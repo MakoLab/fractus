@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:FormItem label="Minimalna wartość sprzedaży">
+		<inputComponents:CurrencyEditor id="salesValue" dataObject="{_salesValue}" change="{this.dispatchEvent(new Event(Event.CHANGE))}"/>
+	</mx:FormItem>
+	<mx:FormItem label="Liczba dni">
+		<mx:NumericStepper id="range" value="{_range}" change="{this.dispatchEvent(new Event(Event.CHANGE))}" maximum="NaN"/>
+	</mx:FormItem>
+	<mx:Script>
+		<![CDATA[
+			[Bindable] private var _salesValue:String; 
+			[Bindable] private var _range:Number;
+			
+			public function set value(value:XML):void
+			{
+				if(value){
+					if(value.salesValue)_salesValue = value.salesValue.toString();
+					if(value.range)_range = Number(value.range.toString());
+				}
+			}
+			public function get value():XML
+			{
+				return <value><salesValue>{salesValue.dataObject}</salesValue><range>{range.value}</range></value>;
+			}
+			
+			public function get valueText():String
+			{
+				var ret:String = "Wartość sprzedaży: " + salesValue.text + ", ilość dni:" + range.value;
+				return ret;
+			}
+		]]>
+	</mx:Script>
+</mx:Form>

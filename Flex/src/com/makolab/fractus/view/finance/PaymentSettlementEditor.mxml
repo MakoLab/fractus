@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	verticalGap="3" xmlns:payments="com.makolab.fractus.view.payments.*" 
+	xmlns:catalogue="com.makolab.fractus.view.catalogue.*">
+
+	<mx:FormHeading label="Informacje o płatności"/>
+	<mx:FormItem label="Dane dokumentu">
+		<mx:HBox verticalAlign="middle">
+			<mx:Text text="{String(paymentXML.documentInfo).replace(/;/g, '\n')}"/>
+			<mx:LinkButton id="lnkBtnPreview" icon="{IconManager.getIcon('properties_small')}" height="25" click="previewDocument()" label="Podgląd" />
+		</mx:HBox>
+	</mx:FormItem>
+	<mx:FormItem label="Kontrahent">
+		<mx:Text text="{paymentXML.contractor.contractor.fullName}"/>
+	</mx:FormItem>
+	<mx:FormItem label="Opis">
+		<mx:Text text="{paymentXML.description}"/>
+	</mx:FormItem>
+	<mx:FormItem label="Rodzaj">
+		<mx:Label text="{Number(paymentXML.amount) * Number(paymentXML.direction) &lt; 0 ? 'wypłata/należność' : 'wpłata/zobowiązanie'}"/>
+	</mx:FormItem>
+	<mx:FormItem label="Kwota płatności">
+		<inputComponents:CurrencyRenderer value="{Math.abs(parseFloat(paymentXML.amount))}" currencyId="{paymentXML.paymentCurrencyId}"/>
+	</mx:FormItem>
+	<mx:FormItem label="Kwota nierozliczona">
+		<mx:HBox>
+		<inputComponents:CurrencyRenderer value="{unsettledAmount}" currencyId="{paymentXML.paymentCurrencyId}"/>
+		<mx:Text visible="{paymentXML.requireSettlement==0?true:false}" text="{LanguageManager.getInstance().labels.finance.noSettlementRequire}"/>
+		</mx:HBox>
+		
+	</mx:FormItem>
+	
+	<mx:FormHeading label="Rozliczenia"/>
+	<mx:DataGrid dataProvider="{settlements}" editable="true" width="100%" itemFocusOut="calcUnsettledAmount()">
+		<mx:columns>
+			
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.document')}" dataField="documentInfo" itemRenderer="com.makolab.fractus.view.payments.PaymentLabelRenderer" editable="false"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.date')}" width="80" dataField="paymentDate" itemRenderer="com.makolab.components.inputComponents.DateRenderer" editable="false"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('documentRenderer.dueDate')}" headerWordWrap="true" width="80" dataField="dueDate" itemRenderer="com.makolab.components.inputComponents.DateRenderer" editable="false"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('documents.paymentamount')}" headerWordWrap="true" width="70" dataField="paymentAmount" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" editable="false"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('documentRenderer.settlementDate')}" headerWordWrap="true" width="80" dataField="settlementDate" itemRenderer="com.makolab.components.inputComponents.DateRenderer" editable="false"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('documentRenderer.settlementAmount')}" headerWordWrap="true" width="70" dataField="settlementAmount" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" editorDataField="dataObject" editable="true"/>
+			<mx:DataGridColumn headerText="" editable="false" width="30">
+				<mx:itemRenderer>
+					<mx:Component>
+						<mx:LinkButton icon="{outerDocument.deleteIcon}" label="" toolTip="{outerDocument.lm.getLabel('common.Delete')}" width="20" height="20" click="outerDocument.deleteSettlement(this.data)"/>
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+		</mx:columns>
+	</mx:DataGrid>
+	
+	<mx:HBox width="100%">
+		<payments:PaymentPopUp id="paymentPopUp" contractorId="{paymentXML.contractor.contractor.id}" direction="{paymentXML.amount * paymentXML.direction &lt; 0 ? 1 : -1}" paymentSelect="handlePaymentSelect(event)" currencyId="{paymentXML.paymentCurrencyId.toString()}"/>
+		<mx:Label text="{ModelLocator.getInstance().languageManager.labels.contractors.contractor}"/>
+		<catalogue:ContractorSearchEditor id="contractorSearch" text="{paymentXML.contractor.contractor.fullName}" setFunction="contractorSetFunction" width="100%"/>
+	</mx:HBox>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.commands.SaveBusinessObjectCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			import com.makolab.fractus.view.payments.PaymentEvent;
+			import com.makolab.fraktus2.utils.DynamicAssetsInjector;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.DataGrid;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.rpc.events.ResultEvent;
+			
+			import assets.IconManager;
+			
+			[Bindable]
+			public var paymentXML:XML;
+			
+			[Bindable]
+			public var deleteIcon:Class = DynamicAssetsInjector.currentIconAssetClassRef.delete_small;
+
+			[Bindable]
+			public var settlements:ArrayCollection;
+			
+			[Bindable]
+			private var unsettledAmount:Number;
+			
+			private var window:ComponentWindow;
+			
+			public var lm:LanguageManager=LanguageManager.getInstance();
+			private function previewDocument():void
+			{
+				if(paymentXML.commercialDocumentHeaderId.length() > 0)
+					DocumentRenderer.showWindow(DocumentTypeDescriptor.COMMERCIAL_DOCUMENT, paymentXML.commercialDocumentHeaderId);
+				else if (paymentXML.financialDocumentHeaderId.length() > 0)
+					DocumentRenderer.showWindow(DocumentTypeDescriptor.FINANCIAL_DOCUMENT, paymentXML.financialDocumentHeaderId); 
+			}
+			
+			public static function showWindow(paymentId:String):ComponentWindow
+			{
+				var editor:PaymentSettlementEditor = new PaymentSettlementEditor();
+				editor.loadPayment(paymentId);
+				var window:ComponentWindow =
+					ComponentWindow.showWindow(editor, ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL, new Rectangle(-1, -1, 800, 500));
+				window.commitFunction = editor.commitChanges;
+				editor.window = window;
+				return window;
+			}
+			
+			public function loadPayment(id:String):void
+			{
+				var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand(LoadBusinessObjectCommand.TYPE_PAYMENT, id);
+				cmd.addEventListener(ResultEvent.RESULT, loadPaymentResult);
+				cmd.execute();
+			}
+			
+			protected function loadPaymentResult(event:ResultEvent):void
+			{
+				paymentXML = XML(event.result).payment[0];
+				
+				if(paymentXML.commercialDocumentHeaderId.length() > 0 || paymentXML.financialDocumentHeaderId.length() > 0)
+					this.lnkBtnPreview.visible = true;
+				else
+					this.lnkBtnPreview.visible = false;
+				
+				deserializeSettlements();
+			}
+			
+			public function deserializeSettlements():void
+			{
+				var a:ArrayCollection = new ArrayCollection();
+				for each (var x:XML in paymentXML.settlements.settlement)
+				{
+					var p:XML = x.relatedPayment.payment[0];
+					a.addItem({
+						settlementId: String(x.id),
+						settlementDate: String(x.date),
+						settlementAmount: Number(x.amount),
+						paymentId: String(p.id),
+						paymentDate: String(p.date),
+						dueDate: String(p.dueDate),
+						paymentAmount: Number(p.amount),
+						documentInfo: String(p.documentInfo)
+					});
+				}
+				settlements = a;
+				calcUnsettledAmount();
+			}
+			
+			private function handlePaymentSelect(event:PaymentEvent):void
+			{
+				settlements.addItem({
+					settlementDate: '',
+					settlementAmount: Math.min(event.unsettledAmount, unsettledAmount),
+					paymentId: event.paymentId,
+					paymentDate: event.paymentDate,
+					dueDate: event.dueDate,
+					paymentAmount: event.amount,
+					documentInfo: event.documentInfo
+				});
+				calcUnsettledAmount();
+			}
+			
+			public function deleteSettlement(settlemenObject:Object):void
+			{
+				settlements.removeItemAt(settlements.getItemIndex(settlemenObject));
+				calcUnsettledAmount();
+			}
+			
+			private function commitChanges():void
+			{
+				var settlementsXML:XML = <settlements/>;
+				for each (var o:Object in settlements)
+				{
+					var x:XML, p:XML, l:XMLList;
+					l = o.settlementId ? paymentXML.settlements.settlement.(id == o.settlementId) : null;
+					if (l && l.length() > 0)
+					{
+						x = l[0];
+						p = x.relatedPayment.payment[0];
+					}
+					else
+					{
+						x = <settlement type="PaymentSettlement"/>;
+						x.appendChild(<payment type="Payment"><relatedPayment>{p}</relatedPayment></payment>);
+						x.relatedPayment.payment.id = o.paymentId;
+					}
+					if (o.settlementId) x.id = o.settlementId;
+					if (o.settlementDate) x.date = o.settlementDate;
+					x.amount = o.settlementAmount;
+					settlementsXML.appendChild(x);
+				}
+				paymentXML.settlements = settlementsXML;
+				var cmd:SaveBusinessObjectCommand = new SaveBusinessObjectCommand();
+				cmd.addEventListener(ResultEvent.RESULT, handleSaveResult);
+				cmd.execute(<root>{paymentXML}</root>);
+			}
+			
+			private function handleSaveResult(event:ResultEvent):void
+			{
+				if (this.window) this.window.hide();
+				this.window = null;
+			}
+			
+			private function calcUnsettledAmount():void
+			{
+				var n:Number = 0;
+				for each (var o:Object in settlements) n += o.settlementAmount;
+				unsettledAmount = Math.abs(parseFloat(paymentXML.amount)) - n;
+			}
+			
+			private function contractorSetFunction(item:Object, data:Object):void
+			{
+				paymentPopUp.contractorId = item.@id;
+			}
+			
+		]]>
+	</mx:Script>
+</mx:Form>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:LinkButton xmlns:mx="http://www.adobe.com/2006/mxml" click="handleClick(event)" label="{currencySymbol}" toolTip="{getToolTipText(data)}">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentObject;
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				if (value)
+				{
+					if (value.paymentCurrencyId.length() > 0)
+						currencySymbol = ModelLocator.getInstance().dictionaryManager.getById(value.paymentCurrencyId).symbol.toString();
+				}
+			}
+			
+			[Bindable] private var currencySymbol:String = "";
+			
+			private var _documentObject:DocumentObject;
+			public function set documentObject(value:DocumentObject):void
+			{
+				_documentObject = value;
+				if (_documentObject.typeDescriptor.isPurchaseDocument || _documentObject.typeDescriptor.isPurchaseCorrectionDocument) this.enabled = true;
+				else this.enabled = false;
+			} 
+			public function get documentObject():DocumentObject
+			{
+				return _documentObject;
+			}
+			
+			private function handleClick(event:MouseEvent):void
+			{
+				DocumentCurrencySelector.show(this,documentObject,XML(data));
+			}
+			
+			private function getToolTipText(payment:Object):String
+			{
+				var toolTipText:String = "";
+				if (payment)
+				{
+					toolTipText += ("Kurs: " + CurrencyManager.formatCurrency(Number(payment.exchangeRate),"?","0",4) + "\n");
+					toolTipText += ("Skala: " + CurrencyManager.formatCurrency(Number(payment.exchangeScale),"?","0",0) + "\n");
+					if (payment.exchangeDate.length() > 0) 
+						toolTipText += ("Data kursu: " + Tools.dateToString(Tools.isoToDate(payment.exchangeDate)));
+				}
+				return toolTipText;
+			}
+		]]>
+	</mx:Script>
+</mx:LinkButton>

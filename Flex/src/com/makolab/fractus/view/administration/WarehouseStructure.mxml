@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="300" height="500" initialize="loadWarehouseMap()" xmlns:groupTree="com.makolab.components.catalogue.groupTree.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.utils.UIDUtil;
+			import com.makolab.fractus.commands.SaveWarehouseMapCommand;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.LoadConfigurationCommand;
+			import com.makolab.fractus.view.administration.WarehouseStructureEditWindow;
+			import mx.events.CloseEvent;
+			import assets.IconManager;
+			import mx.events.ListEvent;
+			import mx.events.ItemClickEvent;
+			import mx.controls.treeClasses.TreeItemRenderer;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.LanguageManager;			
+			import mx.controls.Alert;
+			
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+			
+			[Bindable]
+			private var mainPermission:Boolean = model.permissionManager.isEnabled('warehouse.wms.structure');
+			
+			private var dp:Array =
+				[{permissionKey:"warehouse.wms.structure.add",
+				id:"addBranchBtn",
+				name:"addBranchBtn",
+				toolTip:LanguageManager.getInstance().labels.contractors.forms.contractor.addGroupCatalogue,
+				icon:IconManager.getIcon('group_add_small')},
+				
+				{permissionKey:"warehouse.wms.structure.add",
+				id:"addLeafBtn",
+				name:"addLeafBtn",
+				toolTip:LanguageManager.getInstance().labels.contractors.forms.contractor.addGroup,
+				icon:IconManager.getIcon('group_addSubgroup_small')},
+				
+				{permissionKey:"warehouse.wms.structure.delete",
+				id:"rmvElementBtn",
+				name:"rmvElementBtn",
+				toolTip:LanguageManager.getInstance().labels.contractors.forms.contractor.removeSelected,
+				icon:IconManager.getIcon('group_remove_small')},
+				
+				{permissionKey:"warehouse.wms.structure.edit",
+				id:"addColor",
+				name:"addColor",
+				toolTip:LanguageManager.getInstance().labels.contractors.forms.contractor.properties,
+				icon:IconManager.getIcon('group_properties_small')}];
+			
+			public var window:ComponentWindow;
+			[Bindable]
+			private var warehouseMap:XML = <group>
+												<labels>
+													<label lang="pl">Magazyn</label>
+													<label lang="en">Warehouse</label>
+													<label lang="ru">Склад</label>
+													<label lang="de">Magazin</label>
+												</labels>
+												<subgroups/>
+											</group>;
+			private var warehouseMapConfig:XML;
+			/*
+			private var labelPL:XML = new XML(<label lang='pl'></label>);
+			private var labelEN:XML = new XML(<label lang='en'></label>);
+			private var labelRU:XML = new XML(<label lang='ru'></label>);
+			private var labelDE:XML = new XML(<label lang='de'></label>);
+			*/
+			private var itemsToRemove:Array = [];
+		
+			public static function showWindow():ComponentWindow
+			{
+				var component:WarehouseStructure = new WarehouseStructure();
+				var window:ComponentWindow = ComponentWindow.showWindow(component,ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL,new Rectangle(-1,-1,700,500),LanguageManager.getInstance().labels.title.warehouseStructure.panel);
+				window.commitFunction = component.saveFunction;
+				window.width = 300;
+				window.height = 500;
+				component.window = window;
+				return window;
+			}
+			
+			public function saveFunction():void
+			{
+				saveWarehouseMap();
+			}
+			
+			public static function StrReplace(needle:String, replacement:String, haystack:String):String	{
+	  			var strArr:Array = haystack.split(needle);
+	  			return strArr.join(replacement);
+			}
+			
+			private function translate():void
+			{
+				var s:String;	
+				warehouseMap = <group>
+									<labels>
+										<label lang="pl">Magazyn</label>
+										<label lang="en">Warehouse</label>
+										<label lang="ru">Склад</label>
+										<label lang="de">Magazin</label>
+									</labels>
+									<subgroups/>
+								</group>;			
+				for each(var x:XML in warehouseMapConfig.configValue.warehouseMap.*)	{
+					var xXml:XML = <group>
+										<attributes>
+											<symbol>{x.@symbol}</symbol>
+											<id>{x.@id}</id>
+										</attributes>
+										<labels>
+											<label lang="pl">{x.@label}</label>
+											<label lang="en">{x.@label}</label>
+											<label lang="ru">{x.@label}</label>
+											<label lang="de">{x.@label}</label>
+										</labels>
+										<subgroups/>
+									</group>;
+									
+					for each(var y:XML in x.*)	{
+						var yXml:XML = <group>
+											<attributes>
+												<id>{y.@id}</id>
+												<containerTypeId>{y.@containerTypeId}</containerTypeId>
+												<x>{y.@x}</x>
+												<y>{y.@y}</y>
+												<width>{y.@width}</width>
+												<height>{y.@height}</height>
+												<symbol>{y.@symbol}</symbol>
+											</attributes>
+											<labels>
+												<label lang="pl">{y.@label}</label>
+												<label lang="en">{y.@label}</label>
+												<label lang="ru">{y.@label}</label>
+												<label lang="de">{y.@label}</label>
+											</labels>
+										</group>;									
+						for each(var z:XML in y.*)	{
+							var zXml:XML = <group>
+											<attributes>
+												<id>{z.@id}</id>
+												<containerTypeId>{z.@containerTypeId}</containerTypeId>
+												<x>{z.@x}</x>
+												<y>{z.@y}</y>
+												<width>{z.@width}</width>
+												<height>{z.@height}</height>
+												<symbol>{z.@symbol}</symbol>
+											</attributes>
+											<labels>
+												<label lang="pl">{z.@label}</label>
+												<label lang="en">{z.@label}</label>
+												<label lang="ru">{z.@label}</label>
+												<label lang="de">{z.@label}</label>
+											</labels>
+										</group>;
+							if(yXml.subgroups.toString() == "") yXml.appendChild(<subgroups/>);
+							yXml.subgroups.appendChild(zXml);
+						}
+						xXml.subgroups.appendChild(yXml);
+					}
+					warehouseMap.subgroups.appendChild(xXml);
+					//trace(warehouseMap);
+					tree.itemRenderer =  new ClassFactory(TreeItemRenderer);
+					
+					//tree dp
+					var dpTemp:Array = new Array();
+					var i:int = 0;
+					for each (var item:Object in dp) {
+						
+						if(model.permissionManager.isEnabled(item.permissionKey)) {
+							dpTemp.push(item);
+						}
+					}
+					i++;
+					buttonBar.dataProvider = dpTemp;
+				}
+			}
+			
+			private function buttonBarClickHandler(eventObj:ItemClickEvent):void
+			{
+				var question:Boolean = false;
+				switch(eventObj.item.name){
+					case 'addBranchBtn':
+						var newBranchString:String = "<group>" + 
+								"<attributes><id>" + UIDUtil.createUID() + "</id>" + 
+								"<containerTypeId></containerTypeId><x/><y/><width/><height/><symbol/></attributes>" +
+								"<labels>" + 
+									"<label lang='pl'>Nowy</label>" + 
+									"<label lang='en'>New</label>" + 
+									"<label lang='ru'>Новое</label>" + 
+									"<label lang='de'>Neu</label>" + 
+								"</labels>" + 
+							"<subgroups/></group>";
+						var newBranch:XML = XML(newBranchString);
+						if(tree.selectedItems.length == 0)
+						{
+							warehouseMap.subgroups.appendChild(newBranch);
+						} else {
+							if(tree.selectedItems[tree.selectedItems.length-1].parent()) {
+								tree.selectedItems[tree.selectedItems.length-1].parent().insertChildAfter(tree.selectedItems[tree.selectedItems.length-1],newBranch);
+							}
+						}
+						tree.selectedItem = newBranch;
+						tree.dispatchEvent(new ListEvent(ListEvent.CHANGE));
+						//enableButtons(true);
+						break;
+					case 'addLeafBtn':
+						var newLeafString:String = "<group>" + 
+								"<attributes><id>" + UIDUtil.createUID() + "</id>" + 
+								"<containerTypeId></containerTypeId><x/><y/><width/><height/><symbol/></attributes>" +
+								"<labels>" + 
+									"<label lang='pl'>Nowy</label>" + 
+									"<label lang='en'>New</label>" + 
+									"<label lang='ru'>Новое</label>" + 
+									"<label lang='de'>Neu</label>" + 
+								"</labels>" + 
+							"</group>";
+						var newLeaf:XML = XML(newLeafString);
+						if(tree.selectedItems.length == 0)
+						{
+							warehouseMap.subgroups.appendChild(newLeaf);
+						}else{
+							tree.selectedItems[tree.selectedItems.length-1].parent().insertChildAfter(tree.selectedItems[tree.selectedItems.length-1],newLeaf);
+						}
+						tree.selectedItem = newLeaf;
+						tree.dispatchEvent(new ListEvent(ListEvent.CHANGE));
+						//enableButtons(true);
+						break;
+					case 'rmvElementBtn':
+						if(tree.selectedItems.length > 0)
+						{
+							var indexes:Array = tree.selectedItems;
+							for(var i:int=0;i<indexes.length;i++)
+							{
+								if(tree.dataDescriptor.hasChildren(indexes[i]))
+								{
+									question = true;
+									Alert.show(LanguageManager.getInstance().labels.contractors.forms.contractor.groupRemoveConfirm2,"Fractus",Alert.YES | Alert.NO,null,removeElement);
+									break;
+								}
+							}
+							if(!question)
+							{
+								Alert.show(LanguageManager.getInstance().labels.contractors.forms.contractor.groupRemoveConfirm,"Fractus",Alert.YES | Alert.NO,null,removeElement);
+							}
+						}else{
+							Alert.show(LanguageManager.getInstance().labels.contractors.forms.contractor.groupNotFound,"Fractus");
+						}
+						break;
+					case 'addColor':
+						showEditWindow();
+						break;
+				}
+			}
+			
+			private function removeElement(event:CloseEvent):void
+			{
+				switch(event.detail){
+					case 1:
+						var type:String = "";
+						itemsToRemove = tree.selectedItems;
+						var itemsToRemoveWithId:Array = [];
+						for(var i:int=0;i<itemsToRemove.length;i++)
+						{
+							if(itemsToRemove[i].@id.valueOf().toString() == ""){
+								delete(itemsToRemove[i].parent().children()[itemsToRemove[i].childIndex()]);
+							}else{
+								itemsToRemoveWithId.push(itemsToRemove[i]);
+							}
+						}
+						break;
+					case 2:
+						
+						break;
+				}
+			}
+			
+			private function showEditWindow():void
+			{
+				if(tree.selectedItems.length == 1){
+					var editWindow:WarehouseStructureEditWindow = new WarehouseStructureEditWindow();
+					editWindow.addEventListener("change",warehouseEditHandler);
+					editWindow.dataObject = tree.selectedItem;
+					editWindow.show(parent);
+				}
+			}
+			
+			private function warehouseEditHandler(event:Event):void
+			{
+				//enableButtons(true);
+			}
+			
+			private function retranslate(source:XML):XML
+			{
+				var t:XML = new XML(<warehouseMap/>);
+				
+				for each(var x:XML in source.subgroups.*)	{
+					var xXml:XML = <slotGroup/>;
+					xXml.@label = x.labels.label.(@lang == 'pl');
+					for each(var a:XML in x.attributes.*)	{
+						//trace(a.name() + ": " + a.valueOf());
+						xXml.@[a.name()] = a.valueOf();	
+					}	
+					for each(var y:XML in x.subgroups.*)	{
+						var yXml:XML;
+						if(y.subgroups.toString() == "") yXml = <slot/>;
+						else yXml = <slotGroup/>;
+						yXml.@label = y.labels.label.(@lang == 'pl');
+						xXml.appendChild(yXml);
+						for each(a in y.attributes.*)	{
+							yXml.@[a.name()] = a.valueOf();	
+						}						
+						for each(var z:XML in y.subgroups.*)	{
+							var zXml:XML = <slot/>;
+							zXml.@label = z.labels.label.(@lang == 'pl');
+							for each(a in z.attributes.*)	{
+								zXml.@[a.name()] = a.valueOf();	
+							}	
+							yXml.appendChild(zXml);
+						}
+					}
+					t.appendChild(xXml);					
+				}		
+				//trace(t);		
+				return t;
+			}
+			
+			private function loadWarehouseMap():void
+			{
+				var cmd:LoadConfigurationCommand = new LoadConfigurationCommand();
+				cmd.addEventListener(ResultEvent.RESULT, handleLoadResult);
+				cmd.execute({ key: "warehouse.warehouseMap"});										
+			}
+			
+			private function handleLoadResult(event:ResultEvent):void
+			{
+				warehouseMapConfig = XML(event.result); 
+				//trace(warehouseMapConfig);
+				translate();
+			}
+			
+			private function saveWarehouseMap():void
+			{
+				try
+				{
+					var cmd:SaveWarehouseMapCommand = new SaveWarehouseMapCommand();
+					cmd.addEventListener(ResultEvent.RESULT, handleSaveResult);
+					cmd.execute(retranslate(warehouseMap));
+				}
+				catch (e:Error)
+				{
+					Alert.show(e.message, e.name);
+				}	
+			}
+			
+			private function handleSaveResult(event:ResultEvent):void
+			{
+				//Alert.show(event.result.toString());
+				window.hide();
+			}
+			
+		]]>
+	</mx:Script>	
+		<mx:ButtonBar id="buttonBar" 
+				itemClick="buttonBarClickHandler(event)" 
+				visible="{mainPermission}" includeInLayout="{mainPermission}" enabled="{mainPermission}" 
+				width="100%" buttonStyleName="groupsConfigurationButton" />
+	
+	<groupTree:GroupTree
+		allowMultipleSelection="false"
+		borderSides=""
+		dataProvider="{warehouseMap}"
+		doubleClickEnabled="{model.permissionManager.isEnabled('warehouse.wms.structure.edit')}"
+	 	doubleClick="showEditWindow()"
+		editable="false"
+		height="100%"
+		id="tree"
+		multipleSelection="false"
+		showRoot="true"
+		width="100%"
+	  	dragEnabled="{model.permissionManager.isEnabled('warehouse.wms.structure.edit')}"
+	  	dropEnabled="{model.permissionManager.isEnabled('warehouse.wms.structure.edit')}"
+		/>
+
+</mx:VBox>

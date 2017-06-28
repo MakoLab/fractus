@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"  
+	xmlns:layoutComponents="com.makolab.components.layoutComponents.*"
+	xmlns:list="com.makolab.components.list.*" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	xmlns:catalogue="com.makolab.fractus.view.catalogue.*"
+	xmlns:documents="com.makolab.fractus.view.documents.*"
+	width="100%" height="100%" xmlns:documentLists="com.makolab.fractus.view.documents.documentLists.*"  creationComplete="init()" xmlns:payments="com.makolab.fractus.view.payments.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.commands.GetDocumentsForItemCommand;
+
+			import com.makolab.fractus.commands.GetProductionHistoryForItemCommand;
+			import com.makolab.components.catalogue.CatalogueItemWindow;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.commands.IDocumentSearchCommand;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.components.catalogue.CatalogueItemWindowEvent;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.validators.ValidationResult;
+			import com.makolab.components.inputComponents.IFormBuilderComponent;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.controls.Alert;
+			import mx.core.UIComponent;
+			import mx.core.IFlexDisplayObject;
+			import mx.events.CloseEvent;
+			import mx.controls.TextArea;
+			import mx.managers.PopUpManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.controls.Label;
+			import com.makolab.fractus.model.ModelLocator;
+
+			[Bindable]
+			public var objectId:String;
+			[Bindable]
+			public var warehouseId:String;
+			[Bindable]
+			public var navIndex:Number;
+			
+			public static const ITEM_DETAILS:Number = 0;
+			public static const ITEM_DOCUMENTS:Number = 1;
+			public static const ITEM_STOCK_HISTORY:Number = 2;
+			public static const ITEM_DELIVERIES:Number = 3;
+			
+			[Bindable]
+			public var itemXml:XML;
+			
+			public function init():void
+			{
+				switch(navIndex)	{
+					case CatalogueItemInfo.ITEM_DETAILS: tabNavigator.selectedChild = itemBasicDataTab; break;
+					case CatalogueItemInfo.ITEM_DOCUMENTS: tabNavigator.selectedChild = documentRelated; break;
+					case CatalogueItemInfo.ITEM_STOCK_HISTORY: tabNavigator.selectedChild = deliveryGrid; break;
+					case CatalogueItemInfo.ITEM_DELIVERIES: tabNavigator.selectedChild = availableDeliveryGrid; break;
+				}
+			}
+			
+			private function initializeBasicData():void
+			{
+				var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand(LoadBusinessObjectCommand.TYPE_ITEM, objectId);
+				cmd.targetObject = this;
+				cmd.targetField = 'itemXml';
+				cmd.noRoot = true;
+				cmd.execute();
+			}
+
+			public static function showWindow(id:String,warehouseId:String = null,navIndex:Number = 0,name:String = ""):ComponentWindow
+			{
+				var editor:CatalogueItemInfo = new CatalogueItemInfo();
+				editor.objectId = id;
+				editor.warehouseId = warehouseId;
+				editor.navIndex = navIndex;
+				var window:ComponentWindow = ComponentWindow.showWindow(editor,  ComponentWindow.BUTTON_CLOSE, new Rectangle(-1, -1, 1000, 600));
+				window.title =LanguageManager.getInstance().labels.documents.relatedDocuments + (name != "" ? (" - " + name) : "");
+				window.closeFunction = window.hide;
+				return window;	
+			}
+			
+			
+			public function initializeDelivery():void
+			{		
+				var warId:String = warehouseId
+				if(!warId)
+					warId =ModelLocator.getInstance().currentWarehouseId;
+				deliveryGrid.warehouse.selectedItem = DictionaryManager.getInstance().dictionaries.warehouses.(id == warId);
+				deliveryGrid.showHistory(warId, objectId);
+			}
+			public function initializeAvailableDelivery():void
+			{
+				var warId:String = warehouseId
+				if(warId)
+				{
+					availableDeliveryGrid.warehouse.selectedItem = DictionaryManager.getInstance().dictionaries.warehouses.(id == warId);
+				}
+				availableDeliveryGrid.showDeliveries(objectId,warId)
+			}
+		]]>
+	</mx:Script>
+	
+
+	 <mx:TabNavigator id="tabNavigator" width="100%" height="100%" selectedIndex="{navIndex}">
+	 		<mx:VBox label="{LanguageManager.getInstance().labels.items.forms.item.basicData}" id="itemBasicDataTab" width="100%">
+	 			<inputComponents:ItemRenderer 
+	 				id="itemRenderer"
+	 				data="{itemXml}"
+	 				creationComplete="this.initializeBasicData()" showInfoButton="false"/>
+	 			<inputComponents:ItemImagesRenderer id="itemImagesRenderer" data="{itemXml}"/>
+	 		</mx:VBox>
+			<documentLists:SimpleDocumentList id="documentRelated" 
+					objectId="{objectId}" 
+					commandClassFactory="{GetDocumentsForItemCommand}" 
+					typeConfig="{String('item')}"
+					width="100%" height="100%"
+					label="{LanguageManager.getInstance().labels.documents.relatedDocuments}"
+					creationComplete="documentRelated.invokeSearchDocumentOperation()"
+					/>
+			<documentLists:ProductionDocumentList id="productionRelated" 
+					objectId="{objectId}" 
+					commandClassFactory="{GetProductionHistoryForItemCommand}" 
+					typeConfig="{String('item')}"
+					width="100%" height="100%"
+					label="Produkcja"
+					creationComplete="productionRelated.invokeSearchDocumentOperation()"
+					/>
+			<catalogue:ItemStockHistoryComponent id="deliveryGrid" 
+					width="100%" height="100%" 
+					label="{LanguageManager.getInstance().labels.documents.itemStocHistory}" 
+					initialize="initializeDelivery()"/>
+			<catalogue:ItemDeliveriesComponent id="availableDeliveryGrid" 
+					width="100%" height="100%" 
+					label="{LanguageManager.getInstance().labels.documents.deliveries}"
+					initialize="{initializeAvailableDelivery()}"
+					/>
+					
+			<mx:Form id="contractorPurchasedContractorsTab" label="{LanguageManager.getInstance().labels.contractors.contractors}" height="100%" width="100%">
+		 		<payments:PaymentPurchasedContractors itemId="{objectId}" paddingTop="0" paddingLeft="0" paddingBottom="0" paddingRight="0" width="100%" height="100%" />
+		 	</mx:Form>
+	 </mx:TabNavigator>
+</mx:Canvas>

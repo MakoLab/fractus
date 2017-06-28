@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="absolute"
+	width="350" 
+	height="160"
+	showCloseButton="true"
+	close="close()"
+	creationComplete="creationComplete()">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.GlobalEvent;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.commands.ChangeDocumentStatusCommand;
+			import mx.collections.XMLListCollection;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.commands.CreateBusinessObjectCommand;
+			import com.makolab.fractus.commands.FractusCommand;
+			import mx.controls.Alert;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.managers.PopUpManager;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			private var clipboardXML:XMLListCollection;
+			private var model:ModelLocator = ModelLocator.getInstance();
+			[Bindable]
+			private var documentTypes:XML;
+		
+			
+						
+			public static function show(parent:DisplayObject, clipboardXML:XMLListCollection, clipboardPanel:DocumentClipboardPanel):DocumentClipboardDeleteDocumentWindow
+			{
+				var instance:DocumentClipboardDeleteDocumentWindow = new DocumentClipboardDeleteDocumentWindow();
+			
+				
+				//instance.txt=LanguageManager.getLabel("alert.cancelDocumentQuestion");
+			
+//				if(val)
+//				{
+//					PopUpManager.addPopUp(instance, parent, true);
+//					PopUpManager.centerPopUp(instance);
+//					instance.clipboardPanel = clipboardPanel;
+//					instance.visible = true;
+//									
+//					return instance;
+//				}
+//				else return null;
+
+
+
+				if(clipboardXML)
+				{
+					//sprawdzamy jaki typ dokumentu jest zrodlem
+					for(var i:int=0;i<clipboardXML.length;i++)
+					{
+					var docTypeId:String =clipboardXML.getItemAt(i).@documentTypeId;
+					var docId:String= clipboardXML.getItemAt(i).@id;
+					var typeDescriptor:DocumentTypeDescriptor = new DocumentTypeDescriptor(docTypeId);
+					
+					var entry:XML = DictionaryManager.getInstance().getById(docTypeId);
+					
+						//if(this.typeDescriptor.isCommercialDocument&&this.typeDescriptor.isSalesDocument)
+						{
+							getItemData(typeDescriptor.documentCategory,docId);
+						}
+						
+					}
+				}
+						
+				return null;
+			}
+			
+			public function close():void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			
+			//QLA COPY
+			
+			private static function cancelDocument(documentId:String, itemData:XML):void
+			{				
+				var status:String = DocumentObject.STATUS_CANCELED.toString();
+				var cmd:ChangeDocumentStatusCommand = new ChangeDocumentStatusCommand(documentId,status);
+				cmd.execute(itemData);
+				ModelLocator.getInstance().eventManager.dispatchEvent(new GlobalEvent(GlobalEvent.DOCUMENT_CHANGED, (new DocumentTypeDescriptor(itemData.*.documentTypeId[0].toString())).categoryNumber.toString()));	
+			}
+			private static function getItemData(_type:String,_id:String):void
+			{
+				var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand();
+				cmd.addEventListener(ResultEvent.RESULT, handleItemResult);
+				cmd.execute( { type : _type, id : _id } );
+			}
+			private static function handleItemResult(event:ResultEvent):void
+			{
+				var itemData:XML = XML(event.result);
+				var typeId:String;
+				if (itemData != null)
+				{
+					if(itemData.*.documentTypeId.length() > 0)
+						typeId = itemData.*.documentTypeId;
+					else
+						typeId = itemData.*.financialRegisterId;
+				}
+				trace(itemData.*[0].id);
+				cancelDocument(itemData.*[0].id,itemData);
+			}
+			
+			
+		
+			
+		
+			
+
+			
+			private function creationComplete():void
+			{
+			
+				
+			}
+			
+		
+			
+			private function loadDocumentResult(event:ResultEvent):void
+			{
+				this.close();
+			}
+
+		
+		]]>
+	</mx:Script>
+
+</mx:TitleWindow>

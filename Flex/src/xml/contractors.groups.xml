@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<group id="9C07CC06-8100-4B74-9C02-03605C738806">
+  <labels>
+    <label lang="pl">Grupy kontrahentów</label>
+    <label lang="en">Contractor groups</label>
+  </labels>
+  <subgroups>
+    <group id="A282551C-D98D-4F0A-94D2-0DB11CB41150">
+      <labels>
+        <label lang="pl">Grupa 1</label>
+        <label lang="en">Group 1</label>
+      </labels>
+    </group>
+    <group id="3DC0BB4B-0985-4349-9756-0FE80ABCFD71">
+      <labels>
+        <label lang="pl">Grupa 2</label>
+        <label lang="en">Group 2</label>
+      </labels>
+      <subgroups>
+        <group id="41B4EE04-BB70-4A50-92AD-2A44F9B2F4A7">
+          <labels>
+            <label lang="pl">Podgrupa 2-1</label>
+            <label lang="en">Subgroup 2-1</label>
+          </labels>
+          <subgroups>
+	        <group id="ACA223C0-60EA-4C02-8A68-3F9E5497C09D">
+	          <labels>
+	            <label lang="pl">Podgrupa 2-1-1</label>
+	            <label lang="en">Subgroup 2-1-1</label>
+	          </labels>
+	        </group>
+	        <group id="6F602AF7-1D35-4C7C-950D-461E44E0B9A0">
+	          <labels>
+	            <label lang="pl">Podgrupa 2-1-2</label>
+	            <label lang="en">Subgroup 2-1-2</label>
+	          </labels>
+	        </group>
+	      </subgroups>
+        </group>
+        <group id="F586BCB2-1E6B-4F26-962F-51EA5D377221">
+          <labels>
+            <label lang="pl">Podgrupa 2-2</label>
+            <label lang="en">Subgroup 2-2</label>
+          </labels>
+        </group>
+      </subgroups>
+    </group>
+    <group id="CCE34007-D46B-4B79-B49F-54F253B80831">
+      <labels>
+        <label lang="pl">Grupa 3</label>
+        <label lang="en">Group 3</label>
+      </labels>
+      <subgroups>
+        <group id="440A60DD-D857-4E1B-9F52-62DF09440D1E">
+          <labels>
+            <label lang="pl">Podgrupa 3-1</label>
+            <label lang="en">Subgroup 3-1</label>
+          </labels>
+        </group>
+        <group id="D975E1EF-68B1-4E6C-987E-6554B52F30E6">
+          <labels>
+            <label lang="pl">Podgrupa 3-2</label>
+            <label lang="en">Subgroup 3-2</label>
+          </labels>
+        </group>
+      </subgroups>
+    </group>
+  </subgroups>
+</group>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		implements="com.makolab.fractus.view.documents.documentControls.IDocumentControl"
+		xmlns:inputComponents="com.makolab.components.inputComponents.*"
+	>
+	<mx:Script>
+		<![CDATA[
+			import mx.utils.ArrayUtil;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.document.DocumentObject;
+			private var _documentObject:DocumentObject;
+			
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				if(value == null)
+				{
+					this.visible = false;
+					this.includeInLayout = false;
+				}
+				else
+				{
+					var availableFeatures:Array = value.typeDescriptor.availableFeatures;
+					var exist:Boolean = false;
+					
+					for each(var entry:XML in DictionaryManager.getInstance().dictionaries.documentFeatures)
+					{
+						if (ArrayUtil.getItemIndex(String(entry.id), availableFeatures) >= 0)
+						{
+							exist = true;
+							break;
+						}
+					}
+					
+					if(exist)
+					{
+						this.visible = true;
+						this.includeInLayout = true;
+					}
+					else
+					{
+						this.visible = false;
+						this.includeInLayout = false;
+					}
+				}
+				
+				_documentObject = value;
+			}
+			
+			public function get documentObject():DocumentObject { return _documentObject; }
+		]]>
+	</mx:Script>
+	<mx:states>
+		<mx:State name="rendererEditor">
+			<mx:AddChild>
+				<inputComponents:EditorContainer editorDataField="dataObject" editorDestination="{this.documentObject.attributes.source}">
+					<inputComponents:itemRenderer>
+						<mx:Component>
+							<inputComponents:DocumentFeatureRenderer data="{outerDocument.documentObject.attributes}" />
+						</mx:Component>
+					</inputComponents:itemRenderer>
+					<inputComponents:itemEditor>
+						<mx:Component>
+							<inputComponents:DocumentFeatureSelector top="0" right="0" height="75" verticalScrollPolicy="on" documentObject="{outerDocument.documentObject}"/>
+						</mx:Component>
+					</inputComponents:itemEditor>
+				</inputComponents:EditorContainer>
+			</mx:AddChild>
+		</mx:State>
+		<mx:State name="editor">
+			<mx:SetProperty name="label" value="{LanguageManager.getInstance().labels.documents.documentFeatures}"/>
+			<mx:AddChild>
+				<inputComponents:DocumentFeatureSelector documentObject="{this.documentObject}"/>
+			</mx:AddChild>
+		</mx:State>
+	</mx:states>
+</mx:FormItem>

@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem implements="com.makolab.components.catalogue.ICatalogueFilter" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*"
+	xmlns:catalogue="com.makolab.fractus.view.catalogue.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.CatalogueFilterError;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			import mx.binding.utils.BindingUtils;
+			private var _parameters:XML
+			[Bindable]
+			public var columnName:String = "contractorId";
+			[Bindable]
+			public var allowEmptySelection:Boolean = false;
+			private var _config:XML
+			[Bindable]
+			public function set parameters(value:XML):void
+			{
+				_parameters = value;
+			}
+			
+			public function get parameters():XML
+			{
+				return _parameters;
+			}
+			
+			public function setParameters(params:Object):void
+			{
+				if(useThisFilter.selected&&params){
+					var filterNodes:XMLList = params.filters.column.(@field == columnName);
+					if(filterNodes.length() == 0){
+						var newCondition:XML = <column/>;
+						newCondition.@field = columnName;
+						if(contractorSearch.cs.itemId)newCondition.* = contractorSearch.cs.itemId.toString();
+						params.filters.columns += newCondition;
+					}else{
+						filterNodes[0].* = contractorSearch.cs.itemId.toString();
+					}
+				}else{
+					if(!params) params=new XML();
+					if(!params.filters)params.filters = "";
+					var filterNodes2:XMLList = params.filters.column.(@field == columnName);
+					if(filterNodes2.length() == 1)delete filterNodes2[0];
+				}
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			public function get validationError():String
+			{
+				if(useThisFilter.selected && (!contractorSearch.cs.itemId || contractorSearch.cs.itemId == "")){
+					this.setStyle("backgroundColor",0xff0000);
+					this.setStyle("backgroundAlpha",0.2);
+					this.errorString = LanguageManager.getInstance().labels.reports.filters.noContractorSelected;
+					return LanguageManager.getInstance().labels.reports.filters.noContractorSelected;
+				}
+				this.setStyle("backgroundColor",0xffffff);
+				this.setStyle("backgroundAlpha",0.0);
+				errorString = "";
+				return null;
+			}
+			
+			private function needlessFunction(argument1:Object,argument2:Object):void{setParameters(parameters);}
+			
+			public function get stringValue():String
+			{
+				if (!useThisFilter.selected) return null;
+				return contractorSearch.text;
+			}
+			[Bindable]
+			public var disableFilterType:String = '';
+			
+			public function set config(value:XML):void
+			{
+				_config = value;
+				if(_config.@labelKey.length())
+				{
+					var ka:Array=(_config.@labelKey).split('.');
+					if(ka.length)
+						BindingUtils.bindProperty(this,'label',LanguageManager.getInstance().labels,ka);
+					else
+						BindingUtils.bindProperty(this,'label',LanguageManager.getInstance().labels,_config.@labelKey);
+				}
+				else
+				label = _config.@label;
+				disableFilterType = _config.@disableFilterType;
+			}
+			
+			public function get config():XML
+			{
+				return _config;
+			}
+			public function get value():Object
+			{
+				return contractorSearch.dataObject;
+			}
+			public function setParameterssss(parameters:Object):void
+			{
+				if(value != ""){/* todo : w tools.as zrobić funkcję usuwająca białe znaki ze stringa /^\s*(.*)\s*$/ i to replace na $1 */
+					if(!parameters.filters)parameters.filters = "";
+					var filterNodes:XMLList = parameters.filters.column.(@field == columnName);
+					if(filterNodes.length() == 0){
+						var newCondition:XML = <column/>;
+						newCondition.@field = columnName;
+						newCondition.* = value;
+						parameters.filters.columns += newCondition;
+					}else{
+						filterNodes[0].* = value;
+					}
+				}
+			}
+			
+			public function set template(valueList:XMLList):void{
+				for each (var value:XML in valueList){
+				//todo: jesli filtr ma rozpoznawac, ktory elem. z listy jest dla niego, trzeba to tu dodać
+				
+				/*
+				<filter value="123"/>
+				*/
+				contractorSearch.name=value.@value;
+			
+				}
+			}
+			
+			public function clear():void{
+				if(useThisFilter.selected)contractorSearch.name=""
+			}
+			
+			public function restore():void{
+				//todo
+				//trzeba dopisac cialo funkcji, jesli inny filtr ma miec mozliwosc przywracania stanu tego filtra sprzed wyczyszczenia go
+				//filtry mogą mieć wpływ na inne filtry poprzez wypelnienie w konfiguracji parametru 'disableFilterType', przyklad w DocNumberFilter
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:CheckBox id="useThisFilter" change="setParameters(parameters)"/>
+	<catalogue:ContractorSearchEditor 
+		id="contractorSearch"
+		searchCommandType="contractors"
+		labelField="@fullName"
+		enabled="{useThisFilter.selected}"
+		setFunction="{needlessFunction}"
+		showItemOperations="false"
+		width="100%"
+		searchResult="{setParameters(parameters)}"
+	/>
+</mx:FormItem>

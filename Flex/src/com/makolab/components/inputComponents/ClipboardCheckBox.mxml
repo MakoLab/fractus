@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.CheckBox;
+			import mx.core.UIComponent;
+			
+			[Bindable]
+			public var cb:CheckBox;
+			[Bindable]
+			public var cmp:UIComponent;
+			public function addComponent(_cmp:UIComponent):void
+			{
+				cmp=_cmp;
+				addChild(cmp);
+			
+				//cmp.addEventListener(Event.CHANGE, onChanged);
+				cb=new CheckBox();
+				addChild(cb);
+			}
+			
+		
+
+			
+//			protected function onChanged(event:Event):void
+//			{
+//				// TODO Auto-generated method stub
+//				cb.selected=true;
+//			}
+			
+		]]>
+	</mx:Script>
+
+</mx:HBox>

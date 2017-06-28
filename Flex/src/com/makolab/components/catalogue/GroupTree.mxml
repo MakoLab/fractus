@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Tree xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="init()">    
+	<mx:Script>
+		<![CDATA[
+			import mx.messaging.messages.AsyncMessage;
+			import mx.events.ListEvent;
+			import mx.collections.XMLListCollection;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.AbstractOperation;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import assets.IconManager;
+			
+			public var getGroupsOperation:AbstractOperation;
+			public var saveGroupsOperation:AbstractOperation;
+			
+			private function listenerFunction(event:ListEvent):void {
+			//	Alert.show(event.currentTarget.
+			}
+			
+			private function init():void
+			{
+				getGroupsOperation.send().addResponder(new mx.rpc.Responder(handleResult, handleFault));
+				this.itemRenderer = new ClassFactory(catalogue.GroupTreeRenderer);
+				var icons:Object = {iconID: IconManager.getIcon('group_subgroup_small'), iconID2: IconManager.getIcon('group_group_small.png')};
+				this.itemIcons = icons;	
+			}
+			
+			private function handleResult(event:ResultEvent):void
+			{
+				this.dataProvider = new XMLList(event.message.body);
+			}
+			
+			private function handleFault(event:FaultEvent):void
+			{
+				//trace("fault message: "+event.message.toString());
+			}
+			
+			public function saveFilter(selected:Boolean = false):void
+			{
+				var conXml:String = XMLList(dataProvider).toXMLString(); 
+				var conFilterSelected:String = selected.toString();
+				saveGroupsOperation.send({contractorXML:conXml, filterSelected:conFilterSelected}).addResponder(new mx.rpc.Responder(saveFilterFinished, saveFilterFinished));
+			}
+			
+			private function saveFilterFinished(event:Event):void
+			{
+			}
+		]]>
+	</mx:Script>
+	
+</mx:Tree>

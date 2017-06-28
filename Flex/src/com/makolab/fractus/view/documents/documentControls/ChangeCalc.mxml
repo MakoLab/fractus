@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<mx:Form visible="false" xmlns:mx="http://www.adobe.com/2006/mxml" implements="com.makolab.fractus.view.documents.documentControls.IDocumentControl" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.MetadataEvent;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			private var _documentObject:DocumentObject
+			[Bindable]
+			private var _change:Number = 0;
+			[Bindable]
+			private var total:Number = 0;
+			[Bindable]
+			public var paidAmount:Number = 0;
+			
+			[Bindable]
+			private var currency:String;// = DictionaryManager.getInstance().getById(ModelLocator.getInstance().systemCurrencyId).symbol.toString();
+			
+			public function get change():Number
+			{
+				return _change;
+			}
+			
+			private function calculate(event:Event = null):void
+			{
+				total = 0;
+				currency = DictionaryManager.getInstance().getById(documentObject.documentCurrencyId).symbol.toString();
+				var cashPaymentMethod:XMLList = DictionaryManager.getInstance().dictionaries.paymentMethod.(isGeneratingCashierDocument.toString() == "1").id;
+				var cashPayments:XMLList = new XMLList();
+				//if(documentObject.paymentsXML.payment[0].dueDays.length() > 0 && String(documentObject.paymentsXML.payment[0].paymentMethodId) != "")
+				for each (var payment:XML in documentObject.paymentsXML.payment){
+					for each (var method:XML in cashPaymentMethod)
+						if(payment.paymentMethodId.toString() == method.toString() && String(payment.dueDays) != "" && payment.dueDays.toString() == "0"){
+							cashPayments = cashPayments + payment;
+						}
+				}
+				//cashPayments = documentObject.paymentsXML.payment.(paymentMethodId.toString() == paymentMethod && String(dueDays) != "" && dueDays.toString() == "0");
+				for(var i:int=0; i < cashPayments.length(); i++){
+					total += Number(cashPayments[i].amount.toString());
+				}
+				if(cashPayments.length() > 0)this.visible = true;
+				else this.visible = false;
+				//total = Number(documentObject.xml.grossValue);
+				paidAmount = isNaN(Number(paidValue.dataObject)) ? 0 : Number(paidValue.dataObject);
+				_change = paidAmount - total;
+				if(_change < 0){
+					changeLabel.label = "Pozostało: ";
+					changeValue.setStyle("color","red");
+				}else{
+					changeLabel.label = "Reszta: ";
+					changeValue.setStyle("color","black");
+				}
+			}
+			
+			private function selectAll(event:Event):void
+			{
+				paidValue.setSelection(0,paidValue.text.length);
+			}
+			
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void {
+				if(value)
+				{
+					_documentObject = value; 
+					//total = Number(documentObject.xml.grossValue);
+					if(_documentObject){
+						calculate();
+						_documentObject.addEventListener(DocumentEvent.DOCUMENT_PAYMENT_CHANGE,calculate);
+						_documentObject.addEventListener(DocumentEvent.DOCUMENT_LINE_CHANGE,calculate);
+						_documentObject.addEventListener(DocumentEvent.DOCUMENT_RECALCULATE,calculate);
+						if (_documentObject.xml.documentCurrencyId.length() > 0 && _documentObject.xml.documentCurrencyId.toString().length() > 0)
+							currency = DictionaryManager.getInstance().getById(documentObject.documentCurrencyId).symbol.toString();
+					}
+				}
+				
+			}
+			public function get documentObject():DocumentObject { return _documentObject; }
+		]]>
+	</mx:Script>
+	<!--<mx:HBox height="20">
+		<mx:Label text="Wydawanie reszty" fontWeight="bold"/>
+	</mx:HBox>-->
+	<mx:FormHeading label="{ModelLocator.getInstance().languageManager.labels.documents.calculator}"/>
+	<mx:FormItem label="{ModelLocator.getInstance().languageManager.labels.documents.amountPaid}" direction="horizontal">
+		<!--<mx:Label text="Kwota wpłacona: " width="100"/>-->
+		<inputComponents:CurrencyEditor focusIn="selectAll(event)" id="paidValue" data="0" change="calculate(event)" width="80" forceValidValue="true"/>
+		<mx:Label text="{currency}"/>	
+	</mx:FormItem>
+	<mx:FormItem id="changeLabel" label="{ModelLocator.getInstance().languageManager.labels.sales.quick.change}" direction="horizontal">
+		<!--<mx:Label id="changeLabel" text="Reszta: " width="100"/>-->
+		<inputComponents:CurrencyRenderer id="changeValue" value="{_change}" width="80" textAlign="right"/>
+		<mx:Label text="{currency}"/>	
+	</mx:FormItem>	
+</mx:Form>

@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="callCommand()">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import assets.IconManager;
+			import mx.controls.CheckBox;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.commands.OfflinePrintCommand;
+			import com.makolab.fractus.business.Services;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.PrintDocumentCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.events.ListEvent;
+			import mx.controls.ComboBox;
+			import mx.controls.Alert;
+			import com.makolab.fractus.business.fiscalPrint.WebServicePrinter;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			private var window:ComponentWindow;
+			
+			public var text:String;
+			private var header:XML;
+			private var _documentId:String;
+			public var profile:String;
+			public var printProfiles:String;
+			public var unsavedDocumentId:String;
+			
+			private var printServiceParams:Object;
+			
+			public function set documentId(value:String):void
+			{
+				_documentId = value;
+				//var cmd
+			}
+			
+			public function get documentId():String
+			{
+				return _documentId;
+			}
+			
+			public var documentTypeId:String;
+			
+			private var currentDocumentPrintText:String = "";
+			
+			[Bindable]
+			private var printData:Array = [];
+			
+			private var _relatedDocuments:XML;
+			
+			public function set relatedDocuments(value:XML):void
+			{
+				_relatedDocuments = value;
+				if(_relatedDocuments){
+					for each (var related:XML in _relatedDocuments.id){
+						var relatedObject:Object = {};
+						relatedObject.id = related.toString();
+						relatedObject.typeId = related.@documentTypeId;
+						relatedObject.printText = null;
+						relatedObject.command = null;
+						relatedObject.selected = false;
+						if (relatedObject.id != unsavedDocumentId) printData.push(relatedObject);
+					}
+				}
+			}
+			
+			public function get relatedDocuments():XML
+			{
+				return _relatedDocuments;
+			}
+			
+			private function callCommand():void
+			{
+				// todo: zrobić warunek na istnienie documentId i profileName
+				if(Services.getInstance().serviceMode == Services.MODE_WEB_SERVICE)
+				{
+					var cmd:PrintDocumentCommand = new PrintDocumentCommand("printService", "text");
+					cmd.params = this.printServiceParams;
+					
+					var requestXML:XML = <root/>;
+					requestXML.id = documentId;
+					requestXML.profileName = profile;
+					requestXML.outputContentType = "content";
+					cmd.addEventListener(ResultEvent.RESULT, resultHandler, false, 0, true);
+					cmd.execute(requestXML);
+				}
+				else //wydruki offline
+				{
+					var printCmd:OfflinePrintCommand = new OfflinePrintCommand(documentId, null, profile);
+					printCmd.addEventListener(ResultEvent.RESULT, resultHandler, false, 0, true);
+					printCmd.execute();
+				}
+			}
+			
+			private function textPrintHandler(event:ResultEvent):void
+			{
+				for(var i:int = 0; i < printData.length; i++){
+					if(printData[i].command == event.target){
+						printData[i].printText = event.result;
+						printData[i].command = null;
+					}
+				}
+				updateText();
+				//this.txtCtrl.htmlText = this.replaceText(String(event.result));
+				//this.text = String(event.result);
+			}
+			
+			private function resultHandler(event:ResultEvent):void
+			{
+				currentDocumentPrintText = String(event.result);
+				/* var temp:Array = [];
+				var mainObject:Object = {};
+				mainObject.id = documentId;
+				mainObject.printText = String(event.result);
+				mainObject.command = null;
+				mainObject.selected = true;
+				temp.push(mainObject);
+				for(var i:int = 0; i < printData.length; i++){
+					temp.push(printData[i]);
+				}
+				printData = temp; */
+				updateText();
+			}
+			
+			private function replaceText(value:String):String
+			{
+				return ("<a>"+Tools.htmlEncode(value.substr(value.indexOf("@@@@")+4))+"</a>")
+					.replace(/%FONT-WEIGHT%bold_on/g, "<b>")
+					.replace(/%FONT-WEIGHT%bold_off/g, "</b>")
+					.replace(/%FONT-STYLE%italic_on/g, "<i>")
+					.replace(/%FONT-STYLE%italic_off/g, "</i>")
+					.replace(/%FONT-SIZE%6.0pt_on/g, "")
+					.replace(/%FONT-SIZE%6.0pt_off/g, "")
+					.replace(/%FONT-SIZE%8.0pt_on/g, "<font size='12'>")
+					.replace(/%FONT-SIZE%8.0pt_off/g, "</font>")
+					.replace(/%FONT-SIZE%10.0pt_on/g, "")
+					.replace(/%FONT-SIZE%10.0pt_off/g, "")
+					.replace(/%FONT-SIZE%12.0pt_on/g, "")
+					.replace(/%FONT-SIZE%12.0pt_off/g, "")
+					.replace(/%FONT-SIZE%14.0pt_on/g, "<font size='14'>")
+					.replace(/%FONT-SIZE%14.0pt_off/g, "</font>")
+					.replace(/%FONT-SIZE%17.0pt_on/g, "")
+					.replace(/%FONT-SIZE%17.0pt_off/g, "")
+					.replace(/%FONT-SIZE%20.0pt_on/g, "<font size='20'>")
+					.replace(/%FONT-SIZE%20.0pt_off/g, "</font>")
+					.replace(/%FONT-SIZE%_on/g, "")
+					.replace(/%FONT-SIZE%_off/g, "")
+					.replace(/%INTERLINIA%6/g, "")
+					.replace(/%INTERLINIA%8/g, "")
+					.replace(/%INTERLINIA%10/g, "")
+					.replace(/%INTERLINIA%12/g, "")
+					.replace(/%KONIEC-STRONY%/g, "")
+					.replace(/%FONT%nlq_on/g, "")
+					.replace(/%FONT%nlq_off/g, "");
+			}
+			
+			private function print():void
+			{
+				try
+				{
+					var wsPrinter:WebServicePrinter = new WebServicePrinter();
+					
+					// jezeli printermodel = forceSize to wymuszamy 8pt w kazdej linii, w przeciwnym razie nie modyfikujemy tekstu
+					var forceSize:Boolean = false;
+					/* try
+					{
+						var configXML:XML = XML(this.text.split('@@@@')[0]);
+						if (configXML.@printerModel == 'forceSize') forceSize = true;
+					}
+					catch(e:Error) {} */
+					
+					if (header && header.@printerModel == 'forceSize') forceSize = true;
+					
+					if (!forceSize) 
+					{
+						//trace("!forceSize " + header.toXMLString() + this.text);
+						wsPrinter.printTextual(header.toXMLString() + "@@@@" + this.text);
+					}
+					else
+					{
+						var spl:Array = this.text.split('\n');
+						for (var i:int = 1; i < spl.length; i++)
+						{
+							spl[i] = '%FONT-SIZE%8.0pt_on' + spl[i] + '%FONT-SIZE%8.0pt_off';
+						}
+						//trace("forceSize " + header.toXMLString() + spl.join('\n'));
+	 					wsPrinter.printTextual(header.toXMLString() + "@@@@" + spl.join('\n'));
+					}
+	 				window.hide();
+	 			}
+				catch (error:Error)
+				{
+					Alert.show("Błąd! : " + error.message);
+				}
+			}
+			
+			public function changePrintProfile(event:ListEvent):void
+			{
+				profile = event.target.selectedItem.name.toString();
+				callCommand();
+			}
+			
+			public static function showWindow(id:String,printProfiles:String,relatedDocuments:XML = null,printServiceParams:Object = null,unsavedDocumentId:String = null):ComponentWindow
+			{
+				var profiles:Array = [];
+				var profileNames:Array = printProfiles.replace(" ","").split(",");
+				for(var i:int = 0; i < profileNames.length; i++){
+					var profile:XMLList = DictionaryManager.getInstance().dictionaries.printProfiles.(name.toString() == profileNames[i]);
+					if(profile.length() > 0)profiles.push(profile[0]);
+				}
+				
+				var editor:TextPrintPreviewWindow = new TextPrintPreviewWindow();
+				editor.documentId = id;
+				editor.unsavedDocumentId = unsavedDocumentId;
+				editor.relatedDocuments = relatedDocuments;
+				editor.profile = profiles[0].name.toString();
+				editor.printProfiles = printProfiles;
+				editor.printServiceParams = printServiceParams;
+				
+				var printProfileSelector:ComboBox = new ComboBox();
+				printProfileSelector.addEventListener(ListEvent.CHANGE,editor.changePrintProfile);
+				printProfileSelector.dataProvider = profiles;
+				
+				var window:ComponentWindow = ComponentWindow.showWindow(editor, ComponentWindow.BUTTON_CLOSE | ComponentWindow.BUTTON_COMMIT, null);
+				window.title = LanguageManager.getInstance().labels.title.printPreview;
+				window.commitFunction = editor.print;
+				window.commitButton.label = LanguageManager.getLabel("common.print");
+				window.closeFunction = window.hide;
+				if(profiles.length > 1)window.windowControlBar.addChild(printProfileSelector);
+				editor.window = window;
+				return window;
+			}
+			
+			private function getRelatedPrintText(id:String,typeId:String):void
+			{
+				var index:int = NaN;
+				for(var i:int = 0; i < printData.length; i++){
+					if(printData[i].id == id)index = i;
+				}
+				var typeDescriptor:DocumentTypeDescriptor = new DocumentTypeDescriptor(typeId);
+				if(Services.getInstance().serviceMode == Services.MODE_WEB_SERVICE)
+				{
+					var cmd:PrintDocumentCommand = new PrintDocumentCommand("printService", "text");
+					cmd.params = this.printServiceParams;
+					
+					printData[index].command = cmd;
+					
+					var requestXML:XML = <root/>;
+					requestXML.id = id;
+					requestXML.profileName = typeDescriptor.getDefaultTextPrintProfile();
+					requestXML.outputContentType = "content";
+					cmd.addEventListener(ResultEvent.RESULT, textPrintHandler, false, 0, true);
+					cmd.execute(requestXML);
+				}
+				else //wydruki offline
+				{
+					var printCmd:OfflinePrintCommand = new OfflinePrintCommand(documentId, null, typeDescriptor.getDefaultTextPrintProfile());
+					printData[i].command = printCmd;
+					printCmd.addEventListener(ResultEvent.RESULT, textPrintHandler, false, 0, true);
+					printCmd.execute();
+				}
+			}
+			
+			public function checkBoxChangeHandler(event:Event):void
+			{
+				var index:int = grid.itemRendererToIndex(event.target as CheckBox);
+				if((event.target as CheckBox).selected){
+					printData[index].selected = true;
+					if(printData[index].printText == null){
+						getRelatedPrintText(printData[index].id.toString(),printData[index].typeId.toString());
+					}else{
+						updateText();
+					}
+				}else{
+					printData[index].selected = false;
+					updateText();
+				}
+			}
+			
+			private function updateText():void
+			{
+				var checkedDocumentsCount:int = int(Number(printMainCB.selected));
+				//wyciagamy naglowek
+				try
+				{
+					this.header = XML(this.currentDocumentPrintText.split('@@@@')[0]);
+				}
+				catch(e:Error) {
+					if (ModelLocator.getInstance().isDebug()) Alert.show("Nie można wyodrębnić nagłówka.\n"+e.message,"Błąd");
+				}
+				
+				this.txtCtrl.htmlText = "";
+				this.text = "";
+				if(printMainCB.selected)this.txtCtrl.htmlText = replaceText(currentDocumentPrintText);
+				//dokument wystawiany
+				try
+				{
+					if (printMainCB.selected) this.text = this.currentDocumentPrintText.split('@@@@')[1];
+				}
+				catch(e:Error) {
+					if (ModelLocator.getInstance().isDebug()) Alert.show("Nie można wyodrębnić zawartości.\n"+e.message,"Błąd");
+				}
+				//if (printMainCB.selected) this.text = currentDocumentPrintText;
+				for(var i:int = 0; i < printData.length; i++){
+					if(printData[i].selected){
+						checkedDocumentsCount++;
+						this.txtCtrl.htmlText = this.txtCtrl.htmlText + "<br/><br/><br/><br/>" + replaceText(printData[i].printText);
+						this.text = this.text + (Tools.htmlEncode(printData[i].printText.substr(printData[i].printText.indexOf("@@@@")+4)));
+					}
+				}
+				if (checkedDocumentsCount) 
+				{
+					window.commitButton.enabled = true;
+					window.commitButton.errorString = "";
+				}else{
+					window.commitButton.enabled = false;
+					window.commitButton.errorString = "Proszę zaznaczyć co najmniej 1 dokument do wydrukowania";
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:HBox width="100%" height="100%">
+		<mx:TextArea id="txtCtrl" editable="false" width="100%" height="100%" fontFamily="Courier New" fontSize="10" horizontalScrollPolicy="auto" wordWrap="false"/>
+		<mx:VBox visible="{(printData.length > 0)}" includeInLayout="{(printData.length > 0)}" verticalGap="0">
+			<mx:CheckBox id="printMainCB" label="Drukuj dok. wystawiony" selected="true" change="updateText()"/>
+			<mx:Label id="printRelatedLabel" text="Drukuj dok. powiązane:"/>
+			<mx:DataGrid id="grid" selectable="false" width="{printRelatedLabel.width}" rowCount="{printData.length}" dataProvider="{printData}" sortableColumns="false" headerHeight="0">
+				<mx:columns>
+					<mx:DataGridColumn headerText="" textAlign="center" width="16">
+						<mx:itemRenderer>
+							<mx:Component>
+								<mx:CheckBox selected="{Boolean(Number(data.enabled))}" change="outerDocument.checkBoxChangeHandler(event)" textAlign="center"/>
+							</mx:Component>
+						</mx:itemRenderer>
+					</mx:DataGridColumn>
+					<mx:DataGridColumn dataField="typeId" headerText="" itemRenderer="com.makolab.fractus.view.generic.DocumentTypeRenderer"/>
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:VBox>
+	</mx:HBox>
+</mx:VBox>

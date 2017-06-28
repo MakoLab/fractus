@@ -1,0 +1,16 @@
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintFiscal\bin\Debug\elzabdr.dll
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintFiscal\bin\Debug\MakoPrintFiscal.dll.config
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintFiscal\bin\Debug\MakoPrintFiscal.XML
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintFiscal\bin\Debug\MakoPrintFiscal.dll
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintFiscal\bin\Debug\MakoPrintFiscal.pdb
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintFiscal\obj\Debug\MakoPrintFiscal.csprojResolveAssemblyReference.cache
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintFiscal\obj\Debug\MakoPrintFiscal.dll
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintFiscal\obj\Debug\MakoPrintFiscal.pdb
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintFiscal\bin\Debug\elzabdr.dll
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintFiscal\bin\Debug\MakoPrintFiscal.dll.config
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintFiscal\bin\Debug\MakoPrintFiscal.XML
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintFiscal\bin\Debug\MakoPrintFiscal.dll
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintFiscal\bin\Debug\MakoPrintFiscal.pdb
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintFiscal\obj\Debug\MakoPrintFiscal.csprojResolveAssemblyReference.cache
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintFiscal\obj\Debug\MakoPrintFiscal.dll
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintFiscal\obj\Debug\MakoPrintFiscal.pdb

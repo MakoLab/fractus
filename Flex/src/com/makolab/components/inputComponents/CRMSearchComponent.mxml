@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="550" creationComplete="onCreationComplete()">
+	
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			
+			private function onCreationComplete():void
+			{
+				this.searchButton.setStyle("fillColors", [0x62C2F6, 0x479BF0]);
+				this.searchButton.setStyle("fillAlphas", [0.8,1.0]);
+				this.searchButton.setStyle("color","white");
+				this.searchButton.setStyle("fontWeight","bold");
+				
+			}
+		]]>
+	</mx:Script>
+	
+	
+	<mx:HBox width="350">
+		<mx:TextInput text="Szukaj..." width="200" />
+		<mx:Button id="searchButton" label="Szukaj" />
+	</mx:HBox>
+	
+	<mx:HBox width="350">
+		<mx:CheckBox id="contractorCheck" selected="false" label="{LanguageManager.getInstance().labels.crm.contractor}" iconColor="0x00bb00"/>
+		<mx:CheckBox id="offerCheck" selected="true" label="{LanguageManager.getInstance().labels.crm.offer}" iconColor="0x00bb00"/>
+		<mx:CheckBox id="questionCheck" selected="false" label="{LanguageManager.getInstance().labels.crm.question}" iconColor="0x00bb00"/>	
+	</mx:HBox>
+	
+</mx:VBox>

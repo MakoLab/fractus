@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" xmlns:ns1="com.makolab.components.inputComponents.*" xmlns:business="com.makolab.fractus.business.*"
+		creationComplete="init()"
+		implements="mx.rpc.IResponder"
+	xmlns:view="com.makolab.fractus.view.*">
+	<mx:states>
+		<mx:State name="login">
+			<mx:AddChild position="lastChild">
+				<view:LogInWindow id="loginWindow" verticalCenter="0" horizontalCenter="0" logIn="logIn(loginWindow.userName, loginWindow.password)"/>
+			</mx:AddChild>
+		</mx:State>
+		<mx:State name="contractor">
+			<mx:AddChild position="lastChild">
+				<ns1:ContractorRenderer id="contractorRenderer" left="0" top="0" right="0" bottom="0" data="{dataXML}" backgroundColor="#ffffff"/>
+			</mx:AddChild>
+		</mx:State>
+		<mx:State name="contractorsCatalogue"/>
+		<mx:State name="initializing">
+			<mx:AddChild position="lastChild">
+				<mx:ProgressBar id="progressBar" horizontalCenter="0" width="50%" height="20" labelPlacement="center" verticalCenter="0" mode="manual" label="{progressBarLabel}"/>
+			</mx:AddChild>
+			<mx:AddChild position="lastChild">
+				<mx:Text width="50%" horizontalCenter="0" id="messageText" height="100" verticalCenter="70" text="{messageString}"/>
+			</mx:AddChild>
+		</mx:State>
+	</mx:states>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.crypto.MD5;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.LogInWindow;
+			import mx.controls.Alert;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.rpc.IResponder;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.vo.SessionVO;
+			import mx.rpc.soap.WebService;
+			public var loggedIn:Boolean;
+			
+			private var pendingOperation:int = 0;
+			
+			private var mode:String = "contractor";
+			
+			private const OPERATION_NONE:int = 0;
+			private const OPERATION_GET_DICTIONARIES:int = 1;
+			private const OPERATION_LOGIN:int = 2;
+			private const OPERATION_LOAD_CONTRACTOR:int = 3;
+			
+			private var webService:WebService;
+			
+			[Bindable]
+			private var dataXML:XML;
+			
+			[Bindable]
+			private var progressBarLabel:String = "Trwa ładowanie danych...";
+			[Bindable]
+			private var messageString:String = ""; 
+			
+			//private var logInWindow:LogInWindow;
+			
+			private function init():void
+			{
+				LanguageManager.getInstance().setLabelsXML(labelsXML);
+				
+				services.wsdl = "http://192.168.1.249:8080/KernelServices/KernelService.svc?wsdl";
+				webService = services.getWebService("kernelService");
+				webService.addEventListener(FaultEvent.FAULT, faultHandler);
+
+				currentState = "initializing";				
+
+				mode = application.parameters.mode;
+				if (!mode)
+				{
+					showError("Nie przekazano trybu pracy.");
+					return;
+				}
+				
+				if (application.parameters.login)
+				{
+					currentState = "login";	
+				}
+				else if (application.parameters.username && application.parameters.password)
+				{
+					logIn(application.parameters.username, application.parameters.password);
+				}
+				else if (application.parameters.key)
+				{
+					var hash:String;
+					var password:String = "xxx";
+					
+					if (application.parameters.id) hash = MD5.hash(application.parameters.id + password);
+					else if (application.parameters.nip) hash = MD5.hash(application.parameters.nip + password);
+					//Alert.show(hash);
+					if (hash == String(application.parameters.key))
+					{
+						logIn("xxx", "xxx");
+					}
+					else
+					{
+						showError("Nieprawidłowy klucz obiektu");
+					}
+				}
+				else
+				{
+					logIn("xxx", "xxx");
+				}
+			}
+			
+			private function loadData():void
+			{
+				switch (mode)
+				{
+					case "contractor":
+						var id:String = application.parameters.id;
+						var nip:String = application.parameters.nip;
+						if (!id && !nip) showError("Nie przekazano identyfikatora obiektu");
+						else
+						{
+							var param:XML = id ? <param><type>Contractor</type><id>{id}</id></param> : <param><type>Contractor</type><nip>{nip}</nip></param>;
+							pendingOperation = OPERATION_LOAD_CONTRACTOR;
+							webService.getOperation("LoadBusinessObject").send(param.toString()).addResponder(this);
+							showMessage("Pobieranie danych kontrahenta...", 2);
+						}
+					break;
+				}
+			}
+			
+			private function logIn(user:String, password:String):void
+			{
+				pendingOperation = OPERATION_LOGIN;
+				webService.getOperation("LogOn").send(user, password, "pl").addResponder(this);
+				showMessage("Logowanie do serwera...", 0);
+			}
+			
+			private function showMessage(s:String, complete:Number = NaN):void
+			{
+				messageString += s + "\n";
+				if (progressBar)
+				{
+					progressBar.setProgress(complete, 3);
+				}
+			}
+			
+			public function result(data:Object):void
+			{
+				var event:ResultEvent = ResultEvent(data);
+				switch (pendingOperation)
+				{
+					case OPERATION_LOGIN:
+						currentState = "initializing";
+						pendingOperation = OPERATION_NONE;
+						services.sessionId = String(event.result);
+						pendingOperation = OPERATION_GET_DICTIONARIES;
+						webService.getOperation("GetDictionaries").send().addResponder(this);
+						showMessage("Pobieranie danych konfiguracyjnych...", 1);
+					break;
+					case OPERATION_GET_DICTIONARIES:
+						pendingOperation = OPERATION_NONE;
+						DictionaryManager.getInstance().setDictionariesXML(XML(event.result));
+						loadData();
+					break;
+					case OPERATION_LOAD_CONTRACTOR:
+						showMessage("Zakończono.", 4);
+						pendingOperation = OPERATION_NONE;
+						dataXML = XML(XML(event.result).contractor);
+						currentState = "contractor";
+					break;
+				}
+				
+			}
+			
+			public function fault(info:Object):void { ; }
+			
+			public function faultHandler(event:FaultEvent):void
+			{
+				var errorXML:XML;
+				var msg:String;
+				var extMsg:String;
+				try
+				{
+					errorXML = XML(event.fault.faultString);
+				}
+				catch(e:Error) { ; }
+				if (errorXML && errorXML.toXMLString())
+				{
+					msg = errorXML.customMessage;
+					extMsg = errorXML.extendedCustomMessage;
+					if (!extMsg) extMsg = msg; 
+				}
+				else
+				{
+					msg = event.fault.faultCode;
+					extMsg = event.fault.faultString;
+				}
+				if (currentState == "login")
+				{
+					Alert.show(extMsg, msg);
+				}
+				else
+				{
+					showError("Wystąpił błąd: " + msg + "\n" + extMsg);
+				}
+			}
+			
+			public function showError(msg:String):void
+			{
+				showMessage(msg);
+				progressBarLabel = "Błąd ładowania";
+			}
+		]]>
+	</mx:Script>
+	
+	<business:Services id="services"/>
+	<mx:XML id="labelsXML" source="xml/labels.xml"/>
+</mx:Application>

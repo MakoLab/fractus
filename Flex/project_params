@@ -1,0 +1,9 @@
+title             = Fractus 2
+version_major     = 10
+version_minor     = 0
+version_revision  = 32
+application       = Main
+width             = 100%
+height            = 100%
+bgcolor           = #dddddd
+swf               = Main

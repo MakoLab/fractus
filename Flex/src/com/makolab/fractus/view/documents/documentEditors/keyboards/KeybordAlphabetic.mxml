@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		width="100%" height="100%"
+		focusEnabled="false"
+		paddingBottom="10" paddingLeft="10" paddingRight="10" verticalGap="4"
+		verticalScrollPolicy="off" horizontalScrollPolicy="off">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.events.AllEvent;
+			
+			[Bindable]
+			private var butEnabled:Boolean = true;
+			
+			private function sendFromKeyboard(event:MouseEvent):void {
+				dispatchEvent(new AllEvent(AllEvent.KEY_PRESSED, event.target.label, false));
+				if(!butEnabled) {
+					butEnabled = true;
+					altButton.selected = false;
+				}
+			}
+			
+			private function backspaceClick():void {
+				dispatchEvent(new AllEvent(AllEvent.KEY_PRESSED, false, false));
+			}
+			
+			private function enterClick():void {
+				dispatchEvent(new AllEvent(AllEvent.FUNCTION_CALL));
+			}
+			
+			private function altClick():void {
+				if(altButton.selected) {
+					butEnabled = false;
+				} else {
+					butEnabled = true;
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:Metadata>
+		[Event(name="keyPressed", type="com.makolab.events.AllEvent")]
+		[Event(name="functionCall", type="com.makolab.events.AllEvent")]
+	</mx:Metadata>
+	
+	<mx:HBox width="100%" height="50%" horizontalGap="4">
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="1" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="2" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="3" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="4" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="5" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="6" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="7" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="8" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="9" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="0" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+	</mx:HBox>
+	
+	<mx:HBox width="100%" height="100%" horizontalGap="4">
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="Q" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="W" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Canvas height="100%" width="100%">
+			<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="E" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+			<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="Ę" height="100%" width="100%" styleName="keybordButtom" visible="{!butEnabled}"/>
+		</mx:Canvas>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="R" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="T" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="Y" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="U" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="I" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Canvas height="100%" width="100%">
+			<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="O" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+			<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="Ó" height="100%" width="100%" styleName="keybordButtom" visible="{!butEnabled}"/>
+		</mx:Canvas>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="P" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+	</mx:HBox>
+	<mx:HBox width="100%" height="100%" horizontalGap="4">
+		<mx:Canvas height="100%" width="100%">
+			<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="A" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+			<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="Ą" height="100%" width="100%" styleName="keybordButtom" visible="{!butEnabled}"/>
+		</mx:Canvas>
+		<mx:Canvas height="100%" width="100%">
+			<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="S" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+			<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="Ś" height="100%" width="100%" styleName="keybordButtom" visible="{!butEnabled}"/>
+		</mx:Canvas>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="D" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="F" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="G" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="H" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="J" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="K" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Canvas height="100%" width="100%">
+			<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="L" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+			<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="Ł" height="100%" width="100%" styleName="keybordButtom" visible="{!butEnabled}"/>
+		</mx:Canvas>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="/" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+	</mx:HBox>	
+	<mx:HBox width="100%" height="100%" horizontalGap="4">
+		<mx:Canvas height="100%" width="100%">
+			<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="Z" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+			<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="Ż" height="100%" width="100%" styleName="keybordButtom" visible="{!butEnabled}"/>
+		</mx:Canvas>
+		<mx:Canvas height="100%" width="100%">
+			<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="X" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+			<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="Ź" height="100%" width="100%" styleName="keybordButtom" visible="{!butEnabled}"/>
+		</mx:Canvas>
+		<mx:Canvas height="100%" width="100%">
+			<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="C" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+			<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="Ć" height="100%" width="100%" styleName="keybordButtom" visible="{!butEnabled}"/>
+		</mx:Canvas>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="V" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="B" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Canvas height="100%" width="100%">
+			<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="N" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+			<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="Ń" height="100%" width="100%" styleName="keybordButtom" visible="{!butEnabled}"/>
+		</mx:Canvas>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="M" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="." height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="-" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="+" height="100%" width="100%" styleName="keybordButtom" enabled="{butEnabled}"/>
+	</mx:HBox>
+	
+	<mx:HBox width="100%" height="100%" horizontalGap="4">
+		<mx:Button focusEnabled="false" click="altClick()" id="altButton" label="{LanguageManager.getInstance().labels.sales.quick.alt}" toggle="true" height="200%" width="150%" styleName="keybordButtom"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label=" " height="100%" width="300%" styleName="keybordButtom" enabled="{butEnabled}"/>
+		<mx:Button focusEnabled="false" click="backspaceClick()" label="{LanguageManager.getInstance().labels.sales.quick.backspace}" height="100%" width="200%" styleName="keybordButtom" enabled="{butEnabled}"  fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #FF0000]"/>
+		<mx:Button focusEnabled="false" click="enterClick()" label="{LanguageManager.getInstance().labels.sales.quick.approve}" height="100%" width="200%" styleName="keybordButtom" enabled="{butEnabled}" fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #73EF28]" />
+	</mx:HBox>
+
+</mx:VBox>

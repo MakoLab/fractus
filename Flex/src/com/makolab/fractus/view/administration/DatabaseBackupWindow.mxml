@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="200" xmlns:generic="com.makolab.fractus.view.generic.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import com.adobe.utils.DateUtil;
+			import mx.rpc.events.FaultEvent;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.ErrorManager;
+			import mx.messaging.messages.ErrorMessage;
+			import com.makolab.fractus.vo.ErrorVO;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.commands.AsyncTaskCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			public static function showWindow():ComponentWindow
+			{
+				var window:DatabaseBackupWindow = new DatabaseBackupWindow()
+				window.loadDefaults();
+				return ComponentWindow.showWindow(window, 0, new Rectangle(-1, -1, 500, 190));
+			}
+			
+			private function loadDefaults():void
+			{
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand('tools.p_getBackupDefaults', <root/>);
+				cmd.addEventListener(ResultEvent.RESULT, loadDefaultsResult);
+				cmd.execute();
+			}
+			
+			private function loadDefaultsResult(event:ResultEvent):void
+			{
+				var x:XML = XML(event.result);
+				defaultFileName = x.file;
+				defaultFilePath = x.path;
+				databaseName = x.database;
+			}
+			
+			private function handleResult(s:String):void
+			{
+				var result:XML;
+				var msg:String;
+				try
+				{
+					result = XML(s);
+					if (result.localName() == 'message') String(result);
+					else if (String(result.message)) msg = result.message;
+					else if (String(result.extendedMessage)) msg = result.extendedMessage;
+					else msg = result;
+				}
+				catch(e:Error)
+				{
+					msg = "Bad response";
+				}
+				lblMessage.text = msg;
+			}
+			
+			[Bindable]
+			private var defaultFileName:String;
+			[Bindable]
+			private var defaultFilePath:String;
+			[Bindable]
+			private var databaseName:String;
+			
+		]]>
+	</mx:Script>
+	<mx:FormItem label="Baza danych" width="100%">
+		<mx:Label text="{databaseName}"/>
+	</mx:FormItem>
+	<mx:FormItem label="{LanguageManager.getLabel('common.fileName')}" width="100%">
+		<mx:TextInput id="tiFileName" width="100%" text="{defaultFileName}"/>
+	</mx:FormItem>
+	<mx:FormItem label="{LanguageManager.getLabel('common.filePath')}" width="100%">
+		<mx:TextInput id="tiFilePath" width="100%" text="{defaultFilePath}"/>
+	</mx:FormItem>
+	<mx:HBox width="100%">
+		<mx:Button label="Wykonaj" click="taskComponent.startTask(XMLList(paramsXml))"/>
+		<generic:AsyncTaskComponent
+				id="taskComponent"
+				taskName="{AsyncTaskCommand.STORED_PROCEDURE_TASK}"
+				procedureName="tools.p_BackupDatabase"
+				width="100%"
+				result="handleResult(String(event.result))"
+				fault="handleResult(event.fault.faultString)"
+				indeterminate="true"
+				delay="1000"
+				/>
+	</mx:HBox>
+	<mx:Label id="lblMessage" width="100%" textAlign="center" color="red"/>
+	
+	<mx:XML id="paramsXml">
+		<root>
+			<file>{tiFileName.text}</file>
+			<path>{tiFilePath.text}</path>
+			<database>{databaseName}</database>
+		</root>
+	</mx:XML>
+</mx:Form>

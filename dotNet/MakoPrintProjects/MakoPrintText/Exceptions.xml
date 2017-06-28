@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<exceptions>
+  <exception id="TooManyCharsInRow">
+    <extendedCustomMessage lang="pl">Za dużo znaków w wierszu.</extendedCustomMessage>
+  </exception>
+  <exception id="MissingConfiguration">
+    <extendedCustomMessage lang="pl">Brak nagłówka konfiguracyjnego.</extendedCustomMessage>
+  </exception>
+  <exception id="MissingPortName">
+    <extendedCustomMessage lang="pl">Brak nazwy portu.</extendedCustomMessage>
+  </exception>
+  <exception id="UnknownPrinterModel">
+    <extendedCustomMessage lang="pl">Nie znany model drukarki.</extendedCustomMessage>
+  </exception>
+  <exception id="PortNameError">
+    <extendedCustomMessage lang="pl">Błędny port drukarki.</extendedCustomMessage>
+  </exception>
+  <exception id="PrinterNameError">
+    <extendedCustomMessage lang="pl">Błędna nazwa drukarki.</extendedCustomMessage>
+  </exception>
+</exceptions>

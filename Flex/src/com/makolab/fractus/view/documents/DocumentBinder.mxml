@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" verticalGap="0" xmlns:catalogue="com.makolab.components.catalogue.*" xmlns:permission="com.makolab.components.permission.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.components.document.template.WarehouseDocument;
+			import com.makolab.components.inputComponents.DocRelationsFilter;
+			import com.makolab.fractus.view.documents.documentLists.DocumentList;
+			import com.makolab.fractus.view.documents.documentLists.WarehouseDocumentList;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import mx.controls.Alert;
+			import com.makolab.fractus.commands.UnrelateDocumentsCommand;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.BindDocumentsCommand;
+			import assets.IconManager;
+			import com.makolab.components.catalogue.CatalogueOperation;
+			import com.makolab.components.catalogue.CatalogueEvent;
+			import com.makolab.fractus.commands.GetRelatedComercialDocumentsCommand;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			
+			public static const ADD_MODE:int = 1;
+			public static const DELETE_MODE:int = 0;
+			[Bindable]
+			public var mode:int = ADD_MODE;
+			private var operation:CatalogueOperation;
+			private var listWindow:ComponentWindow;
+			
+			private var newRelatedDocuments:Array = [];
+		
+			protected var window:ComponentWindow;
+			
+			[Bindable]
+			public var editPermissionKey:String;
+			
+			public static function showWindow(documentCategory:String, document:XML, permissionKey:String=null):ComponentWindow
+			{
+				var renderer:DocumentBinder = new DocumentBinder();
+				var typeDescriptor:DocumentTypeDescriptor = new DocumentTypeDescriptor(document.*.documentTypeId.*);
+				renderer.documentXML = document;
+				
+				if(permissionKey) {
+					//permission hard coded
+					switch((permissionKey.split('.'))[0]) {
+						case 'sales':
+							renderer.editPermissionKey = 'sales.binding.add';
+							break;
+						case 'purchase':
+							renderer.editPermissionKey = 'purchase.binding.add';
+							break;
+						case 'warehouse':
+							renderer.editPermissionKey = 'warehouse.warehouseOrders.binding.add';
+							break;
+					}
+					var buts:int;
+					
+					if(ModelLocator.getInstance().permissionManager.isEnabled(renderer.editPermissionKey)) {
+						buts = ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL;
+					} else {
+						buts = ComponentWindow.BUTTON_CANCEL;
+					}
+				} else {
+					buts = ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL;
+				}
+				
+				renderer.window = ComponentWindow.showWindow(renderer,buts,new Rectangle(0,0,500,400),LanguageManager.getInstance().labels.documents.documentBindings);
+				renderer.window.setStyle("headerColors",[typeDescriptor.documentThemeColor,typeDescriptor.documentThemeColorLight]);
+				renderer.window.commitFunction = renderer.commit;
+				return renderer.window;
+			}
+			
+			public function commit():void
+			{
+				if(mode == ADD_MODE && newRelatedDocuments.length > 0){
+					var param:XML = <root><commercialDocuments/><warehouseDocuments/></root>;
+					param.commercialDocuments.id = documentXML.commercialDocument.id.*;
+					for(var i:int=0;i<newRelatedDocuments.length;i++){
+						var node:XML = <id/>;
+						node.* = newRelatedDocuments[i].@id;
+						param.warehouseDocuments.* += node;
+					}
+					var cmd:BindDocumentsCommand = new BindDocumentsCommand();
+					cmd.addEventListener(ResultEvent.RESULT,commandResult);
+					cmd.addEventListener(FaultEvent.FAULT,commandFault);
+					cmd.execute(param);
+				}else if(mode == DELETE_MODE && newRelatedDocuments.length == 0){
+					if(relatedDocuments.length == 0){
+						var delParam:XML = <root><commercialDocumentId/></root>;
+						delParam.commercialDocumentId = documentXML.commercialDocument.id.*;
+						var delCmd:UnrelateDocumentsCommand = new UnrelateDocumentsCommand();
+						delCmd.addEventListener(ResultEvent.RESULT,commandResult);
+						delCmd.addEventListener(FaultEvent.FAULT,commandFault);
+						delCmd.execute(delParam);
+					}else{
+						window.hide();
+					}
+				}
+			}
+			
+			private function commandFault(event:FaultEvent):void
+			{
+				
+			}
+			
+			private function commandResult(event:ResultEvent):void
+			{
+				var message:String = LanguageManager.getLabel(XML(event.result).@message.toString());
+				if(XML(event.result).@message.length() > 0)Alert.show(message);
+				window.hide();
+			}
+			
+			private function typeLabelFunction(item:Object,column:Object):String
+			{
+				return DictionaryManager.getInstance().dictionaries.documentTypes.(id.* == item.@documentTypeId).label.(@lang == LanguageManager.getInstance().currentLanguage);
+			}
+			
+			private function getType(typeId:String):String
+			{
+				return DictionaryManager.getInstance().dictionaries.documentTypes.(id.* == typeId).label.(@lang == LanguageManager.getInstance().currentLanguage);
+			}
+			
+			private var _documentXML:XML = <root/>;
+			
+			public function set documentXML(value:XML):void
+			{
+				_documentXML = value;
+				documentLabel = getType(_documentXML.commercialDocument.documentTypeId.*) + " " + _documentXML.commercialDocument.number.fullNumber.*;
+				getRelations();
+			}
+			public function get documentXML():XML
+			{
+				return _documentXML;
+			}
+			[Bindable]
+			private var documentLabel:String = "";
+			
+			[Bindable]
+			public var relatedDocuments:Array = [];
+			
+			private function getRelations():void
+			{
+				if(documentXML){
+					var cmdWarehouse:GetRelatedComercialDocumentsCommand;
+					cmdWarehouse = new GetRelatedComercialDocumentsCommand(documentXML.commercialDocument.id.*,GetRelatedComercialDocumentsCommand.COMMERCIAL_DOCUMENT);
+					cmdWarehouse.execute(setRelatedResult);
+				}
+			}
+			
+			private function setRelatedResult(resultXML:XML):void
+			{
+				for each(var o:Object in resultXML.*){
+					relatedDocuments.push(o);
+				}
+				relatedGrid.dataProvider = relatedDocuments;
+				if(relatedDocuments.length == 0){
+					this.mode = ADD_MODE;
+					operation = new CatalogueOperation();
+					operation.operationId = "operationBindDocuments";
+					operation.label = LanguageManager.getInstance().labels.documents.bindDocument;
+					operation.image = IconManager.getIcon('add_small');
+					operation.addEventListener(CatalogueEvent.OPERATION_INVOKE,operationInvokeHandler);
+					operation.defaultOperation = true;
+				}else{
+					this.mode = DELETE_MODE;
+				}
+				
+			}
+			
+			public function operationInvokeHandler(event:CatalogueEvent):void
+			{
+				var documentNode:XML = <warehouseDocument/>;
+				documentNode.@id = event.itemData.warehouseDocument.id.*;
+				documentNode.@fullNumber = event.itemData.warehouseDocument.number.fullNumber.*;
+				documentNode.@documentTypeId = event.itemData.warehouseDocument.documentTypeId.*;
+				documentNode.@issueDate = event.itemData.warehouseDocument.issueDate.*;
+				newRelatedDocuments.push(documentNode);
+				relatedDocuments.push(documentNode);
+				relatedGrid.dataProvider = relatedDocuments;
+				listWindow.hide();
+			}
+			
+			private function openWarehouseList():void
+			{
+				if(mode == ADD_MODE){
+					listWindow = DocumentList.showWindow(WarehouseDocumentList,LanguageManager.getInstance().labels.title.documents.list.warehouse,operation);
+					/* var params:XML = 	<searchParams type="WarehouseDocument">
+										  <pageSize>200</pageSize>
+										  <page>1</page>
+										  <columns>
+										    <column field="documentTypeId" column="documentTypeId"/>
+										    <column field="status" column="status"/>
+										    <column field="fullNumber"/>
+										    <column field="issueDate" sortOrder="1" sortType="DESC"/>
+										    <column field="contractor" column="fullName" relatedObject="contractor"/>
+										    <column field="warehouseId"/>
+										    <column field="value"/>
+										  </columns>
+										  <query/>
+										  <dateTo>2010-04-16T23:59:59.997</dateTo>
+										  <dateFrom>2010-04-16</dateFrom>
+										  <filters>
+										    <column field="status">60,40,20</column>
+										    <column field="documentTypeId">'1AB89244-413F-4296-B623-B326803DB3C8'</column>
+    										<column field="related">0</column>
+										  </filters>
+										  <groups/>
+										</searchParams>;
+					(listWindow.innerComponent as WarehouseDocumentList).catalogueBrowser.searchParams = params; */
+					var listFilters:Array = (listWindow.innerComponent as WarehouseDocumentList).filters;
+					for(var i:int=0;i<listFilters.length;i++){
+						if(listFilters[i] is DocRelationsFilter){
+							(listFilters[i] as DocRelationsFilter).relation.selectedIndex = 2;
+						}
+					}
+				}
+				else removeBinding();
+			}
+			
+			private function removeBinding():void
+			{
+				relatedDocuments = [];
+				relatedGrid.dataProvider = relatedDocuments;
+			}
+			
+			private function getButtonLabel(mode:int):String
+			{
+				var ret:String = "";
+				if(mode == ADD_MODE)ret = LanguageManager.getInstance().labels.common.add;
+				if(mode == DELETE_MODE)ret = LanguageManager.getInstance().labels.common.deleteAll;
+				return ret;
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:Label text="{LanguageManager.getInstance().labels.documents.relatedTo}" width="100%"/>
+	<mx:Label text="{documentLabel}" fontWeight="bold" width="100%"/>
+	<mx:DataGrid id="relatedGrid" height="100%" width="100%">
+		<mx:columns>
+			<mx:DataGridColumn width="120" dataField="@fullNumber" headerText="{LanguageManager.getInstance().labels.documents.documentNumber}"/>
+			<mx:DataGridColumn labelFunction="typeLabelFunction" headerText="{LanguageManager.getInstance().labels.documents.documentType}"/>
+			<mx:DataGridColumn width="100" dataField="@issueDate" headerText="{LanguageManager.getInstance().labels.common.date}" itemRenderer="com.makolab.components.inputComponents.DateRenderer"/>
+		</mx:columns>
+	</mx:DataGrid>
+	<permission:ButtonComponent label="{getButtonLabel(mode)}" click="openWarehouseList()" width="100%" permissionKey="{editPermissionKey}"/>
+</mx:VBox>

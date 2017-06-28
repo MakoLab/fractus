@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem implements="com.makolab.components.catalogue.ICatalogueFilter" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			[Bindable]
+			private var _config:XML
+			[Bindable]
+			public var inventoryDocumentId:String = "";
+			
+			public function get value():Object
+			{
+				return availability.selected;
+			}
+			
+			[Bindable]
+			public function set config(value:XML):void
+			{
+				_config = value;
+				//label = _config.@label;
+				inventoryDocumentId = _config.@inventoryDocumentId;
+			}
+			
+			public function get config():XML
+			{
+				return _config;
+			}
+			
+			public function setParameters(parameters:Object):void
+			{
+				if(value != false && inventoryDocumentId!=""){
+					if(!parameters.filters)parameters.filters = "";
+					var filterNodes:XMLList = parameters.filters.column.(@field == "inventoryId");
+					if(filterNodes.length() == 0){
+						var newCondition:XML = <column/>;
+						newCondition.@field = "inventoryId";
+						newCondition.* = inventoryDocumentId;
+						parameters.filters.columns += newCondition;
+					}else{
+						filterNodes[0].* = inventoryDocumentId;
+					}
+				}
+			}
+			
+			public function set template(valueList:XMLList):void{
+				for each (var value:XML in valueList){
+				//todo: jesli filtr ma rozpoznawac, ktory elem. z listy jest dla niego, trzeba to tu dodać
+				
+				// todo
+				}
+			}
+			
+			public function clear():void{
+				if(availability.enabled)availability.selected = false;
+			}
+			
+			public function restore():void{
+				//todo
+				//trzeba dopisac cialo funkcji, jesli inny filtr ma miec mozliwosc przywracania stanu tego filtra sprzed wyczyszczenia go
+				//filtry mogą mieć wpływ na inne filtry poprzez wypelnienie w konfiguracji parametru 'disableFilterType', przyklad w DocNumberFilter
+			}
+		]]>
+	</mx:Script>
+	<mx:CheckBox id="availability" label="{config.@label}"/>
+</mx:FormItem>

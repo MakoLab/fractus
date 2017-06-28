@@ -1,0 +1,540 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 paddingLeft="15"
+		 paddingRight="15"
+		 paddingBottom="15"
+		 width="100%"
+		 height="110%"
+		 left="20"
+		 right="20"
+		 top="20"
+		 bottom="20"
+		 verticalGap="0"
+		 verticalAlign="middle"
+		 horizontalAlign="center"
+		 xmlns:inputComponents="com.makolab.components.inputComponents.*"
+		 initialize="init()" xmlns:view="com.makolab.fractus.view.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.inputComponents.DictionaryEditor;
+			import com.makolab.components.inputComponents.DictionaryXmlEditor;
+			import com.makolab.components.inputComponents.as3syntaxhighlight.CodePrettyPrint;
+			import com.makolab.fractus.business.Services;
+			import com.makolab.fractus.commands.FractusCommand;
+			import com.makolab.fractus.commands.GetCommentsCommand;
+			import com.makolab.fractus.commands.LoadConfigurationCommand;
+			import com.makolab.fractus.commands.SaveConfigurationCommand;
+			import com.makolab.fractus.commands.dictionaries.LoadDictionaryCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.remoteInterface.GetCommentResultEvent;
+			import com.makolab.fractus.remoteInterface.RemoteInterfaceService;
+			import com.makolab.fractus.remoteInterface.SetCommentResultEvent;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.view.XlsToXmlManager;
+			
+			import flash.events.Event;
+			import flash.net.navigateToURL;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.HBox;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.controls.TextArea;
+			import mx.core.mx_internal;
+			import mx.effects.easing.Back;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+
+			// ******************* Inicjalizacja ******************
+			public static function showWindow():ComponentWindow
+			{
+				var component:ConfigurationLittleEditor=new ConfigurationLittleEditor();
+				var window:ComponentWindow=ComponentWindow.showWindow(component);
+				return window;
+			}
+
+
+			private function init():void
+			{
+				myDP=
+					{state: -2, id: "0", name: "0", key: "", select: false};
+				configureParse();
+			}
+			private var window:TitleWindow;
+			private var okButton:Button;
+			private var cancelButton:Button;
+			private var win:ConfigurationXmlEditor;
+			[Bindable]
+			private var branchData:XML=new XML('<root/>');
+
+			[Bindable]
+			private var configureData:XML=new XML('<root/>');
+
+			[Bindable]
+			private var dataTree:XML=new XML('<root/>');
+
+			//[Bindable]
+			//private var model:ModelLocator = ModelLocator.getInstance();
+
+			[Bindable]
+			private var myDP:Object=new Object(); 
+
+			[Bindable]
+			private var buttonLabel:String="Wczytaj zaznaczony ";
+
+			[Bindable]
+			private var commentBox:String="";
+
+			private var path:String="";
+
+
+			
+			// ~~~~~~~~~~~~~~~~~~~~~~~~~~ Wczytywanie klucza wybranego oddzialu ~~~~~~~~~~~~~~
+			public function changeXML():void
+			{
+				if ( !blocked)
+				{
+
+					abtn.enabled=true;
+					if(path=="ui.items.forms.item")
+						gebtn.enabled=true;
+					setXMLLabel();
+
+					// -- Wazne by ustawic tlukowi "podwojnie".
+					xmlEditor.tarea1.text	=	new XML(myDP["data"]).toXMLString();
+					xmlEditor.dataProvider	=	myDP["data"];
+
+				}
+				
+			}
+
+			private var blocked:Boolean=false;
+
+			// --- Tworzenie klucza - zmiennej path na podstawie elementu drzewka
+			private function getPath():void
+			{
+				var parentArray:Array=new Array();
+				var obj:Object=configureTree.selectedItem;
+				parentArray.push(configureTree.selectedItem.@label);
+				var parent:Object=configureTree.getParentItem(obj);
+				while (parent != null)
+				{
+					parentArray.push(parent["@label"]);
+					obj=parent;
+					parent=configureTree.getParentItem(obj);
+				}
+				parentArray.reverse();
+				path="";
+				for each (var s:String in parentArray)
+					path+=s + '.';
+				path = path.substr(0, path.length - 1);
+
+			}
+
+			public function clickTree(e:Event):void
+			{
+				if (blocked == false && configureTree.selectedItem && (configureTree.selectedItem as XML).children().length() == 0)
+				{
+					blocked=true;
+					clearBranch();
+					getPath();
+					getValues();
+					
+
+				}
+
+				//xmlEditor.tarea1.text = "void function ala()\n{ echo \"kota\"; }";
+			}
+
+			public function setXMLLabel():void
+			{
+				if (myDP)
+					xmlEditor.setTextLabel(path);
+				else
+					xmlEditor.setTextLabel("");
+			}
+
+			private function addToTree(x:XML, tree:XML):void
+			{
+				if (x && x.@label)
+				{
+					var elem:String=x.@label;
+					var f:Boolean=false;
+					for each (var e:XML in tree.children())
+					{
+						if (e.@label == elem)
+						{
+							addToTree(x.children()[0], e)
+							f=true;
+							break;
+						}
+					}
+					if (f == false)
+						tree.appendChild(x);
+				}
+			}
+
+
+			private function buildQuery(elem:Object):Object
+			{
+				return {key:path};
+			}
+
+		
+
+
+			private function configureParse():void
+			{
+				var cmd:FractusCommand=new FractusCommand("kernelService", "GetConfigurationKeys");
+				cmd.addEventListener(ResultEvent.RESULT, loadConfigurationKeys);
+				cmd.execute();
+
+			}
+
+
+			private function loadConfigurationKeys(event:ResultEvent):void
+			{
+				if (event.result)
+				{ 
+					configureData=XML(event.result.toString());
+					//xmlEditor.tarea1.text = configureData.toXMLString();
+
+					var l:Array=new Array();
+					//test.text = "[GOTOWY]\n";
+					for each (var x:XML in configureData.children())
+					{
+						var tmp:Array=new Array(x.@key, x.@level, x.toString());
+						//test.text += x.@key +' | '+ x.@level+' | '+ x.toString()+'\n';
+						addToTree(parseKeyToXML(x.@key), dataTree);
+						l.push(tmp);
+					}
+						//test.text += '\n'
+						//test.text += dataTree.toXMLString();	
+				}
+			}
+
+			private function parseKeyToXML(s:String):XML
+			{
+				var ans:XML=new XML('<root/>');
+				var last:XML;
+				var elem:Array=s.split('.');
+
+				for (var i:int=elem.length - 1; i >= 0; i--)
+				{
+					var e:XML=new XML(String('<node label="' + elem[i] + '"/>'));
+					if (last)
+						e.appendChild(last);
+					// tu pod else dopiac dodatkowe dane
+					ans=e;
+					last=ans; 
+				}
+				return ans;
+			}
+
+			//************ Wczytywanie wpisow~******************************************************
+			private var isOk:Boolean = false; 
+			private function getValues():void
+			{
+				test.text+='Rozpoczęcie wczytywania: ';
+				test.text+=path.substr(0, path.length - 1) + "\n";
+				isOk = false;
+				check = null;
+				
+				
+					myDP["state"] = -1;
+					//var cmd:FractusCommand=new FractusCommand("kernelService", "GetConfiguration");
+					var cmd:LoadConfigurationCommand=new LoadConfigurationCommand();
+					
+					cmd.addEventListener(ResultEvent.RESULT, rval);
+					cmd.addEventListener(FaultEvent.FAULT, fval);
+					cmd.defaultErrorHandling=false;
+					
+					cmd.execute(buildQuery(myDP["id"]));
+				
+			}
+			
+			
+			
+			private function rval(event:ResultEvent):void
+			{
+				if (XML(event.result))
+				{
+					
+					
+					var tmp:XML=XML(event.result);
+					
+						myDP["data"]=tmp.toXMLString();
+
+						myDP["key"]="[XML]";
+					
+					
+					
+					
+							myDP["state"] = 2;
+							check=new XML(myDP["data"]);
+							isOk = true; 
+									
+					
+							checkStates();
+							test.text+="Wczytywanie ...[OK]\n";
+							test.text+="Wczytywanie zakończono.\n";
+							blocked=false;
+							changeXML();
+					}
+				
+				
+			}
+
+			private function fval(event:FaultEvent):void
+			{
+			
+					test.text+="Wczytywanie oddziału ...[FALSE]\n";
+					
+					if(XML(event.fault.faultString).branchId[0]){
+						
+					var elemId:String = XML(event.fault.faultString).branchId[0].toString();
+						if(myDP["id"]==elemId) myDP["state"] = -2;
+						
+						
+						 	checkStates();
+							test.text+="Wczytywanie zakończono.\n";
+							blocked=false;
+					}
+			}
+			
+			
+			private var check:XML;
+			private function checkStates():void
+			{
+				var current:XML;
+				var item:Object; 
+				
+				if(check!=null)
+					if (myDP["state"] != 2 && myDP["state"] != -2)
+						if (check == myDP["data"])
+							myDP["state"]=1;
+						else
+							myDP["state"]=0;
+				
+				blocked=false;
+			}
+			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			
+			private function editBtn():void
+			{
+				window = new TitleWindow();
+				window.width = 800;
+				window.height = 500;
+				var vBox:VBox = new VBox();
+				vBox.percentHeight = 100;
+				vBox.percentWidth = 100;
+				window.addChild(vBox);
+				
+				win=new ConfigurationXmlEditor();
+				win.data=XML(xmlEditor.tarea1.text);
+				win.percentHeight=100;
+				win.percentWidth=100;
+				win.addEventListener(Event.CHANGE,changeHandler);
+				vBox.addChild(DisplayObject(win));
+				
+				var hBox:HBox = new HBox();
+				hBox.setStyle("horizontalCenter", 0);
+				okButton = new Button();
+				okButton.label = LanguageManager.getInstance().labels.common.ok;
+				okButton.width = 100;
+				okButton.addEventListener(MouseEvent.CLICK, buttonClickHandler);
+				okButton.enabled = ModelLocator.getInstance().permissionManager.isEnabled('administration.dictionaries.edit');
+				hBox.addChild(okButton);
+				
+				cancelButton = new Button();
+				cancelButton.label = LanguageManager.getInstance().labels.common.cancel;
+				cancelButton.width = 100;
+				cancelButton.addEventListener(MouseEvent.CLICK, buttonClickHandler);
+				hBox.addChild(cancelButton);
+				vBox.addChild(hBox);
+				
+				PopUpManager.addPopUp(window,this,true);
+				PopUpManager.centerPopUp(window);
+			}
+			private function changeHandler(e:Event=null):void
+			{
+				xmlEditor.tarea1.text=XML(win.data).toXMLString();
+				applyBtn();
+			}
+			// ***************** Wysylanie nowych wpisow ********************************
+			private var saveCounter:int=0;
+
+			private function applyBtn():void
+			{
+
+				var cmd:SaveConfigurationCommand=new SaveConfigurationCommand();//FractusCommand("kernelService", "SaveConfiguration");
+				cmd.defaultErrorHandling=false;
+				
+				cmd.addEventListener(FaultEvent.FAULT, saveFault);
+				cmd.addEventListener(ResultEvent.RESULT, saveResult);
+				
+						test.text+="Rozpoczęcie wysyłania nowych wpisów.\n";
+							cmd.execute({requestXml :new XML(xmlEditor.tarea1.text)},false);		
+				
+			}
+
+			private function saveOver():void
+			{
+
+				saveCounter=0;
+				mistakenly=0;
+				correctly=0;
+
+				test.text+="Wysłano.\n\n";
+				clearEditor();
+				clickTree(null);
+
+			}
+
+
+			private var mistakenly:int=0;
+			private var correctly:int=0;
+
+			private function saveFault(e:FaultEvent):void
+			{
+				test.text+="Błąd wysyłania nowego wpisu:\n";
+				test.text+=e.toString() + "\n";
+				mistakenly++;
+				if (saveCounter == correctly + mistakenly)
+					saveOver();
+				//saveCounter++;
+			}
+
+			private function saveResult(e:ResultEvent):void
+			{
+				var ans:XML=new XML(e.result);
+				test.text+="Wysyłanie nowego wpisu:" + " [" + ans.toString() + "]\n";
+				correctly++;
+				if (saveCounter == correctly + mistakenly)
+					saveOver();
+				//saveCounter++;
+			}
+
+			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+			private function clearBranch():void
+			{
+				abtn.enabled=false;
+				gebtn.enabled=false;
+					myDP["state"]=-1;
+					myDP["key"]="";
+					myDP["data"]=null;
+					myDP["ans"]=null;
+					myDP["select"]=false;
+				
+				check = null;
+				clearEditor();
+			}
+
+			private function clearEditor():void
+			{
+				
+				xmlEditor.setTextLabel("");
+				xmlEditor.codeHighlight();
+			}
+			
+			protected function buttonClickHandler(event:MouseEvent):void
+			{
+				if (event.target == okButton)
+				{
+					changeHandler();		//XML(win.dataObject);
+				} 
+				
+				if (window) PopUpManager.removePopUp(window);
+			}
+			
+		]]>
+	</mx:Script>
+
+	<mx:Box paddingBottom="2"
+			paddingLeft="2"
+			paddingRight="2"
+			paddingTop="5"
+			width="100%"
+			height="100%"
+			borderColor="#7BAFE5"
+			horizontalAlign="center"
+			verticalAlign="middle">
+		<mx:HDividedBox width="100%"
+						height="100%"
+						borderColor="#7BAFE5"
+						horizontalAlign="center"
+						verticalAlign="middle">
+			<mx:VBox height="100%"
+					 width="40%">
+				<mx:VDividedBox height="100%"
+								width="100%">
+					<mx:Tree height="100%"
+							 width="100%"
+							 id="configureTree"
+							 dataProvider="{dataTree.node}"
+							 labelField="@label"
+							 click="clickTree(event)"
+							 selectionColor="#009DFF">
+					</mx:Tree>
+					<mx:TextArea height="25"
+								 width="100%"
+								 id="test"
+								 valueCommit="test.verticalScrollPosition=test.maxVerticalScrollPosition-1">
+					</mx:TextArea>
+				</mx:VDividedBox>
+			</mx:VBox>
+			<mx:VBox height="100%" width="60%">
+				<mx:VDividedBox height="100%"
+								width="100%">
+					<mx:TabNavigator width="100%"
+									 height="100%">
+						<mx:Canvas label="XML"
+								   width="100%"
+								   height="100%">
+							<mx:VBox width="100%"
+									 height="100%">
+								<inputComponents:AsyncInPlace id="xmlEditor"
+															  width="100%"
+															  height="100%"/>
+								<mx:Button id="abtn"
+										   label="Zapisz XML"
+										   width="100%"
+										   click="{applyBtn()}"
+										   enabled="false"/>
+								<mx:Button id="gebtn"
+										   label="Edytuj graficznie XML"
+										   width="100%"
+										   click="{editBtn()}"
+										   enabled="false"/>
+							</mx:VBox>
+						</mx:Canvas>
+					<!--	<mx:Canvas label="{commentTabLabel}"
+								   width="100%"
+								   height="100%">
+							<mx:VBox width="100%"
+									 height="100%">									 
+								<mx:TextArea id="commentTb"
+											 text="{commentBox}"
+											 x="0"
+											 y="0"
+											 width="100%"
+											 height="100%" change="{commentBox = commentTb.text}"/>
+								<mx:HDividedBox width="100%">
+									<mx:Label id="CommentLastMod" text="{CommentLastModLabel}"/>
+								</mx:HDividedBox>
+								<mx:Button id="applyCommentBtn"
+										   label="{applyCommentLabel}"
+										   width="100%"
+										   click="{applyCommentBtnClick()}"
+										   enabled="true"/>
+							</mx:VBox>
+						</mx:Canvas>-->
+					</mx:TabNavigator>
+				</mx:VDividedBox>
+			</mx:VBox>
+		</mx:HDividedBox>
+	</mx:Box>
+</mx:VBox>

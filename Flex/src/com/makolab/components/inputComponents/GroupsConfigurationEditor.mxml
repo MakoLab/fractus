@@ -1,0 +1,670 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--- 
+	GroupsConfigurationEditor allows a user to change tree structure, add and remove nodes, name groups in different languages and associate them with colours.
+	GroupsConfigutationEditor can be also used as a filter for the items that belong to groups.
+-->
+<mx:VDividedBox 
+	implements="com.makolab.components.catalogue.ICatalogueFilter" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:groupTree="com.makolab.components.catalogue.groupTree.*" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	xmlns:layoutComponents="com.makolab.components.layoutComponents.*" 
+	xmlns:catalogue="com.makolab.components.catalogue.*" addedToStage="setRenderers();">
+	<mx:Metadata>
+		/**
+		 * Dispatched on double-click on a tree item.
+		 * @eventType com.makolab.components.catalogue.groupTree.GroupTreeEvent
+		 */
+		[Event(name="groupDoubleClick", type="com.makolab.components.catalogue.groupTree.GroupTreeEvent")]
+		/**
+		 * Dispatched when a user changes tree configuration (creates new item, deletes an item, changes tree structure, changes name or color of an item).
+		 * @eventType com.makolab.components.catalogue.GroupTreeEditorEvent
+		 */
+		[Event(name="change", type="com.makolab.components.catalogue.GroupTreeEditorEvent")]
+		/**
+		 * Dispatched when a user drags an element and drops it onto tree area.
+		 * @eventType com.makolab.components.catalogue.groupTree.GroupTreeEvent
+		 */
+		[Event(name="itemDragDrop", type="com.makolab.components.catalogue.groupTree.GroupTreeEvent")]
+		/**
+		 * Dispatched when a user click Filter Button.
+		 */
+		[Event(name="filterButtonClick",type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.PermissionManager;
+			import com.makolab.components.catalogue.groupTree.GroupRenderer;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.GetGroupMembershipsCountCommand;
+			import com.makolab.fractus.commands.SaveConfigurationCommand;
+			import mx.events.DragEvent;
+			import assets.IconManager;
+			import mx.managers.DragManager;
+			import com.makolab.components.catalogue.GroupTreeEditorEvent;
+			import mx.core.EdgeMetrics;
+			import mx.controls.treeClasses.TreeItemRenderer;
+			import com.makolab.components.catalogue.groupTree.GroupSelectionRenderer;
+			import com.makolab.components.catalogue.groupTree.GroupTreeEvent;
+			import com.makolab.fractus.commands.AssignItemToGroupCommand;
+			import mx.containers.HBox;
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.events.ListEvent;
+			import mx.controls.TextInput;
+			import mx.events.CloseEvent;
+			import mx.controls.Alert;
+			import mx.formatters.SwitchSymbolFormatter;
+			import mx.events.ItemClickEvent;
+			import mx.utils.ObjectProxy;
+			
+			[Bindable]
+			private var _dataObject:Object;
+			
+			private var dp:Array =
+				[{permissionKey:"addPermission",
+				id:"addBranchBtn",
+				name:"addBranchBtn",
+				toolTip:LanguageManager.getInstance().labels.contractors.forms.contractor.addGroupCatalogue,
+				icon:IconManager.getIcon('group_add_small')},
+				
+				{permissionKey:"addPermission",
+				id:"addLeafBtn",
+				name:"addLeafBtn",
+				toolTip:LanguageManager.getInstance().labels.contractors.forms.contractor.addGroup,
+				icon:IconManager.getIcon('group_addSubgroup_small')},
+				
+				{permissionKey:"deletePermission",
+				id:"rmvElementBtn",
+				name:"rmvElementBtn",
+				toolTip:LanguageManager.getInstance().labels.contractors.forms.contractor.removeSelected,
+				icon:IconManager.getIcon('group_remove_small')},
+				
+				{permissionKey:"editPermission",
+				id:"addColor",
+				name:"addColor",
+				toolTip:LanguageManager.getInstance().labels.contractors.forms.contractor.properties,
+				icon:IconManager.getIcon('group_properties_small')}];
+			
+			private var _treeStructure:XML = <root/>;
+			
+			/**
+			 * Title or caption displayed in the title bar.
+			 * @default empty String
+			 */
+			 /*
+			[Bindable]
+			public var groupsTreeTitle:String = "";
+			*/
+			[Bindable]
+			private var saveCancelButtonVisible:Boolean = false;
+			
+			[Bindable]
+			private var _showGroupColor:Boolean = false;
+			
+			[Bindable]
+			public function set showGroupColor(value:Boolean):void
+			{
+				_showGroupColor = value;
+				setRenderers();				
+			}
+			/**
+			 * Determines if the tree items are selectable or not.
+			 * @default false;
+			 */
+			public function get showGroupColor():Boolean
+			{
+				return _showGroupColor;
+			}
+			
+			[Bindable]
+			public var allowItemToGroupAssign:Boolean;
+			
+			private function setRenderers():void{
+				
+				var renderer:ClassFactory = new ClassFactory(GroupSelectionRenderer);
+				renderer.properties = {branchSelectable : true};
+				treeItemRenderer = _enableCheckboxSelection ? renderer : (showGroupColor ? new ClassFactory(GroupRenderer) : new ClassFactory(TreeItemRenderer));
+				tree.itemRenderer = _enableCheckboxSelection ? renderer : (showGroupColor ? new ClassFactory(GroupRenderer) : new ClassFactory(TreeItemRenderer));
+			}
+			
+			[Bindable]
+			private var treeDP:XML = new XML();
+			
+			/**
+			 * Determines kind of elements, that can be associated with groups of relevant GroupsConfigurationEditor instance.
+			 * possible values:
+			 * <code>item</code>
+			 * <code>contractor</code>
+			 * @default empty String
+			 */
+			[Bindable]
+			public var itemsType:String = "";
+			[Bindable]
+			public var isSaved:Boolean = true;
+			
+			public var saveCommandClass:Class = null;
+			private var _enableCheckboxSelection:Boolean = false;
+			
+			private var _editable:Object;
+			
+			[Bindable]
+			public function set editable(value:Object):void 
+			{
+				_editable = value;
+			}
+			public function get editable():Object 
+			{
+				if(_editable) {
+					var dpTemp:Array = new Array();
+					var i:int = 0;
+					for each (var item:Object in dp) {
+						if(_editable[item.permissionKey]) {
+							dpTemp.push(item);
+						}
+					}
+					i++;
+					buttonBar.dataProvider = dpTemp;
+ 				}
+ 				return _editable;
+			}
+			
+			
+			private var treeItemRenderer:IFactory = new ClassFactory(GroupSelectionRenderer);
+			/**
+			 * @private
+			 */
+			[Bindable]
+			public function set enableCheckboxSelection(value:Boolean):void
+			{
+				_enableCheckboxSelection = value;
+				setRenderers();
+				
+			}
+			/**
+			 * Determines if the tree items are selectable or not.
+			 * @default false;
+			 */
+			public function get enableCheckboxSelection():Boolean
+			{
+				return _enableCheckboxSelection;
+			}
+			
+			private function treeInitialized():void
+			{
+				tree.itemRenderer = treeItemRenderer;
+			}
+			//[Bindable]
+			//private var groupDetails:ObjectProxy = new ObjectProxy();
+			
+			/*
+			 * @private
+			 */
+			[Bindable]
+			public function set dataObject(value:Object):void
+			{
+				if(value){
+					_dataObject = value;
+					//_treeStructure = value;
+					treeDP = value.configValue.*[0].copy();
+					enableButtons(false);
+					//_treeStructure = tempStructure;
+					//treeDP = tempStructure.copy();
+					if(treeDP.hasOwnProperty("@expandTreeToLevel")) {
+						tree.expandChildren =treeDP.@expandTreeToLevel;
+						trace("expand treedp: xxx");
+						if(tree.itemRenderer==null &&treeItemRenderer==null) 
+						setRenderers();
+					}
+					
+				}else
+					{
+						trace("expand brak value");
+					}
+			}
+			
+			/*
+			 * The tree configuration.
+			 * @default null
+			 * @param value Configuration data.
+			 */
+			public function get dataObject():Object
+			{
+				return _dataObject;
+			}
+			
+			/*
+			 * @private
+			 */
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				if(dataObject !== value){
+					dataObject = value;
+				};
+			}
+			
+			/*
+			 * Lets you pass a value to the editor.
+			 * The <code>data</code> property doesn't change while editing values in editor. The value of <code>data</code> is copied to <code>dataObject</code>. To read modified values use <code>dataObject</code> property.
+			 * @see #dataObject
+			 *
+			 * @default null
+			 * @param value Configuration data.
+			 */
+			override public function get data():Object{
+				return data;
+			}
+			
+			private var itemsToRemove:Array = [];
+			
+			private function getTempName(pattern:String="new group",nr:int=1):String
+			{
+				if(pattern == "new group"){
+					pattern = LanguageManager.getInstance().labels.contractors.forms.contractor.newGroup;
+				}
+				var elemName:String;
+				if(nr <= 1){
+					elemName = pattern;
+				}else{
+					elemName = pattern+nr.toString();
+				};
+				for each(var node:XML in treeDP..*)
+				{
+					for each(var labelNode:XML in node.labels.*){
+						if(labelNode == elemName)
+						{
+							return getTempName(pattern,nr+1);
+							break;
+						}
+					}
+				}
+				return elemName;
+			}
+			
+			private function removeElement(event:CloseEvent):void
+			{
+				switch(event.detail){
+					case 1:
+						var type:String = "";
+						itemsToRemove = tree.selectedItems;
+						var itemsToRemoveWithId:Array = [];
+						switch(itemsType){
+							case "contractors": type = GetGroupMembershipsCountCommand.CONTRACTORS; break;
+							case "items": type = GetGroupMembershipsCountCommand.ITEMS; break;
+						};
+						for(var i:int=0;i<itemsToRemove.length;i++)
+						{
+							if(itemsToRemove[i].@id.valueOf().toString() == ""){
+								delete(itemsToRemove[i].parent().children()[itemsToRemove[i].childIndex()]);
+							}else{
+								itemsToRemoveWithId.push(itemsToRemove[i]);
+							}
+						}
+						if(itemsToRemoveWithId.length > 0){
+							var cmd:GetGroupMembershipsCountCommand = new GetGroupMembershipsCountCommand(itemsToRemoveWithId[itemsToRemoveWithId.length-1].@id,type);
+							cmd.addEventListener(ResultEvent.RESULT,membersCountResult);
+							cmd.execute();
+						}
+						break;
+					case 2:
+						
+						break;
+				}
+			}
+			
+			private function membersCountResult(event:ResultEvent):void
+			{
+				if(XML(event.result).*.toString() == "0"){
+					for(var i:int=0;i<itemsToRemove.length;i++)
+					{
+						delete(itemsToRemove[i].parent().children()[itemsToRemove[i].childIndex()]);
+					}
+					enableButtons(true);
+					tree.dispatchEvent(new ListEvent(ListEvent.CHANGE));
+					tree.selectedItem = null;
+				}else{
+					Alert.show(LanguageManager.getInstance().labels.group.notEmpty);
+				}
+			}
+			
+			private function buttonBarClickHandler(eventObj:ItemClickEvent):void
+			{
+				var question:Boolean = false;
+				switch(eventObj.item.name){
+					case 'addBranchBtn':
+						var newBranchString:String = "<group id=''><labels><label lang='pl'>"+ getTempName() +"</label><label lang='en'>"+ getTempName() +"</label></labels><subgroups/></group>";
+						var newBranch:XML = XML(newBranchString);
+						if(tree.selectedItems.length == 0)
+						{
+							treeDP.subgroups.appendChild(newBranch);
+						}else{
+							/* if(tree.selectedItems[tree.selectedItems.length-1].parent())
+								tree.selectedItems[tree.selectedItems.length-1].parent().insertChildAfter(tree.selectedItems[tree.selectedItems.length-1],newBranch);
+							else
+								treeDP.subgroups.appendChild(newBranch); */
+							if (tree.selectedItems[tree.selectedItems.length-1] && tree.selectedItems[tree.selectedItems.length-1].subgroups.length() > 0)
+							{
+								tree.selectedItems[tree.selectedItems.length-1].subgroups.appendChild(newBranch);
+								tree.expandItem(tree.selectedItems[tree.selectedItems.length-1],true);
+							}else{
+								if(tree.selectedItems[tree.selectedItems.length-1].parent())
+									tree.selectedItems[tree.selectedItems.length-1].parent().insertChildAfter(tree.selectedItems[tree.selectedItems.length-1],newBranch);
+								else
+									treeDP.subgroups.appendChild(newBranch);
+							}
+						}
+						tree.selectedItem = newBranch;
+						tree.dispatchEvent(new ListEvent(ListEvent.CHANGE));
+						enableButtons(true);
+						break;
+					case 'addLeafBtn':
+						var newLeafString:String = "<group id=''><labels><label lang='pl'>"+ getTempName() +"</label><label lang='en'>"+ getTempName() +"</label></labels></group>";
+						var newLeaf:XML = XML(newLeafString);
+						if(tree.selectedItems.length == 0)
+						{
+							treeDP.subgroups.appendChild(newLeaf);
+						}else{
+							/* if(tree.selectedItems[tree.selectedItems.length-1].parent())
+								tree.selectedItems[tree.selectedItems.length-1].parent().insertChildAfter(tree.selectedItems[tree.selectedItems.length-1],newLeaf);
+							else
+								treeDP.subgroups.appendChild(newLeaf); */
+							if (tree.selectedItems[tree.selectedItems.length-1] && tree.selectedItems[tree.selectedItems.length-1].subgroups.length() > 0)
+							{
+								tree.selectedItems[tree.selectedItems.length-1].subgroups.appendChild(newLeaf);
+								tree.expandItem(tree.selectedItems[tree.selectedItems.length-1],true);
+							}else{
+								if(tree.selectedItems[tree.selectedItems.length-1].parent())
+									tree.selectedItems[tree.selectedItems.length-1].parent().insertChildAfter(tree.selectedItems[tree.selectedItems.length-1],newLeaf);
+								else
+									treeDP.subgroups.appendChild(newLeaf);
+							}
+						}
+						tree.selectedItem = newLeaf;
+						tree.dispatchEvent(new ListEvent(ListEvent.CHANGE));
+						enableButtons(true);
+						break;
+					case 'rmvElementBtn':
+						if(tree.selectedItems.length > 0)
+						{
+							var indexes:Array = tree.selectedItems;
+							for(var i:int=0;i<indexes.length;i++)
+							{
+								if(tree.dataDescriptor.hasChildren(indexes[i]))
+								{
+									question = true;
+									Alert.show(LanguageManager.getInstance().labels.group.notEmptyCatalogue);
+									//Alert.show(LanguageManager.getInstance().labels.contractors.forms.contractor.groupRemoveConfirm2,"Fractus",Alert.YES | Alert.NO,null,removeElement);
+									break;
+								}
+								if(!indexes[i].parent()){
+									question = true;
+									Alert.show(LanguageManager.getInstance().labels.group.cantDeleteTreeRoot);
+								}
+							}
+							if(!question)
+							{
+								Alert.show(LanguageManager.getInstance().labels.contractors.forms.contractor.groupRemoveConfirm,"Fractus",Alert.YES | Alert.NO,null,removeElement);
+							}
+						}else{
+							Alert.show(LanguageManager.getInstance().labels.contractors.forms.contractor.groupNotFound,"Fractus");
+						}
+						break;
+					case 'addColor':
+						showEditWindow();
+						break;
+				}
+				
+			}
+			private function treeChangeHandler(event:Event):void
+			{
+			}
+			
+			private function showEditWindow():void
+			{
+				if(tree.selectedItems.length == 1){
+					var editWindow:GroupEditWindow = new GroupEditWindow();
+					editWindow.addEventListener("change",groupsEditHandler);
+					switch(itemsType){
+						case "contractors": editWindow.configurationKey = "contractors.groups.attributes"; break;
+						case "items": editWindow.configurationKey = "items.groups.attributes"; break;
+					};
+					editWindow.dataObject = tree.selectedItem;
+					editWindow.showItemInputs = (itemsType == "items" ? true : false);
+					editWindow.show(parent);
+				}
+			}
+			
+			private function groupsEditHandler(event:Event):void
+			{
+				enableButtons(true);
+			}
+			
+			private function saveHandler():void
+			{
+				dataObject.configValue.* = treeDP;
+				//usuwamy z grup atrybut @selected:
+				delete dataObject.configValue..group.@selected;
+				
+				var emptyCatalogues:Array = searchForEmptyGroupCatalogue(); 
+				if(emptyCatalogues.length > 0){
+					Alert.show(LanguageManager.getInstance().labels.group.noGroupInCatalogue+""+emptyCatalogues);
+					return;
+				}
+				var newEvent:GroupTreeEditorEvent = new GroupTreeEditorEvent("change",dataObject);
+				dispatchEvent(newEvent);
+			}
+			
+			private function cancelHandler():void
+			{
+				treeDP = dataObject.configValue.*[0].copy();
+				saveCancelButtonVisible = false;
+				isSaved = true;
+			}
+			
+			private function searchForEmptyGroupCatalogue():Array
+			{
+				var array:Array = [];
+				var catalogues:XMLList = treeDP..group.(valueOf().subgroups != undefined);
+				for(var i:int=0;i<catalogues.length();i++){
+					if(catalogues[i].subgroups.*.toString() == "")array.push(catalogues[i].labels.label.(@lang == LanguageManager.getInstance().currentLanguage));
+				}
+				return array;
+			}
+			
+			private function resultHandler():void
+			{
+				
+			}
+			
+			private function faultHandler():void
+			{
+				Alert.show(LanguageManager.getInstance().labels.group.saveFailed);
+			}
+			
+			private function itemDoubleClickHandler(event:ListEvent):void
+			{
+				var newEvent:GroupTreeEvent = GroupTreeEvent.createEvent(GroupTreeEvent.GROUP_DOUBLE_CLICK, event.target.selectedItem.@id);
+				newEvent.leaves = tree.getLeafs(event.target.selectedItem.@id);
+				newEvent.unassignedSelected = false;
+				if(newEvent.leaves.length > 0)dispatchEvent(newEvent);
+			}
+			
+			private function unassignedDoubleClickHandler(event:MouseEvent):void
+			{
+				var newEvent:GroupTreeEvent = GroupTreeEvent.createEvent(GroupTreeEvent.GROUP_DOUBLE_CLICK, null);
+				newEvent.leaves = [];
+				newEvent.unassignedSelected = true;
+				dispatchEvent(newEvent);
+			}
+			
+			/**
+			 * returns IDs of checked groups in an array.
+			 */
+			public function getSelectedGroups():Array
+			{
+				return tree.getSelectedGroups();
+			}
+			
+			/**
+			 * returns true if the group of unassigned is checked.
+			 */
+			public function isUnassignedSelected():Boolean
+			{
+				return cbUnassigned.selected;
+			}
+			
+			private function enableButtons(value:Boolean):void
+			{
+				if(value) {
+					saveCancelButtonVisible = true;
+					isSaved = false;
+				} else {
+					saveCancelButtonVisible = false;
+					isSaved = true;
+				}
+			}
+			
+			public function set config(value:XML):void{};
+			public function get config():XML{return null;};
+			
+			public function setParameters(parameters:Object):void
+			{
+				if(enableCheckboxSelection) {
+					var selectedGroups:Array = getSelectedGroups();
+					if ((selectedGroups.length == 0) && !isUnassignedSelected()) return;
+					var a:Array = [];
+					for (var i:String in selectedGroups) a.push("'" + selectedGroups[i] + "'");
+					parameters.groups = a.join(',');
+					if (isUnassignedSelected()) parameters.groups.@includeUnassigned = "1";
+					parameters.page.* = "1";
+				}
+			}
+			
+			private function itemDragDropHandler(event:GroupTreeEvent):void
+			{
+				//enableButtons(true);
+				if(!isSaved){Alert.show(LanguageManager.getInstance().labels.group.addRequireSave);return}; // FIXME : wywołuje się 2x
+				if(event.itemId)dispatchEvent(GroupTreeEvent.createEvent(GroupTreeEvent.ITEM_DRAG_DROP,event.groupId,event.itemId,event.itemIds));
+			}
+			
+			private function rollOverHandler(event:MouseEvent):void
+			{
+				unassignedBox.setStyle("backgroundColor", tree.getStyle("rollOverColor"));
+			}
+			
+			private function rollOutHandler(event:MouseEvent):void
+			{
+				unassignedBox.setStyle("backgroundColor", "0xffffff");
+			}
+			
+			public function set template(valueList:XMLList):void{
+				for each (var value:XML in valueList){
+				//todo: jesli filtr ma rozpoznawac, ktory elem. z listy jest dla niego, trzeba to tu dodać
+				
+				// todo
+				}
+			}
+			
+			public function clear():void{
+				this.enableCheckboxSelection = false;
+			}
+			
+			public function restore():void{
+				//todo
+				//trzeba dopisac cialo funkcji, jesli inny filtr ma miec mozliwosc przywracania stanu tego filtra sprzed wyczyszczenia go
+				//filtry mogą mieć wpływ na inne filtry poprzez wypelnienie w konfiguracji parametru 'disableFilterType', przyklad w DocNumberFilter
+			}
+			
+			private function dragDropHandler(event:DragEvent):void
+			{
+				if(event.dragSource.hasFormat("treeItems"))enableButtons(true);
+			}
+			
+			private function treeChangeEventHandler(event:Event):void {
+				callLater(getTreeSelected);
+			}
+			
+			private function filterButtonClick():void {
+				dispatchEvent(new Event("filterButtonClick"));
+			}
+			
+			private function getTreeSelected():void {
+				if(tree.getSelectedGroups().length != 0 || cbUnassigned.selected) {
+					filterButtom.enabled = true;
+				} else {
+					filterButtom.enabled = false;
+				}
+				
+			}
+		]]>
+	</mx:Script>
+	
+	<!--<mx:XML id="tempStructure" source="xml/contractors.groups.xml"/>-->
+    
+	<mx:VBox width="100%" height="100%" verticalGap="0" minHeight="140">
+	
+	<mx:Canvas width="100%" height="40" >
+		<mx:CheckBox id="cbGroupFilter" label="{LanguageManager.getInstance().labels.catalogue.enableGroupFilter}" verticalCenter="0" left="15" change="enableCheckboxSelection = cbGroupFilter.selected;"/>
+		<mx:Button id="filterButtom" label="{LanguageManager.getInstance().labels.common.filterResults}" right="10" verticalCenter="0" visible="{enableCheckboxSelection}" enabled="false" click="filterButtonClick()"/>
+	</mx:Canvas>
+	
+	<!--
+	<mx:Panel title="{groupsTreeTitle}" width="100%" height="100%" borderStyle="none">
+	-->
+		<mx:VBox width="100%" height="100%">
+			
+			<mx:ButtonBar id="buttonBar" 
+				itemClick="buttonBarClickHandler(event)" 
+				visible="{editable.mainPermission}" includeInLayout="{editable.mainPermission}" enabled="{editable.mainPermission}" 
+				width="100%" buttonStyleName="groupsConfigurationButton"
+				/>
+			
+			<mx:VBox includeInLayout="{saveCancelButtonVisible}" verticalAlign="middle" horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+				<mx:Text text="{LanguageManager.getInstance().labels.items.forms.item.groupsChangeQuestion}" width="100%" paddingLeft="10" paddingRight="10" textAlign="center" fontWeight="bold" fontSize="14" includeInLayout="{saveCancelButtonVisible}" visible="{saveCancelButtonVisible}" selectable="false"/>
+				<mx:HBox width="100%" horizontalAlign="center" horizontalGap="20">
+					<mx:Button id="saveButton" label="{LanguageManager.getInstance().labels.common.save}" click="saveHandler()" enabled="{saveCancelButtonVisible}" includeInLayout="{saveCancelButtonVisible}" visible="{saveCancelButtonVisible}" />
+					<mx:Button id="cancelButton" label="{LanguageManager.getInstance().labels.common.cancel}" click="cancelHandler()" enabled="{saveCancelButtonVisible}" includeInLayout="{saveCancelButtonVisible}" visible="{saveCancelButtonVisible}" />			
+				</mx:HBox>
+			</mx:VBox>
+			
+			<mx:HBox id="unassignedBox" height="24" verticalAlign="middle" barColor="#ffffff" width="100%" rollOver="rollOverHandler(event)" rollOut="rollOutHandler(event)" horizontalGap="1" paddingLeft="16" visible="true">
+				<mx:Image source="{IconManager.getIcon('group_notAssigned_small')}"/>
+				<mx:CheckBox id="cbUnassigned" visible="{enableCheckboxSelection}" width="{enableCheckboxSelection ? NaN : 0}" change="treeChangeEventHandler(event)"/>
+				<mx:Label text="{LanguageManager.getInstance().labels.catalogue.notInAnyGroup}" doubleClick="unassignedDoubleClickHandler(event)" doubleClickEnabled="true" width="100%"/>
+			</mx:HBox>
+			
+			<groupTree:GroupTree
+				creationComplete="treeInitialized()"
+				change="treeChangeEventHandler(event)"
+				changeSelection="treeChangeEventHandler(event)"
+				allowMultipleSelection="false"
+				dataProvider="{treeDP}"
+				allowItemToGroupAssign="{allowItemToGroupAssign}"
+				doubleClickEnabled="true"
+				dragEnabled="{editable.mainPermission}"
+				dragItemType="{itemsType}"
+				dropEnabled="true"
+				editable="false"
+				height="100%"
+				id="tree"
+				itemDoubleClick="itemDoubleClickHandler(event)"
+				itemDragDrop="itemDragDropHandler(event)"
+				dragDrop="dragDropHandler(event)"
+				multipleSelection="true"
+				showRoot="false"
+				width="100%"
+						
+			/>
+			<!--
+			<mx:ControlBar id="controlBar" visible="{editable.mainPermission}" includeInLayout="{editable.mainPermission}">
+			</mx:ControlBar>	
+			-->
+		
+		</mx:VBox>
+	<!--
+	</mx:Panel>
+	-->
+	</mx:VBox>
+	
+</mx:VDividedBox>

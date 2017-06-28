@@ -1,0 +1,45 @@
+<config>
+   <header dataSource="alias1.code"/>
+   <fields>
+       <field labelKey="common.code" label="Kod" dataType="string" dataSource="alias1.code"/>
+       <field label="Jednostka" dataType="string" dataSource="alias1.unit"/>
+       <field label="Cena sprzedaży (netto)" dataType="string" dataSource="cokolwiek.netPrice"/>
+       <field dataType="AttributesListRenderer" dataSource="data.attributes.attribute"/>
+       <field labelKey="common.code" label="Kod" dataType="string" dataSource="cokolwiek.code"/>
+   </fields>
+   <additionalComponents>
+       <component dataType="dataGrid" dataSource="alias1.deliveries.delivery" label="Dostawy zawsze wyświetlane:" alwaysVisible="true">
+           <columns>
+                 <column field="@quantity" headerKey="common.quantity" label="Ilość" width="45" dataType="float"/>
+                 <column field="@warehouseId" label="Magazyn" dataType="dictionary" filter="1"/>
+                 <column field="@incomeDate" labelKey="common.code" width="100" dataType="date" filter="1"/>
+                <column field="@quantity" labelKey="items.stock" width="45" dataType="float"/>
+           </columns>
+       </component>    
+       <component dataType="dataGrid" dataSource="alias1.deliveries.delivery" label="Dostawy wyświetlane tylko gdy nie puste:" alwaysVisible="false">
+           <columns>
+                 <column field="@quantity" label="XXX" width="45" dataType="float"/>
+                 <column field="@warehouseId" label="YYY" dataType="dictionary" filter="1"/>
+                 <column field="@incomeDate" labelKey="common.code" width="100" dataType="date" filter="1"/>
+                <column field="@quantity" labelKey="items.stock" width="45" dataType="float"/>
+           </columns>
+       </component>          
+       <component name="ItemStockGrid" label="ItemStockGrid:" />
+   </additionalComponents>
+   <procedures>
+       <procedure>
+           <procedureName>custom.p_getItemData</procedureName>
+           <alias>alias1</alias>
+           <params>
+               <itemId>\{item\}</itemId>
+           </params>
+       </procedure>
+       <procedure>
+           <procedureName>custom.p_getItemData</procedureName>
+           <alias>cokolwiek</alias>
+           <params>
+               <itemId>\{itemId\}</itemId>
+           </params>
+       </procedure>
+	</procedures>  
+</config> 

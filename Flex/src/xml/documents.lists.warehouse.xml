@@ -1,0 +1,51 @@
+<config>
+				<headerColor>WAREHOUSE_COLOR</headerColor>
+				<headerColorLight>WAREHOUSE_COLOR_LIGHT</headerColorLight>
+				<objectType>WarehouseDocument</objectType>
+				<exportProfile>defaultWarehouseDocumentXml</exportProfile>
+				<showClipboard>true</showClipboard>
+				<columns>
+					<column field="@warehouseId" labelKey="common.warehouseShort" dataType="dictionary" width="40"/> 
+					<column field="@status" dataType="documentStatus" width="25"/>
+					<column field="@documentTypeId" labelKey="documents.type" dataType="documentType" width="70"/>
+					<column field="@fullNumber" labelKey="documents.documentNumber" width="120"/>
+					<column field="@issueDate" labelKey="documents.issueDateShort" dataType="date" width="90"/> 
+					<column field="@contractor" labelKey="contractors.contractor"/> 
+					<column field="@value" labelKey="documents.value" dataType="currency" width="100"/> 
+				</columns>
+				<summary>
+					<column field="@netValue" labelKey="documents.valueSummary" dataType="currency"/>
+				</summary>
+				<getItemDataParams>
+					<type>Document</type>
+					<id/>
+				</getItemDataParams>
+				<filterField>@fullNumber</filterField>
+				<searchParams type="WarehouseDocument">
+					<pageSize>200</pageSize>
+					<page>1</page>
+					<columns>
+						<column field="documentTypeId" column="documentTypeId"/>
+						<column field="status" column="status"/>
+						<column field="fullNumber"/>
+						<column field="issueDate" sortOrder="1" sortType="DESC"/>
+						<column field="contractor" column="fullName" relatedObject="contractor"/>
+						<column field="warehouseId"/>
+						<column field="value"/>
+					</columns>
+				</searchParams>
+				<filters>
+				  	<filter label="" type="dateFilter">
+					  		<parameters>
+					  			<parameter label="" name="nip" type="nip"/>
+					  		</parameters>
+					</filter>
+				  	<filter label="Numer dokumentu" labelKey="documents.documentNumber" type="docNumberFilter" disableFilterType="dateFilter"/>
+				  	<filter label="Status dokumentu" type="docStatusFilter"/>
+				  	<filter labelKey="documents.documentType" label="Typ dokumentu" type="docTypeFilter" itemsType="1,7,8"/>
+				  	<filter label="Firma" type="docCompanyFilter"/>
+				  	<filter label="Magazyn" type="docWarehouseFilter"/>
+				  	<!--filter label="Ust. numerowania" type="docNumSettingsFilter"/-->
+				  	<filter label="Powiązania" type="docRelationsFilter"/>
+				</filters>
+			</config>

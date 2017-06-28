@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="init()" label="Zdjęcie towaru">
+	<mx:Button label="Prześlij obraz..." click="showImageUploader()"/>
+	<mx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			import mx.containers.TabNavigator;
+			import com.makolab.fractus.commands.UpdateAccountingEntriesCommand;
+			import com.makolab.fractus.model.ConfigManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.controls.Image;
+			import mx.core.IFlexDisplayObject;
+			import mx.core.IUIComponent;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.events.DragEvent;
+			import mx.events.MoveEvent;
+			import mx.managers.PopUpManager;
+			
+			private var _popup:TitleWindow;
+			private var _parentWindow:TitleWindow;
+			private var _isPopupAttached:Boolean;
+			private var _isPositionInitialized:Boolean;
+			private var _imageAttributeId:String;
+			private var _repositoryUrl:String;
+			private var _isMouseDown:Boolean = false;
+			
+			private static var _isCallbackRegistered:Boolean;
+			private static var _callbackHandler:ItemImageComponent;
+			
+			private function init():void
+			{
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+				
+				this.parent.addEventListener(FlexEvent.SHOW,onShow);
+				this.parent.addEventListener(FlexEvent.HIDE,onHide);
+				
+				
+				if (!_isCallbackRegistered)
+				{
+					ExternalInterface.addCallback("setUploadedImage", handleSetUploadedImage);
+					_isCallbackRegistered = true;
+				}
+				
+				_imageAttributeId = String(DictionaryManager.getInstance().dictionaries.itemImage.id);
+				ModelLocator.getInstance().configManager.requestList(["services.repositoryService.address"], handleRepositoryUrl);
+				
+				//okno obrazka
+				if (_popup == null && false)
+				{
+					var element:DisplayObject = this;
+					while (!(element is TitleWindow) && element.parent != null)
+					{
+						element = element.parent;
+					}
+					_parentWindow = element as TitleWindow;
+					if (_parentWindow == null) return;
+					_popup = new TitleWindow();
+					_popup.showCloseButton = true;
+
+					_popup.width = 480;
+					_popup.height = 640;
+					_popup.layout = "absolute";
+					_popup.addEventListener(CloseEvent.CLOSE, closePopup);
+					_popup.addEventListener(MouseEvent.MOUSE_DOWN, handlePopupMouseEvent);
+					_popup.addEventListener(MouseEvent.MOUSE_UP, handlePopupMouseEvent);
+					_popup.addEventListener(MoveEvent.MOVE, handlePopupMove);
+						
+					PopUpManager.addPopUp(_popup, _parentWindow);
+					_parentWindow.addEventListener(MoveEvent.MOVE, updatePosition);
+					_parentWindow.addEventListener(Event.REMOVED_FROM_STAGE, handleWindowClosed);
+					_isPopupAttached = true;
+				}
+			}
+			
+			private function onShow(event:*):void{
+				trace("show");
+			}
+			
+			private function onHide(event:*):void{
+				trace("hide");
+			}
+			
+			private static function handleSetUploadedImage(fileNames:String):void
+			{
+				if (_callbackHandler != null) _callbackHandler.setUploadedImage(fileNames);
+			}
+			
+			private function setUploadedImage(fileNames:String):void
+			{
+				_callbackHandler = null;
+				try
+				{				
+					var itemXML:XMLList = XMLList(data);
+					if (itemXML.attributes.length() == 0) itemXML.attributes = <attributes/>;
+					var currentIndex:int = 0;
+					var attributes:XMLList = itemXML.attributes.*;
+					while (currentIndex < attributes.length())
+					{
+						var attribute:XML = attributes[currentIndex];
+						if (attribute.itemFieldId == _imageAttributeId) delete attributes[currentIndex];
+						else currentIndex++;
+					}
+					var names:Array = fileNames.split(",");
+					if (names.length != 2) throw new Error();
+					addImage(names[0], 1);
+					addImage(names[1], 2);
+				}
+				catch (e:Error)
+				{
+					Alert.show("Wystąpił błąd podczas przypisywania obrazów do towaru.");
+				}
+			}
+			
+			private function addImage(fileName:String, order:int):void
+			{
+				XMLList(XMLList(data).attributes).* +=
+					<attribute>
+						<value><image><name>{fileName}</name></image></value>
+						<itemFieldId>{_imageAttributeId}</itemFieldId>
+					</attribute>;
+			}
+			
+			private function updatePosition(args:Object):void
+			{
+				if (!_isPopupAttached) return;
+				if (!_isPositionInitialized)
+				{
+					_parentWindow.x -= _popup.width / 2;
+					_parentWindow.y = 100;
+					_isPositionInitialized = true;
+				}
+				_popup.x = _parentWindow.x + _parentWindow.width;
+				_popup.y = _parentWindow.y;
+			}
+			
+			private function handlePopupMouseEvent(e:MouseEvent):void
+			{
+				if (e.type == MouseEvent.MOUSE_DOWN) _isMouseDown = true;
+				else if (e.type == MouseEvent.MOUSE_UP) _isMouseDown = false;
+			}
+			
+			private function handleWindowClosed(e:Event):void
+			{
+				if (_isPopupAttached) closePopup();
+			}
+			
+			private function handlePopupMove(e:Event):void
+			{
+				if (_isMouseDown) _isPopupAttached = false;
+			}
+			
+			private function closePopup(event:Event = null):void
+			{
+				_popup.removeAllChildren();
+				_parentWindow.removeEventListener(MoveEvent.MOVE, updatePosition);
+				_parentWindow.removeEventListener(Event.REMOVED_FROM_STAGE, handleWindowClosed);
+				_popup.visible = false;
+				PopUpManager.removePopUp(_popup);
+				_popup = null;
+				_parentWindow = null;
+			}
+			
+			public override function set data(value:Object):void
+			{
+				super.data = value;
+				updatePopup();
+			}
+			
+			private function updatePopup():void
+			{
+				var item:XMLList = data as XMLList;
+				if (data != null && _popup != null)
+				{
+					_popup.title = item.code + " - " + item.name;
+					if (_popup.getChildren().length == 0)
+					{
+						var image:Image = new Image();
+						image.scaleContent = false;
+						image.setConstraintValue("horizontalCenter", 0);
+						image.setConstraintValue("verticalCenter", 0);
+						_popup.addChild(image);
+					}
+					if (_repositoryUrl != null)
+					{
+						var imageName:XMLList = item.attributes.attribute.(itemFieldId == _imageAttributeId)
+							.value.image.name;
+						if (imageName.length() > 0)
+						{
+							Image(_popup.getChildAt(0)).source =
+								_repositoryUrl + "/GetFile/" + String(imageName[0]);
+						}
+					}
+				}
+			}
+			
+			private function handleRepositoryUrl():void
+			{
+				_repositoryUrl = String(ModelLocator.getInstance().configManager.values.services_repositoryService_address.*);
+				updatePopup();
+			}
+			
+			private function showImageUploader():void
+			{
+				_callbackHandler = this;
+				var configManager:ConfigManager = ModelLocator.getInstance().configManager; 
+				var uploadUrl:String = String(configManager.values.services_repositoryService_address.*) + "/PutFile"; 
+				ExternalInterface.call("showImageUploader", uploadUrl);
+			}
+			
+			public function get dataObject():Object
+			{
+				return this.data;
+			}
+		]]>
+	</mx:Script>
+</mx:HBox>

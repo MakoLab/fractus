@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<root>
+  <shiftTransaction type="ShiftTransaction">
+    <id/>
+    <applicationUserId/>
+    <issueDate/>
+    <number/>
+
+    <shifts>
+      <shift>
+        <incomeWarehouseDocumentLineId/>
+        <warehouseId/>
+        <containerId/> <!--allow null-->
+        <quantity/>
+        <warehouseDocumentLineId/> <!--allow null-->
+        <sourceShiftId/> <!--allow null-->
+        <status/>
+        <ordinalNumber/>
+        
+        <attributes>
+          <attribute>
+            <shiftFieldId/>
+            <value/>
+          </attribute>
+        </attributes>
+      </shift>
+      <!-- multiple -->
+    </shifts>
+
+    <containerShifts>
+      <containerShift>
+        <containerId/>
+        <parentContainerId/>
+        <ordinalNumber/>
+        <slotContainerId/> <!--allow null-->
+      </containerShift>
+      <!-- multiple -->
+    </containerShifts>
+    
+  </shiftTransaction>
+</root>

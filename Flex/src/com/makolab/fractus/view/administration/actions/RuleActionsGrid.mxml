@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:DataGrid xmlns:mx="http://www.adobe.com/2006/mxml" sortableColumns="false" draggableColumns="false" dataProvider="{actionsXML.action}" xmlns:actions="com.makolab.fractus.view.administration.actions.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			
+			import mx.controls.CheckBox;
+			public function headerCheckBoxChangeHandler(event:Event):void
+			{
+				for each(var action:XML in actionsXML.action){
+					action.@enabled = event.target.selected ? 1 : 0;
+				}
+			}
+			
+			public function checkBoxChangeHandler(event:Event):void
+			{
+				var index:int = this.itemRendererToIndex(event.target as CheckBox);
+				actionsXML.action[index].@enabled = event.target.selected ? 1 : 0;
+			}
+			
+			public function setHeaderCheckBoxSelection(conditions:XML):Boolean
+			{
+				var selected:Boolean = true;
+				for each(var action:XML in actionsXML.action){
+					if(action.attribute("enabled").length() == 0 || action.@enabled == 0){
+						selected = false;
+						break;
+					}
+				}
+				return selected;
+			}
+			
+			public function get actions():XMLList
+			{
+				var list:XMLList = actionsXML.action.(valueOf().@enabled.length() > 0 && @enabled == 1);
+				return list;
+			}
+			public function set actions(value:XMLList):void
+			{
+				var temp:XML = <root/>;
+				for each(var action:XML in actionsXML.action){
+					for each( var element:XML in value){
+						if(action.@name.toString() == element.@name.toString()){
+							action = element;
+							break;
+						}
+					}
+					temp.appendChild(action.copy());
+				}
+				actionsXML = temp;
+			}
+			
+			public function get errors():Array
+			{
+				var array:Array = [];
+				for each(var action:XML in actionsXML.action){
+					if(action.attribute("enabled").length() > 0 
+						&& action.@enabled == 1 
+						&& (action.attribute("editor").length() > 0 && (action.value.length() == 0 || action.value[0].toString() == ""))
+					){
+						array.push('Opcja "'+action.@label+' jest zaznaczona, ale nie wybrano dla niej wartości.');
+					}
+				}
+				return array;
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:columns>
+		<mx:DataGridColumn width="20" rendererIsEditor="true" textAlign="center">
+			<mx:headerRenderer>
+				<mx:Component>
+					<mx:CheckBox selected="{outerDocument.setHeaderCheckBoxSelection(outerDocument.actionsXML)}" change="outerDocument.headerCheckBoxChangeHandler(event)"/>
+				</mx:Component>
+			</mx:headerRenderer>
+			<mx:itemRenderer>
+				<mx:Component>
+					<mx:CheckBox selected="{Boolean(Number(data.@enabled))}" change="outerDocument.checkBoxChangeHandler(event)"/>
+				</mx:Component>
+			</mx:itemRenderer>
+		</mx:DataGridColumn>
+		<mx:DataGridColumn headerText="Akcja" dataField="@label"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('documents.value')}" width="200" rendererIsEditor="true" textAlign="left">
+			<mx:itemRenderer>
+				<mx:Component>
+					<actions:RuleActionsEditor/>
+				</mx:Component>
+			</mx:itemRenderer>
+		</mx:DataGridColumn>
+	</mx:columns>
+	
+	<mx:XML id="actionsXML" xmlns="">
+		<actions>
+			<action name="initialNetPriceCatalogue" label="Wstaw cenę kartotekową jako cenę przed rabatem"/>
+			<action name="netPriceCatalogue" label="Wstaw cenę kartotekową jako cenę po rabacie"/>
+			<action name="discoutRateValue" label="Wstaw rabat procentowy" editor = "currencyEditor"/>
+			<action name="initialNetPricePriceList" label="Wstaw cenę z cennika jako cenę przed rabatem" editor = "priceListSelector"/>
+			<action name="netPricePriceList" label="Wstaw cenę z cennika jako cenę po rabacie" editor = "priceListSelector"/>
+			<action name="initialAttributeNetPricePriceList" label="Wstaw cenę z cennika (atrybutowego) jako cenę przed rabatem" editor = "attributePriceListSelector"/>
+			<action name="netAttributePricePriceList" label="Wstaw cenę z cennika (atrybutowego) jako cenę po rabacie" editor = "attributePriceListSelector"/>
+			<!--<action name="grossDiscountAmountValue" label="Wstaw rabat kwotowy" editor = "currencyEditor"/>-->
+		</actions>
+	</mx:XML>
+</mx:DataGrid>

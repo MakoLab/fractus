@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DockPanel 	xmlns="com.makolab.components.layoutComponents.*" 
+			xmlns:mx="http://www.adobe.com/2006/mxml" 
+			width="100%" maxHeight="300" height="300"
+			xmlns:list="com.makolab.components.list.*" 
+			creationComplete="callCommand();" 
+			headerColors="[0xe4ff00, 0x819400]" titleStyleName="bold"
+			title="{LanguageManager.getInstance().labels.dashboard.PrestaCustomerTitle}">
+		<mx:VBox width="100%" height="100%" id="box">
+				<mx:AdvancedDataGrid  variableRowHeight="true" doubleClickEnabled="true"  id="grid" width="100%" height="100%" iconFunction="{getIcon}" horizontalScrollPolicy="on" >
+					<mx:dataProvider>
+						<mx:HierarchicalData source="{dataProvider}"  />
+					</mx:dataProvider>
+					<mx:groupedColumns>
+						<mx:AdvancedDataGridColumn id="lp" headerText="{LanguageManager.getLabel('common.lp')}" minWidth="40" editable="false" dataField="@lp" width="40" sortCompareFunction="{Tools.getSortFunction('@lp')}"/>
+						<mx:AdvancedDataGridColumn headerText="{LanguageManager.getLabel('common.name')}" dataField="@firstname" width="85"/>
+						<mx:AdvancedDataGridColumn headerText="{LanguageManager.getLabel('common.surname')}" dataField="@lastname" width="85"/>
+						<mx:AdvancedDataGridColumn headerText="{LanguageManager.getLabel('common.email')}" dataField="@email" width="85"/>
+						<mx:AdvancedDataGridColumn headerText="{LanguageManager.getLabel('common.page')}" dataField="@website" width="85"/>
+						<mx:AdvancedDataGridColumn headerText="{LanguageManager.getLabel('common.company')}" dataField="@lcompany" width="85"/>
+						<mx:AdvancedDataGridColumn headerText="{LanguageManager.getLabel('common.transaction')}" dataField="@transactions" width="85" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer"/>						
+					</mx:groupedColumns>
+				
+					<mx:rendererProviders>
+						
+						<mx:AdvancedDataGridRendererProvider  
+							columnIndex="1"
+							columnSpan="0"
+							depth="3"
+							renderer="com.makolab.components.inputComponents.DashboardColumnRenderer"/>
+						<mx:AdvancedDataGridRendererProvider  
+							columnIndex="1"
+							columnSpan="0"
+							depth="2"
+							renderer="com.makolab.components.inputComponents.DashboardColumnRendererEmpty"
+							/>
+					</mx:rendererProviders>
+					
+				</mx:AdvancedDataGrid>
+			<mx:LinkButton label="{LanguageManager.getInstance().labels.dashboard.refresh}" click="callCommand();"/>
+			</mx:VBox>
+			
+			<mx:Script>
+				<![CDATA[
+					import com.makolab.components.inputComponents.CurrencyRenderer;
+					import com.makolab.components.inputComponents.DashboardColumnRenderer;
+					import com.makolab.components.inputComponents.DateRenderer;
+					import com.makolab.components.inputComponents.ObjectTypeFilter;
+					import com.makolab.components.util.CurrencyManager;
+					import com.makolab.components.util.Tools;
+					import com.makolab.fractus.commands.AbstractCommand;
+					import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+					import com.makolab.fractus.model.LanguageManager;
+					import com.makolab.fractus.model.ModelLocator;
+					import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+					import com.makolab.fractus.view.catalogue.CatalogueItemInfo;
+					import com.makolab.fractus.view.documents.DocumentRenderer;
+					import com.makolab.fractus.view.documents.reports.ReportBase;
+					import com.makolab.fractus.view.documents.reports.salesReports.SalesReport;
+					import com.makolab.fractus.view.generic.DocumentTypePrefixRenderer;
+					
+					import mx.collections.HierarchicalData;
+					import mx.controls.Alert;
+					import mx.controls.dataGridClasses.DataGridColumn;
+					import mx.events.ListEvent;
+					import mx.messaging.channels.StreamingAMFChannel;
+					import mx.rpc.events.ResultEvent;
+					
+					private var cmd:ExecuteCustomProcedureCommand;
+					private var mod:ModelLocator=ModelLocator.getInstance();
+					
+					private var searchParams:XML = <root/>;
+					[Bindable]
+					private var vis=true;
+					private var _dataProvider:XMLList;
+					[Bindable]
+					public function set dataProvider(value:XMLList):void
+					{
+						if(value &&value.length())
+							_dataProvider =	value;//
+						/*XMLList(
+							<contractor lastname="DOE" firstname="John" email="pub@prestashop.com" website="" company="" transactions="360.31">
+<items label="Towary">
+ <item id="id" name="nazwa" orderedQty="ilość" currentStock="w magazynie" row="1"/>
+							
+							  <item id="022F1965-2DC5-406B-BD28-D415C7D36A12" name="Elektrolit 0.5L" orderedQty="1.0000" currentStock="2.0000" row="2"/>
+								<item id="E7B4930E-0F1F-4A53-B37E-1F1B05DDA5D3" name="Klema - mosiądz M8" orderedQty="2.0000" currentStock="0.0000" row="3"/>
+								<item id="8C2173CE-4E73-4AB2-B0FD-3AB3C178BA45" name="Klema - mosiądz M8" orderedQty="2.0000" currentStock="0.0000" row="4"/>
+								<item id="BAE2ACCB-85F2-48B1-98B2-CAD899259080" name="Klema - mosiądz super M8" orderedQty="3.0000" currentStock="0.0000" row="5"/>
+								<item id="87C5E973-8186-4D6B-B7ED-230FD8E022C4" name="Klema - mosiądz VW" orderedQty="4.0000" currentStock="0.0000" row="6"/>
+								<item id="4102B575-A6EF-40BB-9410-7154EF2425EA" name="Klema + mosiądz VW" orderedQty="3.0000" currentStock="6.0000" row="7"/>
+							  
+</items>
+<orders label="Zamówienia">
+<order FractusNumber="Number" PrestaIdentifier="Identyfikator" FractusStatus="Status" PrestaStatus="status" creationDate="data" grossValue="brutto" row="1"/>
+							
+							  <order FractusNumber="ZIZI 34 /2015" PrestaIdentifier="XKBKNABJK" FractusStatus="Zapisane" PrestaStatus="Brak towaru" creationDate="2015-03-10T13:08:52" grossValue="53.00" row="2"/>
+								<order FractusNumber="ZIZI 35 /2015" PrestaIdentifier="OHSATSERP" FractusStatus="Zapisane" PrestaStatus="Oczekiwanie na płatność czekiem" creationDate="2015-03-10T13:08:52" grossValue="75.90" row="3"/>
+								<order FractusNumber="ZIZI 36 /2015" PrestaIdentifier="UOYEVOLI" FractusStatus="Zapisane" PrestaStatus="Płatność przyjęta" creationDate="2015-03-10T13:08:52" grossValue="74.01" row="4"/>
+								<order FractusNumber="ZIZI 37 /2015" PrestaIdentifier="FFATNOMMJ" FractusStatus="Zapisane" PrestaStatus="Płatność zaakceptowana" creationDate="2015-03-10T13:08:52" grossValue="87.89" row="5"/>
+								<order FractusNumber="ZIZI 38 /2015" PrestaIdentifier="KHWLILZLL" FractusStatus="Zapisane" PrestaStatus="Zwrot" creationDate="2015-03-10T13:08:52" grossValue="69.51" row="6"/>
+</orders>
+							</contractor>
+						
+						);*/
+					
+					}
+				
+					public function get dataProvider():XMLList
+					{
+						return _dataProvider;
+					}
+					private function callCommand():void
+					{
+						searchParams.@lang= LanguageManager.getInstance().currentLanguage;
+						searchParams.pageSize=200;
+						searchParams.page=1;
+						cmd = new ExecuteCustomProcedureCommand('custom.p_PrestaGetPrestaContractors',searchParams);
+
+
+						cmd.addEventListener(ResultEvent.RESULT,generateReportResult);
+						cmd.execute();
+					}		
+					private function lFunction(item:Object,col:Object):String
+					{
+						return item[col.dataField].labels.label.(@lang==LanguageManager.getInstance().currentLanguage).toString();
+					}
+					private function generateReportResult(event:ResultEvent):void
+					{
+						var xmll:XMLList=XMLList(event.result).children();
+						dataProvider=xmll; 
+					}
+					
+					private function getIcon(item:Object):Class
+					{
+						return null;
+					}
+				
+//					private function showSalesOrder(event:ListEvent):void
+//					{
+//						var item:Object = event.itemRenderer.data;
+//						
+//						if (!item) return;
+//						if(!item.@id.length()) return;
+//						CatalogueItemInfo.showWindow(item.@id.toString(),null,CatalogueItemInfo.ITEM_DETAILS);
+//						//DocumentRenderer.showWindow(DocumentTypeDescriptor.COMMERCIAL_DOCUMENT, item.@id.toString());		
+//					}
+				
+				]]>
+			</mx:Script>
+</DockPanel>

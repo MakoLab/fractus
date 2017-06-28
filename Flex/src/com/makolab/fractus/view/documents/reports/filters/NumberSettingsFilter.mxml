@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem direction="horizontal" implements="com.makolab.fractus.view.documents.reports.filters.IReportFilter" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.CatalogueFilterError;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			private var _parameters:XML
+			[Bindable]
+			public var columnName:String = "numberSettingId";
+			
+			protected function get value():Object
+			{
+				var ret:Array = [];
+				for(var i:int=0;i<combo.selectedItems.length;i++){
+					ret.push("" + combo.selectedItems[i].id.* + "");
+				}
+				return ret.join(",");
+			}
+			[Bindable]
+			public function set parameters(value:XML):void
+			{
+				_parameters = value;
+			}
+			
+			public function get parameters():XML
+			{
+				return _parameters;
+			}
+			
+			private function setParameters(params:XML):void
+			{
+				if(combo.selectedItems.length != 0 && useFilter.selected){
+					if(value.toString() != ""){
+						if(!params.filters)params.filters = "";
+						var filterNodes:XMLList = params.filters.column.(@field == columnName);
+						if(filterNodes.length() == 0){
+							var newCondition:XML = <column/>;
+							newCondition.@field = columnName;
+							newCondition.* = value;
+							params.filters.columns += newCondition;
+						}else{
+							filterNodes[0].* = value;
+						}
+					}
+				}else{
+					if(!params.filters)params.filters = "";
+					var filterNodes2:XMLList = params.filters.column.(@field == columnName);
+					if(filterNodes2.length() == 1)delete filterNodes2[0];
+				}
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			private function getSelectedItems():Array
+			{
+				var items:Array = [];
+				var objects:Object = combo.dataProvider;
+				for each(var o:Object in objects){
+					if(Number(o.value.*) > -20)items.push(o);
+				}
+				return items;
+			}
+			
+			private function setSelection():void
+			{
+				combo.selectedItems = getSelectedItems();
+				setParameters(parameters);
+			}
+			
+			private function comboLabelFunction(item:Object):String
+			{
+				var ret:String = item.label.(@lang == LanguageManager.getInstance().currentLanguage).*; 
+				return ret;
+			}
+			
+			[Bindable]
+			public var allowEmptySelection:Boolean = false;
+			
+			public function get validationError():String
+			{
+				if(!this.allowEmptySelection && combo.selectedItems.length == 0 && useFilter.selected){
+					this.setStyle("backgroundColor",0xff0000);
+					this.setStyle("backgroundAlpha",0.2);
+					this.errorString = LanguageManager.getInstance().labels.reports.filters.noNumberSettingsSelected;
+					return LanguageManager.getInstance().labels.reports.filters.noNumberSettingsSelected;
+				}
+				this.setStyle("backgroundColor",0xffffff);
+				this.setStyle("backgroundAlpha",0.0);
+				errorString = "";
+				return null;
+			}
+			
+			public function get stringValue():String
+			{
+				if (!useFilter.selected) return null;
+				return combo.selectionToString();
+			}
+			
+			private var _selectedIndexes:Object;
+			[Bindable]
+			public function set selectedIndexes(value:Object):void
+			{
+				_selectedIndexes = value;
+				setParameters(parameters);
+			}
+			public function get selectedIndexes():Object
+			{
+				return _selectedIndexes;
+			}
+			
+			[Bindable]
+			public var filterEnabled:Boolean = false;
+		]]>
+	</mx:Script>
+		<mx:CheckBox id="useFilter" selected="{filterEnabled}" toolTip="{LanguageManager.getInstance().labels.reports.filters.turnOnOffFilter}" change="setParameters(parameters)"/>
+		<inputComponents:CheckBoxCombo id="combo" change="setParameters(parameters)" creationComplete="setSelection()" width="100%" labelFunction="comboLabelFunction"  enabled="{useFilter.selected}" selectedIndexes="{selectedIndexes}">
+			<inputComponents:dataProvider>
+				{DictionaryManager.getInstance().dictionaries.numberSettings}
+			</inputComponents:dataProvider>
+		</inputComponents:CheckBoxCombo>
+</mx:FormItem>

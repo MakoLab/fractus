@@ -1,0 +1,1 @@
+<%@ ServiceHost Language="C#" Debug="true" Service="Makolab.Fractus.Kernel.Services.KernelService" %>

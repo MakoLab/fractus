@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem implements="com.makolab.fractus.view.documents.reports.filters.IReportFilter" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*">		
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.CatalogueFilterError;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			private var _parameters:XML
+			[Bindable]
+			public var columnName:String = "realizationStatus";
+			[Bindable]
+			public var allowEmptySelection:Boolean = false;
+			
+			protected function get value():Object
+			{
+				return combo.selectedItem.value.toString();
+			}
+			[Bindable]
+			public function set parameters(value:XML):void
+			{
+				_parameters = value;
+			}
+			
+			public function get parameters():XML
+			{
+				return _parameters;
+			}
+			
+			private function setParameters(params:XML):void
+			{
+				if(value.toString() != ""){
+					if(value.toString() != -1){
+						if(!params.filters)params.filters = "";
+						var filterNodes:XMLList = params.filters.column.(@field == columnName);
+						if(filterNodes.length() == 0){
+							var newCondition:XML = <column/>;
+							newCondition.@field = columnName;
+							newCondition.* = value;
+							params.filters.columns += newCondition;
+						}else{
+							filterNodes[0].* = value;
+						}
+					}else{
+						if(params.filters)
+						delete params.filters.column.(@field == columnName)[0];
+					}
+				}
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			private function getSelectedItems():Array
+			{
+				var items:Array = [];
+				var objects:Object = combo.dataProvider;
+				for each(var o:Object in objects){
+					if(Number(o.value.*) > -20)items.push(o);
+				}
+				return items;
+			}
+			
+			private function comboLabelFunction(item:Object):String
+			{
+				var ret:String = item.label.(@lang == LanguageManager.getInstance().currentLanguage).*; 
+				return ret;
+			}
+			
+			public function get validationError():String
+			{
+				errorString = "";
+				return null;
+			}
+			
+			public function get stringValue():String
+			{
+				return combo.selectedItem[combo.labelField];
+			}
+			
+			[Bindable]
+			public var selectedIndex:int;
+			
+			[Bindable]
+			public var filterEnabled:Boolean = false;
+		]]>
+		</mx:Script>
+			<mx:XML id="configXml" xmlns="">
+			<contractorTypes> 
+				<entry>
+					<label lang="pl">Wszystkie</label>
+					<label lang="en">All</label>
+					<value>-1</value>
+				</entry>
+				<entry>
+					<label lang="pl">Nieposiadające decyzji</label>
+					<label lang="en">To decide</label>
+					<value>0</value>
+				</entry>
+				<entry>
+					<label lang="pl">Do końca niezdecydowane</label>
+					<label lang="en">Not yet decided</label>
+					<value>1</value>
+				</entry>
+				<entry>
+					<label lang="pl">Zdecydowane zupełnie</label>
+					<label lang="en">Decided</label>
+					<value>2</value>
+				</entry>
+			</contractorTypes>
+		</mx:XML>
+		<mx:ComboBox id="combo" selectedIndex="{selectedIndex}" change="setParameters(parameters)" dataProvider="{configXml.entry}" width="100%" labelFunction="comboLabelFunction"/>
+</mx:FormItem>

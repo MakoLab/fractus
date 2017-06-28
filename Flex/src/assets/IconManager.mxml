@@ -1,0 +1,942 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Object xmlns="*" xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			/*
+			[Embed(source="/assets/icons/enabled/kartotekaP.png")]
+			public static var contractor_catalogue:Class;
+
+			[Embed(source="/assets/icons/enabled/nowyP.png")]
+			public static var contractor_new:Class;
+
+			[Embed(source="/assets/icons/enabled/kartotekaF.png")]
+			public static var item_catalogue:Class;
+
+			[Embed(source="/assets/icons/enabled/nowyF.png")]
+			public static var item_new:Class;
+			*/
+			
+			
+			import com.makolab.fraktus2.utils.DynamicAssetsInjector;
+						
+			private static var instance:IconManager;
+
+			
+			public static function getInstance():IconManager
+			{			
+				if (instance == null) instance = new IconManager();
+				return instance;
+			}
+			
+			public static function getIcon(name:String):Class
+		    {	
+		        return DynamicAssetsInjector.currentIconAssetClassRef[name];
+		    } 
+  
+  			public static var CELL_COLOR_1:uint=0xFFFFFF;
+  			public static var CELL_COLOR_2:uint=0xAEAEAE;
+			public static var CELL_ALPHA:Number=0.8;
+  	
+			public static const BANKS_COLOR:uint = 0x00dd00;
+			public static const BANKS_COLOR_LIGHT:uint = 0x88dd88;
+			
+			public static const CONTRACTORS_COLOR:uint = 0x3333dd;
+			public static const CONTRACTORS_COLOR_LIGHT:uint = 0x8888dd;
+			
+			public static const ITEMS_COLOR:uint = 0xbbdd33;
+			public static const ITEMS_COLOR_LIGHT:uint = 0xffdd33;
+			
+			public static const SALES_COLOR:uint = 0xFF5114;
+			public static const SALES_COLOR_LIGHT:uint = 0xFFA048;
+			
+			public static const PURCHASE_COLOR:uint = 0x2CDBDB;
+			public static const PURCHASE_COLOR_LIGHT:uint = 0xB7FAFA;
+			
+			public static const WAREHOUSE_COLOR:uint = 0xA14DD4;
+			public static const WAREHOUSE_COLOR_LIGHT:uint = 0xA18DD4;
+			
+			public static const FINANCIAL_COLOR:uint = 0x639600;
+			public static const FINANCIAL_COLOR_LIGHT:uint = 0xDFE979;
+			
+			public static const COMPLAINT_COLOR:uint =  0xff0000;
+			public static const COMPLAINT_COLOR_LIGHT:uint = 0x660000;
+			
+			public static const SERVICE_COLOR:uint =  0xBBBBBB;
+			public static const SERVICE_COLOR_LIGHT:uint = 0x000000;
+			
+			public static const INVENTORY_COLOR:uint = 0xA14DD4;
+			public static const INVENTORY_COLOR_LIGHT:uint = 0xA18DD4;
+			
+			public static const B2B_COLOR:uint = 0xefc300;
+			public static const B2B_COLOR_LIGHT:uint = 0xffdd33;
+  
+  			public static const CRM_COLOR:uint = 0x479BF0;
+			public static const CRM_COLOR_LIGHT:uint = 0x62C2F6;
+  		/*
+			private static var instance:IconManager;
+			
+			public static function getInstance():IconManager
+			{			
+				if (instance == null) instance = new IconManager();
+				return instance;
+			}
+			
+			public static function getIcon(name:String):Class
+		    {
+		         return IconManager[name];
+		    } 
+  
+			//ENABLED
+			
+			[Embed(source="icons/enabled/bank_catalogue.png")]
+			public static var bank_catalogue:Class;
+			
+			[Embed(source="icons/enabled/bank_new.png")]
+			public static var bank_new:Class;
+			
+			[Embed(source="icons/enabled/contractor_catalogue.png")]
+			public static var contractor_catalogue:Class;
+			
+			[Embed(source="icons/enabled/contractor_new.png")]
+			public static var contractor_new:Class;
+			
+			[Embed(source="icons/enabled/finance_bankIncome_correct.png")]
+			public static var finance_bankIncome_correct:Class;
+			
+			[Embed(source="icons/enabled/finance_bankIncome.png")]
+			public static var finance_bankIncome:Class;
+			
+			[Embed(source="icons/enabled/finance_bankOutcome_correct.png")]
+			public static var finance_bankOutcome_correct:Class;
+			
+			[Embed(source="icons/enabled/finance_bankOutcome.png")]
+			public static var finance_bankOutcome:Class;
+			
+			[Embed(source="icons/enabled/finance_cardIncome_correct.png")]
+			public static var finance_cardIncome_correct:Class;
+			
+			[Embed(source="icons/enabled/finance_cardIncome.png")]
+			public static var finance_cardIncome:Class;
+			
+			[Embed(source="icons/enabled/finance_cashIncome_correct.png")]
+			public static var finance_cashIncome_correct:Class;
+			
+			[Embed(source="icons/enabled/finance_cashIncome.png")]
+			public static var finance_cashIncome:Class;
+			
+			[Embed(source="icons/enabled/finance_cashOutcome_correct.png")]
+			public static var finance_cashOutcome_correct:Class;
+			
+			[Embed(source="icons/enabled/finance_cashOutcome.png")]
+			public static var finance_cashOutcome:Class;
+			
+			[Embed(source="icons/enabled/finance_cashReport.png")]
+			public static var finance_cashReport:Class;
+			
+			[Embed(source="icons/enabled/finance_documentList_bank.png")]
+			public static var finance_documentList_bank:Class;
+			
+			[Embed(source="icons/enabled/finance_documentList_cash.png")]
+			public static var finance_documentList_cash:Class;
+			
+			[Embed(source="icons/enabled/finance_exchangeRates.png")]
+			public static var finance_exchangeRates:Class;
+			
+			[Embed(source="icons/enabled/finance_setOff_correct.png")]
+			public static var finance_setOff_correct:Class;
+			
+			[Embed(source="icons/enabled/finance_setOff.png")]
+			public static var finance_setOff:Class;
+			
+			[Embed(source="icons/enabled/item_catalogue.png")]
+			public static var item_catalogue:Class;
+			
+			[Embed(source="icons/enabled/item_new.png")]
+			public static var item_new:Class;
+				
+			[Embed(source="icons/enabled/purchase_documentList.png")]
+			public static var purchase_documentList:Class;
+			
+			[Embed(source="icons/enabled/purchase_invoice_correct.png")]
+			public static var purchase_invoice_correct:Class;
+			
+			[Embed(source="icons/enabled/purchase_invoice.png")]
+			public static var purchase_invoice:Class;
+			
+			[Embed(source="icons/enabled/sales_currencyInvoice_correct.png")]
+			public static var sales_currencyInvoice_correct:Class;
+			
+			[Embed(source="icons/enabled/sales_currencyInvoice.png")]
+			public static var sales_currencyInvoice:Class;
+			
+			[Embed(source="icons/enabled/sales_documentList.png")]
+			public static var sales_documentList:Class;
+			
+			[Embed(source="icons/enabled/sales_euInvoice_correct.png")]
+			public static var sales_euInvoice_correct:Class;
+			
+			[Embed(source="icons/enabled/sales_euInvoice.png")]
+			public static var sales_euInvoice:Class;
+			
+			[Embed(source="icons/enabled/sales_internalInvoice_correct.png")]
+			public static var sales_internalInvoice_correct:Class;
+			
+			[Embed(source="icons/enabled/sales_internalInvoice.png")]
+			public static var sales_internalInvoice:Class;
+			
+			[Embed(source="icons/enabled/sales_invoice_correct.png")]
+			public static var sales_invoice_correct:Class;
+			
+			[Embed(source="icons/enabled/sales_invoice.png")]
+			public static var sales_invoice:Class;
+			
+			[Embed(source="icons/enabled/sales_order_correct.png")]
+			public static var sales_order_correct:Class;
+			
+			[Embed(source="icons/enabled/sales_order.png")]
+			public static var sales_order:Class;
+			
+			[Embed(source="icons/enabled/sales_production_correct.png")]
+			public static var sales_production_correct:Class;
+			
+			[Embed(source="icons/enabled/sales_production.png")]
+			public static var sales_production:Class;
+			
+			[Embed(source="icons/enabled/sales_proForma_correct.png")]
+			public static var sales_proForma_correct:Class;
+			
+			[Embed(source="icons/enabled/sales_proForma.png")]
+			public static var sales_proForma:Class;
+			
+			[Embed(source="icons/enabled/sales_quick.png")]
+			public static var sales_quick:Class;
+			
+			[Embed(source="icons/enabled/sales_receipt_correct.png")]
+			public static var sales_receipt_correct:Class;
+			
+			[Embed(source="icons/enabled/sales_receipt.png")]
+			public static var sales_receipt:Class;
+			
+			[Embed(source="icons/enabled/sales_receiptInvoice_correct.png")]
+			public static var sales_receiptInvoice_correct:Class;
+			
+			[Embed(source="icons/enabled/sales_receiptInvoice.png")]
+			public static var sales_receiptInvoice:Class;
+			
+			[Embed(source="icons/enabled/sales_taxFree_correct.png")]
+			public static var sales_taxFree_correct:Class;
+			
+			[Embed(source="icons/enabled/sales_taxFree.png")]
+			public static var sales_taxFree:Class;
+			
+			[Embed(source="icons/enabled/settings_dictionaries.png")]
+			public static var settings_dictionaries:Class;
+			
+			[Embed(source="icons/enabled/settings_ownCompanies.png")]
+			public static var settings_ownCompanies:Class;
+			
+			[Embed(source="icons/enabled/warehouse_income_correct.png")]
+			public static var warehouse_income_correct:Class;
+			
+			[Embed(source="icons/enabled/warehouse_income.png")]
+			public static var warehouse_income:Class;
+			
+			[Embed(source="icons/enabled/warehouse_list.png")]
+			public static var warehouse_list:Class;
+			
+			[Embed(source="icons/enabled/warehouse_order_correct.png")]
+			public static var warehouse_order_correct:Class;
+			
+			[Embed(source="icons/enabled/warehouse_order.png")]
+			public static var warehouse_order:Class;
+			
+			[Embed(source="icons/enabled/warehouse_outcome_correct.png")]
+			public static var warehouse_outcome_correct:Class;
+			
+			[Embed(source="icons/enabled/warehouse_outcome.png")]
+			public static var warehouse_outcome:Class;
+			
+			[Embed(source="icons/enabled/warehouse_reservation_correct.png")]
+			public static var warehouse_reservation_correct:Class;
+			
+			[Embed(source="icons/enabled/warehouse_reservation.png")]
+			public static var warehouse_reservation:Class;
+			
+			[Embed(source="icons/enabled/warehouse_reservationList.png")]
+			public static var warehouse_reservationList:Class;
+
+			[Embed(source="icons/enabled/warehouse_orderList.png")]
+			public static var warehouse_orderList:Class;
+			
+			[Embed(source="icons/enabled/warehouse_shift_correct.png")]
+			public static var warehouse_shift_correct:Class;
+			
+			[Embed(source="icons/enabled/warehouse_shift.png")]
+			public static var warehouse_shift:Class;
+			
+			[Embed(source="icons/enabled/reports.png")]
+			public static var reports:Class;
+			
+			[Embed(source="icons/enabled/settings.png")]
+			public static var settings:Class;
+
+			[Embed(source="icons/enabled/reservation.png")]
+			public static var reservation:Class;
+
+			[Embed(source="icons/enabled/order.png")]
+			public static var order:Class;
+			
+			[Embed(source="icons/enabled/complaint_document.png")]
+			public static var complaint_document:Class;
+			
+			[Embed(source="icons/enabled/complaint_documentList.png")]
+			public static var complaint_documentList:Class;
+			
+			[Embed(source="icons/enabled/service_document.png")]
+			public static var service_document:Class;
+			
+			[Embed(source="icons/enabled/service_documentList.png")]
+			public static var service_documentList:Class;
+			
+			[Embed(source="icons/enabled/servicedObject_catalogue.png")]
+			public static var servicedObject_catalogue:Class;
+			
+			[Embed(source="icons/enabled/servicedObject_new.png")]
+			public static var servicedObject_new:Class;
+			
+			[Embed(source="icons/enabled/inventoryDocument_new.png")]
+			public static var inventoryDocument_new:Class;
+			
+			[Embed(source="icons/enabled/inventoryDocument_catalogue.png")]
+			public static var inventoryDocument_catalogue:Class;
+			
+			[Embed(source="icons/enabled/contractor_accounting.png")]
+			public static var contractor_accounting:Class;
+			
+			[Embed(source="icons/enabled/document_accounting.png")]
+			public static var document_accounting:Class;
+			
+			[Embed(source="icons/enabled/payment_synhronization.png")]
+			public static var payment_synhronization:Class;
+			
+			[Embed(source="icons/enabled/sales_salesOrderList.png")]
+			public static var sales_salesOrderList:Class;
+			
+			[Embed(source="icons/enabled/sales_salesOrder.png")]
+			public static var sales_salesOrder:Class;
+			
+			//DISABLED
+			
+			[Embed(source="icons/disabled/dis_bank_catalogue.png")]
+			public static var dis_bank_catalogue:Class;
+			
+			[Embed(source="icons/disabled/dis_bank_new.png")]
+			public static var dis_bank_new:Class;
+			
+			[Embed(source="icons/disabled/dis_contractor_catalogue.png")]
+			public static var dis_contractor_catalogue:Class;
+			
+			[Embed(source="icons/disabled/dis_contractor_new.png")]
+			public static var dis_contractor_new:Class;
+			
+			[Embed(source="icons/disabled/dis_finance_bankIncome_correct.png")]
+			public static var dis_finance_bankIncome_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_finance_bankIncome.png")]
+			public static var dis_finance_bankIncome:Class;
+			
+			[Embed(source="icons/disabled/dis_finance_bankOutcome_correct.png")]
+			public static var dis_finance_bankOutcome_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_finance_bankOutcome.png")]
+			public static var dis_finance_bankOutcome:Class;
+			
+			[Embed(source="icons/disabled/dis_finance_cardIncome_correct.png")]
+			public static var dis_finance_cardIncome_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_finance_cardIncome.png")]
+			public static var dis_finance_cardIncome:Class;
+			
+			[Embed(source="icons/disabled/dis_finance_cashIncome_correct.png")]
+			public static var dis_finance_cashIncome_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_finance_cashIncome.png")]
+			public static var dis_finance_cashIncome:Class;
+			
+			[Embed(source="icons/disabled/dis_finance_cashOutcome_correct.png")]
+			public static var dis_finance_cashOutcome_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_finance_cashOutcome.png")]
+			public static var dis_finance_cashOutcome:Class;
+			
+			[Embed(source="icons/disabled/dis_finance_cashReport.png")]
+			public static var dis_finance_cashReport:Class;
+			
+			[Embed(source="icons/disabled/dis_finance_documentList_bank.png")]
+			public static var dis_finance_documentList_bank:Class;
+			
+			[Embed(source="icons/disabled/dis_finance_documentList_cash.png")]
+			public static var dis_finance_documentList_cash:Class;
+			
+			[Embed(source="icons/disabled/dis_finance_exchangeRates.png")]
+			public static var dis_finance_exchangeRates:Class;
+			
+			[Embed(source="icons/disabled/dis_finance_setOff_correct.png")]
+			public static var dis_finance_setOff_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_finance_setOff.png")]
+			public static var dis_finance_setOff:Class;
+			
+			[Embed(source="icons/disabled/dis_item_catalogue.png")]
+			public static var dis_item_catalogue:Class;
+			
+			[Embed(source="icons/disabled/dis_item_new.png")]
+			public static var dis_item_new:Class;
+				
+			[Embed(source="icons/disabled/dis_purchase_documentList.png")]
+			public static var dis_purchase_documentList:Class;
+			
+			[Embed(source="icons/disabled/dis_purchase_invoice_correct.png")]
+			public static var dis_purchase_invoice_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_purchase_invoice.png")]
+			public static var dis_purchase_invoice:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_currencyInvoice_correct.png")]
+			public static var dis_sales_currencyInvoice_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_currencyInvoice.png")]
+			public static var dis_sales_currencyInvoice:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_documentList.png")]
+			public static var dis_sales_documentList:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_euInvoice_correct.png")]
+			public static var dis_sales_euInvoice_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_euInvoice.png")]
+			public static var dis_sales_euInvoice:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_internalInvoice_correct.png")]
+			public static var dis_sales_internalInvoice_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_internalInvoice.png")]
+			public static var dis_sales_internalInvoice:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_invoice_correct.png")]
+			public static var dis_sales_invoice_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_invoice.png")]
+			public static var dis_sales_invoice:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_order_correct.png")]
+			public static var dis_sales_order_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_order.png")]
+			public static var dis_sales_order:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_production_correct.png")]
+			public static var dis_sales_production_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_production.png")]
+			public static var dis_sales_production:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_proForma_correct.png")]
+			public static var dis_sales_proForma_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_proForma.png")]
+			public static var dis_sales_proForma:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_quick.png")]
+			public static var dis_sales_quick:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_receipt_correct.png")]
+			public static var dis_sales_receipt_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_receipt.png")]
+			public static var dis_sales_receipt:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_receiptInvoice_correct.png")]
+			public static var dis_sales_receiptInvoice_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_receiptInvoice.png")]
+			public static var dis_sales_receiptInvoice:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_taxFree_correct.png")]
+			public static var dis_sales_taxFree_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_taxFree.png")]
+			public static var dis_sales_taxFree:Class;
+			
+			[Embed(source="icons/disabled/dis_settings_dictionaries.png")]
+			public static var dis_settings_dictionaries:Class;
+			
+			[Embed(source="icons/disabled/dis_settings_ownCompanies.png")]
+			public static var dis_settings_ownCompanies:Class;
+			
+			[Embed(source="icons/disabled/dis_warehouse_income_correct.png")]
+			public static var dis_warehouse_income_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_warehouse_income.png")]
+			public static var dis_warehouse_income:Class;
+			
+			[Embed(source="icons/disabled/dis_warehouse_list.png")]
+			public static var dis_warehouse_list:Class;
+			
+			[Embed(source="icons/disabled/dis_warehouse_order_correct.png")]
+			public static var dis_warehouse_order_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_warehouse_order.png")]
+			public static var dis_warehouse_order:Class;
+			
+			[Embed(source="icons/disabled/dis_warehouse_outcome_correct.png")]
+			public static var dis_warehouse_outcome_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_warehouse_outcome.png")]
+			public static var dis_warehouse_outcome:Class;
+			
+			[Embed(source="icons/disabled/dis_warehouse_reservation_correct.png")]
+			public static var dis_warehouse_reservation_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_warehouse_reservation.png")]
+			public static var dis_warehouse_reservation:Class;
+			
+			[Embed(source="icons/disabled/dis_warehouse_reservationList.png")]
+			public static var dis_warehouse_reservationList:Class;
+
+			[Embed(source="icons/disabled/dis_warehouse_orderList.png")]
+			public static var dis_warehouse_orderList:Class;
+			
+			[Embed(source="icons/disabled/dis_warehouse_shift_correct.png")]
+			public static var dis_warehouse_shift_correct:Class;
+			
+			[Embed(source="icons/disabled/dis_warehouse_shift.png")]
+			public static var dis_warehouse_shift:Class;
+			
+			[Embed(source="icons/disabled/dis_reports.png")]
+			public static var dis_reports:Class;
+			
+			[Embed(source="icons/disabled/dis_settings.png")]
+			public static var dis_settings:Class;
+
+			[Embed(source="icons/disabled/dis_order.png")]
+			public static var dis_order:Class;
+			
+			[Embed(source="icons/disabled/dis_complaint_document.png")]
+			public static var dis_complaint_document:Class;
+			
+			[Embed(source="icons/disabled/dis_complaint_documentList.png")]
+			public static var dis_complaint_documentList:Class;
+			
+			[Embed(source="icons/disabled/dis_service_document.png")]
+			public static var dis_service_document:Class;
+			
+			[Embed(source="icons/disabled/dis_service_documentList.png")]
+			public static var dis_service_documentList:Class;
+			
+			[Embed(source="icons/disabled/dis_servicedObject_catalogue.png")]
+			public static var dis_servicedObject_catalogue:Class;
+			
+			[Embed(source="icons/disabled/dis_servicedObject_new.png")]
+			public static var dis_servicedObject_new:Class;
+			
+			[Embed(source="icons/disabled/dis_inventoryDocument_new.png")]
+			public static var dis_inventoryDocument_new:Class;
+			
+			[Embed(source="icons/disabled/dis_inventoryDocument_catalogue.png")]
+			public static var dis_inventoryDocument_catalogue:Class;
+			
+			[Embed(source="icons/disabled/dis_contractor_accounting.png")]
+			public static var dis_contractor_accounting:Class;
+			
+			[Embed(source="icons/disabled/dis_document_accounting.png")]
+			public static var dis_document_accounting:Class;
+			
+			[Embed(source="icons/disabled/dis_payment_synhronization.png")]
+			public static var dis_payment_synhronization:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_salesOrderList.png")]
+			public static var dis_sales_salesOrderList:Class;
+			
+			[Embed(source="icons/disabled/dis_sales_salesOrder.png")]
+			public static var dis_sales_salesOrder:Class;
+			
+			//SMALLENABLED
+			
+			[Embed(source="icons/smallEnabled/add_small.png")]
+			public static var add_small:Class;
+			
+			[Embed(source="icons/smallEnabled/contractor_delete_small.png")]
+			public static var contractor_delete_small:Class;
+			
+			[Embed(source="icons/smallEnabled/contractor_edit_small.png")]
+			public static var contractor_edit_small:Class;
+			
+			[Embed(source="icons/smallEnabled/contractor_export_small.png")]
+			public static var contractor_export_small:Class;
+			
+			[Embed(source="icons/smallEnabled/contractor_new_small.png")]
+			public static var contractor_new_small:Class;
+			
+			[Embed(source="icons/smallEnabled/contractor_toCart_small.png")]
+			public static var contractor_toCart_small:Class;
+			
+			[Embed(source="icons/smallEnabled/correct_small.png")]
+			public static var correct_small:Class;
+			
+			[Embed(source="icons/smallEnabled/delete_small.png")]
+			public static var delete_small:Class;
+			
+			[Embed(source="icons/smallEnabled/duplicate_small.png")]
+			public static var duplicate_small:Class;
+			
+			[Embed(source="icons/smallEnabled/edit_small.png")]
+			public static var edit_small:Class;
+			
+			[Embed(source="icons/smallEnabled/export_small.png")]
+			public static var export_small:Class;
+			
+			[Embed(source="icons/smallEnabled/group_add_small.png")]
+			public static var group_add_small:Class;
+			
+			[Embed(source="icons/smallEnabled/group_addSubgroup_small.png")]
+			public static var group_addSubgroup_small:Class;
+			
+			[Embed(source="icons/smallEnabled/group_group_small.png")]
+			public static var group_group_small:Class;
+			
+			[Embed(source="icons/smallEnabled/group_notAssigned_small.png")]
+			public static var group_notAssigned_small:Class;
+			
+			[Embed(source="icons/smallEnabled/group_properties_small.png")]
+			public static var group_properties_small:Class;
+			
+			[Embed(source="icons/smallEnabled/group_remove_small.png")]
+			public static var group_remove_small:Class;
+			
+			[Embed(source="icons/smallEnabled/group_selectAll_small.png")]
+			public static var group_selectAll_small:Class;
+			
+			[Embed(source="icons/smallEnabled/group_subgroup_small.png")]
+			public static var group_subgroup_small:Class;
+			
+			[Embed(source="icons/smallEnabled/item_delete_small.png")]
+			public static var item_delete_small:Class;
+			
+			[Embed(source="icons/smallEnabled/item_edit_small.png")]
+			public static var item_edit_small:Class;
+			
+			[Embed(source="icons/smallEnabled/item_export_small.png")]
+			public static var item_export_small:Class;
+			
+			[Embed(source="icons/smallEnabled/item_new_small.png")]
+			public static var item_new_small:Class;
+			
+			[Embed(source="icons/smallEnabled/item_toCart_small.png")]
+			public static var item_toCart_small:Class;
+			
+			[Embed(source="icons/smallEnabled/print_small.png")]
+			public static var print_small:Class;
+			
+			[Embed(source="icons/smallEnabled/printFiscal_small.png")]
+			public static var printFiscal_small:Class;
+			
+			[Embed(source="icons/smallEnabled/properties_small.png")]
+			public static var properties_small:Class;
+			
+			[Embed(source="icons/smallEnabled/sales_small.png")]
+			public static var sales_small:Class;
+			
+			[Embed(source="icons/smallEnabled/sales_simple_small.png")]
+			public static var sales_simple_small:Class;
+			
+			[Embed(source="icons/smallEnabled/save_small.png")]
+			public static var save_small:Class;
+			
+			[Embed(source="icons/smallEnabled/toDocument_small.png")]
+			public static var toDocument_small:Class;
+
+			[Embed(source="icons/smallEnabled/closeProcess_small.png")]
+			public static var closeProcess_small:Class;
+						
+			[Embed(source="icons/smallEnabled/preview_small.png")]
+			public static var preview_small:Class;
+			
+			[Embed(source="icons/smallEnabled/cancel_small.png")]
+			public static var cancel_small:Class;
+			
+			[Embed(source="icons/smallEnabled/service_document_small.png")]
+			public static var service_document_small:Class;
+			
+			[Embed(source="icons/smallEnabled/servicedObject_new_small.png")]
+			public static var servicedObject_new_small:Class;
+			
+			[Embed(source="icons/smallEnabled/servicedObject_edit_small.png")]
+			public static var servicedObject_edit_small:Class;
+			
+			[Embed(source="icons/smallEnabled/service_document_edit_small.png")]
+			public static var service_document_edit_small:Class;
+			
+			//SMALLDISABLED
+			
+			[Embed(source="icons/smallDisabled/dis_add_small.png")]
+			public static var dis_add_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_contractor_delete_small.png")]
+			public static var dis_contractor_delete_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_contractor_edit_small.png")]
+			public static var dis_contractor_edit_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_contractor_export_small.png")]
+			public static var dis_contractor_export_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_contractor_new_small.png")]
+			public static var dis_contractor_new_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_contractor_toCart_small.png")]
+			public static var dis_contractor_toCart_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_correct_small.png")]
+			public static var dis_correct_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_delete_small.png")]
+			public static var dis_delete_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_duplicate_small.png")]
+			public static var dis_duplicate_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_edit_small.png")]
+			public static var dis_edit_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_export_small.png")]
+			public static var dis_export_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_group_add_small.png")]
+			public static var dis_group_add_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_group_addSubgroup_small.png")]
+			public static var dis_group_addSubgroup_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_group_group_small.png")]
+			public static var dis_group_group_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_group_notAssigned_small.png")]
+			public static var dis_group_notAssigned_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_group_properties_small.png")]
+			public static var dis_group_properties_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_group_remove_small.png")]
+			public static var dis_group_remove_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_group_selectAll_small.png")]
+			public static var dis_group_selectAll_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_group_subgroup_small.png")]
+			public static var dis_group_subgroup_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_item_delete_small.png")]
+			public static var dis_item_delete_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_item_edit_small.png")]
+			public static var dis_item_edit_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_item_export_small.png")]
+			public static var dis_item_export_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_item_new_small.png")]
+			public static var dis_item_new_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_item_toCart_small.png")]
+			public static var dis_item_toCart_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_print_small.png")]
+			public static var dis_print_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_printFiscal_small.png")]
+			public static var dis_printFiscal_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_properties_small.png")]
+			public static var dis_properties_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_sales_advanced_small.png")]
+			public static var dis_sales_advanced_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_sales_simple_small.png")]
+			public static var dis_sales_simple_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_save_small.png")]
+			public static var dis_save_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_toDocument_small.png")]
+			public static var dis_toDocument_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_preview_small.png")]
+			public static var dis_preview_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_cancel_small.png")]
+			public static var dis_cancel_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_service_document_small.png")]
+			public static var dis_service_document_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_servicedObject_new_small.png")]
+			public static var dis_servicedObject_new_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_servicedObject_edit_small.png")]
+			public static var dis_servicedObject_edit_small:Class;
+			
+			[Embed(source="icons/smallDisabled/dis_service_document_edit_small.png")]
+			public static var dis_service_document_edit_small:Class;
+			
+			//LIST
+			
+			[Embed(source="icons/list/list_purchase.png")]
+			public static var list_purchase:Class;
+
+			[Embed(source="icons/list/list_purchase_correction.png")]
+			public static var list_purchase_correction:Class;
+			
+			[Embed(source="icons/list/list_sales.png")]
+			public static var list_sales:Class;
+
+			[Embed(source="icons/list/list_sales_correction.png")]
+			public static var list_sales_correction:Class;
+			
+			[Embed(source="icons/list/list_warehouse_income.png")]
+			public static var list_warehouse_income:Class;
+			
+			[Embed(source="icons/list/list_warehouse_income_correction.png")]
+			public static var list_warehouse_income_correction:Class;
+			
+			[Embed(source="icons/list/list_warehouse_outcome.png")]
+			public static var list_warehouse_outcome:Class;
+
+			[Embed(source="icons/list/list_warehouse_outcome_correction.png")]
+			public static var list_warehouse_outcome_correction:Class;
+
+			[Embed(source="icons/list/list_warehouse_order.png")]
+			public static var list_warehouse_order:Class;
+
+			[Embed(source="icons/list/list_warehouse_reservation.png")]
+			public static var list_warehouse_reservation:Class;
+
+			[Embed(source="icons/list/list_financial_income.png")]
+			public static var list_financial_income:Class;
+			
+			[Embed(source="icons/list/list_financial_outcome.png")]
+			public static var list_financial_outcome:Class;
+
+			[Embed(source="icons/list/list_financial_report.png")]
+			public static var list_financial_report:Class;
+			
+			[Embed(source="icons/list/status_commited.png")]
+			public static var status_commited:Class;
+			
+			[Embed(source="icons/list/status_booked.png")]
+			public static var status_booked:Class;
+
+			[Embed(source="icons/list/status_canceled.png")]
+			public static var status_canceled:Class;
+
+			[Embed(source="icons/list/status_saved.png")]
+			public static var status_saved:Class;
+			
+			[Embed(source="icons/list/list_complaint.png")]
+			public static var list_complaint:Class;
+			
+			[Embed(source="icons/list/list_service.png")]
+			public static var list_service:Class;
+			
+			[Embed(source="icons/list/list_sales_income.png")]
+			public static var list_sales_income:Class;
+			
+			//LIST DISABLED
+			
+			[Embed(source="icons/list/dis_status_canceled.png")]
+			public static var dis_status_canceled:Class;
+			
+			[Embed(source="images/tick.png")]
+			public static var tick:Class;
+			
+			//IMAGES
+			
+			[Embed(source="images/envelope.png")]
+			public static var envelope:Class;
+			
+			[Embed(source="images/showHideButton_left.png")]
+			public static var showHideButton_left:Class;
+			
+			[Embed(source="images/showHideButton_right.png")]
+			public static var showHideButton_right:Class;
+			
+			
+			public static const BANKS_COLOR:uint = 0x00dd00;
+			public static const BANKS_COLOR_LIGHT:uint = 0x88dd88;
+			
+			public static const CONTRACTORS_COLOR:uint = 0x3333dd;
+			public static const CONTRACTORS_COLOR_LIGHT:uint = 0x8888dd;
+			
+			public static const ITEMS_COLOR:uint = 0xbbdd33;
+			public static const ITEMS_COLOR_LIGHT:uint = 0xffdd33;
+			
+			public static const SALES_COLOR:uint = 0xFF5114;
+			public static const SALES_COLOR_LIGHT:uint = 0xFFA048;
+			
+			public static const PURCHASE_COLOR:uint = 0x2CDBDB;
+			public static const PURCHASE_COLOR_LIGHT:uint = 0xB7FAFA;
+			
+			public static const WAREHOUSE_COLOR:uint = 0xA14DD4;
+			public static const WAREHOUSE_COLOR_LIGHT:uint = 0xA18DD4;
+			
+			public static const FINANCIAL_COLOR:uint = 0x639600;
+			public static const FINANCIAL_COLOR_LIGHT:uint = 0xDFE979;
+			
+			public static const COMPLAINT_COLOR:uint =  0xff0000;
+			public static const COMPLAINT_COLOR_LIGHT:uint = 0x660000;
+			
+			public static const SERVICE_COLOR:uint =  0xBBBBBB;
+			public static const SERVICE_COLOR_LIGHT:uint = 0x000000;
+			
+			public static const INVENTORY_COLOR:uint = 0xA14DD4;
+			public static const INVENTORY_COLOR_LIGHT:uint = 0xA18DD4;
+			
+			public static const B2B_COLOR:uint = 0xefc300;
+			public static const B2B_COLOR_LIGHT:uint = 0xffdd33;
+			/* 
+			public static const TECHNOLOGY_COLOR:uint =  0xBBBBBB;
+			public static const TECHNOLOGY_COLOR_LIGHT:uint = 0x000000;
+			
+			public static const PRODUCTION_COLOR:uint =  0xBBBBBB;
+			public static const PRODUCTION_COLOR_LIGHT:uint = 0x000000; */
+			
+			/* do skasowania - tylko na potrzeby templates, ktore nie maja jescze nowych nazw ikonek */
+			/*
+			[Embed('/assets/icons/enabled/drukN.png')]
+			public static var Bill:Class;
+			[Embed('/assets/icons/enabled/drukP.png')]
+			public static var Invoice:Class;
+			*/
+			
+		/*	
+			//B2B
+			[Embed(source="icons/b2bEnabled/b2b_reservation.png")]
+			public static var b2b_reservation:Class;
+				
+			[Embed(source="icons/b2bEnabled/b2b_reservationList.png")]
+			public static var b2b_reservationList:Class;
+			
+			[Embed(source="icons/b2bEnabled/b2b_settingsList.png")]
+			public static var b2b_settingsList:Class;
+			
+			[Embed(source="icons/b2bEnabled/b2b_clipboard_small.png")]
+			public static var b2b_clipboard_small:Class;
+			
+			[Embed(source="icons/b2bEnabled/b2b_toClipboard_small.png")]
+			public static var b2b_toClipboard_small:Class;
+		*/	
+			
+		]]>
+	</mx:Script>
+</Object>

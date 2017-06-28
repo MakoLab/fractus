@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	verticalCenter="0"
+	horizontalScrollPolicy="off"
+	implements="com.makolab.fractus.view.documents.documentControls.IDocumentControl"
+	verticalGap="0" focusEnabled="true"
+	>
+	<!--borderStyle="solid" borderColor="#aaaaaa" borderSides="top left bottom right" borderThickness="1"-->
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.XMLListCollection;
+			import mx.utils.ArrayUtil;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import mx.events.DragEvent;
+			import mx.controls.CheckBox;
+			import mx.events.FlexEvent;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.controls.TextArea;
+			import mx.controls.List;
+
+			private var _documentObject:DocumentObject;
+			private var checkBoxes:Array = [];
+			
+			public function set documentObject(value:DocumentObject):void
+			{
+				this._documentObject = value;
+				this.dataObject = value.attributes.source;				
+			}
+			
+			[Bindable]
+			public function get documentObject():DocumentObject
+			{
+				return this._documentObject;
+			}
+
+			private var _dataObject:XMLList;
+			/**
+			 * Lets you pass a value to the editor.
+			 * @param value template:
+			 * 
+			 * &lt;attribute&gt;<br/>
+			*	    &lt;documentFieldId&gt;&lt;/documentFieldId&gt;<br/>
+			*	    &lt;value&gt;&lt;/value&gt;<br/>
+			*	  &lt;/attribute&gt;<br/>
+			 * .
+			 * .
+			 */
+			public function set dataObject(value:XMLList):void
+			{
+				this._dataObject = value;
+				
+				for each(var obj:DisplayObject in this.getChildren())
+					obj.removeEventListener(MouseEvent.CLICK, handleCheckBoxClick);
+					
+				this.removeAllChildren();
+					
+				this.dataProvider = null;
+								
+				if(value)
+				{
+					var dp:Array = [];
+					
+					var availableFeatures:Array = documentObject.typeDescriptor.availableFeatures;
+					
+					for each(var entry:XML in DictionaryManager.getInstance().dictionaries.documentFeatures)
+					{
+						if (ArrayUtil.getItemIndex(String(entry.id), availableFeatures) < 0) continue;
+						var chkBoxData:Object = {id : entry.id.*, 
+							 label : entry.label.*, 
+							 selected : this.getSelectionFromDocument(entry.id.*) };
+							 
+						dp.push(chkBoxData);
+							 
+						var chkBox:CheckBox = new CheckBox();
+						chkBox.data = chkBoxData;
+						chkBox.label = String(chkBoxData.label);
+						chkBox.selected	= chkBoxData.selected;
+						chkBox.addEventListener(MouseEvent.CLICK, handleCheckBoxClick);
+						chkBox.addEventListener(FocusEvent.FOCUS_OUT, handleCheckBoxFocusOut);
+						this.checkBoxes.push(chkBox);
+						this.addChild(chkBox);
+					}
+					
+					this.dataProvider = dp;
+				}
+			}
+			
+			private function handleCheckBoxFocusOut(event:FocusEvent):void
+			{
+				var dispatch:Boolean = true;
+				
+				for each(var chkBox:CheckBox in this.checkBoxes)
+				{
+					if(chkBox == event.relatedObject)
+					{
+						dispatch = false;
+						break;
+					}
+				}
+				
+				if(dispatch) dispatchEvent(event);
+			}
+
+			[Bindable]			
+			public function get dataObject():XMLList
+			{
+				return this._dataObject;
+			}
+			
+			private var dataProvider:Array;
+					
+			public override function set data(value:Object):void
+			{
+				this.dataObject = XMLList(value.copy());
+			}
+			
+			/**
+			 * Check whether current document has document feature of a selected id.
+			 * 
+			 * @param id Document feature id to check.
+			 * 
+			 * @return true if the document has the document feature; otherwise false.
+			 */
+			public function getSelectionFromDocument(id:String):Boolean
+			{
+				for each(var entry:XML in this.dataObject)
+				{
+					if (entry.documentFieldId.length() == 1 && entry.documentFieldId.* == id && entry.value.* == "1")
+						return true;
+				}
+				
+				return false;
+			}
+			
+			/**
+			 * Saves current document feature selection to the document.
+			 * 
+			 * @param newAttributes Complete new set of all attributes to save to the document.
+			 */
+			public function saveSelectionToDocument(newAttributes:Array):void
+			{
+				var indexesToDelete:Array = new Array();
+				for each(var obj:Object in newAttributes)
+				{
+					var isUpdated:Boolean = false;
+					
+					for(var i:int=0; i<this.dataObject.length(); i++)
+					{
+						if (String(this.dataObject[i].documentFieldId) == String(obj.id))
+						{
+							if(obj.selected)
+								this.dataObject[i].value.* = "1";
+							else
+								indexesToDelete.push(i);
+								
+							isUpdated = true;
+							break;		
+						}
+					}
+					
+					if (!isUpdated && obj.selected) //create new attribute
+					{
+						this.dataObject +=
+							<attribute><documentFieldId>{obj.id}</documentFieldId><value>1</value></attribute>;
+					}
+				}
+				
+				indexesToDelete.reverse();
+				
+				for each(var u:int in indexesToDelete)
+					delete this.dataObject[u];
+					
+				documentObject.attributes = new XMLListCollection(this.dataObject);
+			}
+			
+			/**
+			 * Event handler for document feature checkbox click event.
+			 * 
+			 * @param event MouseEvent object containing event data.
+			 */
+			public function handleCheckBoxClick(event:MouseEvent):void
+			{
+				event.target.data.selected = event.target.selected;
+				this.saveSelectionToDocument(this.dataProvider);
+			}
+		]]>
+	</mx:Script>
+</mx:VBox>

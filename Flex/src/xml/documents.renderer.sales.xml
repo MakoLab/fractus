@@ -1,0 +1,28 @@
+<configuration>
+  <linesTableColumns>
+    <column node="ordinalNumber" headerKey="common.ordinalNumber" header="Lp" dataFormat="decimal" width="30" labelKey="common.ordinalNumber"/>
+    <column node="itemName" headerKey="common.shortName" header="Nazwa" labelKey="common.itemNameShort"/>
+    <column node="quantity" headerKey="common.quantity" header="Ilość" dataFormat="decimal4" width="40"/>
+    <column node="unitId" localizedAttribute="symbol" headerKey="dictionaries.unitIdShort" header="J.m." width="40" dataFormat="dictionary" />
+    <!--
+    <column node="initialNetPrice" headerKey="common.priceNetto" header="Cena netto bez rabatu" dataFormat="money" width="100"/>
+    <column node="vatValue" header="Podatek" dataFormat="money" width="100"/>
+    -->
+    
+    <column node="discountRate" headerKey="common.discount"  header="Rabat" dataFormat="percent" width="60"/>
+    <column node="netPrice" headerKey="common.priceNetto" header="Cena netto" dataFormat="money" width="100"/>
+    <column node="vatRateId" attribute="symbol" header="VAT [%]" width="40" />
+    <column node="netValue" headerKey="documents.netValue" header="Wartość netto" dataFormat="money" width="100"/>
+    <column node="grossValue" headerKey="documents.grossValue" header="Wartość brutto" dataFormat="money" width="100"/>
+    <column node="warehouseId" headerKey="common.warehouse" header="Magazyn" attribute="symbol" dataFormat="dictionary" width="60" />
+    
+    <column node="cost" header="Koszt" dataFormat="systemMoney" width="100"/>
+    <column node="margin" header="Marża" headerKey="common.profit" width="60"/>
+  </linesTableColumns>
+  <vatTableColumns>
+    <column node="netValue" header="Netto" dataFormat="money"/>
+    <column node="vatRateId" attribute="symbol" header="VAT [%]"/>
+    <column node="vatValue" header="Podatek" dataFormat="money"/>
+    <column node="grossValue" header="Brutto" dataFormat="money"/>
+  </vatTableColumns>
+</configuration>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:generic="com.makolab.fractus.view.generic.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.document.DocumentObject;
+			
+			[Bindable] public var dataSetName:String;
+			
+			private var documentFieldId:String;
+			
+			private var _documentObject:DocumentObject;
+			
+			[Bindable] private var attribute:Object = {};
+			
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				documentFieldId = DictionaryManager.getInstance().dictionaries.documentFields.(name.toString() == "Attribute_SalesmanId").id.toString();
+				for each(var a:XML in value.attributes){
+					if(a.documentFieldId.toString() == documentFieldId){
+						this.attribute = a;
+						break;
+					}
+				}
+				_documentObject = value;
+			}
+			public function get documentObject():DocumentObject
+			{
+				return _documentObject;
+			}
+			
+			private function handleChange(event:Event):void
+			{
+				//if(!attribute)attribute = {};
+				//attribute.value = selector.selectedId;
+			}
+		]]>
+	</mx:Script>
+	<generic:IdSelector id="selector" labelField="@label" idField="@id" selectedId="{attribute.value}" dataSetName="{this.dataSetName}" change="handleChange(event)"/>
+</mx:FormItem>

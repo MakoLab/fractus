@@ -1,0 +1,13 @@
+﻿<catalogueConfig>
+  <listTitle>items.lists.items.title</listTitle>
+  <newItemWindowTitle>items.forms.item.titleNew</newItemWindowTitle>
+  <editItemWindowTitle>items.forms.item.titleEdit</editItemWindowTitle>
+  <newItemParam>
+    <type>Item</type>
+  </newItemParam>
+  <listConfig>items.lists.items</listConfig>
+  <formConfig>items.forms.item</formConfig>
+  <panelConfig>items.panel.item</panelConfig>
+  <searchEvent>itemsSearch</searchEvent>
+  <loadDataEvent>itemsLoadData</loadDataEvent>
+</catalogueConfig>

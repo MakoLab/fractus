@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:DataGrid width="100%" height="100%" dataProvider="{this.dataProvider}" editable="true">
+		<mx:columns>
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.item')}" dataField="itemName" editable="false"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.warehouse')}" dataField="warehouseId" editable="false" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" width="80"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.quantity')}" dataField="quantity" editable="false" itemRenderer="com.makolab.components.inputComponents.FloatRenderer" width="60"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('documents.realizedStatus')}" dataField="usedQuantity" editable="false" itemRenderer="com.makolab.components.inputComponents.FloatRenderer" width="90"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('documents.realization')}" editable="true" dataField="targetQuantity" editorDataField="value" rendererIsEditor="true">
+				<mx:itemRenderer>
+					<mx:Component>
+						<inputComponents:FloatStepper minimum="0" maximum="0" height="20">
+							<mx:Script>
+								<![CDATA[
+									public override function set data(value:Object):void
+									{
+										super.data = value;
+										this.maximum = outerDocument.getMaximum(value);
+									}
+									public override function get data():Object
+									{
+										return super.data;
+									}
+								]]>
+							</mx:Script>
+						</inputComponents:FloatStepper>
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:RadioButtonGroup id="radioGroup"/>
+	<mx:Repeater id="templateRepeater" dataProvider="{documentTypeDescriptor.availableDerivedDocuments}">
+		<mx:RadioButton
+				paddingLeft="10"
+				value="{XML(templateRepeater.currentItem)}"
+				label="{getTemplate(templateRepeater.currentItem.@name).@label}"
+				group="{radioGroup}"
+				selected="false"
+				visible="{showRadioButton(XML(templateRepeater.currentItem))}"
+				includeInLayout="{showRadioButton(XML(templateRepeater.currentItem))}"
+				change="this.checkBoxChange(event)"
+			/>
+	</mx:Repeater>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.ComponentExportManager;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.XMLListCollection;
+			import mx.controls.listClasses.BaseListData;
+			import mx.controls.listClasses.ListData;
+			import mx.rpc.events.ResultEvent;
+			import mx.utils.ArrayUtil;
+
+			private var maxQuantities:Array;
+			
+			[Bindable]
+			private var documentTypeDescriptor:DocumentTypeDescriptor;
+			
+			[Bindable]
+			private var dataProvider:Array;
+			
+			public var window:ComponentWindow;
+			
+			private var documentObject:DocumentObject;
+			
+			[Bindable]
+			private var clearSelectionFunction:Function;
+			
+			private function showRadioButton(derivedDocument:XML):Boolean
+			{
+				if(documentXML.relations.relation.(relationType.* == "9").length() > 0 
+					&& derivedDocument.@hideWhenPrepayments.length() > 0 
+					&& derivedDocument.@hideWhenPrepayments == "true")
+					return false;
+				else
+					return true;
+			}
+			
+			private function checkBoxChange(event:Event):void
+			{
+				this.dataProvider = this.filterLines(documentXML.lines.line, RadioButton(event.target).value.@LineAttribute_SalesOrderGenerateDocumentOption);	
+			}
+			
+			private function filterLines(lines:XMLList, attrVals:String):Array
+			{
+				var filteredLines:Array = new Array();
+				
+				if(!attrVals || attrVals == "")
+				{
+					for each(var line:XML in lines) filteredLines.push(line);				
+					return filteredLines;
+				}
+				
+				var attrVal:Array = attrVals.split(',');
+				
+				var attrId:String = DictionaryManager.getInstance().getByName("LineAttribute_SalesOrderGenerateDocumentOption", "documentFields").id;
+				
+				this.maxQuantities = [];
+				
+				for each(line in lines)
+				{
+					var attribs:XMLList = line.attributes.attribute.(documentFieldId.* == attrId);
+					
+					if(attribs.length() == 1)
+					{
+						for each(var allowedVal:String in attrVal)
+						{
+							if(attribs[0].value.* == allowedVal)
+							{
+								filteredLines.push(line);
+								this.maxQuantities.push(parseFloat(line.targetQuantity));
+							}
+						}
+					}
+				}
+				
+				return filteredLines;
+			}
+			
+			public function getMaximum(item:Object):Number
+			{
+				if (item == null) return 0;
+				var index:int = ArrayUtil.getItemIndex(item, this.dataProvider);
+				if (index >= 0 && index <= this.maxQuantities.length) return this.maxQuantities[index];
+				else return 0;
+			}
+			
+			private var _documentXML:XML;
+			[Bindable]
+			public function set documentXML(value:XML):void
+			{
+				_documentXML = value;
+				
+				if(value)
+				{
+					this.dataProvider = this.filterLines(documentXML.lines.line, null);
+					documentTypeDescriptor = new DocumentTypeDescriptor(value.documentTypeId);
+					this.documentObject = new DocumentObject(value.parent());
+				}
+				else
+				{
+					this.documentObject = null;
+					this.dataProvider = null;
+				}
+				
+				maxQuantities = [];
+				if (_documentXML)
+				{
+					for each (var line:XML in _documentXML.lines.line)
+					{
+						var qty:Number = parseFloat(line.quantity), used:Number = 0, max:Number;
+						for each (var x:XML in line.commercialWarehouseRelations.commercialWarehouseRelation)
+						{
+							used += parseFloat(x.quantity);
+						}
+						max = qty - used;
+						line.usedQuantity = used;
+						line.targetQuantity = max;
+						maxQuantities.push(max);
+					}
+				}
+			}
+			public function get documentXML():XML
+			{
+				return _documentXML;
+			}
+			
+			private function getTemplate(templateName:String):XML
+			{
+				var templates:XML = ModelLocator.getInstance().documentTemplates;
+				return templates.*.template.(@id == templateName)[0];
+			}
+			
+			public static function showWindow(documentXML:XML, clearSelectionFunction:Function):ComponentWindow
+			{
+				var editor:SalesOrderRealizationWindow = new SalesOrderRealizationWindow();
+				editor.documentXML = documentXML;
+				editor.clearSelectionFunction = clearSelectionFunction;
+				var title:String = "Realizacja zamówienia sprzedażowego " + documentXML.number.fullNumber;
+				var window:ComponentWindow = ComponentWindow.showWindow(editor, ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CLOSE, new Rectangle(-1, -1, 500, 300), title);
+				window.commitFunction = editor.commitFunction;
+				window.closeFunction = window.hide;
+				editor.window = window;
+				return window;
+			}
+			
+			private function commitFunction():void
+			{
+				if (!radioGroup.selectedValue) return;
+				var list:XMLList = new XMLList();
+				
+				for each (var line:XML in this.dataProvider)
+				{
+					if (line.targetQuantity > 0) list += <line id={String(line.id)} quantity={String(line.targetQuantity)}/>
+				}
+				var category:uint;
+				var template:XML = getTemplate(String(radioGroup.selectedValue.@name));
+				var templateParentName:String = template.parent().localName();
+				switch (templateParentName)
+				{
+					case "warehouseDocument":
+						category = DocumentTypeDescriptor.CATEGORY_WAREHOUSE;
+						break;
+					case "salesDocument":
+						category = DocumentTypeDescriptor.CATEGORY_SALES;
+						break;
+				}
+				
+				createDocument(documentXML.id, template.@id, list, handleCommandResult, category);
+			}
+			
+			public static function createDocument(documentId:String, templateName:String, lines:XMLList, listener:Function, category:uint):void
+			{
+				// realizacja rezerwacji
+				var editorCmd:ShowDocumentEditorCommand = new ShowDocumentEditorCommand(category);
+				editorCmd.template = templateName;
+				editorCmd.source = <source type="salesOrderRealization" commercialDocumentId={documentId}>{lines}</source>;
+				editorCmd.addEventListener(ResultEvent.RESULT, listener);
+				editorCmd.execute();
+			}
+
+			private function handleCommandResult(event:ResultEvent):void
+			{
+				if(this.clearSelectionFunction != null)
+					this.clearSelectionFunction();
+				
+				this.window.hide();
+			}
+		]]>
+	</mx:Script>
+</mx:VBox>

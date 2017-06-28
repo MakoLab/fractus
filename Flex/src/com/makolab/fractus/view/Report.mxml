@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:layoutComponents="com.makolab.components.layoutComponents.*" xmlns:list="com.makolab.components.list.*" width="100%" height="100%"
+		creationComplete="initializeFilters()"
+	>
+	<!--marta-->
+	<mx:Label text="SDF"/>
+	<layoutComponents:CollapsablePanel title="Filtry" width="100%" paddingLeft="20" paddingRight="20" paddingTop="10" paddingBottom="10">
+		<mx:HBox width="100%">
+			<mx:VBox>
+				<mx:Button label="Szukaj" click="search()"/>
+			</mx:VBox>
+			<mx:VBox>
+				<mx:CheckBox label="Show request" id="cbShowXML"/>
+				<mx:CheckBox label="Show response" id="cbShowResult"/>
+			</mx:VBox>
+			
+			<mx:VBox id="filtersPanel" width="100%" borderColor="#CCCCCC" borderThickness="1" borderStyle="solid"/>
+		</mx:HBox>
+	</layoutComponents:CollapsablePanel>
+	<list:CommonGrid width="100%" height="100%" config="{resultXML.columns.length() > 0 ? resultXML.columns : config.columns}" dataProvider="{resultXML.elements.*}"/>
+	<mx:Text includeInLayout="{resultXML.summary.length() > 0}" text="{resultXML.summary}"/>
+
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.ErrorReport;
+			import mx.collections.ICollectionView;
+			import com.makolab.fractus.commands.GetReportCommand;
+			import com.makolab.components.catalogue.FilterClassMapper;
+			import mx.core.UIComponent;
+			import com.makolab.components.catalogue.ICatalogueFilter;
+			import mx.containers.HBox;
+			private var _config:XML;
+			
+			private var _resultXML:XML;
+			[Bindable]
+			public function set resultXML(value:XML):void
+			{
+				_resultXML = value;
+				if (cbShowResult.selected) ErrorReport.showWindow("Wynik zestawienia:", _resultXML.toXMLString(), "Debug");
+			}
+			public function get resultXML():XML { return _resultXML; }
+			
+			[Bindable]
+			public function set config(value:XML):void
+			{
+				_config = value;
+				if(config.filters)
+				{
+					var filtersArray:Array = [];
+					for each(var filter:XML in config.filters.filter){
+						filtersArray.push(new FilterClassMapper.CLASSES[filter.@type]);
+						filtersArray[filtersArray.length-1].config = filter;
+					}
+					searchFilters = filtersArray;
+				}
+				initializeFilters();
+			}
+			public function get config():XML { return _config; }
+			
+			private var searchFilters:Array;
+			
+			private function initializeFilters():void
+			{
+				if (!filtersPanel || !searchFilters) return;
+				var i:String;
+				var filter:ICatalogueFilter;
+				var showFilters:Boolean = searchFilters && searchFilters.length;
+				filtersPanel.removeAllChildren();
+				filtersPanel.visible = true;
+				for (i in searchFilters)
+				{
+					if (!(searchFilters[i] is ICatalogueFilter) || !(searchFilters[i] is UIComponent)) throw new Error("Filter must be a UIComponent and implement ICatalogueFilter.");
+					filter = searchFilters[i] as ICatalogueFilter;
+					filtersPanel.addChild(filter as UIComponent);
+				}
+			}
+			
+			public function search():void
+			{
+				try
+				{
+					var params:XML = config.searchParams[0].copy();
+					for (var i:String in searchFilters) ICatalogueFilter(searchFilters[i]).setParameters(params);
+					//trace(params);
+					var cmd:GetReportCommand = new GetReportCommand(config.@procedureName);
+					cmd.targetField = "resultXML";
+					cmd.targetObject = this;
+					if (cbShowXML.selected) ErrorReport.showWindow("XML przekazywany do procedury:", params.toXMLString(), "Debug");
+					cmd.execute(params);
+				}
+				catch (e:Error)
+				{
+					ErrorReport.showWindow(e.message, e.getStackTrace(), "Report module error");
+				}
+			}
+			
+		]]>
+	</mx:Script>
+</mx:VBox>

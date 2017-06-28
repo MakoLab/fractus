@@ -1,0 +1,12 @@
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintPdf\bin\Debug\MakoPrintPdf.dll
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintPdf\bin\Debug\MakoPrintPdf.pdb
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintPdf\bin\Debug\ibex35.dll
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintPdf\obj\Debug\MakoPrintPdf.csprojResolveAssemblyReference.cache
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintPdf\obj\Debug\MakoPrintPdf.dll
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintPdf\obj\Debug\MakoPrintPdf.pdb
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintPdf\bin\Debug\MakoPrintPdf.dll
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintPdf\bin\Debug\MakoPrintPdf.pdb
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintPdf\bin\Debug\ibex35.dll
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintPdf\obj\Debug\MakoPrintPdf.csprojResolveAssemblyReference.cache
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintPdf\obj\Debug\MakoPrintPdf.dll
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintPdf\obj\Debug\MakoPrintPdf.pdb

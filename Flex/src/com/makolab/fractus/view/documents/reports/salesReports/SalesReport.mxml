@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<reports:ReportContainer
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	configurationName="sales" 
+	width="400" height="300" 
+	xmlns:reports="com.makolab.fractus.view.documents.reports.*" 
+	xmlns:salesReports="com.makolab.fractus.view.documents.reports.salesReports.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.view.documents.reports.ReportGenerator;
+			import com.makolab.fractus.view.documents.reports.ReportBase;
+			import mx.events.CloseEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import com.makolab.fractus.commands.SearchCommand;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			private var _filtersInfo:Object = {};
+			[Bindable]
+			public function set filtersInfo(value:Object):void
+			{
+				_filtersInfo = value;
+			}
+			public function get filtersInfo():Object
+			{
+				return _filtersInfo;
+			}
+			
+			[Bindable]
+			private var showProgressBar:Boolean = false;
+			
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:SalesReport = new SalesReport();
+				window.innerComponent = component;
+				window.show(null,/* new Rectangle(-1,-1,800,500) */null,LanguageManager.getInstance().labels.reports.salesReports);
+				component.reportsName = LanguageManager.getInstance().labels.reports.salesReports;
+				return window;
+			}
+			
+			private function filtersInfoChangedHandler(event:Event):void
+			{
+				this.filtersInfo = filtersTab.filtersInfo;
+			}
+		]]>
+	</mx:Script>
+	<reports:defaultSearchParams>
+		<mx:XML xmlns="">
+			<searchParams type="CommercialDocument">
+				 <filters>	
+				 </filters> 
+			</searchParams>
+		</mx:XML>
+	</reports:defaultSearchParams>
+	
+	<reports:filtersComponent>
+		<reports:ReportFilters imInSales="true" id="filtersTab" documentCategories="0,5,13" label="{LanguageManager.getInstance().labels.reports.filters.filters}" filterInfoChanged="filtersInfoChangedHandler(event)" filtersInfo="{filtersInfo}" searchParams="{defaultSearchParams}" width="100%" height="100%"/>
+	</reports:filtersComponent>
+	
+	<salesReports:ReportByItem label="{LanguageManager.getInstance().labels.reports.headers.byAssortments}" reportsName="{reportsName}" filtersInfo="{filtersInfo}" procedure="reports.p_getSalesByItems" width="100%" height="100%" showProgressBar="{showProgressBar}"/>
+	<salesReports:ReportByItemGroups label="{LanguageManager.getInstance().labels.reports.headers.byAssortmentsGroups}" reportsName="{reportsName}" filtersInfo="{filtersInfo}" procedure="reports.p_getSalesByItemGroup" width="100%" height="100%" showProgressBar="{showProgressBar}"/>
+	<salesReports:ReportByContractor label="{LanguageManager.getInstance().labels.reports.headers.byContractors}" reportsName="{reportsName}" filtersInfo="{filtersInfo}" procedure="reports.p_getSalesByContractor" width="100%" height="100%" showProgressBar="{showProgressBar}"/>
+	<salesReports:ReportByContractorGroups label="{LanguageManager.getInstance().labels.reports.headers.byContractorsGroups}" reportsName="{reportsName}" filtersInfo="{filtersInfo}" procedure="reports.p_getSalesByContractorGroup" width="100%" height="100%" showProgressBar="{showProgressBar}"/>
+	<salesReports:ReportByDay label="{LanguageManager.getInstance().labels.reports.headers.byDays}" reportsName="{reportsName}" filtersInfo="{filtersInfo}" procedure="reports.p_getSalesByDay" width="100%" height="100%"/>
+	<salesReports:ReportByMonth label="{LanguageManager.getInstance().labels.reports.headers.byMonths}" reportsName="{reportsName}" filtersInfo="{filtersInfo}" procedure="reports.p_getSalesByMonth" width="100%" height="100%"/>
+	<salesReports:ReportByQuarter label="{LanguageManager.getInstance().labels.reports.headers.byQuarters}" reportsName="{reportsName}" filtersInfo="{filtersInfo}" procedure="reports.p_getSalesByQuarter" width="100%" height="100%"/>
+	<salesReports:ReportByPaymentMethod label="{LanguageManager.getInstance().labels.reports.headers.byPayment}" reportsName="{reportsName}" filtersInfo="{filtersInfo}" procedure="reports.p_getSalesByPaymentMethod" width="100%" height="100%"/>
+	<salesReports:ReportByVAT label="{LanguageManager.getInstance().labels.reports.headers.byVatReport}" reportsName="{reportsName}" filtersInfo="{filtersInfo}" procedure="reports.p_getSalesByVatRate" width="100%" height="100%"/>
+	<!--<reports:ReportByDocumentFeatures label="wg cech księgowych" reportsName="{reportsName}" procedure="reports.p_getSalesByDocumentFeature" width="100%" height="100%"/>-->
+	<!--<salesReports:ReportBySalesOrder label="zamówienia - sprzedaż" reportsName="{reportsName}" procedure="[reports].[p_getSalesOrders]" width="100%" height="100%" showProgressBar="{showProgressBar}"/>-->
+</reports:ReportContainer>

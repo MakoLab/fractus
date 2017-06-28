@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		layout="absolute"
+		xmlns:lineList="com.makolab.components.lineList.*"
+		xmlns:model="com.makolab.fractus.model.*"
+		xmlns:layoutComponents="com.makolab.components.layoutComponents.*"
+		xmlns:groupTree="com.makolab.components.catalogue.groupTree.*"
+		xmlns:catalogue="src.com.makolab.components.catalogue.*"
+		creationComplete="main()"
+	>
+	
+	<mx:Script>
+		<![CDATA[
+			import assets.IconManager;
+			private function main():void
+			{
+				
+			}
+		]]>
+	</mx:Script>
+	
+	<groupTree:GroupTree
+			x="10"
+			y="40"
+			id="tree"
+			width="400"
+			height="600"
+			dataProvider="{groupsXML}"
+			groupIcon={IconManager.getIcon('group_subgroup_small')};
+			groupFolderIcon={IconManager.getIcon('group_group_small')};
+			language="{cbLang.selectedItem}"
+			multipleSelection="{cbMultiSelect.selectedItem}"
+			editable="false"
+			dragEnabled="true"
+			dragMoveEnabled="true"
+			dropEnabled="true"
+		/>
+	
+	<!--itemEditor="com.makolab.components.catalogue.groupTree.GroupTreeItemEditor"-->
+			
+	<mx:TextArea id="ta" text="{groupsXML.*}" x="450" y="40" height="600" width="400" dragEnter="dragEnter(event)" dragDrop="dragDrop(event)"/>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.DragManager;
+			import mx.events.DragEvent;
+			private function dragEnter(event:DragEvent):void
+			{
+				DragManager.acceptDragDrop(ta);
+			}
+			
+			private function dragDrop(event:DragEvent):void
+			{
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:HBox x="10" y="10">
+		<mx:Label text="Language"/>
+		<mx:ComboBox id="cbLang" dataProvider="{['pl', 'en']}" width="100" />
+		<mx:Label text="Multiple selection enabled"/>
+		<mx:ComboBox id="cbMultiSelect" dataProvider="{[true, false]}" width="100"/>
+	</mx:HBox>
+	
+	<mx:XML id="groupsXML" source="xml/contractors.groups.xml"/>
+
+</mx:Application>

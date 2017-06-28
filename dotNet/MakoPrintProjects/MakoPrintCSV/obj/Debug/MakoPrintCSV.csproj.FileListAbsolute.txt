@@ -1,0 +1,12 @@
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintCSV\bin\Debug\MakoPrintCSV.XML
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintCSV\bin\Debug\MakoPrintCSV.dll
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintCSV\bin\Debug\MakoPrintCSV.pdb
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintCSV\obj\Debug\MakoPrintCSV.csprojResolveAssemblyReference.cache
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintCSV\obj\Debug\MakoPrintCSV.dll
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintCSV\obj\Debug\MakoPrintCSV.pdb
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintCSV\bin\Debug\MakoPrintCSV.XML
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintCSV\bin\Debug\MakoPrintCSV.dll
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintCSV\bin\Debug\MakoPrintCSV.pdb
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintCSV\obj\Debug\MakoPrintCSV.csprojResolveAssemblyReference.cache
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintCSV\obj\Debug\MakoPrintCSV.dll
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintCSV\obj\Debug\MakoPrintCSV.pdb

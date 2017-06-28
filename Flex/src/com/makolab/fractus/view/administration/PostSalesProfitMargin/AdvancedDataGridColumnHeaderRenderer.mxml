@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" height="32" width="100%" verticalAlign="middle" mouseOver="mouseOverHandler(event)" mouseOut="mouseOutHandler(event)" horizontalScrollPolicy="off" verticalScrollPolicy="off" horizontalGap="0">
+	
+	<mx:Metadata>
+		[Event(name="addColumn", type="flash.events.Event")]
+		[Event(name="removeColumn", type="flash.events.Event")]
+		[Event(name="editColumnHeader", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Image;
+			import com.makolab.fractus.model.ModelLocator;
+			import assets.IconManager;
+			import mx.controls.DataGrid;
+			import mx.events.DataGridEvent;
+			
+			[Bindable] private var mouseIsOver:Boolean;
+			[Bindable] private var editIcon:Class = IconManager.getIcon("edit_small");
+			[Bindable] private var addIcon:Class = IconManager.getIcon("add_small");
+			[Bindable] private var deleteIcon:Class = IconManager.getIcon("delete_small");
+			
+			private function mouseOverHandler(event:MouseEvent):void{mouseIsOver = true;}
+			private function mouseOutHandler(event:MouseEvent):void {mouseIsOver = false;}
+			
+			private function addButtonClickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new Event("addColumn"));
+				if(owner)owner.dispatchEvent(new DataGridEvent("addColumn",false,false,columnIndex,data.dataField));
+			}
+			private function removeButtonClickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new Event("removeColumn"));
+				if(owner)owner.dispatchEvent(new DataGridEvent("removeColumn",false,false,columnIndex,data.dataField));
+			}
+			private function editButtonClickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new Event("editColumnHeader"));
+				if(owner)owner.dispatchEvent(new DataGridEvent("editColumnHeader",false,false,columnIndex,data.dataField));
+			}
+			public function get columnIndex():int
+			{
+				var index:int = -1;
+				for (var i:int = 0; i < (owner as DataGrid).columns.length; i++)
+				{
+					if (this.data == (owner as DataGrid).columns[i])
+					{
+						index = i;
+						break;
+					}
+				}
+				return index;
+			}
+		]]>
+	</mx:Script>
+	<mx:Text text="{data.headerText}" width="100%" selectable="false" fontWeight="bold"/>
+	<mx:Button textAlign="center" width="32" height="32" click="editButtonClickHandler(event)" visible="{mouseIsOver}" toolTip="Edytuj" icon="{editIcon}"/>
+	<mx:VBox height="100%" verticalGap="0">
+		<mx:Button label="+" width="16" height="16" visible="{mouseIsOver}" click="addButtonClickHandler(event)" toolTip="Dodaj kolumnę" icon="{addIcon}"/>
+		<mx:Button label="-" width="16" height="16" visible="{mouseIsOver}" click="removeButtonClickHandler(event)" toolTip="Usuń kolumnę" icon="{deleteIcon}"/>
+	</mx:VBox>
+</mx:HBox>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:LinkButton xmlns:mx="http://www.adobe.com/2006/mxml" click="handleClick(event)" doubleClickEnabled="false" width="40" height="25">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.inputComponents.DataObjectManager;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			import assets.IconManager;
+			
+			private var _data:Object;
+			
+			private var commercialDocumentId:String;
+			
+			private var financialDocumentId:String;
+			
+			public override function set data(value:Object):void		
+			{
+				this._data = value;
+				
+				if(data)
+				{
+					if(data.@commercialDocumentId.length() > 0 && String(data.@commercialDocumentId) != "")
+						this.commercialDocumentId = data.@commercialDocumentId;
+					else
+						this.commercialDocumentId = null;
+					
+					if(data.@financialDocumentId.length() > 0 && String(data.@financialDocumentId) != "")
+						this.financialDocumentId = data.@financialDocumentId;
+					else
+						this.financialDocumentId = null;	
+				}
+				else
+				{
+					this.commercialDocumentId = null;
+					this.financialDocumentId = null;
+				}
+				
+				if(this.commercialDocumentId == null && this.financialDocumentId == null)
+				{
+					this.enabled = false;
+					this.setStyle("icon", null);
+				}
+				else
+				{
+					this.setStyle("icon", IconManager.getIcon('properties_small'));
+					this.enabled = true;
+				}	
+			}
+			
+			public override function get data():Object
+			{
+				return this._data;
+			}
+			
+			private function handleClick(event:MouseEvent):void
+			{
+				if(this.commercialDocumentId != null)
+					DocumentRenderer.showWindow(DocumentTypeDescriptor.COMMERCIAL_DOCUMENT, this.commercialDocumentId);
+				else if (this.financialDocumentId != null)
+					DocumentRenderer.showWindow(DocumentTypeDescriptor.FINANCIAL_DOCUMENT, this.financialDocumentId);
+			}
+		]]>
+	</mx:Script>
+</mx:LinkButton>

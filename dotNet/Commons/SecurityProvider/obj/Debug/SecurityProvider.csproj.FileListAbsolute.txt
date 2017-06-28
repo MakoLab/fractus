@@ -1,0 +1,7 @@
+C:\Projekty\trunk\dotNet\Commons\SecurityProvider\bin\Debug\SecurityProvider.dll
+C:\Projekty\trunk\dotNet\Commons\SecurityProvider\bin\Debug\SecurityProvider.pdb
+C:\Projekty\trunk\dotNet\Commons\SecurityProvider\bin\Debug\Microsoft.IdentityModel.dll
+C:\Projekty\trunk\dotNet\Commons\SecurityProvider\bin\Debug\Thinktecture.IdentityModel.dll
+C:\Projekty\trunk\dotNet\Commons\SecurityProvider\obj\Debug\SecurityProvider.dll
+C:\Projekty\trunk\dotNet\Commons\SecurityProvider\obj\Debug\SecurityProvider.pdb
+C:\Projekty\trunk\dotNet\Commons\SecurityProvider\obj\Debug\SecurityProvider.csprojResolveAssemblyReference.cache

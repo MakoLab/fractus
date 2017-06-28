@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DocumentList 
+	icon="{IconManager.getIcon('warehouse_list')}"
+	themeColor="{IconManager.WAREHOUSE_COLOR}"
+	xmlns="com.makolab.fractus.view.documents.documentLists.*" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:catalogue="com.makolab.components.catalogue.*" 
+	xmlns:data="data.*"
+	xmlns:languageManager="com.makolab.fractus.model.LanguageManager"
+	dblClickPermissionKey="warehouse.preview"
+	xmlns:graph="com.makolab.fractus.view.graph.*"
+	config="{listConfig}"
+	permissionKey="warehouse"
+	listPermissionKey="warehouse.list"
+	>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import assets.IconManager;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+			[Bindable]
+			public var listConfig:XML = model.configManager.getXML("documents.lists.warehouse");
+		
+		]]>
+	</mx:Script>
+	
+	<!-- OPERATIONS -->
+	<itemOperations>
+		<catalogue:CatalogueOperation permissionKey="warehouse.preview" operationId="operationPreviewDocument" label="{LanguageManager.getInstance().labels.documents.preview}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" defaultOperation="true"/>
+		<EditDocumentOperation permissionKey="warehouse.edit" category="{DocumentTypeDescriptor.CATEGORY_WAREHOUSE}"/>
+		<CorrectDocumentOperation permissionKey="warehouse.correct" documentTypeDescriptor="{this.currentDocumentTypeDescriptor}"/>
+		<catalogue:CatalogueOperation permissionKey="warehouse.printGraphical" operationId="operationPrintDocumentGraphical" label="{LanguageManager.getInstance().labels.documents.printPdf}" image="{IconManager.getIcon('print_small')}" operationInvoke="operationInvokeHandler(event)" extendedOperations="{[{ label : LanguageManager.getInstance().labels.documents.printDuplicate, operationId : 'operationPrintDocumentGraphicalDuplicate' }]}"/>
+		<catalogue:CatalogueOperation permissionKey="warehouse.printTextual" operationId="operationPrintDocumentText" label="{LanguageManager.getInstance().labels.documents.printText}" image="{IconManager.getIcon('print_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="purchase.printBarCodes" operationId="operationPrintContainerContent" label="{LanguageManager.getInstance().labels.documents.printLabels}" image="{IconManager.getIcon('print_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="warehouse.printGraphicalLocation" operationId="operationPrintDocumentGraphicalLocation" label="{LanguageManager.getInstance().labels.documents.printLocationPdf}" image="{IconManager.getIcon('print_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="warehouse.export" operationId="operationExportDocument" label="{LanguageManager.getInstance().labels.common.export}" image="{IconManager.getIcon('export_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<DocumentStatusChangeOperation permissionKey="warehouse.cancel" status="{DocumentStatusChangeOperation.CANCELLED}"/>
+		<DocumentStatusChangeOperation permissionKey="warehouse.commit" status="{DocumentStatusChangeOperation.COMMITED}"/>
+		<catalogue:CatalogueOperation permissionKey="warehouse.accountancy" operationId="operationAccountancy" label="{LanguageManager.getInstance().labels.documents.accountancy}" image="{IconManager.getIcon('add_small')}" operationInvoke="operationInvokeHandler(event)" visible="{model.headquarters}"/>
+		<catalogue:CatalogueOperation permissionKey="warehouse.addToClipboard" operationId="operationAddDocumentToClipboard" label="{LanguageManager.getInstance().labels.common.addToClipboard}" image="{IconManager.getIcon('add_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="warehouse.add" operationId="createOutcomeShift" label="{LanguageManager.getInstance().labels.warehouse.createMM}-" image="{IconManager.getIcon('add_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="warehouse.addToCart" operationId="addLinesToCart" label="{LanguageManager.getInstance().labels.cart.addLinesToCart}" image="{IconManager.getIcon('item_toCart_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink1Item" label="{LanguageManager.getLabel(listConfig.operations['link1'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link1OperationVisible}" includeInLayout="{link1OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink2Item" label="{LanguageManager.getLabel(listConfig.operations['link2'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link2OperationVisible}" includeInLayout="{link2OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink3Item" label="{LanguageManager.getLabel(listConfig.operations['link3'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link3OperationVisible}" includeInLayout="{link3OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink4Item" label="{LanguageManager.getLabel(listConfig.operations['link4'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link4OperationVisible}" includeInLayout="{link4OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink5Item" label="{LanguageManager.getLabel(listConfig.operations['link5'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link5OperationVisible}" includeInLayout="{link5OperationVisible}"/>
+	</itemOperations>
+	<!-- CONFIGURATION -->
+	<!--
+	<config>
+		<mx:XML xmlns="">
+			<config>
+				<headerColor>WAREHOUSE_COLOR</headerColor>
+				<headerColorLight>WAREHOUSE_COLOR_LIGHT</headerColorLight>
+				<objectType>WarehouseDocument</objectType>
+				<exportProfile>defaultWarehouseDocumentXml</exportProfile>
+				<columns>
+					<column field="@warehouseId" labelKey="common.warehouseShort" dataType="dictionary" width="40"/> 
+					<column field="@status" dataType="documentStatus" width="25"/>
+					<column field="@documentTypeId" labelKey="documents.type" dataType="documentType" width="70"/>
+					<column field="@fullNumber" labelKey="documents.documentNumber" width="120"/>
+					<column field="@issueDate" labelKey="documents.issueDateShort" dataType="date" width="90"/> 
+					<column field="@contractor" labelKey="contractors.contractor"/> 
+					<column field="@value" labelKey="documents.value" dataType="currency" width="100"/> 
+				</columns>
+				<summary>
+					<column field="@netValue" labelKey="documents.valueSummary" dataType="currency"/>
+				</summary>
+				<getItemDataParams>
+					<type>Document</type>
+					<id/>
+				</getItemDataParams>
+				<filterField>@fullNumber</filterField>
+				<searchParams type="WarehouseDocument">
+					<pageSize>200</pageSize>
+					<page>1</page>
+					<columns>
+						<column field="documentTypeId" column="documentTypeId"/>
+						<column field="status" column="status"/>
+						<column field="fullNumber"/>
+						<column field="issueDate" sortOrder="1" sortType="DESC"/>
+						<column field="contractor" column="fullName" relatedObject="contractor"/>
+						<column field="warehouseId"/>
+						<column field="value"/>
+					</columns>
+				</searchParams>
+				<filters>
+				  	<filter label="" type="dateFilter">
+					  		<parameters>
+					  			<parameter label="" name="nip" type="nip"/>
+					  		</parameters>
+					</filter>
+				  	<filter label="Numer dokumentu" type="docNumberFilter"/>
+				  	<filter label="Status dokumentu" type="docStatusFilter"/>
+				  	<filter labelKey="documents.documentType" label="Typ dokumentu" type="docTypeFilter" itemsType="1,7,8"/>
+				  	<filter label="Firma" type="docCompanyFilter"/>
+				  	<filter label="Magazyn" type="docWarehouseFilter"/>
+				  	<filter label="Ust. numerowania" type="docNumSettingsFilter"/>
+				  	<filter label="Powiązania" type="docRelationsFilter"/>
+				</filters>
+			</config>
+		</mx:XML>
+	</config>
+	-->
+</DocumentList>

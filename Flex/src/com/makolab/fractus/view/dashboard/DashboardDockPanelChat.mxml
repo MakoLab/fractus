@@ -1,0 +1,418 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DockPanel 	xmlns="com.makolab.components.layoutComponents.*" 
+			xmlns:mx="http://www.adobe.com/2006/mxml" 
+			width="100%" maxHeight="700" height="700"
+			xmlns:list="com.makolab.components.list.*" 
+			creationComplete="callCommand();grid_b.contextMenu.customItems=[];grid_u.contextMenu.customItems=[];" 
+			headerColors="[0xe4ff00, 0x819400]" titleStyleName="bold" 
+			title="{LanguageManager.getInstance().labels.dashboard.ChatTitle}">
+			
+			<mx:HBox width="100%" height="100%" paddingRight="5">
+				<mx:TabNavigator id="tn" width="30%" height="100%" creationPolicy="all">
+					<mx:VBox height="100%" id="box1" label="{LanguageManager.getInstance().labels.dashboard.branches}">
+						<list:CommonGrid allowMultipleSelection="false" id="grid_b" width="100%" height="100%" dataProvider="{temp}" click="handleItemClickB(event)">		
+							<list:columns>
+								<mx:DataGridColumn dataField="@label" headerText=""/>
+							</list:columns>
+						</list:CommonGrid>
+					</mx:VBox>
+					<mx:VBox height="100%" id="box2" label="{LanguageManager.getInstance().labels.dashboard.users}">
+						<list:CommonGrid  allowMultipleSelection="false" id="grid_u" width="100%" height="100%" dataProvider="{temp1}" click="handleItemClickU(event)">		
+							<list:columns>
+								<mx:DataGridColumn dataField="@label" headerText=""/>
+							</list:columns>
+						</list:CommonGrid>
+					</mx:VBox>
+				</mx:TabNavigator>
+				<mx:VBox width="70%" height="100%" horizontalAlign="left">
+					<mx:TextArea id="messages" height="70%" width="100%" htmlText="{formattedMessage}"/>
+					<mx:Label text="{LanguageManager.getInstance().labels.dashboard.message}" textAlign="left"/>
+					<mx:TextArea id="message" height="20%"  width="100%" textInput="txtInputHandler(event)">
+					</mx:TextArea>
+					<mx:HBox horizontalAlign="right" width="100%">
+	    				<mx:CheckBox  id="sendCh" label="{LanguageManager.getInstance().labels.dashboard.showAllMessages}" height="20" paddingRight="20" change="checkBoxChange()"/>
+						<mx:Button label="{LanguageManager.getInstance().labels.dashboard.send}" click="sendMessage();"/>
+	    					
+					</mx:HBox>
+				</mx:VBox>
+		</mx:HBox>
+			
+			<mx:Script>
+				<![CDATA[
+					import org.gif.events.TimeoutEvent;
+					import mx.messaging.channels.StreamingAMFChannel;
+					import com.greensock.loading.BinaryDataLoader;
+					import com.makolab.fractus.model.LanguageManager;
+					import com.makolab.fractus.model.DictionaryManager;
+					import mx.controls.dataGridClasses.DataGridColumn;
+					import com.makolab.fractus.model.ModelLocator;
+					import com.makolab.fractus.commands.AbstractCommand;
+					import com.makolab.components.util.Tools;
+					import com.makolab.fractus.view.documents.reports.salesReports.SalesReport;
+					import mx.controls.Alert;
+					import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+					import mx.rpc.events.ResultEvent;
+					
+					private var cmd:ExecuteCustomProcedureCommand;
+					private var mod:ModelLocator=ModelLocator.getInstance();
+					
+					private var _config:XMLList;
+					public function set config(_c:XMLList):void
+					{
+						_config=_c;
+					}
+					[Bindable]
+					private var formattedMessage:String;
+					[Bindable]
+					private var temp:XMLList;
+					[Bindable]
+					private var temp1:XMLList;
+					
+					private var lastDate:Date;
+					private var lastMessages:XML;
+					private var myTimer:Timer;
+					private var tick:Number=10000;
+					
+					private var selectedBId:String="";
+					private var selectedUId:String="";
+					
+					
+					private var myId:String=mod.sessionManager.userId;
+					private var myBranch:String=mod.branchId;
+					private var branches:XMLList = DictionaryManager.getInstance().dictionaries.branches;
+					private var users:XMLList = DictionaryManager.getInstance().dictionaries.users;
+						
+					private var messageList:XML=<root/>;
+					private var messageListA:Array;
+					
+					
+					private function callCommand():void
+					{
+						lastDate=new Date();
+						createDataProvider();
+						setTimer();
+						cmd = new ExecuteCustomProcedureCommand('tools.p_getUserMessages', <root><applicationUserId>{mod.sessionManager.userId}</applicationUserId><showAll>{sendCh.selected?1:0}</showAll><fromDate/></root>);
+						cmd.addEventListener(ResultEvent.RESULT,generateReportResult);
+						cmd.execute();
+					}
+					private function checkBoxChange():void
+					{
+					//	trace("checkBoxChange:",sendCh.selected?1:0);
+						cmd = new ExecuteCustomProcedureCommand('tools.p_getUserMessages', <root><applicationUserId>{mod.sessionManager.userId}</applicationUserId><showAll>{sendCh.selected?1:0}</showAll><fromDate/></root>);
+						cmd.addEventListener(ResultEvent.RESULT,generateReportResult);
+						mod.isDashboard=true;
+						cmd.execute();
+						mod.isDashboard=false;
+					}
+					private function setTimer():void
+					{
+						if(_config && _config.refreshrate)
+							tick=_config.refreshrate.@val;
+
+						myTimer=new Timer(tick);
+						myTimer.addEventListener(TimerEvent.TIMER,callForNew);
+						myTimer.start();
+					}
+					public function stopTimer()
+					{
+						if(myTimer&&myTimer.running)
+							myTimer.stop();
+					}
+					private function callForNew(e:TimerEvent):void
+					{
+						cmd = new ExecuteCustomProcedureCommand('tools.p_getUserMessages', <root><applicationUserId>{mod.sessionManager.userId}</applicationUserId><showAll>0</showAll><fromDate>{convDateTime(lastDate)}</fromDate></root>);
+						cmd.addEventListener(ResultEvent.RESULT,addMessages);
+						mod.isDashboard=true;
+						cmd.execute();
+						mod.isDashboard=false;
+						lastDate=new Date();
+					}
+					private function addMessages(event:ResultEvent):void
+					{
+						if(XML(event.result).message.children().length()>0)
+						{
+							for each(var mess:XML in XML(event.result).message.children())
+							{
+								var ok:Boolean=true;
+								if(lastMessages)
+								{
+									for each(var mess1:XML in lastMessages.message.children())
+									{
+										if(mess.id.toString()==mess1.id.toString())
+										{
+											ok=false;
+										}
+									}	
+									
+								}
+
+							if(ok)
+									{
+									//var x:XML=messageList.message.chidren;
+									var y:XML=mess.copy();
+									messageListA.push(y);
+									}
+							}
+						lastMessages=XML(event.result);
+						getMessages(selectedBId,selectedUId);
+						//trace("new message:",XML(event.result).message.children().length()," czas:",convDateTime(new Date()),selectedBId,selectedUId,messageListA.length);
+						}
+						
+					}
+					private function sayIveSeenIt(mess:XML):void
+					{
+						var mess1:XML=<root><message/></root>
+						mess1.message.appendChild(mess); 
+						cmd = new ExecuteCustomProcedureCommand('tools.p_updateUserMessage', mess1);
+						cmd.addEventListener(ResultEvent.RESULT,messUpdateHandler);
+						mod.isDashboard=true;
+						cmd.execute();
+						mod.isDashboard=false;
+					}
+					private function getMessages(branchId:String="", userId:String=""):void
+					{
+						var txt:String="";
+						var u:String="";
+						var b:String="";
+						
+						var flashEnvelopeMsg:String="";
+						for each(var mess:XML in messageListA){
+							//setting envelope icon
+							
+							if(
+							((mess.receiverBranchId==branchId||branchId=="") &&
+							(userId=="" || mess.receiverId==userId))//do mnie lub mojego oddzialu
+							||
+							((mess.branchId==branchId||branchId=="") &&
+							(userId=="" || mess.applicationUserId==userId))// moje lub mojego oddzialu
+							||
+							(mess.receiverBranchId=="" && mess.receiverId=="")// do nikogo tak na wszelki wypadek
+							
+							)
+							{
+								if(userId!=""||branchId!="")
+								{
+									if(mess.receiveDate== undefined||mess.receiveDate.length==0)
+									{
+										mess.receiveDate=convDateTime(new Date());
+										sayIveSeenIt(mess);
+									}
+								}
+								if(mess.branchId!="")
+								{
+									if(mess.branchId==myBranch)
+									b='<b>';
+									b+=branches.(id.toString()==mess.branchId.toString()).label.(@lang = LanguageManager.getInstance().currentLanguage);
+									b+=": ";
+									if(mess.branchId==myBranch)
+									b+='</b>';
+								}
+								if(mess.applicationUserId!="")
+								{
+									if(mess.applicationUserId==myId)
+									u='<b>';
+									u+=users.(id.toString()==mess.applicationUserId.toString()).label.toString();
+									u+=": ";
+									if(mess.applicationUserId==myId)
+									u+='</b>';
+								}
+								txt=txt+b+u+mess.messageText+'\n';
+							}
+							
+							if(mess.receiveDate== undefined||mess.receiveDate.length==0)
+							{
+								var od:String=""
+								if(mess.applicationUserId!=""&&mess.applicationUserId!=undefined &&mess.applicationUserId==userId)
+								{
+									od=users.(id.toString()==mess.applicationUserId.toString()).label.toString();
+									
+									
+								}
+								if(mess.branchId!=undefined&& branchId!=""&&od=="")
+								{
+										od+=branches.(id.toString()==mess.branchId.toString()).label.(@lang = LanguageManager.getInstance().currentLanguage);
+								}
+								flashEnvelopeMsg+=LanguageManager.getInstance().labels.dashboard.hasMessages+ od;
+							}
+							
+							
+						}
+
+					mod.msg=flashEnvelopeMsg;
+					formattedMessage	=txt;
+					}		
+					function handler(event:KeyboardEvent){
+
+					   // if the key is ENTER
+					   if(event.charCode == 13)
+					       {
+					       	event.preventDefault();
+					       	event.stopImmediatePropagation();
+					       	sendMessage();
+					       }
+					
+					}
+					private function txtInputHandler(event:TextEvent):void{
+			              if (event.text=="\n"){
+			                    event.preventDefault();
+			                    event.stopImmediatePropagation();
+			                    sendMessage();
+			              }
+			       }
+					private function sendMessage(e:Event=null):void
+					{
+						if(message.text!=""&&
+							(selectedBId!=""||selectedUId!="")
+						)
+						{
+							var mess:XML=
+							<root>
+       <message>
+    <entry>
+      <id></id>
+      <date>{convDateTime(new Date())}</date>
+      <applicationUserId>{myId}</applicationUserId>
+      <title></title>
+      <messageText>{message.text}</messageText>
+      <receiverId>{selectedUId}</receiverId>
+      <receiveDate></receiveDate>
+      <branchId>{myBranch}</branchId>
+     <receiverBranchId>{selectedBId}</receiverBranchId>
+    </entry>
+       </message>
+</root> 
+	cmd = new ExecuteCustomProcedureCommand('tools.p_sendUserMessage', mess);
+						cmd.addEventListener(ResultEvent.RESULT,sendMessageHandler);
+						mod.isDashboard=true;
+						cmd.execute();
+						mod.isDashboard=false;
+							message.text="";
+							
+						}
+					}
+					private function createDataProvider():void
+					{
+						//message.addEventListener(KeyboardEvent.KEY_DOWN,handler);
+						temp = new XMLList();
+					
+						for each(var branch:XML in branches){
+							var item:XML = <branch/>;
+							item.@id = branch.id.toString();
+							item.@label = branch.label.(@lang = LanguageManager.getInstance().currentLanguage);
+							item.@color =0xFF0000; 
+							item.@dataType="color";
+							item.@dependencyField="@color";
+							temp = temp + item;
+						}
+
+				
+					temp1 = new XMLList();
+					for each(var user:XML in users){
+							var item:XML = <user/>;
+							item.@id = user.id.toString();
+							item.@label = user.label.toString();
+							temp1 = temp1 + item;
+						}
+							
+					}
+					private function generateReportResult(event:ResultEvent=null):void
+					{
+					messageList= XML(event.result);
+					messageListA=null;
+					messageListA=new Array();
+					for each(var mess:XML in messageList.message.children())
+					{
+						messageListA.push(mess);
+					}
+					lastMessages=messageList.copy();
+					getMessages(selectedBId,selectedUId);
+					}
+					private function sendMessageHandler(event:ResultEvent=null):void
+					{
+						//trace("sendMessageHandler:",XML(event.result));
+					}
+					private function messUpdateHandler(event:ResultEvent=null):void
+					{
+					//	trace("messUpdateHandler:",XML(event.result));
+					}
+					
+					protected function getPayement(id_:String):String
+					{
+						return ModelLocator.getInstance().dictionaryManager.dictionaries.paymentMethod.(id.toString() == id_).label;
+					}
+					protected function getBranch(id_:String):String
+					{
+						return ModelLocator.getInstance().dictionaryManager.dictionaries.branches.(id.toString() == id_).label;
+					}
+					private function hasCell(a:Array,val:String):Boolean
+					{
+						for(var i:int=0;i<a.length;i++)
+						{
+							if(a[i]==val) return true;
+						}
+						return false;
+					}
+				
+					private function goToRaport():void{
+						SalesReport.showWindow();
+					}
+					private function handleItemClickU(event:MouseEvent):void
+					{
+						if(grid_u.selectedItem  && grid_u.selectedItem.@id.toString() != selectedUId) 
+						{
+							selectedUId = grid_u.selectedItem.@id.toString();
+							selectedBId="";
+							if(sendCh.selected)
+							{
+								checkBoxChange();
+							}
+							else
+							getMessages("",selectedUId);
+						}
+					}
+					private function handleItemClickB(event:MouseEvent):void
+					{
+						
+						if(grid_b.selectedItem  && grid_b.selectedItem.@id.toString() != selectedBId) 
+						{
+							selectedBId = grid_b.selectedItem.@id.toString();
+							selectedUId="";
+							if(sendCh.selected)
+							{
+								checkBoxChange();
+							}
+							else
+							getMessages(selectedBId);
+						}
+					}
+					private function convDate(aDate:Date):String 
+					{
+						if(aDate)	{
+							var SEPARATOR:String = "-";		    
+							var mm:String = (aDate.month + 1).toString();
+							if (mm.length < 2) mm = "0" + mm;		    
+							var dd:String = aDate.date.toString();
+							if (dd.length < 2) dd = "0" + dd;		    
+							var yyyy:String = aDate.fullYear.toString();
+							return yyyy + SEPARATOR + mm + SEPARATOR + dd;
+						}
+						else return "";
+					}
+					private function convDateTime(aDate:Date):String {
+				if(aDate)	{
+					var SEPARATOR:String = "-";		    
+					var mm:String = (aDate.month + 1).toString();
+					if (mm.length < 2) mm = "0" + mm;		    
+					var dd:String = aDate.date.toString();
+					if (dd.length < 2) dd = "0" + dd;		    
+					var yyyy:String = aDate.fullYear.toString();
+					aDate.toTimeString()
+					var time:String = aDate.toTimeString().substr(0,8);
+					return yyyy + SEPARATOR + mm + SEPARATOR + dd + " " + time;
+				}
+				else return "";
+			}
+					
+				]]>
+			</mx:Script>
+</DockPanel>

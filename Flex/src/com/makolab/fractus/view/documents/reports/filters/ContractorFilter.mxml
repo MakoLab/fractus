@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem direction="horizontal" implements="com.makolab.fractus.view.documents.reports.filters.IReportFilter" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:catalogue="com.makolab.fractus.view.catalogue.*">
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.CatalogueFilterError;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			private var _parameters:XML
+			[Bindable]
+			public var columnName:String = "contractorId";
+			[Bindable]
+			public var allowEmptySelection:Boolean = false;
+			
+			[Bindable]
+			public function set parameters(value:XML):void
+			{
+				_parameters = value;
+			}
+			
+			public function get parameters():XML
+			{
+				return _parameters;
+			}
+			
+			private function setParameters(params:XML):void
+			{
+				if(useThisFilter.selected){
+					var filterNodes:XMLList = params.filters.column.(@field == columnName);
+					if(filterNodes.length() == 0){
+						var newCondition:XML = <column/>;
+						newCondition.@field = columnName;
+						if(contractorSearch.cs.itemId)newCondition.* = contractorSearch.cs.itemId.toString();
+						params.filters.columns += newCondition;
+					}else{
+						filterNodes[0].* = contractorSearch.cs.itemId.toString();
+					}
+				}else{
+					if(!params.filters)params.filters = "";
+					var filterNodes2:XMLList = params.filters.column.(@field == columnName);
+					if(filterNodes2.length() == 1)delete filterNodes2[0];
+				}
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			public function get validationError():String
+			{
+				if(useThisFilter.selected && (!contractorSearch.cs.itemId || contractorSearch.cs.itemId == "")){
+					this.setStyle("backgroundColor",0xff0000);
+					this.setStyle("backgroundAlpha",0.2);
+					this.errorString = LanguageManager.getInstance().labels.reports.filters.noContractorSelected;
+					return LanguageManager.getInstance().labels.reports.filters.noContractorSelected;
+				}
+				this.setStyle("backgroundColor",0xffffff);
+				this.setStyle("backgroundAlpha",0.0);
+				errorString = "";
+				return null;
+			}
+			
+			private function needlessFunction(argument1:Object,argument2:Object):void{setParameters(parameters);}
+			
+			public function get stringValue():String
+			{
+				if (!useThisFilter.selected) return null;
+				return contractorSearch.text;
+			}
+		]]>
+	</mx:Script>
+	<mx:CheckBox id="useThisFilter" change="setParameters(parameters)"/>
+	<catalogue:ContractorSearchEditor 
+		id="contractorSearch"
+		searchCommandType="contractors"
+		labelField="@fullName"
+		enabled="{useThisFilter.selected}"
+		setFunction="{needlessFunction}"
+		showItemOperations="false"
+		width="100%"
+		searchResult="{setParameters(parameters)}"
+	/>
+</mx:FormItem>

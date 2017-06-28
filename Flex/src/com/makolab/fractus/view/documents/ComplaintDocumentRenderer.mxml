@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" xmlns:components="com.makolab.components.lineList.*" 
+	height="100%" creationComplete="init()" 
+	xmlns:documents="com.makolab.fractus.view.documents.*" 
+	xmlns:generic="com.makolab.fractus.view.generic.*" 
+	xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*">
+	<!--
+	<mx:Style source="/assets/stylesheets/documentRenderer.css"/>
+	-->
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.Clipboard;
+			import mx.controls.TextArea;
+			import com.makolab.fractus.view.generic.DocumentStatusRenderer;
+			import com.makolab.fractus.view.graph.DocumentRelationsGraph;
+			import mx.events.ListEvent;
+			import com.makolab.fractus.view.documents.plugins.CommercialDocumentCalculationPlugin;
+			import com.makolab.components.inputComponents.StringCorrectionRenderer;
+			import com.makolab.components.inputComponents.CorrectionRenderer;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.components.util.ComponentExportManager;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.view.ComponentWindow;
+			import mx.core.UIComponent;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.components.inputComponents.CurrencyRenderer;
+			import com.makolab.fractus.view.documents.documentControls.VatTableComponent;
+			import mx.controls.DataGrid;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import com.makolab.components.util.Tools;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Text;
+			import mx.controls.Label;
+			import mx.containers.HBox;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import assets.IconManager;
+			
+			[Bindable]
+			protected var dictionaryManager:DictionaryManager = DictionaryManager.getInstance();
+			
+			[Bindable]
+			private var _data:Object;
+			
+			private var componentInitializedForType:String = '';
+			
+			[Bindable] public var docType:String;
+			
+			[Bindable] public var documentXML:XML;
+			
+			[Bindable] public var issuerAddressId:String;
+			
+			[Bindable] public var symbol:String;
+			
+			[Bindable] public var contractorAddressId:String;
+			
+			[Bindable] public var contractor:Boolean;
+			
+			[Bindable] private var labels:Object;
+			
+			[Bindable] private var printProfile:String;
+			[Bindable] private var exportProfile:String;
+			
+			[Bindable] private var documentId:String;
+			
+			[Bindable] public var typeDescriptor:DocumentTypeDescriptor;
+			[Bindable] private var linesXML:XMLList;
+			
+			protected function init():void
+			{	
+				this.setValues();
+				this.addHtmlLines();
+				
+				this.vboxLines.invalidateDisplayList();
+				this.vboxLines.invalidateProperties();
+				this.vboxLines.invalidateSize();
+			}
+						
+			public override function set data(value:Object):void
+			{
+				_data = value;
+				// ustal typ dok
+				if (_data)
+				{
+					documentXML = XML(_data);
+					docType = documentXML.@type;
+					typeDescriptor = new DocumentTypeDescriptor(documentXML.documentTypeId);
+					this.setValues();
+				}
+				else
+				{
+					documentXML = null;
+					docType = null;
+				}
+			}
+			
+			private function setValues():void
+			{
+				if(this.documentXML)
+				{
+					this.documentId = documentXML.id;
+					this.linesXML = documentXML.lines.line;
+					this.printProfile = typeDescriptor.getDefaultPrintProfile();
+					
+					issuerAddressId = documentXML.issuer.addressId;
+					
+					if(documentXML.contractor)
+					{
+						contractor = true;
+						contractorAddressId = documentXML.contractor.addressId;
+					}
+					else contractor = false;
+				}
+			}
+			
+			[Bindable]
+			public override function get data():Object
+			{
+				return _data;
+			}
+			
+			public static function showWindow(documentId:String):ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var renderer:ComplaintDocumentRenderer = new ComplaintDocumentRenderer();
+				window.showLater(renderer);
+				var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand(DocumentTypeDescriptor.COMPLAINT_DOCUMENT, documentId);
+				cmd.targetObject = renderer;
+				cmd.targetField = 'data';
+				cmd.noRoot = true;
+				cmd.addEventListener(ResultEvent.RESULT, window.showLaterHandler);
+				cmd.execute();
+				window.show(null, new Rectangle(-1, -1, 850, 620));
+				return window;
+			}
+			
+			private function exportDocument(profile:String):void
+			{
+				ComponentExportManager.getInstance().exportObject(profile, documentId, 'content');
+			}
+			
+			
+			private function handleDoubleClick(event:ListEvent):void
+			{
+				if (ModelLocator.getInstance().isDebug()) DocumentRelationsGraph.showWindow(event.itemRenderer.data.id);
+			}
+			
+			private function setPercentWidth(dest:UIComponent, value:Number):Number
+			{
+				dest.percentWidth = value;
+				return NaN;
+			}
+			
+			private function addHtmlLines():void
+			{
+				for each(var line:XML in this.linesXML)
+				{
+					var txtArea:Label = new Label();
+					//txtArea.editable = false;
+					txtArea.height = 16;
+					txtArea.percentWidth = 100;
+				
+					var unit:String = DictionaryManager.getInstance().getById(line.unitId).label.@symbol;
+					var issueDate:String = String(line.issueDate).substr(0, 10);
+					
+					txtArea.htmlText = line.ordinalNumber + ". <b>" + line.itemName + "</b> (<i>" + parseInt(line.quantity).toString() + " " + unit + "</i>) " + issueDate + "<br/>";;
+					txtArea.toolTip = "Uwagi:\n" + line.remarks;
+					
+					this.vboxLines.addChild(txtArea);
+					
+					if(line.complaintDecisions.complaintDecision.length() > 0)
+					{
+						txtArea = new Label();
+						//txtArea.editable = false;
+						txtArea.height = 17;
+						txtArea.percentWidth = 100;
+						txtArea.htmlText = "Decyzje:";
+						txtArea.setStyle("paddingLeft", 15);
+						txtArea.styleName = "label"
+						this.vboxLines.addChild(txtArea);
+						
+						for each(var decision:XML in line.complaintDecisions.complaintDecision)
+						{
+							txtArea = new Label();
+							//txtArea.editable = false;
+							txtArea.height = 16;
+							txtArea.percentWidth = 100;
+							txtArea.setStyle("paddingLeft", 15);
+							
+							unit = DictionaryManager.getInstance().getById(decision.replacementUnitId).label.@symbol;
+							issueDate = String(decision.issueDate).substr(0, 10);
+							
+							var decisionType:String = "Nieuznana";
+							
+							if(decision.decisionType == "3")
+								decisionType = "Uznana - utylizacja";
+							else if (decision.decisionType == "4")
+								decisionType = "Uznana - zwrot do dostawcy";
+								
+							var warehouse:String = DictionaryManager.getInstance().getById(decision.warehouseId).symbol;
+							
+							txtArea.htmlText = "- <b>" + decisionType + ", " + decision.replacementItemName + "</b> (<i>" + parseInt(decision.quantity).toString() + " " + unit + "</i>),"+LanguageManager.getLabel('common.warehouse')+" : " + warehouse + ", " + issueDate;
+							txtArea.toolTip = "Uzasadnienie decyzji:\n" + decision.decisionText;
+							this.vboxLines.addChild(txtArea);
+						} 
+					}
+				}			
+			}
+			
+			private function addToCart():void
+			{
+				for each (var line:XML in documentXML.lines.line)
+					Clipboard.getInstance().addElement(line);
+			}
+		]]>
+	</mx:Script>
+	<mx:Binding source="LanguageManager.getInstance().labels.documentRenderer" destination="labels"/>
+	<mx:LinkButton icon="{IconManager.getIcon('print_small')}" toolTip="{LanguageManager.getInstance().labels.common.printGraphical}" right="68" top="2" height="27" enabled="{documentId &amp;&amp; printProfile}" click="exportDocument(printProfile)"/>
+	<mx:LinkButton icon="{IconManager.getIcon('export_small')}" toolTip="{LanguageManager.getInstance().labels.common.export}" right="35" top="2" height="27" enabled="{documentId &amp;&amp; exportProfile}" click="exportDocument(exportProfile)"/>
+	<mx:LinkButton icon="{IconManager.getIcon('add_small')}" toolTip="{LanguageManager.getInstance().labels.cart.addLinesToCart}" right="2" top="2" height="27" enabled="{Boolean(documentId)}" click="addToCart()"/>
+	<mx:TabNavigator id="tabNavigator" top="10" bottom="0" left="0" right="0">
+		<mx:VBox verticalGap="2" paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="4" label="{LanguageManager.getInstance().labels.common.document}">
+			<mx:HBox width="100%">
+				<mx:VBox width="50%">
+					<mx:HBox width="100%">
+						<mx:Label text="{LanguageManager.getInstance().labels.documents.documentType}:" width="140" styleName="label"/>
+						<mx:Text text="{dictionaryManager.getById(documentXML.documentTypeId).label}"/>
+					</mx:HBox>
+				</mx:VBox>
+			</mx:HBox>
+			<mx:Text text="{dictionaryManager.getById(documentXML.documentTypeId).symbol} {documentXML.number.fullNumber}" width="100%" textAlign="center" styleName="header"/>
+			<mx:HBox width="100%">
+				<mx:HBox id="contractorHB" width="{setPercentWidth(this.contractorHB,50)}">
+					<mx:Label text="{LanguageManager.getInstance().labels.documentRenderer.issuer}:" width="140" styleName="label"/>
+					<mx:VBox width="100%" verticalGap="0">
+						<mx:Text id="txt" text="{documentXML.issuer.contractor.fullName}" width="100%"/>
+						<mx:Text text="{documentXML.issuer.contractor.addresses.address.(id == issuerAddressId).address}" width="100%"/>
+						<mx:Text text="{documentXML.issuer.contractor.addresses.address.(id == issuerAddressId).city}" width="100%"/>
+						<mx:Text text="{documentXML.issuer.contractor.nip}" width="100%"/>
+					</mx:VBox>
+				</mx:HBox>
+				<mx:HBox width="50%" visible="{contractor}" includeInLayout="{contractor}">
+					<mx:Label text="{labels.contractor}:" width="140" styleName="label"/>
+					<mx:VBox width="100%" verticalGap="0">
+						<mx:Text text="{documentXML.contractor.contractor.fullName}" width="100%"/>
+						<mx:Text text="{documentXML.contractor.contractor.addresses.address.(id == contractorAddressId).address}" width="100%"/>
+						<mx:Text text="{documentXML.contractor.contractor.addresses.address.(id == contractorAddressId).city}" width="100%"/>
+						<mx:Text text="{documentXML.contractor.contractor.nip}" width="100%"/>
+					</mx:VBox>
+				</mx:HBox>
+			</mx:HBox>
+			<mx:VBox paddingTop="10" id="vboxLines" width="100%" height="100%" verticalGap="0" verticalAlign="top" verticalCenter="0">
+			</mx:VBox>
+		</mx:VBox>
+		<mx:VBox verticalGap="2" paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10" label="{LanguageManager.getInstance().labels.common.relations}">
+			<documents:DocumentRelationsGrid width="100%" data="{&lt;root&gt;{documentXML}&lt;/root&gt;}"/>
+		</mx:VBox>
+		<mx:VBox verticalGap="2" paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10" label="{LanguageManager.getInstance().labels.documents.attributes}">
+			<documents:DocumentAttributesRenderer documentXML="{documentXML}" />
+		</mx:VBox>
+	</mx:TabNavigator>
+</mx:Canvas>

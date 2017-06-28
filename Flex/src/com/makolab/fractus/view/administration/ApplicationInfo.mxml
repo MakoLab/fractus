@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:administration="com.makolab.fractus.view.administration.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.view.ComponentWindow;
+			
+               
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:ApplicationInfo = new ApplicationInfo();
+				component.percentHeight = 100;
+				component.percentWidth = 100;
+				window.innerComponent = component; 
+				if(component.icon)window.titleIcon = component.icon;
+				window.show(null,new Rectangle(0,0,400,600),"Test prędkości");
+				return window;
+			}
+		]]>
+	</mx:Script>
+	<administration:SpeedTest width="100%"/>
+</mx:VBox>

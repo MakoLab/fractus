@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:DataGrid xmlns:mx="http://www.adobe.com/2006/mxml" doubleClickEnabled="true" itemDoubleClick="showShifts()" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.view.warehouse.ShiftTransactionEditor;
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.controls.Alert;
+			import assets.IconManager;
+			import com.makolab.components.inputComponents.FloatRenderer;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.GetItemStockCommand;
+			
+			private var _itemId:String;
+			
+			private var _data:Object;
+			
+			[Bindable]
+			public var showInfoButton:Boolean;
+			
+			override public function set data(value:Object):void
+			{
+				_data = value;
+				itemId = String(value);
+			}
+			override public function get data():Object
+			{
+				return _data;
+			}
+			
+			public function set itemId(value:String):void
+			{
+				_itemId = value;
+				dataProvider = null;
+				if (_itemId) new GetItemStockCommand(_itemId).execute(setResult);
+			}
+			public function get itemId():String
+			{
+				return _itemId;
+			}
+			
+			public var itemName:String = "";
+			
+			private function setResult(result:XML):void
+			{
+				dataProvider = result.*;
+				rowCount = result.*.length();
+			}
+
+			public function getIcon(name:String):Class
+			{
+				return IconManager.getIcon(name);
+			}
+			
+			public function showHistory(warehouseId:String):void
+			{
+				//ItemStockHistoryComponent.showWindow(warehouseId, itemId);
+				CatalogueItemInfo.showWindow(itemId,warehouseId,CatalogueItemInfo.ITEM_STOCK_HISTORY);
+			}
+			
+			private function showShifts():void
+			{
+				var WMSable:Boolean = DictionaryManager.getInstance().getById(selectedItem.@warehouseId.toString()).valuationMethod.toString() == "1";
+				if (WMSable) 
+				{
+					var params:XML = <param><itemId label="">{itemId}</itemId></param>;
+					params.itemId.@label = this.itemName;
+					ShiftTransactionEditor.showWindow(params);
+				}
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:columns>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.warehouse}" dataField="@warehouseId" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.items.stock}" dataField="@quantity" itemRenderer="com.makolab.components.inputComponents.FloatRenderer" width="60"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.items.reservedShort}" dataField="@reservedQuantity" itemRenderer="com.makolab.components.inputComponents.FloatRenderer" width="40"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.items.orderedShort}" dataField="@orderedQuantity" itemRenderer="com.makolab.components.inputComponents.FloatRenderer" width="40"/>
+		
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.profit}" dataField="@profitMargin" itemRenderer="com.makolab.components.inputComponents.PercentageRenderer" width="60"/>
+		
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.items.lastPurchasePrice}" dataField="@lastPurchaseNetPrice">
+			<mx:itemRenderer>
+				<mx:Component>
+					<inputComponents:CurrencyRenderer currencyId="{ModelLocator.getInstance().systemCurrencyId}">
+						<mx:Script>
+							<![CDATA[
+								import com.makolab.fractus.model.ModelLocator;
+								import com.makolab.fractus.model.DictionaryManager;
+							]]>
+						</mx:Script>
+					</inputComponents:CurrencyRenderer>
+				</mx:Component>
+			</mx:itemRenderer>
+		</mx:DataGridColumn>
+		<mx:DataGridColumn width="40" visible="{this.showInfoButton}">
+			<mx:itemRenderer>
+				<mx:Component>
+					<mx:LinkButton width="40" height="25" icon="{outerDocument.getIcon('properties_small')}" disabledIcon="{outerDocument.getIcon('dis_properties_small')}" click="outerDocument.showHistory(data.@warehouseId)" 
+						enabled="{isEnabled(data.@warehouseId.toString())}" 
+						useHandCursor="{isEnabled(data.@warehouseId.toString())}">
+						<mx:Script>
+							<![CDATA[
+								import com.makolab.fractus.model.ModelLocator;
+								
+								private function isEnabled(warehouseId:String):Boolean
+								{
+									var branchId:String;
+									var warehouse:XML = ModelLocator.getInstance().dictionaryManager.getById(warehouseId);
+									if (warehouse.length() == 1) branchId = warehouse.branchId.toString();
+									if (ModelLocator.getInstance().headquarters || (branchId && branchId == ModelLocator.getInstance().branchId)) return true;
+									else return false;
+								}
+							]]>
+						</mx:Script>
+					</mx:LinkButton>
+				</mx:Component>
+			</mx:itemRenderer>
+		</mx:DataGridColumn>
+	</mx:columns>
+</mx:DataGrid>

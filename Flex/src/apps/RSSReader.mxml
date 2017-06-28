@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml">
+
+ <mx:HTTPService id="httpRSS" url="http://makolab.pl/pl/portfolio/portfolio.rss.xml" resultFormat="e4x" result="handleResult(event)"/>
+ 
+ <mx:Script>
+ 	<![CDATA[
+ 		import mx.rpc.events.ResultEvent;
+ 		
+ 		[Bindable]
+ 		private var list:Array;
+ 		
+ 		private function handleResult(event:ResultEvent):void
+ 		{
+ 			data = event.result;
+ 			var l:Array = [];
+ 			for (var i:int = 0; i < 10; i++) {
+ 				l.push(data.channel.item[i]);
+ 			}
+ 			list = l;
+ 		}
+ 	]]>
+ </mx:Script>
+
+ <mx:Panel id="reader" title="Pete Freitag's Blog Reader" width="500">
+
+  <mx:DataGrid id="entries" width="{reader.width-15}" dataProvider="{data.rss.channel[0].item}" itemClick="{body.htmlText=data.rss.channel[0].item[entries.selectedIndex].description}">
+    <mx:columns>
+      <mx:Array>
+        <mx:DataGridColumn dataField="title" headerText="Title" />
+        <mx:DataGridColumn dataField="pubDate" headerText="Date" />
+      </mx:Array>
+    </mx:columns>	
+  </mx:DataGrid>
+  
+  <mx:Accordion width="400">
+  	<mx:Repeater id="rep" dataProvider="{list}">
+  		<mx:VBox label="{rep.currentItem.title}" width="100%" verticalGap="0">
+	  		<mx:TextArea editable="false" text="{rep.currentItem.description}" height="100%" width="100%"/>
+	  		<mx:HBox width="100%">
+	  			<mx:Image source="{rep.currentItem.enclosure.@url}"/>
+	  			<mx:Label width="100%" text="{rep.currentItem.pubDate}"/>
+	  			<mx:LinkButton id="lb" label=">>" toolTip="{rep.currentItem.link}" click="navigateToURL(new URLRequest(toolTip))"/>
+	  		</mx:HBox>
+  		</mx:VBox>
+  	</mx:Repeater>
+  </mx:Accordion>
+
+  <mx:TextArea id="body" editable="false" width="{reader.width-15}" height="300" />
+
+  <mx:Button label="Load Blog Entries" click="{httpRSS.send()}" />
+   
+ </mx:Panel>
+</mx:Application>

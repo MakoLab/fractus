@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		width="100%" height="100%"
+		focusEnabled="false"
+		paddingBottom="10" paddingLeft="10" paddingRight="10" verticalGap="4"
+		verticalScrollPolicy="off" horizontalScrollPolicy="off">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.events.AllEvent;
+			
+			private function sendFromKeyboard(event:MouseEvent):void {
+				dispatchEvent(new AllEvent(AllEvent.KEY_PRESSED, event.target.label, false));
+			}
+			
+			private function backspaceClick():void {
+				dispatchEvent(new AllEvent(AllEvent.KEY_PRESSED, false, false));
+			}
+			
+			private function enterClick():void {
+				dispatchEvent(new AllEvent(AllEvent.FUNCTION_CALL));
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:Metadata>
+		[Event(name="keyPressed", type="com.makolab.events.AllEvent")]
+		[Event(name="functionCall", type="com.makolab.events.AllEvent")]
+	</mx:Metadata>
+	
+	<mx:VBox width="100%" height="100%" horizontalGap="4">
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="7" height="100%" width="100%" styleName="keybordButtom"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="4" height="100%" width="100%" styleName="keybordButtom"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="1" height="100%" width="100%" styleName="keybordButtom"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="0" height="100%" width="100%" styleName="keybordButtom"/>
+	</mx:VBox>
+		
+	<mx:VBox width="100%" height="100%" horizontalGap="4">
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="8" height="100%" width="100%" styleName="keybordButtom"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="5" height="100%" width="100%" styleName="keybordButtom"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="2" height="100%" width="100%" styleName="keybordButtom"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="00" height="100%" width="100%" styleName="keybordButtom"/>
+	</mx:VBox>
+		
+	<mx:VBox width="100%" height="100%" horizontalGap="4">
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="9" height="100%" width="100%" styleName="keybordButtom"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="6" height="100%" width="100%" styleName="keybordButtom"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="3" height="100%" width="100%" styleName="keybordButtom"/>
+		<mx:Button focusEnabled="false" click="sendFromKeyboard(event)" label="." height="100%" width="100%" styleName="keybordButtom"/>
+	</mx:VBox>
+		
+	<mx:VBox width="100%" height="100%" horizontalGap="4">
+		<mx:Button focusEnabled="false" click="backspaceClick()" label="{LanguageManager.getInstance().labels.sales.quick.backspace}" height="100%" width="100%" styleName="keybordButtom" fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #FF0000]"/>
+		<mx:Button focusEnabled="false" click="enterClick()" label="{LanguageManager.getInstance().labels.sales.quick.approve}" height="100%" width="100%" styleName="keybordButtom" fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #73EF28]"/>
+	</mx:VBox>
+</mx:HBox>

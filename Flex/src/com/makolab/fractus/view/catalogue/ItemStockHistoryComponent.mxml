@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:catalogue="com.makolab.fractus.view.catalogue.*" horizontalGap="0" xmlns:inputComponents="com.makolab.components.inputComponents.*" >
+	<mx:HBox width="100%">
+		<mx:Label text="{LanguageManager.getInstance().labels.common.warehouse}"/>
+		<mx:ComboBox id="warehouse" labelField="@label" dataProvider="{DictionaryManager.getInstance().dictionaries.allActiveFilteredWarehouses}" labelFunction="comboLabelFunction"/><!--change="warehouseChange(event)" -->
+		<mx:Button click="clickHandler(event)"  label="{LanguageManager.getInstance().labels.common.search2}" />
+	</mx:HBox>
+	<mx:HBox>
+		<inputComponents:DateFilter id = "dateFilter" dateFieldsDirection="horizontal"  />
+		<mx:Label id="beforeStock" />
+	</mx:HBox>	
+	<mx:HBox width="100%" height="100%">
+	<catalogue:ItemStockHistoryGrid
+		id="grid"
+		height="100%"
+		width="100%"
+		change="handleGridChange(event)"
+		selectedDocuments="{selectedDocuments}"
+		doubleClickEnabled="true"
+		itemDoubleClick="{showDocument(grid.selectedItem.@documentId)}"
+		/>
+
+
+	<mx:DataGrid
+			id="relatedDocuments"
+			height="100%"
+			width="30%"
+			dataProvider="{selectedItemDeliveries}"
+			enabled="{selectedItemDeliveries != null}"
+			itemDoubleClick="{showDocument(relatedDocuments.selectedItem.@documentId)}"
+			doubleClickEnabled="true"
+		>
+		<mx:columns>
+			<mx:DataGridColumn headerText="Numer" dataField="@fullNumber"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.date')}" dataField="@issueDate" itemRenderer="com.makolab.components.inputComponents.DateRenderer"/>
+			<mx:DataGridColumn headerText="Ilość pow." dataField="@relationQuantity" itemRenderer="com.makolab.components.inputComponents.FloatRenderer"/>
+			<mx:DataGridColumn headerText="Cena" dataField="@price" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer"/>
+		</mx:columns>
+	</mx:DataGrid>
+	</mx:HBox>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.components.inputComponents.CurrencyRenderer;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			import com.makolab.fractus.commands.GetRelatedWarehouseDocumentsCommand;
+			import mx.events.ListEvent;
+			import com.makolab.fractus.commands.GetItemStockHistoryCommand;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.components.util.Tools;
+			
+			private var _itemId:String;
+			
+			public function showHistory(warehouseId:String, itemId:String):void
+			{
+				_itemId = itemId;
+				dateBeforeStock = dateFilter.dateFrom ? new Date(dateFilter.dateFrom) : null;
+				new GetItemStockHistoryCommand(warehouseId, itemId,dateFilter.dateFrom,dateFilter.dateTo).execute(setResult);
+			}
+			
+			private function setResult(result:XML):void
+			{
+				grid.dataProvider = result.*;
+				
+				var val:String = "";
+				var num:Number = parseFloat(String(result.@stan_przed));
+				if (isNaN(num)) val = "-";
+				else if (num == 0) val = "0";
+				else val = String(num).replace(/\./, ',');
+				if(dateBeforeStock)
+				{
+					beforeStock.visible= true;
+					dateBeforeStock.date--;
+					beforeStock.text = "Stan na " + Tools.dateToString(dateBeforeStock) + " wynosi : " + val ;
+				}
+				else
+				{
+					beforeStock.visible= false;	
+				}
+			}
+			private var dateBeforeStock :Date
+			
+			[Bindable]
+			private var selectedDocuments:Array;
+			
+			[Bindable]
+			private var selectedItemDeliveries:Object;
+			
+			public static function showWindow(warehouseId:String, itemId:String):ComponentWindow
+			{
+				var grid:ItemStockHistoryComponent = new ItemStockHistoryComponent();
+				grid.showHistory(warehouseId, itemId);
+				return ComponentWindow.showWindow(grid, 0, new Rectangle(-1, -1, 800, 600));
+			}
+			
+			public function handleGridChange(event:ListEvent):void
+			{
+				var cmd:GetRelatedWarehouseDocumentsCommand;
+				var item:Object = grid.selectedItem;
+				cmd = new GetRelatedWarehouseDocumentsCommand(
+						item.@id,
+						(item.@quantity * item.@direction < 0) ?
+						GetRelatedWarehouseDocumentsCommand.OUTCOME_LINE :
+						GetRelatedWarehouseDocumentsCommand.INCOME_LINE
+					);
+				cmd.execute(setRelatedResult);
+			}
+			
+			private function setRelatedResult(result:XML):void
+			{
+				selectedItemDeliveries = result.*;
+				var docs:Array = [String(grid.selectedItem.@id)];
+				for each (var x:XML in selectedItemDeliveries) docs.push(String(x.@id));
+				selectedDocuments = docs;
+			}
+			private function clickHandler(event:MouseEvent):void
+			{
+				if(_itemId)
+					showHistory(warehouse.selectedItem.id.*, _itemId);
+			}
+			private function warehouseChange(event:Event):void
+			{
+				if(_itemId)
+					showHistory(warehouse.selectedItem.id.*, _itemId);
+			}
+			
+			private function showDocument(id:String):void
+			{
+				DocumentRenderer.showWindow(DocumentTypeDescriptor.WAREHOUSE_DOCUMENT, id);
+			}
+			
+			private function comboLabelFunction(item:Object):String
+			{
+				return item.label.(@lang == LanguageManager.getInstance().currentLanguage).*; 
+			}
+		]]>
+	</mx:Script>
+</mx:Form>

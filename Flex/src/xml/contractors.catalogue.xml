@@ -1,0 +1,13 @@
+<catalogueConfig>
+	<listTitle>contractors.lists.contractors.title</listTitle>
+	<newItemWindowTitle>contractors.forms.contractor.titleNew</newItemWindowTitle>
+	<editItemWindowTitle>contractors.forms.contractor.titleEdit</editItemWindowTitle>
+	<newItemParam>
+		<type>Contractor</type>
+	</newItemParam>
+  <listConfig>contractors.lists.contractors</listConfig>
+  <formConfig>contractors.forms.contractor</formConfig>
+  <panelConfig>contractors.panel.contractor</panelConfig>
+  <searchEvent>contractorsSearch</searchEvent>
+  <loadDataEvent>contractorsLoadData</loadDataEvent>
+</catalogueConfig>

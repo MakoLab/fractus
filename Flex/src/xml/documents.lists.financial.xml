@@ -1,0 +1,45 @@
+<config title="{LanguageManager.getInstance().labels.title.documents.list.financialDocuments}">
+				<headerColor>FINANCIAL_COLOR</headerColor>
+				<headerColorLight>FINANCIAL_COLOR_LIGHT</headerColorLight>
+				<objectType>FinancialDocument</objectType>
+				<exportProfile>defaultFinancialDocumentXml</exportProfile>
+				<columns>
+					<column field="@status" dataType="documentStatus" width="25"/>
+					<column field="@documentTypeId" labelKey="documents.type" dataType="documentType" width="70"/>
+					<column field="@fullNumber" labelKey="documents.documentNumber" width="120"/>
+					<column field="@issueDate" labelKey="documents.issueDateShort" dataType="date" width="80"/> 
+					<column field="@contractorName" labelKey="contractors.contractor"/>
+					<column field="@reportNumber" labelKey="finance.reportShort" width="120"/>
+					<column field="@amount" labelKey="documents.value" dataType="currency" width="80"/>
+				</columns>
+				<summary>
+					<column field="@amount" labelKey="documents.valueSummary" dataType="currency"/>
+				</summary>
+				<getItemDataParams>
+					<type>Document</type>
+					<id/>
+				</getItemDataParams>
+				<filterField>@fullNumber</filterField>
+				<searchParams type="FinancialDocument">
+					<pageSize>200</pageSize>
+					<page>1</page>
+					<columns>
+						<column field="documentTypeId" column="documentTypeId"/>
+						<column field="status" column="status"/>
+						<column field="fullNumber" column="fullNumber"/>
+						<column field="issueDate" sortOrder="1" sortType="DESC"/>
+						<column field="contractorName" column="fullName" relatedObject="contractor"/>
+						<column field="reportNumber" column="fullNumber" relatedObject="FinancialReport"/>
+						<column field="amount"/>
+					</columns>
+				</searchParams>
+				<filters>
+				  	<filter label="" type="dateFilter"/>
+				  	<filter label="Numer dokumentu" labelKey="documents.documentNumber" type="docNumberFilter" disableFilterType="dateFilter"/>
+				  	<filter label="Status dokumentu" type="docStatusFilter"/>
+				  	<filter labelKey="documents.documentType" label="Typ dokumentu" type="docTypeFilter" itemsType="9"/>
+				  	<filter label="Firma" type="docCompanyFilter"/>
+				  	<!--<filter label="Ustawienia numerowania" type="docNumSettingsFilter"/>-->
+				  	<filter label="Rozliczone" type="docUnsettledFilter"/>
+				</filters>
+			</config>

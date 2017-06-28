@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form 
+	implements="com.makolab.components.inputComponents.IFormBuilderComponent"
+	xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+	xmlns:inputComponents="com.makolab.components.inputComponents.*"
+	xmlns:payments="com.makolab.fractus.view.payments.*"
+	xmlns:filters="com.makolab.fractus.view.documents.reports.filters.*"
+	xmlns:catalogue="com.makolab.fractus.view.catalogue.*"
+	creationComplete="init()">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.view.finance.PaymentSettlementEditor;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.commands.GetPaymentsCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			
+			[Bindable]
+			private var payments:XML; 
+			
+			[Bindable]
+			public var model:ModelLocator = ModelLocator.getInstance();
+			
+			[Bindable]
+			public var searchParams:XML = 	<root/>;
+			
+			[Bindable] private var incomeTotal:Number = 0;
+			[Bindable] private var outcomeTotal:Number = 0;
+			[Bindable] private var total:Number = 0;
+			[Bindable] private var unsettledTotal:Number = 0;
+			
+			private var _contractorId:String = "";
+			private var _dataObject:XML;
+			[Bindable]
+			public var selectedDateFilter:int=1;
+			private function init():void
+			{
+				issueDateFilter.selectedIndex = selectedDateFilter;
+				issueDateFilter.dateComboChange();
+				dueDateFilter.selectedIndex = selectedDateFilter;
+				dueDateFilter.dateComboChange();
+				paymentFilter.selectedIndex = 2;
+				paymentFilter.paymentChange();
+				
+				if(contractorId != ""){
+					contractorSearchItem.visible = false;
+				}
+				model.eventManager.addEventListener('refreshPaymentList', refreshList, false, 0, true);
+			}
+			
+			private var tempGridverticalScrollPosition:Number;
+			private function refreshList(event:Event):void {
+				tempGridverticalScrollPosition = paymentGrid.verticalScrollPosition;
+				search();
+			}
+
+			public static function showWindow(id:String = null):ComponentWindow
+			{
+				var editor:PaymentList = new PaymentList();
+				//editor.contractorId = id;
+				var window:ComponentWindow = ComponentWindow.showWindow(editor,  ComponentWindow.BUTTON_CLOSE, null);
+				editor.contractorId = id;
+				window.title = LanguageManager.getInstance().labels.documents.payments;
+				window.closeFunction = window.hide;
+				return window;	
+			}
+		
+			[Bindable]
+			public function set contractorId(value:String):void
+			{
+					issueDateFilter.selectedIndex = selectedDateFilter;
+				issueDateFilter.dateComboChange();
+				dueDateFilter.selectedIndex = selectedDateFilter;
+						dueDateFilter.dateComboChange();
+						paymentFilter.selectedIndex = 2;
+						paymentFilter.paymentChange();
+				if(value){
+					//if(_contractorId == "")	{
+										
+						searchParams.contractorId = value;
+						//searchParams.settled = "0";
+						var cmd:GetPaymentsCommand = new GetPaymentsCommand(searchParams);
+						cmd.execute(getPaymentsResult);	
+					//}					
+				_contractorId = value;
+				}
+				else
+				{
+					searchParams.contractorId="";
+					var cmd:GetPaymentsCommand = new GetPaymentsCommand(searchParams);
+						cmd.execute(getPaymentsResult);
+				}
+			}
+			
+			public function get contractorId():String
+			{
+				return _contractorId;
+			}
+			
+			private function getPaymentsResult(result:XML):void
+			{
+				var totalTmp:Number = 0;
+				var incomeTmp:Number = 0;
+				var outcomeTmp:Number = 0;
+				var unsettledTmp:Number = 0;
+				var amount:Number;
+				
+				for each(var payment:XML in result.payment)
+				{
+					amount = CurrencyManager.systemCurrencyValue(parseFloat(payment.@amount),payment.@currencyId.toString(),parseFloat(payment.@exchangeRate),parseFloat(payment.@exchangeScale)) * parseFloat(payment.@direction)
+					
+					totalTmp += amount;
+					unsettledTmp += CurrencyManager.systemCurrencyValue(parseFloat(payment.@unsettledAmount),payment.@currencyId.toString(),parseFloat(payment.@exchangeRate),parseFloat(payment.@exchangeScale)) * parseFloat(payment.@direction);
+					
+					if(amount < 0)
+						outcomeTmp -= amount;
+					else
+						incomeTmp += amount;
+						payment.@documentInfo=payment.@documentInfo?payment.@documentInfo:"";
+						payment.@currencySymbol = DictionaryManager.getInstance().getById(payment.@currencyId).symbol;					
+				}
+				
+				payments = result;
+				
+				if(tempGridverticalScrollPosition) {
+					paymentGrid.verticalScrollPosition = tempGridverticalScrollPosition;
+				}
+				tempGridverticalScrollPosition = null;
+				
+				this.total = totalTmp;
+				this.incomeTotal = incomeTmp;
+				this.outcomeTotal = outcomeTmp;
+				this.unsettledTotal = unsettledTmp;
+			}
+			
+			private function previewDocument(documentId:String):void
+			{
+				DocumentRenderer.showWindow(DocumentTypeDescriptor.COMMERCIAL_DOCUMENT, documentId);
+			}
+			
+			private function editPaymentSettlements(paymentId:String):void
+			{
+				PaymentSettlementEditor.showWindow(paymentId);
+			}
+			
+			/**
+			 * A method of IFormBuilderComponent interface.
+			 * @see com.makolab.components.inputComponents.IFormBuilderComponent
+			 */
+			public function commitChanges():void
+			{
+				
+			}
+			
+			public function validate():Object
+			{
+				return null;
+			}
+			
+			/**
+			 * A method of IFormBuilderComponent interface.
+			 * @see IFormBuilderComponent
+			 */
+			public function reset():void 
+			{
+				
+			}
+			
+			private function search():void
+			{
+				contractorSearchItem.textSnapshot
+				var cmd:GetPaymentsCommand = new GetPaymentsCommand(searchParams);
+				cmd.execute(getPaymentsResult);	
+			}
+			
+			private function contractorChangeHandler(argument1:Object,argument2:Object):void
+			{
+				if(argument1==null &&argument2==null)
+				contractorId="";
+				else
+				contractorId = contractorSearch.cs.itemId;
+			}
+			
+			private function keyEventHandler(event:KeyboardEvent):void
+			{
+				var key:int = event.keyCode;
+				if (key == 13)
+				{
+					search();
+					event.stopImmediatePropagation();
+					event.stopPropagation();
+					event.target.setFocus();
+				}
+			}
+			
+			private function getDocumentTypeList(categories:String):XMLList
+			{
+				var list:Array = categories.split(",");
+				var xmlList:XMLList = new XMLList();
+				for(var i:int=0;i<list.length;i++){
+					if(!isNaN(Number(list[i])))xmlList = xmlList + DictionaryManager.getInstance().dictionaries.documentTypes.(documentCategory.toString() == list[i]);
+				}
+				return xmlList;
+			}
+			
+			private function textChanged(event:Event):void
+			{
+				delete searchParams.fullNumber;
+				
+				if(this.txtBoxDocNumber.text != "")
+					searchParams.fullNumber.* = this.txtBoxDocNumber.text;				
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox width="100%">
+		<mx:Form paddingBottom="0" paddingTop="0">
+			<mx:FormItem label="{model.languageManager.labels.contractors.contractor}" id="contractorSearchItem" includeInLayout="{contractorSearchItem.visible}">
+ 				<catalogue:ContractorSearchEditor id="contractorSearch" setFunction="{contractorChangeHandler}"/>
+	 		</mx:FormItem>
+	 		<mx:FormItem label="{model.languageManager.labels.documents.documentNumber}">
+	 			<mx:TextInput id="txtBoxDocNumber" width="160" keyDown="keyEventHandler(event)" change="textChanged(event)" />
+	 		</mx:FormItem>
+	 		<mx:FormItem label="{model.languageManager.labels.common.direction}">
+				<payments:DirectionFilter parameters="{searchParams}" width="160"/>
+			</mx:FormItem>
+			<mx:FormItem label="{model.languageManager.labels.contractors.forms.contractor.payments}">
+				<payments:PaymentFilter id="paymentFilter" parameters="{searchParams}" width="160"/>
+			</mx:FormItem>
+			<mx:FormItem label="{model.languageManager.labels.common.currency}">
+				<payments:CurrencyFilter id="currencyFilter" parameters="{searchParams}" width="160"/>
+			</mx:FormItem>
+				<mx:FormItem label="{model.languageManager.labels.common.reguireSettlement}">
+				<payments:SettlementFilter id="settlementFilter" parameters="{searchParams}" width="160"/>
+			</mx:FormItem>
+		</mx:Form>
+		
+		<mx:Form paddingLeft="0" paddingRight="0" paddingBottom="0" paddingTop="0" width="400">
+			<mx:FormItem label="{model.languageManager.labels.documents.issueDate}" height="80">
+				<filters:DateFilter 
+					id="issueDateFilter" 
+					dateFieldsDirection="horizontal" 
+					parameters="{searchParams}"
+					selectedIndex="2"
+					/>
+			</mx:FormItem>
+					 
+			<mx:FormItem label="{model.languageManager.labels.dictionaries.documentType}" >
+				<!--<documents:DocumentTypeFilter id="documentTypeFilter" parameters="{searchParams}" width="160"/>    -->
+				 <filters:DocumentTypeFilter  selectAllOnStartup="true" parameters="{searchParams}" id="documentTypeFilter" label="" escapeValues="true"   itemsList="{getDocumentTypeList('0,2,5,6')}" /> 
+			</mx:FormItem>
+	 
+		</mx:Form>
+
+		<mx:Canvas height="100%">
+			<mx:Form paddingLeft="1" paddingBottom="0" paddingTop="0" paddingRight="0">
+				<mx:FormItem label="{model.languageManager.labels.documents.dueDate}">
+					<filters:DateFilter 
+						id="dueDateFilter" 
+						dateFieldsDirection="horizontal" 
+						parameters="{searchParams}"
+						dateFromParameterName="dueDateFrom"
+						dateToParameterName="dueDateTo"
+						selectedIndex="2"
+						/>
+				</mx:FormItem>
+			</mx:Form>
+
+			<mx:Button label="{model.languageManager.labels.common.search2}" click="search()" bottom="0" right="0"/>
+			
+		</mx:Canvas>
+			
+		
+	</mx:HBox>
+	
+	<payments:PaymentGrid 
+		id="paymentGrid"
+		showContractorColumn="{(contractorId == '')}"
+		dataProvider="{payments.*}"
+		doubleClick="/*previewDocument(paymentGrid.selectedItem.@commercialDocumentId)*/editPaymentSettlements(paymentGrid.selectedItem.@id)"
+		doubleClickEnabled="true"
+		width="100%"
+		height="100%"
+		showSettlingColumn="true"
+		/>
+	<mx:HBox>
+		<mx:Label text="{model.languageManager.labels.documentRenderer.totalIncome}: "/>
+		<inputComponents:CurrencyRenderer fontWeight="bold" data="{incomeTotal}" currencyId="{ModelLocator.getInstance().systemCurrencyId}"/>
+		<mx:Label paddingLeft="10" text="{model.languageManager.labels.documentRenderer.totalOutcome}: "/>
+		<inputComponents:CurrencyRenderer fontWeight="bold" data="{outcomeTotal}" currencyId="{ModelLocator.getInstance().systemCurrencyId}"/>
+		<mx:Label paddingLeft="10" text="{model.languageManager.labels.common.balance}: "/>
+		<inputComponents:CurrencyRenderer fontWeight="bold" data="{total}" currencyId="{ModelLocator.getInstance().systemCurrencyId}"/>
+		<mx:Label paddingLeft="10" text="{model.languageManager.labels.common.balanceUnsettled}: "/>
+		<inputComponents:CurrencyRenderer fontWeight="bold" data="{unsettledTotal}" currencyId="{ModelLocator.getInstance().systemCurrencyId}"/>
+	</mx:HBox>
+</mx:Form>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:maps="com.google.maps.*">
+	  <mx:Panel title="Google Maps API for Flash - Simple Map" width="100%" height="100%">
+    <mx:UIComponent id="mapContainer" 
+        initialize="startMap(event);" 
+        resize="resizeMap(event)" 
+        width="100%" height="100%"/>
+  </mx:Panel>
+  <mx:Script>
+    <![CDATA[
+    	import com.google.maps.overlays.Marker;
+    	import com.google.maps.services.Placemark;
+    	import com.google.maps.services.GeocodingEvent;
+    	import com.google.maps.services.ClientGeocoder;
+		import flash.events.Event;
+		import com.google.maps.MapEvent;
+		import com.google.maps.Map;
+		import com.google.maps.MapType;
+		import com.google.maps.LatLng;
+
+		private var map:Map;
+		
+		public function startMap(event:Event):void {
+			map = new Map();
+			map.key = "ABQIAAAACoMtbLTKUN-etwCyQWPR9RTFUNIMS9n9JhbPv0hc4OLpHAesohQX0t1Ma-PxQzmqFe6BAZrDdcXx_g";
+			map.addEventListener(MapEvent.MAP_READY, onMapReady);
+			mapContainer.addChild(map);
+		}
+		  
+		public function resizeMap(event:Event):void {
+			map.setSize(new Point(mapContainer.width, mapContainer.height));
+		}
+		  
+		private function onMapReady(event:MapEvent):void {
+			//map.setCenter(new LatLng(40.736072,-73.992062), 14, MapType.NORMAL_MAP_TYPE);
+			var cg:ClientGeocoder = new ClientGeocoder("PL");
+			cg.addEventListener(GeocodingEvent.GEOCODING_SUCCESS, handleGeocodingSuccess);
+			cg.geocode("Łódź, Demokratyczna 46");
+		}
+		
+		private function handleGeocodingSuccess(event:GeocodingEvent):void
+		{
+			if (event.response.placemarks.length > 0)
+			{
+				var placemark:Placemark = Placemark(event.response.placemarks[0]);
+				map.setCenter(placemark.point);
+				map.setZoom(15);
+				var marker:Marker = new Marker(placemark.point);
+				map.addOverlay(marker);
+			}
+			
+		}
+	]]>
+  </mx:Script>
+</mx:Application>

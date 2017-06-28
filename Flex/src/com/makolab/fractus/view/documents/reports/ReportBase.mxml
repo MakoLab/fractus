@@ -1,0 +1,701 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" implements="com.makolab.components.util.IExportableComponent" creationComplete="createContent()" width="100%" height="100%" xmlns:layoutComponents="com.makolab.components.layoutComponents.*">
+	<mx:Metadata>
+		[Event(name="dataLoaded", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.inputComponents.CurrencyRenderer;
+			import com.makolab.components.inputComponents.DateTimeRenderer;
+			import com.makolab.components.inputComponents.FloatRenderer;
+			import com.makolab.components.inputComponents.OrdinalNumberRenderer;
+			import com.makolab.components.layoutComponents.AdvancedDataGridSummary;
+			import com.makolab.components.layoutComponents.AdvancedDataGridSummary2;
+			import com.makolab.components.layoutComponents.SummaryOperation;
+			import com.makolab.components.util.ColorTools;
+			import com.makolab.components.util.ComponentExportManager;
+			import com.makolab.components.util.ComponentExportManagerDialog;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.remoteInterface.Int;
+			
+			import mx.binding.utils.BindingUtils;
+			import mx.collections.ArrayCollection;
+			import mx.collections.Grouping;
+			import mx.collections.GroupingCollection;
+			import mx.collections.GroupingField;
+			import mx.collections.HierarchicalData;
+			import mx.collections.IViewCursor;
+			import mx.collections.SummaryField;
+			import mx.collections.SummaryRow;
+			import mx.collections.XMLListCollection;
+			import mx.containers.Tile;
+			import mx.containers.VBox;
+			import mx.controls.AdvancedDataGrid;
+			import mx.controls.Alert;
+			import mx.controls.DataGrid;
+			import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.core.IFlexDisplayObject;
+			import mx.formatters.CurrencyFormatter;
+			import mx.formatters.DateFormatter;
+			import mx.managers.PopUpManager;
+			import mx.rpc.AsyncToken;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.utils.ColorUtil;
+			import mx.utils.ObjectUtil;
+			
+			import assets.IconManager;
+			
+			[Bindable]
+			public var config:XML = <config><columns/></config>;
+			
+			public var table:AdvancedDataGrid;
+			[Bindable]
+			public var treeTable:AdvancedDataGrid;
+			[Bindable]
+			public var graph:VBox;
+			
+			public var reportsName:String;
+			
+			public var timeout:Number = NaN;
+			
+			private var _customControlsContainer:VBox;
+			public function set customControlsContainer(value:VBox):void
+			{
+				if (!value)
+				{
+					if (this.additionalControlsBox && _customControlsContainer && (additionalControlsBox as HBox).owns(_customControlsContainer))
+						additionalControlsBox.removeChild(_customControlsContainer);
+				}else{
+					if (this.additionalControlsBox)
+					{
+						if (_customControlsContainer) additionalControlsBox.removeChild(_customControlsContainer);
+						additionalControlsBox.addChild(value);
+					}
+				}
+				
+				_customControlsContainer = value;
+			}
+			public function get customControlsContainer():VBox
+			{
+				return _customControlsContainer;
+			}
+			
+			[Bindable]
+			public var summary:AdvancedDataGridSummary2;
+			//public var showSummary:Boolean = true;
+			public var summaryColumns:Array = [];
+			[Bindable]
+			public var summaries:Array;
+			private var cmd:ExecuteCustomProcedureCommand;
+			private var token:AsyncToken;
+			
+			[Bindable]
+			public var customFilters:ICustomReportFilter;
+			
+			[Bindable]
+			public var alternateExportXmlGeneration:Boolean = false;
+			
+			[Bindable]
+			public var createOrderButtonVisible:Boolean = false;
+			
+			private var _showProgressBar:Boolean = false;
+			[Bindable]
+			public function set showProgressBar(value:Boolean):void
+			{
+				_showProgressBar = value;
+				if(_showProgressBar){
+					if (message != null)
+					{
+					message.visible = false;
+					message.includeInLayout = false;
+					}
+				}
+			}
+			public function get showProgressBar():Boolean
+			{
+				return _showProgressBar;
+			}
+			
+			private var _dataProvider:XMLList;
+			[Bindable]
+			public function set dataProvider(value:XMLList):void
+			{
+				_dataProvider = value;
+				if(table){
+					table.dataProvider = _dataProvider;
+					createSummaryTable();
+				}else{
+					if(treeTable)treeTable.dataProvider = new HierarchicalData(_dataProvider);
+					createSummaryTable();
+				}
+			}
+			
+			public function get dataProvider():XMLList
+			{
+				return _dataProvider;
+			}
+			
+			private function calculateSummary(dataField:String):Number
+			{
+				var sum:Number = 0;
+				for(var i:int=0;i<_dataProvider.length();i++){
+					if(dataField.substr(0,1) == "@"){
+						//trace(dataField+": "+(_dataProvider[i] as XML).attribute(dataField.substr(1)),"xml: "+(_dataProvider[i] as XML).toXMLString());
+						if(!isNaN(Number((_dataProvider[i] as XML).attribute(dataField.substr(1)))))sum += Number((_dataProvider[i] as XML).attribute(dataField.substr(1)));
+					}
+				}
+				return sum;
+			}
+			
+			private function createContent():void
+			{
+				if(customControlsContainer && customControlsContainer.visible)additionalControlsBox.addChild(customControlsContainer);
+				if(tableContainer != null)
+				{
+				if((table && tableContainer.contains(table)) || (treeTable && tableContainer.contains(treeTable)))return;
+				}
+				if(tableContainer)tableContainer.removeAllChildren();
+				if(table && tableContainer){
+					tableContainer.addChild(table);
+					table.headerWordWrap = true;
+					table.dataProvider = _dataProvider;
+				};
+				if(treeTable && tableContainer){
+					tableContainer.addChild(treeTable);
+					treeTable.percentHeight = 100;
+					treeTable.headerWordWrap = true;
+					treeTable.dataProvider = new HierarchicalData(_dataProvider);
+					treeTable.expandAll();
+					//treeTable.contextMenu = ComponentExportManager.getInstance().getExportMenu();
+				};
+				contextMenu = ComponentExportManager.getInstance().getExportMenu();
+				if(graph){
+					graphContainer.addChild(graph);
+					BindingUtils.bindProperty(this.graphContainer,'label',LanguageManager.getInstance(),['labels','common','graph']);
+				}
+				else
+				{
+					if(accordion != null)
+					accordion.removeChild(graphContainer);
+				}
+				
+				if(this.customFilters && this.customFilters is DisplayObject)
+				{
+					this.customFilterVBox.addChild(DisplayObject(this.customFilters));					
+				}
+			}
+			
+			[Bindable]
+			public var procedure:String = "";
+			
+			private var searchParams:XML;
+			
+			private function getSearchParamsWithCustomFilters():XML
+			{
+				if(this.customFilters)
+				{
+					var custom:XML = this.customFilters.getSearchParams();
+					
+					if(this.searchParams && custom)
+					{
+						var returnXml:XML = this.searchParams.copy();
+						returnXml.appendChild(custom.*);
+						return returnXml;
+					}
+						
+				}
+				
+				return this.searchParams;
+			}
+			
+			public function generateReport(newSearchParams:XML, refresh:Boolean = false):void
+			{
+				if(procedure == ""){
+					throw new Error("No procedure name");
+					return;
+				}
+				if(refresh || newSearchParams != searchParams)
+				{
+					callCommand(newSearchParams);
+				}
+			}
+			
+			protected var lastSearchParams:XML;
+			
+			private function callCommand(newSearchParams:XML):void
+			{
+				searchParams = newSearchParams.copy();
+				this.lastSearchParams = this.getSearchParamsWithCustomFilters();
+				cmd = new ExecuteCustomProcedureCommand(procedure,this.lastSearchParams);
+				cmd.timeout = this.timeout;
+				cmd.addEventListener(ResultEvent.RESULT,generateReportResult);
+				token = cmd.execute();
+				showProgressBar = true;
+			}
+			public function get searchParamsXML():XML
+			{
+				return lastSearchParams; 
+			}
+			protected function onGenerateReportResult():void
+			{
+			}
+			
+			private function generateReportResult(event:ResultEvent):void
+			{
+				dataProvider = XML(event.result).*;
+				this.onGenerateReportResult();
+				showProgressBar = false;
+				this.dispatchEvent(new Event("dataLoaded"));
+			}
+			
+			protected function createSummaryTable():void
+			{
+				if(table || treeTable){
+					if(tableContainer != null)
+				{
+					if(summary && tableContainer.contains(summary))tableContainer.removeChild(summary); 
+				
+					if(summary)tableContainer.addChild(summary);
+					}
+				}
+			}
+			
+			protected function moneyLabelFunction(item:Object,column:Object):String
+			{
+				if(!(column is AdvancedDataGridColumn) && !(column is DataGridColumn))throw new Error("the 'column' attribute must be an object of type AdvancedDataGridColumn or DataGridColumn");
+				return CurrencyManager.formatCurrency(parseFloat(item[column.dataField]), '-'); 
+			}
+			
+			protected function currencyLabelFunction(item:Object,column:Object):String
+			{
+				if(!(column is AdvancedDataGridColumn) && !(column is DataGridColumn))throw new Error("the 'column' attribute must be an object of type AdvancedDataGridColumn or DataGridColumn");
+								
+				var text:String = "-";
+				text = CurrencyManager.formatCurrency(Number(item[column.dataField]),"", "");
+
+				if(text.length > 0)
+				{
+					var currencySymbol:String = DictionaryManager.getInstance().getById(ModelLocator.getInstance().systemCurrencyId).symbol.toString();
+					text += (" " + currencySymbol);
+				}
+				return text;
+			}
+
+			protected function dateLabelFunction(item:Object,column:Object):String
+			{
+				if(!(column is AdvancedDataGridColumn) && !(column is DataGridColumn))throw new Error("the 'column' attribute must be an object of type AdvancedDataGridColumn or DataGridColumn");
+				var text:String = item[column.dataField];
+				if(text != ''){
+					text = DateTimeRenderer.getTextValue(item, column.dataField);
+				}
+				return text;
+			}
+			
+			protected function percentLabelFunction(item:Object,column:Object):String
+			{
+				if(!(column is AdvancedDataGridColumn) && !(column is DataGridColumn))throw new Error("the 'column' attribute must be an object of type AdvancedDataGridColumn or DataGridColumn");
+				
+				var text:String = "-";
+				text = CurrencyManager.formatCurrency(Number((item[column.dataField].toString())) * 100) + "%";
+				if(item[column.dataField].length() == 0 || String(item[column.dataField]) == '') text = "";
+				return text;
+			}
+			
+			protected function quantityLabelFunction(item:Object,column:Object):String
+			{
+				if(!(column is AdvancedDataGridColumn) && !(column is DataGridColumn))throw new Error("the 'column' attribute must be an object of type AdvancedDataGridColumn or DataGridColumn");
+				
+				var text:String = "-";
+				var number:Number = 0;
+				if(item[column.dataField].toString() == ""){
+					text = "";
+				}else{
+					number = Number(item[column.dataField].toString());
+					//if(Number(number.toFixed(0)) == number)text = CurrencyManager.formatCurrency(number,"?","0",0);
+					//else text = CurrencyManager.formatCurrency(number,"?","0",4);
+					var fraction:String = number.toFixed(4).substr(-4,4);
+					for(var i:int=fraction.length-1;i>=0;i--){
+						if(fraction.charAt(i) == "0")fraction = fraction.substring(0,i);
+						else break;
+					}
+					text = Math.floor(number).toString();
+					if(fraction.length > 0)text = text + "," + fraction;
+				}
+				return text;
+			}
+			/**
+			 * Shows the export dialog window.
+			 */
+			public function showExportDialog() : void {
+				var dialog:IFlexDisplayObject = PopUpManager.createPopUp( this, ComponentExportManagerDialog, true);
+				PopUpManager.centerPopUp(dialog);
+			}
+			
+			private function exportXmlAlternate():XML
+			{
+				var columns:Array = [];
+				var result:XML = <list><columns/><elements/></list>;
+				
+				if(table) columns = table.columns;
+				var colName:String;
+				
+				for (var i:int = 0; i < columns.length; i++) {
+					colName = "@col" + i.toString();
+					result.columns.* += <column label={columns[i].headerText} field={colName}/>;
+				}
+				
+				var rows:XMLListCollection = table.dataProvider as XMLListCollection;	
+				for each(var row:XML in rows)
+				{
+					exportXmlAlternateLineAsign(columns, colName, result, row);
+				}
+				
+				if(summary){
+					var rowss:XMLListCollection = summary.dataProvider as XMLListCollection;
+					for each(var srow:XML in rowss)
+					{
+						exportXmlAlternateLineAsign(columns, colName, result, srow);
+					}
+				}
+				
+				if (result.details.length() == 0) result.details = <details/>;
+				// naglowek z tytulem zestawienia
+				var titleNode:XML = <detail/>;
+				if (reportsName) titleNode.@header = reportsName + ": " + this.label;
+				else titleNode.@header = this.label;
+				result.details.appendChild(titleNode);
+				
+				//wyswietlanie filtrow jesli opcja jest wlaczona.
+				if (filterValues)
+				{
+					for (var filter:int = 0; filter < filterValues.length; filter++)
+					{
+						var detail:XML = <detail/>;
+						detail.@subHeader = filterValues[filter].label + ": " + filterValues[filter].value;
+						result.details.appendChild(detail);
+					}
+				}
+				
+				ModelLocator.getInstance().exportListXML = result;
+				return result;
+			}
+			
+			private function exportXmlAlternateLineAsign(columns:Array, colName:String, result:XML, row:XML):void {
+				var element:XML = <line/>
+				var dgc:AdvancedDataGridColumn;
+				var newElements:XMLList = new XMLList();
+				var rowCount:int = 1;
+				var i:int = 0;
+				var values:Array;
+				for (i = 0; i < columns.length; i++) {
+					dgc = columns[i] as AdvancedDataGridColumn;
+					
+					colName = "@col" + i.toString();
+					element[colName] = dgc.itemToLabel(row);
+					values = String(element[colName]).split("\n");
+					if (values.length > rowCount) rowCount = values.length;
+				}
+				for (i = 0; i < rowCount; i++)
+				{
+					newElements = newElements + <line/>;
+				}
+				for (i = 0; i < columns.length; i++) {
+					dgc = columns[i] as AdvancedDataGridColumn;
+					
+					colName = "@col" + i.toString();
+					element[colName] = dgc.itemToLabel(row);
+					values = String(element[colName]).split("\n");
+					for (var j:int = 0; j < values.length; j ++)
+					{
+						newElements[j][colName] = values[j];
+					}
+				}
+				for (i = 0; i < rowCount; i++)
+				{
+					XML(result.elements).appendChild(newElements[i]);
+				}
+				
+				//XML(result.elements).appendChild(element);
+			}
+			
+			/**
+			 * Exports an XML to a given format.
+			 */
+		public function exportXmlAll(format:String):XML
+		 {
+		 	return exportXml(format);
+		 }
+			public function exportXml(format:String):XML
+			{
+				if(this.alternateExportXmlGeneration)
+					return this.exportXmlAlternate();
+					
+				var columns:Array = [];
+				var result:XML = <list><columns/><elements/></list>;
+				var xmlnsPattern:RegExp;
+				var cc:String;
+				
+				if(table)columns = table.columns;
+				if(treeTable)columns = treeTable.columns;
+				var col:XML;
+				for (var i:int = 0; i < columns.length; i++) {
+					if(columns[i].dataField != null)	{
+						col = <column label={columns[i].headerText} field={columns[i].dataField} color={ColorTools.HexToRGB(columns[i].getStyle("color")).string}/>;
+						if((columns[i] as AdvancedDataGridColumn).itemRenderer)
+							switch (((columns[i] as AdvancedDataGridColumn).itemRenderer as ClassFactory).generator){
+								case CurrencyRenderer:
+									col.@dataType = "currency";
+									break;
+								case FloatRenderer:
+									col.@dataType = "float";
+									break;
+							}
+						/*zabezpieczenie, jesli uzyto niestandardowej labelFunction, do uzycia tylko w przypadku istnienia dataField*/
+						//cc = config.columns.column.(@number == i).@dataType[0]; - 	//po wuju to rozwiązanie z numerem kolumny- wystarczy zmienić kolejności kolumn 
+																						//albo dodać kolumnę o innym typie i wydruk ma NaNy w tych kolumnach, liczby wyświetlaja się jako tekst, itp.
+																						//rozwiazanie z dataField tez nie jest idealne ale nie ma na to czasu. coolik 
+						cc = config.columns.column.(@dataField == columns[i].dataField).@dataType[0];
+						
+						if(cc!=null){
+							switch (cc){
+								case "currency":
+									col.@dataType = "currency";
+									break;
+								case "currencyHide0":
+									col.@dataType = "currencyHide0";
+									break;
+								case "float":
+									col.@dataType = "float";
+									break;
+							}
+						} 
+
+						else if((columns[i] as AdvancedDataGridColumn)["labelFunction"]){
+							switch ((columns[i] as AdvancedDataGridColumn).labelFunction){
+								case this.moneyLabelFunction:
+									col.@dataType = "currencyHide0";
+									break;
+								case this.currencyLabelFunction:
+									col.@dataType = "currency";
+									break;
+								case this.quantityLabelFunction:
+									col.@dataType = "float";
+									break;
+							}
+						}
+						result.columns.* += col;
+					}else{
+						if((columns[i] as AdvancedDataGridColumn).itemRenderer){
+							if((((columns[i] as AdvancedDataGridColumn).itemRenderer as ClassFactory).generator)==OrdinalNumberRenderer){
+								col = <column label={columns[i].headerText} dataType = "ordinalNumber"/>;
+								result.columns.* += col;
+							}
+						}
+					}
+					
+				}
+				if(table)result.elements.* = XMLListCollection(table.dataProvider).copy();
+				if(treeTable){
+					var nodes:XMLList = new XMLList();
+					/* for each(var x:XML in treeTable.hierarchicalCollectionView.openNodes){
+						if(treeTable.hierarchicalCollectionView.)
+						nodes = nodes + x + x.*;
+					} */
+					var cursor:IViewCursor = treeTable.hierarchicalCollectionView.createCursor();
+					var depth:int = 0;
+					var node:XML;
+					while(!cursor.afterLast){
+						depth = treeTable.hierarchicalCollectionView.getNodeDepth(cursor.current);
+						node = cursor.current.copy(); 
+						for(var d:int = 0;d<depth-1;d++){
+							node.@name = "\u00A0\u00A0" + node.@name;
+						} 
+						nodes = nodes + node;
+						cursor.moveNext();
+					}
+					result.elements.* = nodes;
+				}
+				
+				var elementsCopy:XMLList = XMLList(result.elements.*).copy();
+				
+				for(var element:int = 0; element < elementsCopy.length(); element++){
+					var styleObject:Object;
+				//	if (table) styleObject = table.styleFunction(elementsCopy[element],null);
+				//	if (treeTable) styleObject = treeTable.styleFunction(elementsCopy[element],null);
+					if (styleObject && styleObject.color) elementsCopy[element].@color = ColorTools.HexToRGB(styleObject.color).string;
+					for(var j:int = 0; j < columns.length; j++){
+						cc = config.columns.column.(@dataField == columns[j].dataField).@dataType[0];
+						if(cc==null){
+							if(columns[j].labelFunction){
+								//if(element[columns[j].dataField].length() == 0)
+								if(columns[j].labelFunction != quantityLabelFunction && columns[j].labelFunction != currencyLabelFunction  && columns[j].labelFunction != moneyLabelFunction)
+									elementsCopy[element][columns[j].dataField] = columns[j].labelFunction(result.elements.*[element],columns[j]);
+							}
+						}
+						else if(cc=='currency'){//kiedy kolumna jest typu liczbowego a mimo to ma labelfunction podmieniajaca dane
+							if(columns[j].labelFunction){
+								elementsCopy[element][columns[j].dataField] = columns[j].labelFunction(result.elements.*[element],columns[j]);
+								elementsCopy[element][columns[j].dataField] = elementsCopy[element][columns[j].dataField].toString().replace(' ','');
+								elementsCopy[element][columns[j].dataField] = elementsCopy[element][columns[j].dataField].toString().replace(',','.');
+							}
+						}
+						if((columns[j] as AdvancedDataGridColumn).itemRenderer && (((columns[j] as AdvancedDataGridColumn).itemRenderer) as ClassFactory).generator["getTextValue"]){
+							elementsCopy[element][columns[j].dataField] = (((columns[j] as AdvancedDataGridColumn).itemRenderer) as ClassFactory).generator["getTextValue"](elementsCopy[element],columns[j].dataField);
+						}
+					}
+				}
+				
+				result.elements.* = elementsCopy;
+				
+				if(summary){
+					var summaryElements:XMLList = new XMLList();
+					var summaryElement:XML = <summary/>;
+					var summaryRows:XMLList = XMLList(summary.dataProvider.source);
+					for(var row:int = 0; row < summaryRows.length(); row++){
+						summaryElements = summaryElements + summaryElement.copy();
+						for(var c:int = 0; c < summary.columns.length; c++){
+							if(/* summary.columns[c].labelFunction &&  */summary.columns[c].dataField)
+								summaryElements[row][summary.columns[c].dataField] = summaryRows[row][summary.columns[c].dataField];//summary.columns[c].labelFunction(summaryRows[row],summary.columns[c]);
+							cc = config.columns.column.(@number == c).@dataType[0];
+							if(cc==null){
+								if(summary.columns[c].labelFunction && summary.columns[c].labelFunction != currencyLabelFunction && summary.columns[c].labelFunction != quantityLabelFunction && summary.columns[c].labelFunction != moneyLabelFunction)
+									summaryElements[row][summary.columns[c].dataField] = summary.columns[c].labelFunction(summaryRows[row],summary.columns[c]);
+							}
+							summaryElements[row][summary.columns[0].dataField] = LanguageManager.getInstance().labels.common.total;
+						}
+					}
+					result.elements.* = result.elements.* + summaryElements; 
+				}
+				
+				if (result.details.length() == 0) result.details = <details/>;
+				// naglowek z tytulem zestawienia
+				var titleNode:XML = <detail/>;
+				if (reportsName) titleNode.@header = reportsName + ": " + this.label;
+				else titleNode.@header = this.label;
+				result.details.appendChild(titleNode);
+				
+				//wyswietlanie filtrow jesli opcja jest wlaczona.
+				if (filterValues)
+				{
+					for (var filter:int = 0; filter < filterValues.length; filter++)
+					{
+						var detail:XML = <detail/>;
+						detail.@subHeader = filterValues[filter].label + ": " + filterValues[filter].value;
+						result.details.appendChild(detail);
+					}
+				}
+				
+				ModelLocator.getInstance().exportListXML = result;
+				return result;
+			}
+			
+			public static function stringCompareFunction(field:String):Function
+			{
+				return function(obj1:Object, obj2:Object):int{
+					return Tools.sortComparePL(obj1[field], obj2[field], true);
+					//return ObjectUtil.stringCompare(obj1[field],obj2[field],true);
+				} 
+			}
+			
+			public static function numberCompareFunction(field:String):Function
+			{
+				return function (obj1:Object, obj2:Object):int  
+			    { 
+			    	var n:Number = Number(obj1[field]);
+			        var num:Number = ((Number)(obj1[field]) - (Number)(obj2[field])); 
+			        return (num > 0) ? 1 : ((num < 0) ? -1 : 0); 
+			    } 
+			} 
+			
+			protected function createOrder():void
+			{}	
+			
+			private var _showFiltersInfo:Boolean = true;
+			[Bindable]
+			public function set showFiltersInfo(value:Boolean):void
+			{
+				_showFiltersInfo = value;
+			}
+			public function get showFiltersInfo():Boolean
+			{
+				return _showFiltersInfo;
+			}
+			
+			private var _filtersInfo:Object;
+			[Bindable]
+			public function set filtersInfo(value:Object):void
+			{
+				_filtersInfo = value;
+				filterValues = new ArrayCollection();
+				for each (var filterInfo:Object in value)
+				{ 
+					if (filterInfo.value && showFiltersInfo) filterValues.addItem(filterInfo);
+				}
+				if (filterValues.length > 0) customControlsContainer = filtersInfoBox;
+				else customControlsContainer = null;
+				if (_filtersInfo == null) filterValues = null;
+			}
+			public function get filtersInfo():Object
+			{
+				return _filtersInfo;
+			}
+			
+			private function cancelCommand():void
+			{
+				var msgId:String;
+				if (token) msgId = token.message.messageId;
+				cmd.cancel(msgId);
+				showProgressBar = false;
+			}
+			
+			[Bindable]
+			private var filterValues:ArrayCollection;
+		]]>
+	</mx:Script>
+	
+	<mx:VBox id="mainVBox" x="0" y="0" width="100%" height="100%">
+		<mx:HBox id="additionalControlsBox" width="100%">
+			<mx:VBox>
+				<mx:VBox id="customFilterVBox" 
+					visible="{this.customFilters &amp;&amp; this.customFilters is DisplayObject}" 
+					includeInLayout="{this.customFilters &amp;&amp; this.customFilters is DisplayObject}" 
+					width="100%" horizontalAlign="center" verticalAlign="middle" 
+					paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" />
+				<mx:HBox>
+					<mx:Button id="exportButton" label="{LanguageManager.getInstance().labels.common.export}" styleName="exportButton" height="22" click="exportXml('xml');showExportDialog()"/>
+					<mx:Button id="refreshButton" label="{LanguageManager.getInstance().labels.common.refresh}" styleName="refreshButton" height="22" click="generateReport(searchParams,true)"/>
+					<mx:Button id="btnCreateOrder" label="{LanguageManager.getInstance().labels.reports.filters.createOrder}" icon="{IconManager.getIcon('toDocument_small')}" height="22" click="createOrder()" visible="{createOrderButtonVisible}" includeInLayout="{createOrderButtonVisible}"/>
+				</mx:HBox>
+			</mx:VBox>
+			<mx:VBox id="filtersInfoBox" visible="{(filterValues.length > 0 &amp;&amp; showFiltersInfo)}" includeInLayout="{(filterValues.length > 0 &amp;&amp; showFiltersInfo)}" width="100%">
+				<layoutComponents:TileForm width="100%" direction="horizontal">
+					<mx:Repeater id="rpt" dataProvider="{filterValues}">
+						<mx:FormItem label="{rpt.currentItem.label}" fontWeight="bold">
+							<mx:Text text="{rpt.currentItem.value}" maxWidth="250" fontWeight="normal" toolTip="{rpt.currentItem.value}"/>
+						</mx:FormItem>
+					</mx:Repeater>
+				</layoutComponents:TileForm>
+			</mx:VBox>
+		</mx:HBox>
+		<mx:Accordion id="accordion" width="100%" height="100%">
+			<mx:VBox label="{LanguageManager.getInstance().labels.common.table}" id="tableContainer" width="100%" height="100%" verticalGap="0"/>
+			<mx:VBox  id="graphContainer" width="100%" height="100%"/>
+		</mx:Accordion>
+	</mx:VBox>
+	<mx:Canvas id="progressBar" x="0" y="0" width="100%" height="100%" backgroundColor="0x000000" backgroundAlpha="0.2" visible="{showProgressBar}" includeInLayout="{progressBar.visible}">
+		<mx:ProgressBar label="{LanguageManager.getInstance().labels.reports.filters.generatingOrderPleaseWait}" indeterminate="true" verticalCenter="0" horizontalCenter="0"/>
+		<mx:Button label="{LanguageManager.getInstance().labels.common.cancel}" click="cancelCommand()" verticalCenter="30" horizontalCenter="0"/>
+	</mx:Canvas>
+	<mx:Canvas id="message" x="0" y="0" width="100%" height="100%" backgroundColor="0x000000" backgroundAlpha="0.2" visible="false" includeInLayout="{message.visible}">
+		<mx:Text horizontalCenter="0" verticalCenter="0" fontWeight="bold" text=""/>
+	</mx:Canvas>
+</mx:Canvas>

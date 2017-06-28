@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.FilterClassMapper;
+			import com.makolab.components.catalogue.ICatalogueFilter;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			import flash.events.MouseEvent;
+			
+			import mx.collections.XMLListCollection;
+			import mx.controls.ComboBox;
+			import mx.controls.List;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+		
+			private var _config:XMLList;	
+			[Bindable] public var filtersArray:Array = [];
+			[Bindable] private var dataProvider:XMLList;
+					
+			public function set config(value:XMLList):void
+			{
+				_config = value;
+			}
+				
+			public function get config():XMLList
+			{
+				return _config;
+			}
+			
+			public function setFiltersTemplate(event:ListEvent):void{
+					
+				var templatesArray:Array = new Array();
+				var idCounter:int = 0;
+				for each(var template:XML in config.*){//dla kazdego szablonu z configu
+					if(idCounter == event.rowIndex){//jesli szablon zostal wybrany
+						for each(var filter:XML in template.*){//dla kazdego ustawienia filtra w szablonie
+							if(filter.@type&&String(filter.@type).length>0)
+							{
+								var filterClass:Class = FilterClassMapper.CLASSES[filter.@type];//rozpoznanie klasy filtra z szablonu
+								var filterClassName:String = new filterClass().className;
+								//wypelnianie listy ustawien filtra (lista w razie istnienia kilku fitrow tego samego typu, kazdy dostanie ta sama liste, i sam zadecyduje, ktora konfiguracja jest dla niego)
+								if(!templatesArray[filterClassName]) templatesArray[filterClassName] = XMLList(filter);
+								else templatesArray[filterClassName]+=filter;
+							}
+						}
+					break;
+					}
+					idCounter++;
+				}
+				
+				//odpalenie wybranego szablonu
+				for each(var f:Object in filtersArray){//dla kazdego obiektu z tablicy filtrow
+					if(f is ICatalogueFilter)//jesli jest filtrem
+						(f as ICatalogueFilter).clear();//wyczysc filtr
+					if(templatesArray[f.className])//jezeli istnieje ustawienie dla rozpatrywanego filtra w wybranym szablonie
+						(f as ICatalogueFilter).template = templatesArray[f.className];//ustaw w filtrze wartosci z szablonu
+				}
+
+			}
+			
+			public function setTemplatesPopUp():List{
+				//wypelnienie comba szablonow filtrow szablonami
+				
+				var list:XMLList=new XMLList();
+				var idCounter:int = 0;
+				for each(var template:XML in config.*){
+					if(template.labels)
+					{
+						var str:String=template.labels[0].label.(@lang==LanguageManager.getInstance().currentLanguage)[0];
+						list = list + <entry><id>{idCounter}</id><label>{str}</label></entry>;	
+					}
+					else
+						list = list + <entry><id>{idCounter}</id><label>{template.@label}</label></entry>;
+					idCounter++;
+				}	
+				var popupList:List = new List();
+				popupList.dataProvider = list;
+				popupList.addEventListener(ListEvent.ITEM_CLICK, setFiltersTemplate);
+				popupList.rowCount = popupList.dataProvider.length<5?popupList.dataProvider.length:5;
+				return popupList;	
+			}
+			
+			public function clearAllFilters():void{
+					
+				//odpalenie wybranego szablonu
+				for each(var f:Object in filtersArray){//dla kazdego obiektu z tablicy filtrow
+					if(f is ICatalogueFilter)//jesli jest filtrem
+						(f as ICatalogueFilter).clear();//wyczysc filtr
+				}
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:PopUpButton 
+	id="templatesButton" 
+	label="{LanguageManager.getInstance().labels.common.noTemplate}" 
+	openAlways="false" 
+	click="{clearAllFilters()}"
+	popUp="{setTemplatesPopUp()}" 
+	textAlign="left"
+	/>
+</mx:Canvas>

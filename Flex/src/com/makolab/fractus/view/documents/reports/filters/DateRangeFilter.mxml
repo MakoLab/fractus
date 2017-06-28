@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem direction="horizontal" implements="com.makolab.fractus.view.documents.reports.filters.IReportFilter" width="100%" creationComplete="dateComboChange()" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*">		
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</mx:Metadata>		
+	<mx:CheckBox id="useFilter" toolTip="{LanguageManager.getInstance().labels.reports.filters.turnOnOffFilter}" change="setParameters()"/>
+	<mx:VBox enabled="{useFilter.selected}">
+		<mx:ComboBox
+			id="dateCombo"
+			dataProvider="{[
+					{label : LanguageManager.getInstance().labels.date.filter.noDateLimit, value : null},
+					{label : LanguageManager.getInstance().labels.date.filter.today, value : 'day'},
+					{label : LanguageManager.getInstance().labels.date.filter.yesterday, value : 'yesterday'},
+					{label : LanguageManager.getInstance().labels.date.filter.currentMonth, value : 'month'},
+					{label : LanguageManager.getInstance().labels.date.filter.currentMonthToToday, value : 'monthToToday'},
+					{label : LanguageManager.getInstance().labels.date.filter.currentMonthYearAgo, value : 'monthYearAgo'},
+					{label : LanguageManager.getInstance().labels.date.filter.previousMonth, value : 'previousMonth'},
+					{label : LanguageManager.getInstance().labels.date.filter.currentYear, value : 'year'},
+					{label : LanguageManager.getInstance().labels.date.filter.currentYearToToday, value : 'yearToToday'},
+					{label : LanguageManager.getInstance().labels.date.filter.previousYear, value : 'previousYear'},
+					{label : LanguageManager.getInstance().labels.date.filter.last14days, value : '14days'},
+					{label : LanguageManager.getInstance().labels.date.filter.last30days, value : '30days'},
+					{label : LanguageManager.getInstance().labels.date.filter.last365days, value : '365days'},
+					{label : LanguageManager.getInstance().labels.date.filter.enterDates, value : 'custom'}
+				]}"
+			change="dateComboChange()"
+			labelField="label"
+			rowCount="{dateCombo.dataProvider.length}"
+			width="100%"
+			/>
+		<mx:HBox width="100%">
+			<mx:Label text="{LanguageManager.getInstance().labels.date.filter.fromDate}" width="20%"/>
+			<inputComponents:DateEditor
+					id="dateFromField"
+					change="handleDateChange(event)"
+					enabled="{Boolean(dateCombo.selectedItem.value)}"
+					editable="true"
+					width="80%"
+				 	textAlign="right"
+				 	selectedDate="{selectedDateFrom}"
+				/>
+		</mx:HBox>
+		<mx:HBox width="100%">
+			<mx:Label text="{LanguageManager.getInstance().labels.date.filter.toDate}" width="20%"/>
+			<inputComponents:DateEditor
+					id="dateToField"
+					change="handleDateChange(event)"
+					enabled="{Boolean(dateCombo.selectedItem.value)}"
+					editable="true"
+					width="80%"
+					textAlign="right"
+				 	selectedDate="{selectedDateTo}"
+				/>
+		</mx:HBox>
+	</mx:VBox>
+
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.DataFromMegaManage;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.components.util.Tools;
+			import mx.events.CalendarLayoutChangeEvent;
+			import mx.events.FlexEvent;
+			
+			public var dateFromParameterName:String = "dateFrom";
+			public var dateToParameterName:String = "dateTo";
+			[Bindable]
+			public var selectedDateFrom:Date = new Date();
+			[Bindable]
+			public var selectedDateTo:Date = new Date();
+			
+			public var columnName:String = "";
+			public var dateFromColumnName:String = "";
+			public var dateToColumnName:String = "";
+			
+			private var _selectedIndex:int;
+			[Bindable]
+			public function set selectedIndex(value:int):void
+			{
+				_selectedIndex = value;
+				dateCombo.selectedIndex = value;
+				dateComboChange();
+			}
+			public function get selectedIndex():int
+			{
+				return _selectedIndex;
+			}
+			
+			/**
+			 * @private
+			 */
+			[Bindable]
+			public function get dateFrom():Date
+			{
+				return dateFromField.selectedDate;
+			}
+			/**
+			 * First date in a time interval.
+			 * @see #dateTo
+			 */
+			public function set dateFrom(value:Date):void
+			{
+				dateFromField.selectedDate = value;
+			}
+			/**
+			 * @private
+			 */
+			[Bindable]
+			public function get dateTo():Date
+			{
+				return dateToField.selectedDate;
+			}
+			
+			/**
+			 * The last date in a time interval.
+			 * @see #dateFrom
+			 */
+			public function set dateTo(value:Date):void
+			{
+				dateToField.selectedDate = value;
+			}
+			
+			public function dateComboChange():void
+			{
+				var value:String = dateCombo.selectedItem.value;
+				var fd:Date, td:Date;
+				fd = dateFromField.selectedDate;
+				td = dateToField.selectedDate;
+				switch (value)
+				{
+					case null:
+						fd = null;
+						td = null;
+						break;
+					case "day":
+						fd = new Date();
+						td = fd;
+						break;
+					case "yesterday":
+						fd = new Date();
+						fd.date -= 1;
+						td = fd;
+						break;
+					case "month":
+						fd = new Date();
+						fd.date = 1;
+						td = new Date();
+						td.month++;
+						td.date = 0;
+						break;
+					case "monthToToday":
+						fd = new Date();
+						fd.date = 1;
+						td = new Date();
+						break;
+					case "monthYearAgo":
+						fd = new Date();
+						fd.fullYear--;
+						fd.date = 1;
+						td = new Date();
+						td.fullYear--;
+						td.date = 1;
+						td.month++;
+						td.date--;
+						break;
+					case "previousMonth":
+						fd = new Date();
+						fd.date = 1;
+						fd.month -= 1;
+						td = new Date();
+						td.date = 0;
+						break;
+					case "year":
+						fd = new Date();
+						fd.date = 1;
+						fd.month = 0;
+						td = new Date();
+						td.date = 1;
+						td.month = 0;
+						td.fullYear++;
+						td.date--;
+						break;
+					case "yearToToday":
+						fd = new Date();
+						fd.date = 1;
+						fd.month = 0;
+						td = new Date();
+						break;
+					case "previousYear":
+						fd = new Date();
+						fd.fullYear--;
+						fd.date = 1;
+						fd.month = 0;
+						td = new Date();
+						td.date = 1;
+						td.month = 0;
+						td.date--;
+						break;
+					case "14days": case "30days": case "365days":
+						fd = new Date();
+						fd.date -= parseInt(value);
+						td = new Date();
+						break;
+				}
+				dateFromField.selectedDate = fd;
+				dateToField.selectedDate = td;
+				setParameters();
+			}
+			/**
+			 * Sets the end date to start date if it's earlier.
+			 */
+			protected function handleDateChange(event:CalendarLayoutChangeEvent):void
+			{
+				dateCombo.selectedIndex = 7;
+				if (dateFromField.selectedDate)
+				{
+					if (!dateToField.selectedDate || dateToField.selectedDate < dateFromField.selectedDate) dateToField.selectedDate = dateFromField.selectedDate;	
+				}
+				setParameters();
+			}
+			
+			private var _config:XML
+			
+			public function set config(value:XML):void
+			{
+				_config = value;
+			}
+			
+			public function get config():XML
+			{
+				return _config;
+			}
+			
+			private var _parameters:XML;
+			[Bindable]
+			public function set parameters(value:XML):void
+			{
+				_parameters = value;
+			}
+			
+			public function get parameters():XML
+			{
+				return _parameters;
+			}
+			
+			private function setParameters():void
+			{
+				if(String(columnName) != "" && String(dateFromColumnName) != "" && String(dateToColumnName) != ""){
+					if(!parameters.filters)parameters.filters = "";
+					var filterNodes:XMLList = parameters.filters.column.(@field == columnName);
+					var filterNodes1:XMLList = parameters.filters.column.(@field == dateFromColumnName);
+					var filterNodes2:XMLList = parameters.filters.column.(@field == dateToColumnName);
+					if(useFilter.selected){
+						if(filterNodes.length() == 0){
+							var newCondition:XML = <column/>;
+							newCondition.@field = columnName;
+							parameters.filters.columns += newCondition;
+						}
+						
+						filterNodes1 = parameters.filters.column.(@field == dateFromColumnName);
+						filterNodes2 = parameters.filters.column.(@field == dateToColumnName);
+						
+						if (dateFrom && dateTo)
+						{
+							if(filterNodes1.length() == 0){
+								var newCondition1:XML = <column/>;
+								newCondition1.@field = dateFromColumnName;
+								newCondition1.* = Tools.dateToString(dateFrom);
+								parameters.filters.columns += newCondition1;
+							}else{
+								filterNodes1[0].* = Tools.dateToString(dateFrom);
+							}
+							
+							if(filterNodes2.length() == 0){
+								var newCondition2:XML = <column/>;
+								newCondition2.@field = dateToColumnName;
+								newCondition2.* = Tools.dateToString(dateTo) + "T23:59:59.997";
+								parameters.filters.columns += newCondition2;
+							}else{
+								filterNodes2[0].* = Tools.dateToString(dateTo) + "T23:59:59.997";
+							}
+						}
+						else
+						{
+							if(filterNodes1.length() > 0)delete filterNodes1[0];
+							if(filterNodes2.length() > 0)delete filterNodes2[0];
+						}
+					}else{
+						if(filterNodes.length() > 0)delete filterNodes[0];
+						if(filterNodes1.length() > 0)delete filterNodes1[0];
+						if(filterNodes2.length() > 0)delete filterNodes2[0];
+					}
+				}else{
+					if (dateFrom && dateTo)
+					{
+						// everything from the start of the first day till the end of the second day
+						parameters[this.dateFromParameterName] = Tools.dateToString(dateFrom);
+						parameters[this.dateToParameterName] = Tools.dateToString(dateTo) + "T23:59:59.997";
+						
+					}
+					else
+					{
+						if (parameters[this.dateToParameterName].length() > 0) delete parameters[this.dateToParameterName];
+						if (parameters[this.dateFromParameterName].length() > 0) delete parameters[this.dateFromParameterName];
+					}
+				}
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			public function get validationError():String
+			{
+				return null;
+			}
+			
+			public function get stringValue():String
+			{
+				if (!useFilter.selected) return null;
+				return Tools.dateToString(dateFrom) != "" ? Tools.dateToString(dateFrom) + " - " + Tools.dateToString(dateTo) : LanguageManager.getInstance().labels.date.filter.noDateLimit;
+			}
+				
+		]]>
+	</mx:Script>
+</mx:FormItem>

@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:DataGrid xmlns:mx="http://www.adobe.com/2006/mxml" itemEditBegin="handleItemEditBegin(event)" removedFromStage="removeFromStageHandler(event)" itemEditEnd="handleItemEditEnd(event)" creationComplete="init()" keyDown="handleKeyDown(event)" change="changeHandler()" editable="{useCountColumn}">
+	<mx:Metadata>
+		[Event(name="commit", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.document.ShiftObject;
+			import mx.events.ValidationResultEvent;
+			import mx.events.FlexMouseEvent;
+			import mx.collections.XMLListCollection;
+			import mx.events.AdvancedDataGridEvent;
+			import com.makolab.components.util.FPopUpManager;
+			import mx.events.FlexEvent;
+			import mx.managers.IFocusManagerComponent;
+			import mx.managers.FocusManager;
+			import mx.events.IndexChangedEvent;
+			import mx.controls.Alert;
+			import mx.events.DataGridEvent;
+			import mx.events.ListEvent;
+			import mx.controls.TextInput;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.collections.ListCollectionView;
+			import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.fractus.view.documents.reports.ReportBase;
+			import com.makolab.fractus.view.ComponentWindow;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.GetItemLotsCommand;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			//todo WMS
+			
+			[Bindable]
+			public var useCountColumn:Boolean = true;
+			
+			public var countColumn:DataGridColumn = new DataGridColumn();
+			
+			private var preventDefaultItemEditEndHandler:Boolean = false;
+			
+			private function init():void
+			{
+				if(useCountColumn){
+					countColumn.headerWordWrap = true;
+					countColumn.headerText = LanguageManager.getLabel('common.quantity');
+					countColumn.width = 50;
+					countColumn.dataField = "@count";
+					countColumn.labelFunction = quantityLabelFunction;
+					countColumn.editable = true;
+					var factory:ClassFactory = new ClassFactory(TextInput);
+					factory.properties = {"restrict" : "0-9,\\."}; 
+					countColumn.itemEditor = factory;
+					countColumn.editorUsesEnterKey = true;
+					var columnArray:Array = [countColumn];
+					for(var i:int=0;i<columns.length;i++){
+						columnArray.push(columns[i]);
+					}
+					columns = columnArray;
+				}
+			}
+			
+			private function removeFromStageHandler(event:Event):void
+			{
+				if(!validate())dispatchEvent(new Event("validationError"));
+				if(itemEditorInstance)this.destroyItemEditor();
+				this.selectedItem = null;
+				//this.editedItemPosition = null;
+			}
+			
+			[Bindable]public var totalQuantity:Number;
+			
+			private function get availableQuantity():Number
+			{
+				var quantity:Number = totalQuantity;
+				var source:XMLList = XMLList(dataProvider.source);
+				for each(var shift:XML in source){
+					if(shift.@count.length() > 0 && shift.@count != ""){
+						quantity -= Number(shift.@count);
+					}
+				}
+				return quantity > 0 ? quantity : 0;
+			} 
+			
+			private var _itemId:String;
+			public var warehouseId:String;
+			public var shiftTransactionId:String;
+			public var warehouseDocumentHeaderId:String;
+			public var documentCurrencyId:String;
+			
+			//private var enterPressed:Boolean = false;
+			
+			public function callCommand():void
+			{
+				if(_itemId){
+					var cmd:GetItemLotsCommand = new GetItemLotsCommand(_itemId,warehouseId,shiftTransactionId,warehouseDocumentHeaderId);
+					cmd.addEventListener(ResultEvent.RESULT,handleResult);
+					cmd.execute();
+				}
+			}
+			
+			[Bindable]
+			public function set itemId(value:String):void
+			{
+				if(_itemId == value)return;
+				_itemId = value;
+			}
+			public function get itemId():String
+			{
+				return _itemId;
+			}
+			
+			private function handleResult(event:ResultEvent):void
+			{
+				var list:XMLList = XML(event.result).shifts;
+				preventDefaultItemEditEndHandler = true;
+				this.dataProvider = list;
+				setSelection();
+				if(list.length()>0){
+					selectedIndex = 0;
+					editedItemPosition = {columnIndex : 0,rowIndex : 0};
+				}
+			}
+			
+			public static function showWindow(itemId:String,editable:Boolean = true):ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:LotSelector = new LotSelector();
+				component.itemId = itemId;
+				component.useCountColumn = editable;
+				window.innerComponent = component;
+				window.show(null, new Rectangle(-1, -1, 800, 400),"Transze");// todo use languageManager
+				return window;
+			}
+			
+			private function quantityLabelFunction(item:Object,column:Object):String
+			{
+				if(!(column is AdvancedDataGridColumn) && !(column is DataGridColumn))throw new Error("the 'column' attribute must be an object of type AdvancedDataGridColumn or DataGridColumn");
+				var number:Number = Number(item[column.dataField].toString().replace(",","."));
+				var fraction:String = number.toFixed(4).substr(-4,4);
+				for(var i:int=fraction.length-1; i >= 0; i--){
+					if(fraction.charAt(i) == "0")fraction = fraction.substring(0,i);
+					else break;
+				}
+				var text:String = Math.floor(number).toString();
+				if(fraction.length > 0)text = text + "," + fraction;
+				return text;
+			}
+			
+			protected function currencyLabelFunction(item:Object,column:Object):String
+			{
+				if(!(column is AdvancedDataGridColumn) && !(column is DataGridColumn))throw new Error("the 'column' attribute must be an object of type AdvancedDataGridColumn or DataGridColumn");
+				
+				var text:String = "-";
+				text = CurrencyManager.formatCurrency(Number(item[column.dataField]),"","0") + " " + (DictionaryManager.getInstance().getById(ModelLocator.getInstance().systemCurrencyId).symbol.toString());
+				return text;
+			}
+			
+			override protected function drawRowBackground(s:Sprite, rowIndex:int, y:Number, height:Number, color:uint, dataIndex:int):void
+			{
+				var dp:ListCollectionView = dataProvider as ListCollectionView;
+				if (dp && rowColorFunction != null)
+				{
+					var item:Object;
+					if (dataIndex < dp.length) item = dp.getItemAt(dataIndex);
+					var c:Number = NaN;
+					if (item != null) c = rowColorFunction(item);
+					if (!isNaN(c)) color = c;
+					super.drawRowBackground(s, rowIndex, y, height, color, dataIndex);
+				}
+				super.drawRowBackground(s, rowIndex, y, height, color, dataIndex);
+			}
+			
+			private var rowColorFunction:Function = function (data:Object):Object{
+				if(data.@quantity == "1")return "0xBBFFBB";
+				return NaN;
+			};
+			
+			private function changeHandler():void
+			{
+				if(this.selectedItem){
+					validate();
+					this.editedItemPosition = { columnIndex : 0, rowIndex : selectedIndex };
+					//if(enterPressed)this.dispatchEvent(new Event("commit"));
+				}
+			}
+			
+			private function handleKeyDown(event:KeyboardEvent):void
+			{
+				if(event.ctrlKey)return;
+				switch(event.keyCode){
+					case Keyboard.ENTER:
+						//enterPressed = true;
+						this.dispatchEvent(new Event("commit"));
+					case Keyboard.DOWN:
+						if(selectedIndex<this.collection.length - 1)selectedIndex++;
+						else selectedIndex = 0;
+						validate();
+						dispatchEvent(new ListEvent(ListEvent.CHANGE));
+						break;
+					case Keyboard.UP:
+						if(selectedIndex > 0)selectedIndex--;
+						else selectedIndex = this.collection.length - 1;
+						validate();
+						dispatchEvent(new ListEvent(ListEvent.CHANGE));
+						break;
+					case Keyboard.ESCAPE:
+						if(editedItemPosition)event.preventDefault();
+						break;
+				}
+			}
+			
+			private function handleItemEditBegin(event:DataGridEvent):void
+			{
+				if(!this.stage)event.preventDefault();
+			}
+			
+			private function handleItemEditEnd(event:DataGridEvent = null):void
+			{
+				if(preventDefaultItemEditEndHandler)return;
+				var value:Number = Number(String(event.currentTarget.itemEditorInstance.text).replace(",","."));
+				if(event.currentTarget.itemEditorInstance.data){
+					var quantity:Number = Number(String(event.currentTarget.itemEditorInstance.data.@quantity).replace(",","."));
+					//if(!isNaN(value)){
+						if(isNaN(value) || value > quantity){
+							if(event)event.preventDefault();
+							this.editedItemPosition = { columnIndex : 0, rowIndex : event.rowIndex };
+							selectedIndex = event.rowIndex;
+						}else{
+							this.editedItemRenderer.data.@count = value;
+							this.dataProvider.notifyItemUpdate(this.editedItemRenderer);
+							//this.destroyItemEditor();
+						}
+					//}
+				}
+				var array:Array = [];
+				var shift:Object = {};
+				for(var i:int=0;i<(dataProvider as XMLListCollection).length;i++){
+					if(dataProvider[i].@count.length() > 0 && Number(dataProvider[i].@count) != 0 && dataProvider[i].@count != ""){
+						
+						shift = {};
+						shift.containerId = null;
+						shift.incomeDate = dataProvider[i].@incomeDate;
+						shift.incomeWarehouseDocumentLineId = dataProvider[i].@incomeWarehouseDocumentLineId;
+						shift.quantity = String(dataProvider[i].@count).replace(",",".");
+						shift.sourceShiftId = dataProvider[i].@shiftId;
+						shift.status = dataProvider[i].@status;
+						shift.containerLabel = dataProvider[i].@containerLabel;
+						shift.price = dataProvider[i].@price;
+						shift.fullNumber = dataProvider[i].@fullNumber;
+						//shift.version = dataProvider[i].@version;
+						//if(dataProvider[i].attribute("version").length() > 0)					shift.version = dataProvider[i].@version;
+						if(dataProvider[i].attribute("id").length() > 0)						shift.shiftId = dataProvider[i].@id;
+						if(dataProvider[i].attribute("sourceContainerId").length() > 0)			shift.sourceContainerId = dataProvider[i].@sourceContainerId;
+						if(dataProvider[i].attribute("warehouseDocumentLineId").length() > 0)	shift.warehouseDocumentLineId = dataProvider[i].@warehouseDocumentLineId;
+						if(dataProvider[i].attribute("warehouseId").length() > 0)				shift.warehouseId = dataProvider[i].@warehouseId;
+						if(dataProvider[i].attribute("shiftTransactionId").length() > 0)		shift.shiftTransactionId = dataProvider[i].@shiftTransactionId;
+						if(dataProvider[i].attribute("ordinalNumber").length() > 0)				shift.ordinalNumber = dataProvider[i].@ordinalNumber;
+						array.push(new ShiftObject(shift));
+					}
+				}
+				_selectedShifts = array;
+			}
+			
+			public function validate():Boolean
+			{
+				if(this.itemEditorInstance){
+					if(Number(this.itemEditorInstance["text"].toString().replace(",",".")) <= Number(this.itemEditorInstance.data.@quantity)){
+						return true;
+					}
+				}
+				if(collection){
+					var nan:Boolean;
+					for(var i:int=0;i<collection.length;i++){
+						if(this.itemEditorInstance)nan = isNaN(Number(this.itemEditorInstance["text"]));  
+						if(nan || Number(collection[i].@count) > Number(collection[i].@quantity)){
+							if(this.stage){
+								editedItemPosition = {columnIndex : 0, rowIndex : i};
+								selectedIndex = i;
+							}
+							return false;
+						}
+					}
+				}
+				return true;
+			}
+			
+			private var _selectedShifts:Array;
+			
+			public function set selectedShifts(value:Array):void
+			{
+				if(_selectedShifts == value)return;
+				_selectedShifts = value;
+			}
+			
+			public function get selectedShifts():Array
+			{
+				return _selectedShifts;
+			}
+			
+			private function setSelection():void
+			{
+				if(this.dataProvider && _selectedShifts && _selectedShifts.length > 0){
+					var list:XMLList = new XMLList();
+					var source:XMLList = XMLList(dataProvider.source);
+					for each(var shift:XML in source){
+						for(var i:int=0;i<_selectedShifts.length;i++){
+							if((shift.attribute("shiftId").length() > 0 && String(shift.@shiftId).toUpperCase() == String(_selectedShifts[i].sourceShiftId).toUpperCase())|| (shift.attribute("shiftId").length() == 0 && _selectedShifts[i].sourceShiftId=="" && shift.@incomeWarehouseDocumentLineId == _selectedShifts[i].incomeWarehouseDocumentLineId)){
+								shift.@count = _selectedShifts[i].quantity;
+								if(_selectedShifts[i].shiftId != "")shift.@id = _selectedShifts[i].shiftId;
+								if(_selectedShifts[i].ordinalNumber != "")shift.@ordinalNumber = _selectedShifts[i].ordinalNumber;
+								if(_selectedShifts[i].shiftTransactionId != "")shift.@shiftTransactionId = _selectedShifts[i].shiftTransactionId;
+								if(_selectedShifts[i].sourceContainerId != "")shift.@sourceContainerId = _selectedShifts[i].sourceContainerId;
+								if(_selectedShifts[i].sourceShiftId != "")shift.@sourceShiftId = String(_selectedShifts[i].sourceShiftId).toUpperCase();
+								if(_selectedShifts[i].warehouseDocumentLineId != "")shift.@warehouseDocumentLineId = _selectedShifts[i].warehouseDocumentLineId;
+							}
+						}
+						list = list + shift;
+					}
+					// 
+					this.editedItemPosition = null;
+					dataProvider = list;
+					dispatchEvent(new Event("valuesUpdated"));
+				}
+				preventDefaultItemEditEndHandler = false;
+			}
+		]]>
+	</mx:Script>
+	<mx:columns>
+		<mx:DataGridColumn editable="false" headerWordWrap="true" headerText="Dostępne" width="70" dataField="@quantity" labelFunction="quantityLabelFunction"/>
+		<mx:DataGridColumn editable="false" headerWordWrap="true" headerText="Położenie" width="70" dataField="@containerLabel"/>
+		<mx:DataGridColumn editable="false" headerWordWrap="true" headerText="{LanguageManager.getLabel('common.attributes')}" dataField="@attributes"/>
+		<mx:DataGridColumn editable="false" headerWordWrap="true" headerText="Data dostawy" width="140" dataField="@incomeDate" textAlign="center" itemRenderer="com.makolab.components.inputComponents.DateTimeRenderer"/>
+		<mx:DataGridColumn editable="false" headerWordWrap="true" headerText="Numer dok. dostawy" width="80" dataField="@fullNumber" textAlign="center"/>
+		<mx:DataGridColumn editable="false" headerWordWrap="true" headerText="Cena zakupu" width="80" dataField="@price" labelFunction="currencyLabelFunction" textAlign="right"/>
+	</mx:columns>
+</mx:DataGrid>

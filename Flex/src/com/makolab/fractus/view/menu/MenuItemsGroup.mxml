@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SubMenu xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:menu="com.makolab.components.menu.*" xmlns="com.makolab.fractus.view.menu.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Button;
+			import com.makolab.fractus.view.menu.MenuItemsList;
+			
+			import com.makolab.fractus.view.menu.MultiButton;
+			
+			//public var menuItemList:MenuItemsList  = new MenuItemsList(SubMenu(this));
+			
+			public function init(panelItemsArray:Array):void{
+				
+				var button:Button;
+				for (var i:Number = 0; i < panelItemsArray.length; i++){
+					//button = menuItemList.getMenuItem(panelItemsArray[i]);
+					button = MenuItemsList.getInstance().getMenuItem(panelItemsArray[i].id,panelItemsArray[i].item);
+					if(button)this.addChild(button);
+				}	
+			}
+		]]>
+	</mx:Script>
+</SubMenu>

@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	implements="com.makolab.fractus.view.documents.documentControls.IDocumentControl" xmlns:inputComponents="com.makolab.components.inputComponents.*"
+	enabled="{Boolean(this.documentObject.xml.contractor.length() > 0)}"
+	label="{LanguageManager.getInstance().labels.documents.receivingPerson}"
+	>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.document.DocumentEvent;
+			import mx.controls.ComboBox;
+			import mx.controls.Alert;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.document.DocumentObject;
+			
+			/**
+			 * Flag indicating whether to skip processing <code>focusOut</code> event in combo box.
+			 */
+			private var skipFocusOut:Boolean;
+			
+			/**
+			 * Copy of receivingPerson that was originally in currently edited document.
+			 */
+			private var originalReceivingPerson:XML;
+			
+			private var _documentObject:DocumentObject;
+			
+			[Bindable]
+			public var dataProvider:XMLList;
+			
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				if(this._documentObject != null)
+				{
+					_documentObject.removeEventListener(DocumentEvent.DOCUMENT_FIELD_CHANGE, handleContractorChange);
+					_documentObject.removeEventListener(DocumentEvent.DOCUMENT_LOAD, handleContractorChange);
+				}
+
+				this._documentObject = value;
+				
+				if(this._documentObject != null)
+				{
+					_documentObject.addEventListener(DocumentEvent.DOCUMENT_FIELD_CHANGE, handleContractorChange, false, 0, true);
+					_documentObject.addEventListener(DocumentEvent.DOCUMENT_LOAD, handleContractorChange, false, 0, true);
+					this.dataProvider = this.getDataProvider(this.documentObject.xml.contractor.contractor.relations.relation.relatedContractor.contractor);
+				}
+				
+				if(value != null && value.typeDescriptor.isPurchaseDocument)
+				{
+					this.visible = false;
+					this.includeInLayout = false;
+				}
+				else
+				{
+					this.visible = true;
+					this.includeInLayout = true;
+				}
+				
+				this.storeOriginalReceivingPersion();
+			}
+			
+			private function handleContractorChange(event:DocumentEvent):void
+			{
+				if((event.type == DocumentEvent.DOCUMENT_FIELD_CHANGE && event.fieldName == "contractor") || event.type == DocumentEvent.DOCUMENT_LOAD)
+					this.dataProvider = this.getDataProvider(this.documentObject.xml.contractor.contractor.relations.relation.relatedContractor.contractor);
+			}
+			
+			/**
+			 * Saves current receivingPerson to <code>originalReceivingPerson</code> field.
+			 */
+			private function storeOriginalReceivingPersion():void
+			{
+				if(this.documentObject.xml.receivingPerson.length() > 0)
+					this.originalReceivingPerson = this.documentObject.xml.receivingPerson.contractor[0]; 
+				else
+					this.originalReceivingPerson = null;
+			}
+			
+			public function get documentObject():DocumentObject { return _documentObject; }
+			
+			/**
+			 * Copy of receivingPerson before it was edited. Used only in 'rendererEditor' state when
+			 * the <code>EditorContainer</code> enters BeginEdit stage.
+			 */
+			private var receivingPersonBeforeEdit:XML;
+			
+			/**
+			 * Event handler for <code>focusIn</code> event in combo box.
+			 * 
+			 * @param event FocusEvent object containing event info.
+			 */
+			public function handleComboBoxfocusIn(event:FocusEvent):void
+			{
+				if(this.currentState == "rendererEditor")
+				{
+					if(this.documentObject.xml.receivingPerson.length() > 0)
+						this.receivingPersonBeforeEdit = this.documentObject.xml.receivingPerson[0].copy(); 
+					else
+						this.receivingPersonBeforeEdit = null;
+				}
+			}
+			
+			/**
+			 * Event handler for <code>keyUp</code> event in combo box.
+			 * 
+			 * @param event KeyboardEvent object containing event info.
+			 */
+			public function handleComboBoxKeyUp(event:KeyboardEvent):void
+			{
+				var comboBox:ComboBox = ComboBox(event.currentTarget);
+				
+				this.skipFocusOut = false;
+				
+				if(event.keyCode != Keyboard.ENTER && event.keyCode != Keyboard.ESCAPE && event.keyCode != Keyboard.TAB)
+				{
+					if(!comboBox.isPopUp)
+					{
+						comboBox.open();
+						comboBox.isPopUp = true;
+					}
+					
+					this.selectPotentialItem(comboBox.text, comboBox);
+				}
+				else if (event.keyCode == Keyboard.ESCAPE && this.currentState == "rendererEditor")
+				{
+					delete this.documentObject.xml.receivingPerson;
+					
+					if(this.receivingPersonBeforeEdit != null)
+					{
+						this.documentObject.xml.appendChild(this.receivingPersonBeforeEdit);
+						delete this.documentObject.xml.receivingPerson.contractor.mx_internal_uid; 
+					}
+					
+					this.skipFocusOut = true;
+				}
+			}
+			
+			/**
+			 * Finds and selects in dropdown potential item in data provider that matches currently entered text in combo box.
+			 * 
+			 * @param label Text to find in data provider items.
+			 * @param comboBox ComboBox in which to select potential item in dropdown.
+			 */
+			private function selectPotentialItem(label:String, comboBox:ComboBox):void
+			{
+				if(label == '')
+				{
+					comboBox.dropdown.selectedItem = null;
+					return;
+				}
+				
+				var labelField:String = comboBox.labelField;
+				
+				for (var i:int=0; i<comboBox.dataProvider.length; i++)
+				{
+					if(String(comboBox.dataProvider[i][labelField]).toUpperCase().indexOf(label.toUpperCase()) >= 0)
+					{
+						comboBox.dropdown.selectedIndex = i;
+						return;
+					}
+				}
+				
+				comboBox.dropdown.selectedItem = null;
+			}
+			
+			/**
+			 * Finds the item from data provider that completely matches entered input string in combo box.
+			 * 
+			 * @param label Text to find in data provider items.
+			 * @param comboBox ComboBox that contains data provider to search for.
+			 * 
+			 * @return The found item or null.
+			 */
+			private function getExactItem(label:String, comboBox:ComboBox):XML
+			{
+				if(label == '' || label == null) return null;
+				
+				var labelField:String = comboBox.labelField;
+				
+				for (var i:int=0; i<comboBox.dataProvider.length; i++)
+				{
+					if(String(comboBox.dataProvider[i][labelField]).toUpperCase() == label.toUpperCase())
+					{
+						return comboBox.dataProvider[i];
+					}
+				}
+				
+				return null;
+			}
+			
+			/**
+			 * Event handler for <code>focusOut</code> event in combo box.
+			 * 
+			 * @param event Event object containing event info.
+			 */
+			public function handleComboBoxFocusOut(event:Event):void
+			{
+				if(this.skipFocusOut) return;
+				
+				var comboBox:ComboBox = ComboBox(event.currentTarget);
+				
+				var exactItem:XML = this.getExactItem(comboBox.text, comboBox);
+				
+				if(exactItem != null) //select existing one
+				{
+					this.documentObject.xml.receivingPerson.* = exactItem;
+					delete this.documentObject.xml.receivingPerson.contractor.mx_internal_uid;
+					this.documentObject.xml.receivingPerson.contractor = this.documentObject.xml.receivingPerson.contractor;
+				}
+				else if(comboBox.text != null && comboBox.text != '') //create new
+				{
+					this.documentObject.xml.receivingPerson.* = <contractor type="Contractor">
+										<isBusinessEntity>0</isBusinessEntity>
+										<shortName>{comboBox.text}</shortName>
+										<fullName>{comboBox.text}</fullName>
+										</contractor>;
+					
+					this.documentObject.xml.receivingPerson.contractor = this.documentObject.xml.receivingPerson.contractor;
+				}
+				else //delete
+					delete this.documentObject.xml.receivingPerson;
+
+				comboBox.isPopUp = false;
+				comboBox.selectedIndex = -1;
+			}
+			
+			/**
+			 * Function used in binding that modifies data provider adding <code>originalReceivingPerson</code> if needed.
+			 * 
+			 * @value Parameter needed only for binding purposes.
+			 * 
+			 * @return Collection of contractors.
+			 */
+			public function getDataProvider(value:XMLList):XMLList
+			{
+				var provider:XMLList = this.documentObject.xml.contractor.contractor.relations.relation.relatedContractor.contractor.copy();
+				
+				if(this.originalReceivingPerson != null)
+				{
+					var similarContractor:XMLList = this.documentObject.xml.contractor.contractor.relations.relation.relatedContractor.contractor.(String(id) == String(this.originalReceivingPerson.id));
+					
+					//jezeli kontrahent zmienil nazwisko
+					if((similarContractor.length() == 1 && 
+						String(similarContractor[0].shortName) != String(this.originalReceivingPerson.shortName)) ||
+						similarContractor.length() == 0) //lub jezeli oryginalna osoba odbierajaca jest w ogole nie powiazana z kontrahentem juz
+					{
+						provider += this.originalReceivingPerson;	
+					}
+				}
+				
+				return provider;
+			}
+			
+			private function getSelectedIndex(xml:XMLList):int
+			{
+				if(xml == null || xml.length() == 0)
+					return -1;
+				else
+				{
+					for(var i:int = 0; i<this.dataProvider.length(); i++)
+					{
+						if(String(this.dataProvider[i].shortName).toUpperCase() == String(xml[0].shortName).toUpperCase())
+						{
+							return i;
+						}
+					}
+					
+					return -1;
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<!--
+	<mx:Label text="{LanguageManager.getInstance().labels.documents.receivingPerson}" fontFamily="Arial" fontSize="16" width="140"/>
+	-->	
+	<mx:states>
+		<mx:State name="rendererEditor">
+			<mx:SetStyle name="labelStyleName" value="simpleDocumentEditorLabel"/>
+			<mx:SetStyle name="labelWidth" value="140"/>
+			<mx:AddChild>
+				<inputComponents:EditorContainer fontSize="16" fontFamily="Arial" editorUsesEnterKey="true">
+					<inputComponents:itemRenderer>
+						<mx:Component>
+							<mx:Label
+								minWidth="200"
+								text="{outerDocument.documentObject.xml.receivingPerson.contractor.shortName}"/>
+						</mx:Component>
+					</inputComponents:itemRenderer>
+					<inputComponents:itemEditor>
+						<mx:Component>
+							<mx:ComboBox  
+								editable="true" 
+								minWidth="200"
+								keyUp="outerDocument.handleComboBoxKeyUp(event)"
+								focusOut="outerDocument.handleComboBoxFocusOut(event)"
+								focusIn="outerDocument.handleComboBoxfocusIn(event)"
+								labelField="shortName"
+								dataProvider="{outerDocument.getDataProvider(outerDocument.documentObject.xml.contractor.contractor.relations.relation.relatedContractor.contractor)}"
+								text="{outerDocument.documentObject.xml.receivingPerson.contractor.shortName}"
+								data="{outerDocument.documentObject.xml.receivingPerson.contractor}"
+								selectedItem="{outerDocument.documentObject.xml.receivingPerson.contractor}" />
+						</mx:Component>
+					</inputComponents:itemEditor>
+				</inputComponents:EditorContainer>
+			</mx:AddChild>
+		</mx:State>
+		<mx:State name="editor">
+			<mx:AddChild>
+				<mx:ComboBox  
+					editable="true" 
+					minWidth="200"
+					keyUp="handleComboBoxKeyUp(event)"
+					focusOut="handleComboBoxFocusOut(event)"
+					labelField="shortName"
+					dataProvider="{this.dataProvider}"
+					text="{this.documentObject.xml.receivingPerson.contractor.shortName}"
+					data="{this.documentObject.xml.receivingPerson.contractor}"
+					selectedIndex="{getSelectedIndex(this.documentObject.xml.receivingPerson.contractor)}"
+					 />
+			</mx:AddChild>
+		</mx:State>
+	</mx:states>
+</mx:FormItem>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			
+			import mx.events.ListEvent;
+			[Bindable]
+			public var parameters:XML;
+			
+			private function directionChange(event:ListEvent):void
+			{
+				if(parameters.direction && directionCB.selectedItem.value.toString() == "0") delete parameters.direction;
+				else parameters.direction = directionCB.selectedItem.value.toString();
+				//Fix me
+				//parameters.direction = directionCB.selectedItem.value.text();
+				//parameters.direction = 1;
+			}
+		]]>
+		
+	</mx:Script>
+	<mx:ComboBox id="directionCB" change="directionChange(event)" width="100%" dataProvider="{[
+				 {label : LanguageManager.getInstance().labels.direction.filter.all, value : 0},
+				 {label : LanguageManager.getInstance().labels.direction.filter.receivables, value : -1},
+				 {label : LanguageManager.getInstance().labels.direction.filter.liabilities, value : 1}
+				 ]}"/>
+</mx:VBox>

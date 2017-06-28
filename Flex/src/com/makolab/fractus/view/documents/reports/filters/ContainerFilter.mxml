@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem implements="com.makolab.fractus.view.documents.reports.filters.IReportFilter" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.CatalogueFilterError;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			private var _parameters:XML
+
+			[Bindable]
+			public function set parameters(value:XML):void
+			{
+				_parameters = value;
+			}
+			
+			public function get parameters():XML
+			{
+				return _parameters;
+			}
+			
+			private function setParameters(params:XML):void
+			{
+				if(this.txtInput.text != "")
+					parameters.containers.* = this.txtInput.text;
+				else
+					delete parameters.containers;
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			public function get validationError():String
+			{
+				return null;
+			}
+			
+			public function get stringValue():String
+			{
+				return txtInput.text;
+			}
+			
+			[Bindable]
+			public var text:String = "";
+		]]>
+	</mx:Script>
+		<mx:TextInput id="txtInput" change="setParameters(parameters)" width="100%" text="{text}"/>
+</mx:FormItem>

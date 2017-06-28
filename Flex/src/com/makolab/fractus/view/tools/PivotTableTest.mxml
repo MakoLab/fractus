@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas creationComplete="creationCompleteHandler()" xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300" xmlns:list="com.makolab.components.list.*" xmlns:pivot="com.flexmonster.pivot.*" xmlns:tools="com.makolab.fractus.view.tools.*">
+	<!--list:FlexPivot id="pivotTable"/-->
+	<mx:HBox width="100%">
+				<mx:Button label="Lista raportów" toggle="{reportManager.visible}" click="{if (reportManager.visible) reportManager.hide(); else reportManager.show();}"/>
+				<mx:ButtonBar
+					itemClick="buttonClickHandler(event)"
+					labelField="label"
+					top="4"
+					left="4"
+					 
+					>
+					<mx:dataProvider>
+						<mx:Array>
+							<mx:Object key="getData" label="Pobierz dane"/>
+							<mx:Object key="saveReport" label="Zapisz raport"/>
+							<mx:Object key="openReport" label="Otwórz raport"/>
+						</mx:Array>
+					</mx:dataProvider>
+				</mx:ButtonBar>
+			</mx:HBox>
+	<mx:HBox 
+		top="30"
+		bottom="0"
+		left="0"
+		right="0">
+		<tools:UserReportsManager
+			id="reportManager"
+			width="400"
+			height="100%"
+			change="configurationChangeHandler(event)"
+			/>
+		<mx:VBox width="100%" height="100%">
+			
+			<pivot:FlexPivotComponent
+				id="pivotTable"
+				width="100%"
+				height="100%"
+				filename="{ModelLocator.getInstance().printServiceUrl}GetAllDocumentsReport/"
+				fieldSeparator=";"
+				swfFilePath="{this.swfFilePath}"
+				configUrl="{this.swfFilePath}pivotTableConfig.xml"
+				autoLoad="false"
+				/>
+		</mx:VBox>
+	</mx:HBox>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.inputComponents.SingleValueWindow;
+			import mx.controls.Button;
+			import mx.containers.ControlBar;
+			import mx.controls.TextInput;
+			import mx.containers.TitleWindow;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.ConfigManager;
+			import mx.controls.Alert;
+			import com.flexmonster.pivot.type.DestinationType;
+			import mx.events.ItemClickEvent;
+			import com.flexmonster.pivot.data.consts.AggregationName;
+			import mx.core.Application;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			[Bindable]
+			private var swfFilePath:String = (Application.application.parameters['swfFilePath'] == null) ? 'flexmonster/' : Application.application.parameters['swfFilePath'];
+			private var serviceAddress:String = ModelLocator.getInstance().kernelServiceUrl;
+			
+			public static function showWindow(width:int = -1,height:int = -1):ComponentWindow
+			{
+				var component:PivotTableTest = new PivotTableTest();
+				var title:String = "Test tabeli przestawnej";
+				var dimensions:Rectangle;
+				if (width > 0 && height > 0) dimensions = new Rectangle(0,0,width,height);
+				var window:ComponentWindow = ComponentWindow.showWindow(component,0,dimensions,title);
+				window.setStyle("headerColors", [0x222222, 0x888888]); 
+				return window;
+			}
+			
+			private function creationCompleteHandler():void
+			{
+				
+			}
+			
+			private function buttonClickHandler(event:ItemClickEvent) : void
+			{
+				switch (event.item.key)
+				{
+					case "getData": pivotTable.load(); break;
+					case "saveReport" : getReportName(); break;
+					case "openReport" : pivotTable.load(true); break;
+				}
+			}
+			
+			private function getReportName():void
+			{
+				var nameWindow:SingleValueWindow = new SingleValueWindow();
+				nameWindow.title = "Nazwa raportu";
+				nameWindow.addEventListener(Event.CHANGE,saveReport);
+				nameWindow.show(this);
+			}
+			
+			private function saveReport(event:Event = null):void
+			{
+				if (event.type == Event.CHANGE)
+					pivotTable.save((event.target as SingleValueWindow).value,DestinationType.SERVER,saveHandler,serviceAddress + "web/SavePivotReport?name=");
+			}
+			
+			private function saveHandler(o:Object):void
+			{
+				if (o && o.toString() != false) Alert.show("Zapisano");
+			}
+			
+			private function configurationChangeHandler(event:Event):void
+			{
+				pivotTable.clearReport();
+				pivotTable.configUrl = serviceAddress + "web/GetPivotReport?id=" + reportManager.selectedReport.key.toString();
+				pivotTable.load();
+			}
+		]]>
+	</mx:Script>
+</mx:Canvas>

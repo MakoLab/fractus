@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox creationComplete="init()" xmlns:mx="http://www.adobe.com/2006/mxml" width="1000" height="500" xmlns:list="com.makolab.components.list.*" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:HBox width="100%" verticalAlign="middle">
+		<mx:Label text="Kontrahent:"/>
+		<mx:Text text="{this.result.@fullName}" width="100%" fontWeight="bold"/>
+		<!--
+		<mx:Label text="Typ płatności:"/>
+		<mx:Text text="{this.paymentsOrDebt}" fontWeight="bold"/>
+		-->
+		<!--mx:CheckBox id="branchFilterSwitch" change="checkBoxChanged()" label="Wyłącz filtr oddziału"/-->
+		<!--<mx:Form>-->
+			<mx:FormItem label="Oddział:" direction="horizontal" visible="{isBranchSwitchVisible(searchParams)}" includeInLayout="{isBranchSwitchVisible(searchParams)}">
+				<mx:RadioButtonGroup id="branchFilterSwitch" change="checkBoxChanged()"/>
+				<mx:RadioButton groupName="branchFilterSwitch" label="{getSelectedBranches(searchParams)}" value="false" selected="true" fontWeight="bold"/>
+				<mx:RadioButton groupName="branchFilterSwitch" label="Wszystkie" value="true" fontWeight="bold"/>
+			</mx:FormItem>
+			<mx:FormItem label="Typ płatności:" direction="horizontal">
+				<mx:RadioButton id="cbDebt" label="Należności" click="checkBoxChanged()" groupName="paymentDebt" fontWeight="bold"/>
+				<mx:RadioButton id="cbPayment" label="Zobowiązania" click="checkBoxChanged()" groupName="paymentDebt" fontWeight="bold"/>
+			</mx:FormItem>
+		<!--</mx:Form>-->
+	</mx:HBox>
+	<mx:HBox width="100%">
+		<mx:HBox width="33%">
+			<mx:Label text="Kod:"/>
+			<mx:Text text="{this.result.@code}" fontWeight="bold"/>
+		</mx:HBox>
+		<mx:HBox width="33%">
+			<mx:Label text="Telefon:"/>
+		<mx:Text text="{this.result.@contractorPhone}" fontWeight="bold"/>
+		</mx:HBox>
+		<mx:HBox width="33%">
+			<mx:Label text="Uwagi:"/>
+		<mx:Text text="{this.result.@contractorRemark}" fontWeight="bold"/>
+		</mx:HBox>
+	</mx:HBox>
+	<list:CommonGrid
+			id="grid"
+			headerWordWrap="true"
+			labelFunctions="{this}"
+			width="100%"
+			height="100%"
+			dataProvider="{this.result.*}"
+			itemDoubleClick="handleItemDoubleClick(event)"
+			doubleClickEnabled="true" 
+			rowTextColorFunction="{getLineColor}"
+			rowFontWeightFunction="{getFontWeight}"
+		/>
+	<mx:DataGridColumn id="selectionColumn" width="20" rendererIsEditor="true" textAlign="center" sortable="false">
+		<mx:headerRenderer>
+				<mx:Component>
+					<mx:CheckBox selected="{outerDocument.setHeaderCheckBoxSelection(outerDocument.result)}" change="outerDocument.headerCheckBoxChangeHandler(event)"/>
+				</mx:Component>
+			</mx:headerRenderer>
+			<mx:itemRenderer>
+				<mx:Component>
+					<mx:CheckBox selected="{Boolean(Number(data.@enabled))}" change="outerDocument.checkBoxChangeHandler(event)"/>
+				</mx:Component>
+			</mx:itemRenderer>
+	</mx:DataGridColumn>
+	<!--
+	<mx:DataGridColumn id="lpColumn" headerText="{LanguageManager.getLabel('common.lp')}" minWidth="30" width="30" editable="false" itemRenderer="com.makolab.components.inputComponents.OrdinalNumberRenderer"/>			
+	-->
+	<mx:HBox width="100%" paddingBottom="4">
+		<mx:Label text="Waluta systemowa" width="120" fontWeight="bold"/>
+		<mx:Label text="Suma wartości:"/>
+		<inputComponents:CurrencyRenderer value="{valueSum}" currencyId="{ModelLocator.getInstance().systemCurrencyId}"/>
+		<mx:Label text="Suma nierozliczonych:"/>
+		<inputComponents:CurrencyRenderer value="{unsettledSum}" fontWeight="bold" currencyId="{ModelLocator.getInstance().systemCurrencyId}"/>
+		<mx:Label text="Suma przeterminowanych:"/>
+		<inputComponents:CurrencyRenderer value="{overdueSum}" fontWeight="bold" color="red" currencyId="{ModelLocator.getInstance().systemCurrencyId}"/>
+		<mx:HBox width="100%"/>
+	</mx:HBox>
+	<mx:HRule width="100%"/>
+	<mx:HBox width="100%" paddingBottom="4">
+		<mx:Label text="Waluta dokumentu" width="120" fontWeight="bold"/>
+		<mx:Label text="Suma wartości:"/>
+		<inputComponents:CurrencyRenderer value="{documentAmount}"/>
+		
+		<mx:Label text="Suma nierozliczonych:"/>
+		<inputComponents:CurrencyRenderer value="{foreignPaymentUnsettledSum}" fontWeight="bold"/>
+		<mx:Label text="Suma przeterminowanych:"/>
+		<inputComponents:CurrencyRenderer value="{foreignPaymentOverdueSum}" fontWeight="bold" color="red"/>
+		
+		<mx:HBox width="100%"/>
+		<mx:Button id="printRequestForPaymentButton" label="Wydruk ponaglenia" click="exportButtonClickHandler(true)" visible="false"/>
+		<mx:Button label="Eksportuj" click="exportButtonClickHandler()"/>
+	</mx:HBox>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.components.util.ComponentExportManager;
+			import com.makolab.fractus.model.ConfigManager;
+			import com.makolab.components.inputComponents.OrdinalNumberRenderer;
+			import com.makolab.fractus.model.document.BusinessObject;
+			import mx.utils.ObjectUtil;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.controls.CheckBox;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			import mx.events.ListEvent;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			[Bindable]
+			public var result:XML;
+			
+			private var window:ComponentWindow;
+			
+			[Bindable] private var unsettledSum:Number;
+			[Bindable] private var valueSum:Number;
+			[Bindable] private var overdueSum:Number;
+			
+			[Bindable] private var foreignPaymentUnsettledSum:Number;
+			[Bindable] private var foreignPaymentValueSum:Number;
+			[Bindable] private var foreignPaymentOverdueSum:Number;
+			[Bindable] private var documentAmount:Number;
+			
+			[Bindable]
+			private var paymentsOrDebt:String;
+			[Bindable]
+			private var branchFilterNode:XML;
+			[Bindable]
+			public var searchParams:XML;
+			
+			private var requestForPaymentPrintProfile:String;
+			
+			private function init():void{
+				if(searchParams!=null){
+					cbPayment.selected = this.searchParams.filters.column.(@field == 'payments').* == '1'?true:false;
+					cbDebt.selected = this.searchParams.filters.column.(@field == 'debt').* == '1'?true:false;
+					setPaymentsOrDebt(searchParams);
+				}
+				ModelLocator.getInstance().configManager.requestList(['finance.requestForPaymentPrintProfile'], requestForPaymentPrintProfileLoaded);
+			}
+			
+			private function requestForPaymentPrintProfileLoaded():void
+			{
+				this.requestForPaymentPrintProfile = ModelLocator.getInstance().configManager.getString('finance.requestForPaymentPrintProfile');
+				if (requestForPaymentPrintProfile) this.printRequestForPaymentButton.visible = true;
+			}
+			
+			public static function showWindow(params:XML):ComponentWindow
+			{
+				var cpsd:ContractorPaymentStructureDetails = new ContractorPaymentStructureDetails();
+				cpsd.loadData(params);
+				var window:ComponentWindow = ComponentWindow.showWindow(cpsd, 0, new Rectangle(-1, -1, 1000, 500));
+				cpsd.window = window;
+				return window;
+			}
+			
+			public function headerCheckBoxChangeHandler(event:Event):void
+			{
+				for each(var item:XML in result.*){
+					item.@enabled = event.target.selected ? 1 : 0;
+				}
+				calculateSummary();
+			}
+			
+			public function checkBoxChangeHandler(event:Event):void
+			{
+				var t:String = event.target.data.@lp;
+				result.*.(@lp == t).@enabled = event.target.selected ? 1 : 0;
+				calculateSummary();
+				/*
+				var index:int = grid.itemRendererToIndex(event.target as CheckBox); 
+				result.*[index].@enabled = event.target.selected ? 1 : 0;
+				calculateSummary();
+				*/
+			}
+			
+			public function setHeaderCheckBoxSelection(conditions:XML):Boolean
+			{
+				var selected:Boolean = true;
+				for each(var item:XML in result.*){
+					if(item.attribute("enabled").length() == 0 || item.@enabled == 0){
+						selected = false;
+						break;
+					}
+				}
+				return selected;
+			}
+			
+			private function exportButtonClickHandler(printRequestForPayment:Boolean = false):void
+			{
+				var xml:XML;
+				if (printRequestForPayment)
+				grid.showExportDialogV=false;
+				xml = grid.exportXml('xml');
+				xml.elements.* = xml.elements.documents.(valueOf().@enabled == 1);
+				var summary:XML = <summary/>;
+				summary.@fullNumber = "Łącznie";
+				summary.@documentValue = CurrencyManager.parseCurrency(valueSum.toString());
+				summary.@unsettled = CurrencyManager.parseCurrency(unsettledSum.toString());
+				xml.elements.* = xml.elements.* + summary;
+				ModelLocator.getInstance().exportListXML = xml;
+				if (printRequestForPayment)
+				{
+					xml.details.contractor =
+						<contractor>
+							<shortName>{this.result.@shortName}</shortName>
+							<fullName>{this.result.@fullName}</fullName>
+							<address>{this.result.@contractorAddress}</address>
+							<city>{this.result.@contractorCity}</city>
+							<postCode>{this.result.@contractorPostCode}</postCode>
+							<postOffice>{this.result.@contractorPostOffice}</postOffice>
+						</contractor>;
+					ComponentExportManager.getInstance().exportData(xml, this.requestForPaymentPrintProfile, 'content');
+				}
+				else
+				{
+					grid.showExportDialog();
+				}
+			}
+			
+			public function loadData(params:XML):void
+			{
+				searchParams = params;
+				
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand('[reports].[p_getContractorsPaymentStructureDetails]', params);
+				cmd.addEventListener(ResultEvent.RESULT, handleResult);
+				cmd.execute();
+			}
+			
+			private function handleResult(event:ResultEvent):void
+			{
+				// przeniesione z MXML by wymusic kolejnosc przypisan
+				this.grid.config = XMLList(this.config);
+				var columns:Array = [selectionColumn];
+				//columns.push(lpColumn);
+				
+				for each(var column:DataGridColumn in this.grid.columns){
+					columns.push(column);
+				}
+				this.grid.columns = columns;
+				this.result = XML(event.result);
+				
+				/*---doklada lp---*/
+				var counter:int = 1;
+				if(this.result){
+					for each (var i:XML in this.result.*)
+					{
+						i.@lp=counter.toString();
+						counter++;
+					}
+				}
+				//------------------
+				
+				this.window.title = 'Nierozliczone płatności - ' + result.@shortName;
+				for each (var document:XML in result.*)document.@enabled = 1; // zaznaczenie wszystkich na dzień dobry
+				calculateSummary();
+			}
+			
+			private static const DATE_ERROR_COLOR:uint = 0xff0000;
+			protected function getLineColor(item:XML):Number
+			{
+				var dueDate:Date = Tools.isoToDate(item.@dueDate);
+				dueDate.hours = 23;
+				dueDate.minutes = 59;
+				dueDate.seconds = 59;
+				var result:int = ObjectUtil.dateCompare(new Date(), dueDate);
+				return result<=0 ? NaN : DATE_ERROR_COLOR;
+			}
+			
+			protected function getFontWeight(item:XML):String
+			{
+				var result:String = "normal";
+				if (item.valueOf().@factoring == "1")result = "bold";
+				return result;
+			}
+			
+			private function calculateSummary():void
+			{
+				var value:Number = 0, unsettled:Number = 0, overdue:Number = 0;
+				var foreignPaymentValue:Number = 0, foreignPaymentUnsettled:Number = 0, foreignPaymentOverdue:Number = 0, documentAmount:Number = 0;
+				var systemCurrencySymbol:String = DictionaryManager.getInstance().dictionaries.currency.(id.toString() == ModelLocator.getInstance().systemCurrencyId).symbol.toString();
+				for each (var x:XML in this.result.*.(valueOf().@enabled == 1))
+				{
+					value += parseFloat(x.@documentValue);
+					unsettled += parseFloat(x.@unsettled);
+					if (!isNaN(getLineColor(x)))overdue += parseFloat(x.@unsettled);
+					if ( x.@currency.toString() != systemCurrencySymbol )
+					{
+						foreignPaymentValue +=  parseFloat(x.@documentValue);
+						foreignPaymentUnsettled +=  parseFloat(x.@unsettledDocumentAmount);
+						documentAmount += Math.abs(parseFloat(x.@documentAmount));
+						if (parseFloat(x.@delay) > 0) foreignPaymentOverdue += parseFloat(x.@unsettledDocumentAmount);
+					}
+				}
+				this.valueSum = value;
+				this.unsettledSum = unsettled;
+				this.overdueSum = overdue;
+				
+				this.foreignPaymentValueSum = foreignPaymentValue;
+				this.foreignPaymentUnsettledSum = foreignPaymentUnsettled;
+				this.foreignPaymentOverdueSum = foreignPaymentOverdue;
+				this.documentAmount = documentAmount;
+			}
+			
+			private function handleItemDoubleClick(event:ListEvent):void
+			{
+				var item:Object = event.itemRenderer.data;
+				if (item.@commercialDocumentHeaderId.length() > 0) DocumentRenderer.showWindow(DocumentTypeDescriptor.COMMERCIAL_DOCUMENT, item.@commercialDocumentHeaderId);
+				else if (item.@financialDocumentHeaderId.length() > 0) DocumentRenderer.showWindow(DocumentTypeDescriptor.FINANCIAL_DOCUMENT, item.@financialDocumentHeaderId);
+			}
+			// label functions
+			
+			public function getDocumentData(data:Object, listData:Object):String
+			{
+				if (data.@fullNumber) return data.@documentType + ' ' + data.@fullNumber;
+				else if (data.@documentInfo) return String(data.@documentInfo).replace(/;/g, ' ');
+				else return '?';
+			}
+			
+			public function getUnsettledPercent(data:Object, listData:Object):String
+			{
+				var value:Number = 100 * parseFloat(data.@unsettled) / parseFloat(data.@documentValue);
+				if (isNaN(value)) return '';
+				else return CurrencyManager.formatCurrency(value, '', '0', 0) + '%';
+			}
+			
+			public function getSupplierDocumentData(data:Object, listData:Object):String
+			{
+				var result:String = String(data.@supplierDocumentNumber);
+				if (data.@supplierDocumentDate.length() > 0) result += ' (' + String(data.@supplierDocumentDate).substr(0, 10) + ')';
+				return result;
+			}
+			
+			public function getPaymentMethodWithDays(data:Object, listData:Object):String
+			{
+				var result:String = String(data.@paymentMethod) + " (" + String(data.@dueDays) + ")";
+				return result;
+			}
+			
+			public function getDocumentAmount(data:Object, listData:Object):String
+			{
+				var systemCurrencySymbol:String = DictionaryManager.getInstance().dictionaries.currency.(id.toString() == ModelLocator.getInstance().systemCurrencyId).symbol.toString();
+				var result:String = data && String(data.@currency) != systemCurrencySymbol ? CurrencyManager.formatCurrency(Math.abs(Number(data.@documentAmount))) + " " + String(data.@currency) : "";
+				return result;
+			}
+
+			private function setPaymentsOrDebt(params:XML):void{
+				paymentsOrDebt = params.filters.*.(@field == "payments").* == '1'?cbPayment.label+" ":"";
+				paymentsOrDebt += params.filters.*.(@field == "debt").* == '1'?cbDebt.label+" ":"";
+			}
+			
+			private function setBranchFilter():void
+			{
+				if (!branchFilterSwitch.selectedValue)
+				{
+					if (this.searchParams.filters.column.(@field == 'branchId').length() == 0 && branchFilterNode)
+					{
+						this.searchParams.filters.appendChild(branchFilterNode.copy());
+						branchFilterNode = null;
+					}
+				}else{
+					if (this.searchParams.filters.column.(@field == 'branchId').length() > 0)
+					{
+						branchFilterNode = this.searchParams.filters.column.(@field == 'branchId')[0].copy();
+						delete this.searchParams.filters.column.(@field == 'branchId')[0];
+					}
+				}
+			}
+			
+			private function checkBoxChanged():void{
+				this.searchParams.filters.column.(@field == 'payments').* = cbPayment.selected ? 1 : 0;
+				this.searchParams.filters.column.(@field == 'debt').* = cbDebt.selected ? 1 : 0;
+				setPaymentsOrDebt(searchParams);
+				setBranchFilter();
+				this.result = null;
+				loadData(searchParams);
+			}
+			
+			private function getSelectedBranches(searchParams:XML):String
+			{
+				var branches:Array = [];
+				if (this.searchParams.filters.column.(@field == 'branchId').length() > 0)
+				{
+					var branchIds:Array = String(this.searchParams.filters.column.(@field == 'branchId')[0]).replace(" ","").split(",");
+					for (var i:int = 0; i < branchIds.length; i++)
+					{
+						branches.push(DictionaryManager.getInstance().dictionaries.branches.(id.toString() == branchIds[i]).symbol.toString());
+					}		
+				}
+				return branches.join(",");
+			}
+			
+			private function isBranchSwitchVisible(searchParams:XML):Boolean
+			{
+				return (this.searchParams.filters.column.(@field == 'branchId').length() > 0);
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:XML id="config">
+		<config header="{this.result.@fullName}" subHeader="{this.paymentsOrDebt}">
+			<column labelKey="common.lp" label="Lp." field="@lp" width="32"/>			
+			<column field="@fullNumber" labelFunction="getDocumentData" labelKey="common.document" label="Dokument" width="80"/>
+			<column field="@issueDate" dataType="date" label="Data wystawienia" width="80"/>
+			<column field="@dueDate" dataType="date" label="Termin płatności" width="80"/>
+			<column field="@documentValue" dataType="currency" label="Winien (waluta&#160;sys.)" width="100"/>
+			<column field="@unsettled" dataType="currency" label="Pozostało (waluta&#160;sys.)" width="100"/>
+			<column field="@unsettledPercent" labelFunction="getUnsettledPercent" label="%" width="45"/>
+			<column field="@supplierDocumentNumber" labelFunction="getSupplierDocumentData" label="Dokument dostawcy" width="200"/>
+			<column field="@paymentMethod" labelFunction="getPaymentMethodWithDays" label="Forma płatności" width="120"/>
+			<column field="@documentAmount" labelFunction="getDocumentAmount" label="Winien (waluta&#160;dok.)" width="120" textAlign="right"/>
+		</config>
+	</mx:XML>
+</mx:VBox>

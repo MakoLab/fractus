@@ -1,0 +1,33 @@
+<config>
+	<searchParams type="CommercialDocument">
+	  <pageSize>200</pageSize>
+	  <page>1</page>
+	  <columns>
+	    <column field="id" column="commercialDocumentId" />
+	    <column field="status"/>
+	    <column field="fullNumber"/>
+	    <column field="issueDate" sortOrder="1" sortType="DESC"/>
+	    <column field="contractor" column="fullName" relatedObject="contractor"/>
+	    <column field="grossValue"/>
+	  </columns>
+	  <query/>
+	  <filters>
+	    <column field="status">60,40,20</column>
+	    <column field="documentCategory">13</column>
+	  </filters>
+	  <groups/>
+	</searchParams>
+	<operations>
+	</operations>
+	<searchModes>
+		<column label="Ogólne" field=""/>
+		<!--<column labelKey="common.code" label="Kod" field="code"/>-->
+	</searchModes>
+	<columns>
+		<column field="@status" dataType="documentStatus" width="25"/>
+		<column field="@fullNumber" labelKey="documents.documentNumber" width="120"/>
+		<column field="@issueDate" labelKey="documents.issueDateShort" dataType="date" width="80"/> 
+		<column field="@contractor" labelKey="contractors.contractor"/>
+		<column field="@grossValue" labelKey="documents.grossValue" dataType="currency" width="100"/>
+	</columns>
+</config>

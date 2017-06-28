@@ -1,0 +1,27 @@
+<config title="{LanguageManager.getInstance().labels.documents.list.sales}">
+				<headerColor>WAREHOUSE_COLOR</headerColor>
+				<headerColorLight>WAREHOUSE_COLOR_LIGHT</headerColorLight>
+				<objectType>Draft</objectType>
+				<columns>
+					<column field="@documentTypeId" labelKey="documents.type" dataType="documentType" width="70"/>
+					<column field="@date" labelKey="documents.saveDate" dataType="dateTime" width="160"/> 
+					<column field="@contractor" labelKey="contractors.contractor"/>
+				</columns>
+				<getItemDataParams>
+					<type>Document</type>
+					<id/>
+				</getItemDataParams>
+				<searchParams type="Draft">
+					<pageSize>200</pageSize>
+					<page>1</page>
+					<columns>
+						<column field="documentTypeId" column="documentTypeId"/>
+						<column field="date" sortOrder="1" sortType="DESC"/>
+						<column field="contractor" column="fullName" relatedObject="contractor"/>
+					</columns>
+				</searchParams>
+				<filters>
+				  	<filter label="" type="dateFilter"/>
+				  	<filter labelKey="documents.documentType" label="Typ dokumentu" type="docTypeFilter" itemsType="1,3,4"/>
+				</filters>
+</config>

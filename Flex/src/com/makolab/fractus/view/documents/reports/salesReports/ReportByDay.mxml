@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReportBase xmlns="com.makolab.fractus.view.documents.reports.*" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:layoutComponents="com.makolab.components.layoutComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.commands.SearchCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.view.documents.documentLists.DocumentList;
+			import com.makolab.fractus.view.documents.documentLists.SalesDocumentList;
+			import com.makolab.fractus.view.documents.documentLists.SimpleCatalogue;
+			import com.makolab.fractus.view.documents.documentLists.SimpleDocumentList;
+			import com.makolab.fractus.view.documents.reports.CheckBoxLegendItem;
+			
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.events.ListEvent;
+			import mx.formatters.CurrencyFormatter;
+			
+			private static const legendItemClass:Class = CheckBoxLegendItem;
+			
+			private function calculateProfitMargin(source:XMLList,dataField:String,childDataField:String = null):String{
+				var dataFieldName:String = dataField;
+				var nettoSum:Number = 0;
+				var profitSum:Number = 0;
+				for(var i:int=0;i<source.length();i++){
+					nettoSum += Number(source[i].@netValue);
+					profitSum += Number(source[i].@profit);
+				}
+				return (profitSum/nettoSum).toString();
+			}
+			
+			private function itemDoubleClickHandler(event:ListEvent):void
+			{
+				if(dataProvider)
+				{
+					var catalogueWindow:ComponentWindow = SimpleCatalogue.showWindow(SearchCommand.DOCUMENTS,"documents.lists.sales",false);
+					(catalogueWindow.innerComponent as SimpleCatalogue).searchFilters =  	<filters>
+																								<column field="status">60,40,20</column>
+																								<column field="documentCategory">0,5</column>
+																							</filters>;
+					(catalogueWindow.innerComponent as SimpleCatalogue).dateFrom = grid.dataProvider[event.rowIndex].@date;
+					(catalogueWindow.innerComponent as SimpleCatalogue).dateTo = grid.dataProvider[event.rowIndex].@date + "T23:59:59.997";
+					(catalogueWindow.innerComponent as SimpleCatalogue).search();
+				}
+			}
+		]]>
+	</mx:Script>
+	<table>
+		<mx:AdvancedDataGrid id="grid" width="100%" height="100%" doubleClickEnabled="true" itemDoubleClick="itemDoubleClickHandler(event)">
+			<mx:columns>
+				<mx:AdvancedDataGridColumn id="dayColumn" headerText="{LanguageManager.getLabel('common.date')}" dataField="@date" width="100" textAlign="center"/>
+				<mx:AdvancedDataGridColumn id="quantityColumn" sortCompareFunction="{Tools.getSortFunction('@quantity')}" headerText="{LanguageManager.getLabel('common.amount')}" dataField="@quantity" textAlign="right" labelFunction="quantityLabelFunction" width="100"/>
+				<mx:AdvancedDataGridColumn id="costColumn" sortCompareFunction="{Tools.getSortFunction('@cost')}" headerText="{LanguageManager.getLabel('reports.pricebypurchase')}" dataField="@cost" textAlign="right" labelFunction="currencyLabelFunction" width="120"/>
+				<mx:AdvancedDataGridColumn id="netValueColumn" sortCompareFunction="{Tools.getSortFunction('@netValue')}" headerText="{LanguageManager.getLabel('reports.netsellprice')}" dataField="@netValue" textAlign="right" labelFunction="currencyLabelFunction" width="120"/>
+				<mx:AdvancedDataGridColumn id="grossValueColumn" sortCompareFunction="{Tools.getSortFunction('@grossValue')}" headerText="{LanguageManager.getLabel('reports.grosssellprice')}" dataField="@grossValue" textAlign="right" labelFunction="currencyLabelFunction" width="120"/>
+				<mx:AdvancedDataGridColumn id="profitColumn" sortCompareFunction="{Tools.getSortFunction('@profit')}" headerText="{LanguageManager.getLabel('common.profitValue')}" dataField="@profit" textAlign="right" labelFunction="currencyLabelFunction" width="120"/>
+				<mx:AdvancedDataGridColumn id="profitMarginColumn" sortCompareFunction="{Tools.getSortFunction('@profitMargin')}" headerText="{LanguageManager.getLabel('common.profit')}" dataField="@profitMargin" textAlign="right" labelFunction="percentLabelFunction" width="100"/>
+				</mx:columns>
+		</mx:AdvancedDataGrid>
+	</table>
+	<summary>
+		<layoutComponents:AdvancedDataGridSummary2 source="{grid}">
+			<layoutComponents:summaryColumns>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.ROW_COUNT]}" sourceColumn="{dayColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{quantityColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{costColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{netValueColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{grossValueColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{profitColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[calculateProfitMargin]}" sourceColumn="{profitMarginColumn}"/>
+			</layoutComponents:summaryColumns>
+		</layoutComponents:AdvancedDataGridSummary2>
+	</summary>
+	<graph>
+		<mx:VBox width="100%">
+			<mx:HBox width="100%">
+			<mx:LineChart id="chart" dataProvider="{this.dataProvider}" showDataTips="true" width="100%">
+				<mx:horizontalAxis>
+					<mx:CategoryAxis dataProvider="{dataProvider}" categoryField="@date"/>
+				</mx:horizontalAxis>
+				<mx:series>
+					<mx:LineSeries yField="@quantity" displayName="{LanguageManager.getLabel('common.quantity')}"/>
+					<mx:LineSeries yField="@cost" displayName="{LanguageManager.getLabel('common.cost')}"/>
+					<mx:LineSeries yField="@netValue" displayName="{LanguageManager.getLabel('documents.netValue')}"/>
+					<mx:LineSeries yField="@grossValue" displayName="{LanguageManager.getLabel('documents.grossValue')}"/>
+					<mx:LineSeries yField="@profit" displayName="{LanguageManager.getLabel('common.profitValue')}"/>
+					<mx:LineSeries yField="@quantity" displayName="{LanguageManager.getLabel('common.profit')}"/>
+				</mx:series>
+			</mx:LineChart>
+			<mx:Legend dataProvider="{chart}" legendItemClass="{legendItemClass}"/>
+			</mx:HBox>
+		</mx:VBox>
+	</graph>
+</ReportBase>

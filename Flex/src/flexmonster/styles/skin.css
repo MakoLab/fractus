@@ -1,0 +1,655 @@
+/* CSS file */
+
+default {
+	fontFamily: "Verdana";
+	fontSize: 12;
+	color: #000000;
+}
+
+grid {
+	defaultCellWidth: 60;
+	defaultCellHeight: 24;
+	topHeaderHeight: 24;
+	leftHeaderWidth: 28;
+	titleStyleName: gridTitle;
+	textAlign: right;
+}
+
+	gridTitle {
+		fontFamily: "Verdana";
+		fontSize: 12;
+		fontWeight: bold;
+		color: #000000; 
+	}
+
+grid:print {
+	defaultCellWidth: 40;
+	defaultCellHeight: 16;
+	topHeaderHeight: 16;
+	leftHeaderWidth: 18;
+}
+
+grid:pdf {
+	defaultCellWidth: 40;
+	defaultCellHeight: 18;
+	topHeaderHeight: 18;
+	leftHeaderWidth: 18;
+}
+
+sheetHeader {
+	lineColor: #CCCCCC;
+	fillColor: #F9F3D6;
+	textColor: #3d3d39;
+	fontSize: 12;
+}
+
+sheetHeader:print {
+	lineColor: #CCCCCC;
+	fillColor: #F9F3D6;
+	textColor: #3d3d39;
+	fontSize: 8;
+}
+
+sheetHeader:pdf {
+	lineColor: #CCCCCC;
+	fillColor: #F9F3D6;
+	textColor: #3d3d39;
+	fontSize: 9;
+}
+
+.dataCell {
+	fontFamily: "Verdana";
+	fontSize: 12;
+	color: #000000;
+	backgroundColor: #FFFFFF;
+	overColor: #91AA9D;
+	textAlign: right;
+}
+
+.dataCell:print {
+	fontFamily: "Verdana";
+	fontSize: 8;
+	color: #000000; 
+	backgroundColor: #FFFFFF;
+}
+
+.dataCell:pdf {
+	fontFamily: "Verdana";
+	fontSize: 9;
+	color: #000000; 
+	backgroundColor: #FFFFFF;
+}
+
+.totalCell {
+	fontSize: 11;
+	fontWeight: bold;
+}
+
+.totalCell:print {
+	fontSize: 8;
+	fontWeight: bold;
+}
+
+.totalCell:pdf {
+	fontSize: 9;
+	fontWeight: bold;
+}
+
+.redCell {
+	backgroundColor: #974d06;
+	color: #FFFFFF; 
+}
+
+.orangeCell {
+	backgroundColor: #f9f3d6;
+	color: #000000; 
+}
+
+.greenCell {
+	backgroundColor: #669900;
+	color: #FFFFFF; 
+}
+
+.headerCell {
+	fontFamily: "Verdana";
+	fontSize: 12;
+	color: #FFFFFF; 
+	textIndent:4;
+	backgroundColor: #336600;
+	overColor: #91AA9D;
+	paddingLeft: 2;
+}
+
+.headerCell:print {
+	fontFamily: "Verdana";
+	fontSize: 8;
+	color: #FFFFFF; 
+	textIndent:4;
+	backgroundColor: #336600;
+	paddingLeft: 2;
+}
+
+.headerCell:pdf {
+	fontFamily: "Verdana";
+	fontSize: 9;
+	color: #FFFFFF; 
+	textIndent:4;
+	backgroundColor: #336600;
+	paddingLeft: 2;
+}
+
+.expandedHeaderCell {
+	textIndent: 4;
+	leftIcon: Embed(source="styles/swf/skins.swf", symbol="MinusIconClass", color="0xFFFFFF");
+	useHandCursor: false;
+}
+
+.expandedHeaderCell:print {
+	textIndent: 4;
+	leftIcon: Embed(source="styles/swf/skins.swf", symbol="MinusIconClassPrint");
+	useHandCursor: false;
+}
+
+.expandedHeaderCell:pdf {
+	textIndent: 4;
+	leftIcon: Embed(source="styles/swf/skins.swf", symbol="MinusIconClassPrint");
+	useHandCursor: false;
+}
+
+.collapsedHeaderCell {
+	textIndent: 4;
+	leftIcon: Embed(source="styles/swf/skins.swf", symbol="PlusIconClass", color="0xFFFFFF");
+	useHandCursor: false;
+}
+
+.collapsedHeaderCell:print {
+	textIndent: 4;
+	leftIcon: Embed(source="styles/swf/skins.swf", symbol="PlusIconClassPrint");
+	useHandCursor: false;
+}
+
+.collapsedHeaderCell:pdf {
+	textIndent: 4;
+	leftIcon: Embed(source="styles/swf/skins.swf", symbol="PlusIconClassPrint");
+	useHandCursor: false;
+}
+
+.hierarchyDrilledDownCell {
+	useHandCursor: false;
+	linkStyleName: hierarchyLink;
+}
+
+.hierarchyDrilledUpCell {
+	useHandCursor: false;
+	linkStyleName: hierarchyLink;
+}
+.hierarchyLink {
+	fontFamily: "Verdana";
+	fontSize: 10;
+	color: #ADBF9B;
+	underline: true;
+}
+.filterCell {
+	textIndent: 3;
+	paddingLeft: 2;
+	leftIcon: Embed(source="styles/swf/skins.swf", symbol="FilterArrowIconClass");
+	useHandCursor: true;
+}
+
+.filteredCell {
+	rightIcon: Embed(source="styles/swf/skins.swf", symbol="FilterIconClass");
+}
+
+.filterCell:print {
+	textIndent: 4;
+	paddingLeft: 2;
+	leftIcon: Embed(source="styles/swf/skins.swf", symbol="FilterIconClassPrint");
+	useHandCursor: true;
+}
+
+.filterCell:pdf {
+	textIndent: 4;
+	paddingLeft: 2;
+	leftIcon: Embed(source="styles/swf/skins.swf", symbol="FilterIconClassPrint");
+	useHandCursor: true;
+}
+
+.cellLink {
+	color: #ADBF9B;
+	underline: true;
+	useHandCursor: true;
+}
+
+.vSortCell {
+	overIcon: Embed(source="styles/swf/skins.swf", symbol="vSortIconClass");
+}
+.vSortAscCell {
+	rightIcon: Embed(source="styles/swf/skins.swf", symbol="vSortAscIconClass");
+}
+.vSortDescCell {
+	rightIcon: Embed(source="styles/swf/skins.swf", symbol="vSortDescIconClass");
+}
+.hSortCell {
+	overIcon: Embed(source="styles/swf/skins.swf", symbol="hSortIconClass");
+}
+.hSortAscCell {
+	rightIcon: Embed(source="styles/swf/skins.swf", symbol="hSortAscIconClass");
+}
+.hSortDescCell {
+	rightIcon: Embed(source="styles/swf/skins.swf", symbol="hSortDescIconClass");
+}
+
+.level0 {
+	paddingLeft: 2;
+}
+.level1 {
+	paddingLeft: 17;
+}
+.level2 {
+	paddingLeft: 32;
+}
+.level3 {
+	paddingLeft: 47;
+}
+.level4 {
+	paddingLeft: 62;
+}
+.level5 {
+	paddingLeft: 77;
+}
+.level6 {
+	paddingLeft: 92;
+}
+.level7 {
+	paddingLeft: 107;
+}
+.level8 {
+	paddingLeft: 122;
+}
+.level9 {
+	paddingLeft: 137;
+}
+.level10 {
+	paddingLeft: 152;
+}
+.level11 {
+	paddingLeft: 167;
+}
+.level12 {
+	paddingLeft: 182;
+}
+
+chartsView {
+	minBarSize: 3;
+	legendStyleName: chartLegend;
+	chartXLabelStyleName: chartXLabel;
+	chartYLabelStyleName: chartYLabel;
+	chartPieLabelStyleName: chartPieLabel;
+	chartViewTitleStyleName: chartTitle;
+	chartViewPieCbxStyleName: chartPieCbx;
+	chartViewMeasureCbxStyleName: chartMeasureCbx;
+	colors: [#A50F15, #DE2D26, #FB6A4A, #FC9272, #FCBBA1, #ffdecd], [#08519C, #3182BD, #6BAED6, #8dbdd6, #abcfe4, #c1d9f8], [#216d00, #4ca528, #67c563, #7add7f, #b3e6b8, #cbebce], [#980043, #DD1C77, #DF65B0, #C994C7, #D4B9DA, #F1EEF6], [#993404, #D95F0E, #FE9929, #FEC44F, #FEE391, #fbf9b8], [#006D2C, #2CA25F, #66C2A4, #99D8C9, #CCECE6, #e1f5f1], [#8c0a94, #c60bd1, #d460cd, #e87be2, #f995f3, #fed6fc], [#999900, #CCCC00, #DDDD33, #D0D066, #CCCC99, #efefb3], [#002d9d, #0056e3, #338aff, #6eafff, #a2bfff, #c4caff]; 
+	singleColors: #E41A1C, #377EB8, #4DAF4A, #e042a6, #FF7F00, #59BBAB, #b96bdd, #EDC200, #2491DE; 
+}
+
+	chartLegend {
+		hideButtonStyleName: hideButton;
+		legendSeparatorStyleName: legendSeparator;
+		backgroundImage: Embed(source="styles/swf/skins.swf", symbol="LegendBgClass");
+	}
+
+		hideButton {
+			upSkin: Embed(source="styles/swf/skins.swf", symbol="LegendBtnSkinClass");	
+			overSkin: Embed(source="styles/swf/skins.swf", symbol="LegendBtnSkinClass");
+			downSkin: Embed(source="styles/swf/skins.swf", symbol="LegendBtnSkinClass");
+			fontSize: 10;
+			color: #006699;
+			textDecoration: underline;
+		}
+		
+		legendSeparator {
+			backgroundImage: Embed(source="styles/swf/skins.swf", symbol="LegendSeparatorClass");
+		}
+		
+	chartTitle {
+		fontFamily: "Verdana";
+		fontSize: 12;
+		fontWeight: bold;
+		color: #000000; 
+	}
+	
+	chartXLabel {
+		fontFamily: "Verdana";
+		fontSize: 10;
+		color: #000000; 
+	}
+
+	chartYLabel {
+		fontFamily: "Verdana";
+		fontSize: 10;
+		color: #000000; 
+	}
+
+	chartPieLabel {
+		fontFamily: "Verdana";
+		fontSize: 10;
+		color: #000000; 
+	}
+
+	chartPieCbx {
+		upSkin: Embed(source="styles/swf/skins.swf", symbol="ChartCbxSkinClass");
+		overSkin: Embed(source="styles/swf/skins.swf", symbol="ChartCbxSkinClass");
+		downSkin: Embed(source="styles/swf/skins.swf", symbol="ChartCbxSkinClass");
+		fontSize: 12;
+		textAlign: left;
+		leftMargin: 10;
+	}
+	
+	chartMeasureCbx {
+		upSkin: Embed(source="styles/swf/skins.swf", symbol="ChartCbxSkinClass");
+		overSkin: Embed(source="styles/swf/skins.swf", symbol="ChartCbxSkinClass");
+		downSkin: Embed(source="styles/swf/skins.swf", symbol="ChartCbxSkinClass");
+		fontSize: 12;
+		textAlign: left;
+		leftMargin: 10;
+	}
+	
+	chartToolTip {
+		shadow: 1;
+		rounded: 6;
+		stroke: 1;
+		borderColor: #C8C8C8;
+		backgroundColor: #ffffff;
+		titleColor: #000000;
+		titleWeight: bold;
+		titleSize: 10;
+		bodyColor: #000000;
+		bodyWeight: normal;
+		bodySize: 10;
+	}
+
+configuratorCellCheckbox {
+	fontSize: 11;
+	background: Embed(source="styles/swf/skins.swf", symbol="CellBgClass");
+	icon: Embed(source="styles/swf/skins.swf", symbol="EmptyCheckBoxClass"); 
+	backgroundAlpha: 0.5;
+	paddingLeft: 5;
+}
+configuratorCellCheckbox:over {
+	backgroundAlpha: 1;
+}
+configuratorCellCheckbox:checked {
+	fontWeight: bold;
+	icon: Embed(source="styles/swf/skins.swf", symbol="CheckBoxClass"); 
+	
+}
+
+hierarchyCell {
+	paddingLeft: 4;
+	backgroundImage: Embed(source="styles/swf/skins.swf", symbol="CellBgClass");
+	iconOpen: Embed(source="styles/swf/skins.swf", symbol="IconPlusClass");
+	iconClose: Embed(source="styles/swf/skins.swf", symbol="IconMinusClass");
+	iconEmptyCheckbox: Embed(source="styles/swf/skins.swf", symbol="EmptyCheckBoxClass");
+	iconHalfCheckbox: Embed(source="styles/swf/skins.swf", symbol="HalfCheckBoxClass");
+	iconCheckbox: Embed(source="styles/swf/skins.swf", symbol="CheckBoxClass");
+}
+
+measureCellAggregation {
+	icon: Embed(source="styles/swf/skins.swf", symbol="MeasureCellAggregationClass");
+	iconOver: Embed(source="styles/swf/skins.swf", symbol="MeasureCellAggregationOverClass");
+	backgroundImage: Embed(source="styles/swf/skins.swf", symbol="LevelCellBgClass");
+	paddingLeft: 2;
+	iconEmptyCheckbox: Embed(source="styles/swf/skins.swf", symbol="EmptyCheckBoxClass");
+	iconCheckbox: Embed(source="styles/swf/skins.swf", symbol="CheckBoxClass");
+}
+
+checkBoxHierarchyCell {
+	backgroundImage: Embed(source="styles/swf/skins.swf", symbol="LevelCellBgClass");
+}
+
+levelCell {
+	icon: Embed(source="styles/swf/skins.swf", symbol="LevelCellDragIconClass");
+	iconValues: Embed(source="styles/swf/skins.swf", symbol="ValuesIconClass");
+	backgroundImage: Embed(source="styles/swf/skins.swf", symbol="LevelCellBgClass");
+}
+
+dimensionCell {
+	iconClose: Embed(source="styles/swf/skins.swf", symbol="DimensionCellCloseClass");
+	iconOpen: Embed(source="styles/swf/skins.swf", symbol="DimensionCellOpenClass");
+	backgroundImage: Embed(source="styles/swf/skins.swf", symbol="LevelCellBgClass");
+}
+
+folderCell {
+	iconClose: Embed(source="styles/swf/skins.swf", symbol="FolderIconCloseClass");
+	iconOpen: Embed(source="styles/swf/skins.swf", symbol="FolderIconOpenClass");
+	backgroundImage: Embed(source="styles/swf/skins.swf", symbol="LevelCellBgClass");
+}
+
+checkBoxTreeList {
+	fontSize: 12;
+	fontWeight: bold;
+	color: #51841E;
+	labelAlign: center;
+	backgroundImage: Embed(source="styles/swf/skins.swf", symbol="FieldsListBgClass");
+}
+
+aggregationView {
+	backgroundImage: Embed(source="styles/swf/skins.swf", symbol="AggregationBgClass");
+}
+
+filterCheckBoxTreeList {
+	backgroundImage: Embed(source="styles/swf/skins.swf", symbol="WhiteBgClass");
+}
+
+fieldsList {
+	fontSize: 12;
+	color: #51841E;
+	fontWeight: bold;
+	labelAlign: center;
+	backgroundImage: Embed(source="styles/swf/skins.swf", symbol="FieldsListBgClass");
+	backgroundSelectedImage: Embed(source="styles/swf/skins.swf", symbol="CheckBoxTreeBgClass");
+}
+
+treeFieldsList {
+	fontSize: 12;
+	color: #51841E;
+	fontWeight: bold;
+	labelAlign: center;
+	backgroundImage: Embed(source="styles/swf/skins.swf", symbol="FieldsListBgClass");
+	backgroundSelectedImage: Embed(source="styles/swf/skins.swf", symbol="CheckBoxTreeBgClass");
+}
+
+fieldsView {
+	backgroundImage: Embed(source="styles/swf/skins.swf", symbol="FieldsViewBgClass");
+	top: 1;
+	right: 1;
+	openConfiguratorButton: openConfiguratorButton;
+}
+
+	openConfiguratorButton {
+		upSkin: Embed(source="styles/swf/skins.swf", symbol="BtnOpenFieldsListUpClass");
+		overSkin: Embed(source="styles/swf/skins.swf", symbol="BtnOpenFieldsListOverClass");
+		downSkin: Embed(source="styles/swf/skins.swf", symbol="BtnOpenFieldsListDownClass");
+	}
+
+configuratorView {
+	updateBtnStyleName: configuratorUpdateBtn;	
+	cancelBtnStyleName: configuratorCancelBtn;
+}
+
+	configuratorUpdateBtn {
+		upSkin: Embed(source="styles/swf/skins.swf", symbol="BtnUpSkinClass");
+		overSkin: Embed(source="styles/swf/skins.swf", symbol="BtnOverSkinClass");
+		downSkin: Embed(source="styles/swf/skins.swf", symbol="BtnDownSkinClass");
+		disabledSkin: Embed(source="styles/swf/skins.swf", symbol="BtnDisabledSkinClass");
+		icon: Embed(source="styles/swf/skins.swf", symbol="BtnCheckIconClass");
+		fontSize: 12;
+		color: #000000;
+		fontWeight: bold;
+	}
+	
+	configuratorCancelBtn {
+		upSkin: Embed(source="styles/swf/skins.swf", symbol="BtnUpSkinClass");
+		overSkin: Embed(source="styles/swf/skins.swf", symbol="BtnOverSkinClass");
+		downSkin: Embed(source="styles/swf/skins.swf", symbol="BtnDownSkinClass");
+		
+		fontSize: 12;
+		color: #000000;
+	}
+
+filterSortView {
+	backgroundImage: Embed(source="styles/swf/skins.swf", symbol="FilterBgClass");
+	labelStyleName: filterLabel;
+	checkBoxTreeListStyleName: filterCheckBoxTreeList;
+	filterOkButtonStyleName: filterOkButton;
+	filterCancelButtonStyleName: filterCancelButton;
+	accordionStyleName: accordion;
+	paddingLeft: 12;
+	paddingRight: 12;
+	width: 300;
+	height: 400;
+}
+
+	filterLabel {
+		fontFamily: "Verdana";
+		fontSize: 11;
+		color: #51841E; 
+		textIndent:2;
+		backgroundColor: #5B7876;
+		paddingLeft: 2;
+		fontWeight: bold;
+	}
+
+	accordion {
+		contentStyleName: accordionContent;
+		tabStyleName: accordionTab;
+		tabSelectedStyleName: accordionSelectedTab;
+		backgroundImage: Embed(source="styles/swf/skins.swf", symbol="AccordionContentBgClass");
+	}
+
+		accordionContent {
+			buttonsStyleName: filterButtons;
+			separator: Embed(source="styles/swf/skins.swf", symbol="SeparatorClass");
+		}
+			
+			filterButtons {
+				iconAsc: Embed(source="styles/swf/skins.swf", symbol="SortingAzClass");
+				iconDesc: Embed(source="styles/swf/skins.swf", symbol="SortingZaClass");
+				iconUnsorted: Embed(source="styles/swf/skins.swf", symbol="SortingNoClass");
+				iconTop10: Embed(source="styles/swf/skins.swf", symbol="SortingTop10Class");
+				upSkin: Embed(source="styles/swf/skins.swf", symbol="BtnFilterSortingUpClass");
+				overSkin: Embed(source="styles/swf/skins.swf", symbol="BtnFilterSortingOverClass");
+				downSkin: Embed(source="styles/swf/skins.swf", symbol="BtnFilterSortingDownClass");
+				selectedUpSkin: Embed(source="styles/swf/skins.swf", symbol="BtnFilterSortingSelectedUpClass");
+				selectedOverSkin: Embed(source="styles/swf/skins.swf", symbol="BtnFilterSortingSelectedOverClass");
+				selectedDownSkin: Embed(source="styles/swf/skins.swf", symbol="BtnFilterSortingSelectedDownClass");
+			}
+
+		accordionTab {
+			upSkin: Embed(source="styles/swf/skins.swf", symbol="FilterTabSkinClass");
+			overSkin: Embed(source="styles/swf/skins.swf", symbol="FilterTabSkinClass");
+			fontSize: 12;
+			color: #000000;
+			textAlign: left;
+		}
+		
+		accordionSelectedTab {
+			upSkin: Embed(source="styles/swf/skins.swf", symbol="FilterTabSelectedClass");
+			overSkin: Embed(source="styles/swf/skins.swf", symbol="FilterTabSelectedClass");
+			fontSize: 12;
+			color: #FFFFFF;
+			fontWeight: bold;
+			textAlign: left;
+		}
+	filterOkButton {
+		upSkin: Embed(source="styles/swf/skins.swf", symbol="BtnUpSkinClass");
+		overSkin: Embed(source="styles/swf/skins.swf", symbol="BtnOverSkinClass");
+		downSkin: Embed(source="styles/swf/skins.swf", symbol="BtnDownSkinClass");
+		disabledSkin: Embed(source="styles/swf/skins.swf", symbol="BtnDisabledSkinClass");
+		okIcon: Embed(source="styles/swf/skins.swf", symbol="BtnCheckIconClass");
+		fontSize: 12;
+		color: #000000;
+		fontWeight: bold;
+	}
+	
+	filterCancelButton {
+		upSkin: Embed(source="styles/swf/skins.swf", symbol="BtnUpSkinClass");
+		overSkin: Embed(source="styles/swf/skins.swf", symbol="BtnOverSkinClass");
+		downSkin: Embed(source="styles/swf/skins.swf", symbol="BtnDownSkinClass");
+		
+		fontSize: 12;
+		color: #000000;
+	}
+	
+alert {
+	width: 420;
+	height: 190;
+	backfillColor: 0x000000;
+	backfillAlpha: 0.4;
+	backgroundColor: 0xFFFFFF;
+	backgroundAlpha: 1;
+	borderColor: 0x999999;
+	borderWidth: 5;
+	borderAlpha: 1;
+	borderRound: 8;
+	icon: Embed(source="styles/swf/skins.swf", symbol="ErrorSignClass");
+	
+	messageStyleName: alertMessage;
+	titleStyleName: alertTitle;
+	buttonsStyleName: alertButtons;
+	btnOKStyleName: alertBtnOK;
+	inputStyleName: alertInput;
+}
+	alertMessage {
+		fontFamily: "Verdana";
+		fontSize: 11;
+		color: 0x000000;
+		bold: false;
+		paddingLeft: 15;
+		paddingRight: 15;
+		paddingTop: 30;
+		align: "left";
+	}
+	
+	alertTitle {
+		fontFamily: "Verdana";
+		fontSize: 13;
+		color: 0x000000;
+		bold: true;
+		paddingTop: 5;
+		align: "center";
+	}
+	
+	alertButtons {
+		size: 12;
+		color: #000000;
+		width: 80;
+		height: 33;
+		spacing: 5;
+	
+		upSkin: Embed(source="styles/swf/skins.swf", symbol="BtnUpSkinClass");
+		overSkin: Embed(source="styles/swf/skins.swf", symbol="BtnOverSkinClass");
+		downSkin: Embed(source="styles/swf/skins.swf", symbol="BtnDownSkinClass");	}
+	
+	alertBtnOK {
+		bold: true;
+		icon: Embed(source="styles/swf/skins.swf", symbol="BtnCheckIconClass");
+	}
+
+	selectionBox {
+		borderColor: #CCCC33;
+		borderWidth: 1;
+		backgroundColor: #CCCC33;
+		backgroundAlpha: 0.25;
+		cornerRadius: 0;
+	}
+
+tooltip {
+	backgroundImage: Embed(source="styles/swf/skins.swf", symbol="TooltipBgClass");
+	fontFamily: "Arial";
+	fontSize: 11;
+	color: #000000;
+	paddingLeft: 2;
+	paddingRight: 2;
+	height: 19;
+}

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" horizontalAlign="center">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			
+			private function resetHeight():void{
+				img.percentWidth = 100;
+				img.height = img.measuredHeight*img.width/img.measuredWidth;
+			}
+			
+			private function getImgHeight(width:Number):Number
+			{
+				return img.measuredHeight * width / img.measuredWidth;
+			}
+		]]>
+	</mx:Script>
+	<mx:Image creationComplete="{resetHeight()}" horizontalAlign="center" width="100%" scaleContent="true" id="img" height="{this.getImgHeight(img.width)}" source="{ModelLocator.getInstance().configManager.values.services_repositoryService_address.*}/GetFile/{data.value.image.name.*}" />
+	<mx:Text width="100%" minHeight="0" paddingLeft="5" paddingRight="5" paddingTop="5" paddingBottom="5" id="lblDescription" text="{data.value.image.description.*}"/>
+</mx:VBox>

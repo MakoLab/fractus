@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" currentState="person" implements="com.makolab.components.inputComponents.IFormBuilderComponent">
+	<mx:Metadata>
+		[Style(name="labelWidth", type="Number", format="Length", inherit="yes")]
+		[Style(name="editorWidth", type="Number", format="Length", inherit="yes")]
+	</mx:Metadata>
+	<mx:states>
+		<mx:State name="person">
+			<mx:AddChild position="lastChild">
+				<mx:FormItem label="{LanguageManager.getInstance().labels.common.name}">
+					<mx:TextInput width="100%" id="tiFirstName" text="{getName(dataObject, 1)}" change="changeHandler(event)"/>
+				</mx:FormItem>
+			</mx:AddChild>
+			<mx:AddChild position="lastChild">
+				<mx:FormItem label="{LanguageManager.getInstance().labels.common.surname}">
+					<mx:TextInput width="100%" id="tiLastName" text="{getName(dataObject, 2)}" change="changeHandler(event)"/>					
+				</mx:FormItem>
+			</mx:AddChild>
+		</mx:State>
+		<mx:State name="company">
+			<mx:AddChild position="lastChild">
+				<mx:FormItem label="{LanguageManager.getInstance().labels.contractors.forms.contractor.fullName}">
+					<mx:TextArea width="100%" height="50" id="taFullName" change="changeHandler(event)" text="{getName(dataObject, -1)}"/>					
+				</mx:FormItem>
+			</mx:AddChild>
+			<mx:AddChild position="lastChild">
+				<mx:FormItem label="{LanguageManager.getInstance().labels.contractors.forms.contractor.shortName}">
+					<mx:HBox id="hbShortName">
+						<mx:TextInput width="100%" id="tiShortName" change="changeHandler(event)" text="{getName(dataObject, -2)}"/>
+						<mx:CheckBox id="cbEqual" click="isEqual = cbEqual.selected; if (isEqual) updateShortName(); checkBoxClicked = true;" selected="{isEqual}" toolTip="{LanguageManager.getInstance().labels.contractors.forms.contractor.equalFullName}"/>
+					</mx:HBox>					
+				</mx:FormItem>
+			</mx:AddChild>
+		</mx:State>
+	</mx:states>
+
+	<mx:Script>
+		<![CDATA[
+			import mx.validators.ValidationResult;
+			import mx.controls.TextArea;
+			import mx.controls.TextInput;
+			import mx.controls.Label;
+			import com.makolab.fractus.model.LanguageManager;
+		
+			private var _dataObject:Object = new Object();
+			
+			[Bindable]
+			private var isEqual:Boolean;
+			
+			private var changeFirst:Boolean = true;
+			
+			private var checkBoxClicked:Boolean = false;
+			
+			[Bindable]
+			public function set dataObject(value:Object):void{
+				_dataObject = value;
+				if (data != value) data = value;
+				if (_dataObject)
+				{
+					currentState = parseInt(_dataObject.isBusinessEntity) ? "company" : "person";
+					if(!checkBoxClicked) {
+						isEqual = (getShortName(_dataObject.fullName) == String(_dataObject.shortName));
+					}
+				}
+			}
+			public function get dataObject():Object { return _dataObject}
+		
+			[Bindable]
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				dataObject = value;
+			}
+			override public function get data():Object { return dataObject; }
+			
+			private function getName(d:Object, n:int):String
+			{
+				// 1, 2 - first, last, -1, -2 - full, short
+				if (n < 0)
+				{
+					return String(n == -1 ? d.fullName : d.shortName).replace(/\n/g, '');
+				}
+				if (!d) return "";
+				var m:Array = String(d.fullName).match(/(.*) (.*)/);
+				if (m && m[n]) return String(m[n]).replace(/\xa0/g, ' ');
+				else return "";
+			}
+			
+			private function changeHandler(event:Event):void
+			{
+				if (_dataObject)
+				{
+					if (event.target == tiFirstName || event.target == tiLastName)
+					{
+						_dataObject.fullName = tiFirstName.text.replace(/ /g, '\xa0') + " " + tiLastName.text.replace(/ /g, '\xa0');
+						updateShortName();
+					}
+					else if (event.target == taFullName)
+					{
+						var eq:Boolean = isEqual;
+						_dataObject.fullName = taFullName.text;
+						if (eq) updateShortName();
+					}
+					else if (event.target == tiShortName)
+					{
+						_dataObject.shortName = tiShortName.text;
+						isEqual = false;
+					}
+					changeFirst = false;
+					validate();
+				}
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			private function updateShortName():void
+			{
+				_dataObject.shortName = getShortName(_dataObject.fullName);
+			}
+			
+			private function getShortName(s:String):String
+			{
+				s = s.replace(/\n/g, '');
+				var n:int = s.indexOf('\r');
+				if (n >= 0) s = s.substring(0, n);
+				return s.substring(0, 40);
+			}
+			
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+			{
+				var labelWidth:Number = getStyle("labelWidth");
+				var editorWidth:Number = getStyle("editorWidth");
+				//if (lblFirstName) lblFirstName.percentWidth = labelWidth;
+				//if (lblLastName) lblLastName.percentWidth = labelWidth
+				//if (lblFullName) lblFullName.percentWidth = labelWidth
+				//if (lblShortName) lblShortName.percentWidth = labelWidth;
+				if (tiFirstName) tiFirstName.width = editorWidth;
+				if (tiLastName) tiLastName.width = editorWidth;
+				if (taFullName) taFullName.width = editorWidth;
+				if (hbShortName) hbShortName.width = editorWidth;
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+			}
+			
+			public function validate():Object
+			{
+				if(changeFirst) {
+					if(currentState == 'person') {
+						tiFirstName.dispatchEvent(new Event(Event.CHANGE));
+					} else if(currentState == 'company') {
+						taFullName.dispatchEvent(new Event(Event.CHANGE));
+					}
+					changeFirst = true;
+				}
+				
+				var result:Object;
+				var errorMessage:String = LanguageManager.getLabel("contractors.forms.contractor.alert.name"); // TODO: pobieranie z zewnatrz
+				var fnError:String = null;
+				var snError:String = null;
+				if (!String(dataObject.shortName).replace(/\s/g, ''))
+				{
+					result = new ValidationResult(true, "shortName", "emptyName", errorMessage);
+					snError = errorMessage;
+				}
+				else if (taFullName) taFullName.errorString = null;
+				if (!String(dataObject.fullName).replace(/\s/g, ''))
+				{
+					if (!result) result = new ValidationResult(true, null, "fullName", errorMessage);
+					fnError = errorMessage;
+				}
+				if (taFullName)
+				{
+					taFullName.errorString = fnError;
+					tiShortName.errorString = snError;
+				}
+				if (tiFirstName) tiFirstName.errorString = tiLastName.errorString = (fnError || snError);
+				return result;
+			}
+			
+			public function commitChanges():void {}
+			public function reset():void {}
+		]]>
+	</mx:Script>
+	
+</mx:VBox>

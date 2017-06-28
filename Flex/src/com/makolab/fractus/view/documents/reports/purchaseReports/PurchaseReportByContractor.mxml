@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReportBase xmlns="com.makolab.fractus.view.documents.reports.*" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:layoutComponents="com.makolab.components.layoutComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.catalogue.CatalogueContractorInfo;
+			import com.makolab.fractus.view.catalogue.ContractorsCatalogue;
+			
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.events.ListEvent;
+			import mx.formatters.CurrencyFormatter;
+			
+			private function calculateProfitMargin(source:XMLList,dataField:String,childDataField:String = null):String{
+				var dataFieldName:String = dataField;
+				var nettoSum:Number = 0;
+				var profitSum:Number = 0;
+				for(var i:int=0;i<source.length();i++){
+					nettoSum += Number(source[i].@netValue);
+					profitSum += Number(source[i].@profit);
+				}
+				return (profitSum/nettoSum).toString();
+			}
+			
+			private function itemDoubleClickHandler(event:ListEvent):void
+			{
+				if (dataProvider && event.itemRenderer.data.@id.length() > 0)
+					CatalogueContractorInfo.showWindow(event.itemRenderer.data.@id);
+			}
+		]]>
+	</mx:Script>
+	<table>
+		<mx:AdvancedDataGrid id="grid" width="100%" height="100%" doubleClickEnabled="true" itemDoubleClick="itemDoubleClickHandler(event)">
+			<mx:columns>
+				<mx:AdvancedDataGridColumn id="nameColumn" headerText="Nazwa kontrahenta" dataField="@contractorName" sortCompareFunction="{ReportBase.stringCompareFunction('@contractorName')}"/>
+				<mx:AdvancedDataGridColumn headerText="Kod kontrahenta" dataField="@contractorCode" width="100"/>
+				<mx:AdvancedDataGridColumn id="quantityColumn" sortCompareFunction="{Tools.getSortFunction('@quantity')}" headerText="{LanguageManager.getLabel('common.quantity')}" dataField="@quantity" labelFunction="quantityLabelFunction" textAlign="right" width="100"/>
+				<mx:AdvancedDataGridColumn id="netValueColumn" sortCompareFunction="{Tools.getSortFunction('@netValue')}" headerText="{LanguageManager.getLabel('reports.headers.netPurchaseValue')}" dataField="@netValue" labelFunction="currencyLabelFunction" textAlign="right" width="120"/>
+				<mx:AdvancedDataGridColumn id="grossValueColumn" sortCompareFunction="{Tools.getSortFunction('@grossValue')}" headerText="Wartość brutto zakupu" dataField="@grossValue" labelFunction="currencyLabelFunction" textAlign="right" width="120"/>
+			</mx:columns>
+		</mx:AdvancedDataGrid>
+	</table>
+	<summary>
+		<layoutComponents:AdvancedDataGridSummary2 source="{grid}">
+			<layoutComponents:summaryColumns>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.ROW_COUNT]}" sourceColumn="{nameColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{quantityColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{netValueColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{grossValueColumn}"/>
+			</layoutComponents:summaryColumns>
+		</layoutComponents:AdvancedDataGridSummary2>
+	</summary>
+</ReportBase>

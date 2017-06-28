@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:DataGrid xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:columns>
+			<mx:DataGridColumn width="20" editable="false" headerText=" " dataField="@status" itemRenderer="com.makolab.fractus.view.generic.DocumentStatusRenderer" />
+			<mx:DataGridColumn width="60" editable="false" headerText="{LanguageManager.getLabel('common.date')}" dataField="@date" itemRenderer="com.makolab.components.inputComponents.DateRenderer" />
+			<mx:DataGridColumn width="120" editable="false" headerText="{LanguageManager.getLabel('common.user')}" dataField="@userId" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" />
+			<mx:DataGridColumn width="95" editable="false" headerText="{LanguageManager.getLabel('common.code')}" dataField="@itemCode" itemRenderer="com.makolab.fractus.view.generic.TooltipLabelRenderer" />
+			<mx:DataGridColumn width="85" editable="false" headerText="Przychód" dataField="@incomeDocumentNumber" />
+			<mx:DataGridColumn width="50" editable="false" headerText="Z" dataField="@sourceContainerLabel" />
+			<mx:DataGridColumn width="50" editable="false" headerText="Do" dataField="@containerLabel" />
+			<mx:DataGridColumn width="50" editable="false" headerText="{LanguageManager.getLabel('common.quantity')}" dataField="@quantity" itemRenderer="com.makolab.components.inputComponents.FloatRenderer" />
+	</mx:columns>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.commands.GetCommercialFinancialRelationsCommand;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.SearchCommand;
+			import com.makolab.fractus.commands.GetCorrectiveDocumentsCommand;
+			import com.makolab.components.layoutComponents.DataGridImageItemRenderer;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.generic.FractusDictionaryRenderer;
+			import com.makolab.fractus.view.generic.FractusDictionarySelector;
+			import com.makolab.fractus.commands.GetRelatedComercialDocumentsCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.commands.GetRelatedWarehouseDocumentsCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			private var shifts:Array = [];
+			
+			private var _data:Object = new Object();
+			
+			[Bindable]
+			override public function set data(value:Object):void
+			{
+				_data = value;
+				getShifts();
+			}
+			
+			override public function get data():Object
+			{
+				return _data;
+			}
+			
+			public function getShifts():void
+			{
+				this.shifts = [];
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("warehouse.p_getShifts", XML(this._data));
+				cmd.addEventListener(ResultEvent.RESULT, handleSearchCompleted, false, 0, true);
+				cmd.execute(); 
+			}
+			
+			private function handleSearchCompleted(event:ResultEvent):void
+			{
+				for each(var o:XML in XML(event.result).*){
+					shifts.push(o);
+				}
+				this.dataProvider = shifts;
+			}
+		]]>
+	</mx:Script>
+</mx:DataGrid>

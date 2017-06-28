@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem xmlns:mx="http://www.adobe.com/2006/mxml" implements="com.makolab.fractus.view.documents.documentControls.IDocumentControl">
+	<mx:Metadata>
+		[Event(type="com.makolab.components.document.DocumentEvent", name="documentAttributeChange")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.components.inputComponents.GenericAttributeEditorComponent;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.view.generic.GenericEditor;
+			
+			import mx.containers.errors.ConstraintError;
+			import mx.core.IDataRenderer;
+			import mx.core.UIComponent;
+			
+			private var _documentObject:DocumentObject;
+			
+			protected function handleAttributeChange(event:DocumentEvent):void
+			{
+				if (event.fieldName == attributeName)
+				{
+					updateValue();
+				}
+			}
+			
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				_documentObject = value;
+				updateValue();
+			} 
+			public function get documentObject():DocumentObject
+			{
+				return _documentObject;
+			}
+			
+			protected function updateValue():void
+			{
+				attribute = getAttribute();
+				if (!attribute && attributeEntry && documentObject)
+				{
+					var attrib:XML = (<attribute><documentFieldId/></attribute>).copy();//_documentObject.attributeXML.copy();
+					attrib.documentFieldId = String(attributeEntry.id);
+					_documentObject.attributes.addItem(attrib);
+					attribute = getAttribute();
+				}
+			}
+			private var _permission:String;
+			[Bindable]
+			public function set permission(value:String):void
+			{
+				_permission = value;
+			}
+			public function get permission():String
+			{
+				return _permission;
+			}
+			private var _attributeName:String;
+			[Bindable]
+			protected var attributeEntry:XML;
+			
+			[Bindable]
+			protected var attribute:XML;
+			
+			public function set attributeName(value:String):void
+			{
+				_attributeName = value;
+				var l:XMLList = DictionaryManager.getInstance().dictionaries.documentFields.(name == _attributeName);
+				attributeEntry = l.length() > 0 ? l[0] : null;
+				label = attributeEntry ? 
+					(attributeEntry.label.@lang.length()? attributeEntry.label.(@lang==LanguageManager.getInstance().currentLanguage)[0]:attributeEntry.label) 
+				: null;
+				updateValue();
+			}
+			public function get attributeName():String
+			{
+				return _attributeName;
+			}
+			
+		
+			
+			protected function dispatchChangeEvent():Boolean
+			{
+				var event:DocumentEvent = DocumentEvent.createEvent(DocumentEvent.DOCUMENT_ATTRIBUTE_CHANGE, attributeEntry.name);
+				return dispatchEvent(event);
+			}
+			
+			protected function getAttribute():XML
+			{
+				if (!_documentObject) return null;
+				var l:XMLList = _documentObject.attributes.source.(documentFieldId == String(attributeEntry.id));
+				return l.length() > 0 ? l[0] : null;
+			}
+
+		]]>
+	</mx:Script>
+	
+</mx:FormItem>

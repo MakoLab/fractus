@@ -1,0 +1,1439 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HDividedBox dividerRelease="resetWidthsAndButtons(event)" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+	xmlns:catalogue="com.makolab.components.catalogue.*"
+	preinitialize="preinit()"
+	creationComplete="init();"
+	backgroundAlpha="0.0"
+	xmlns:layoutComponents="layoutComponents.*"
+	xmlns:groupTree="com.makolab.components.catalogue.groupTree.*"
+	xmlns:inputComponents="com.makolab.components.inputComponents.*"
+	xmlns:commonGrid="com.makolab.components.commonGrid.*" xmlns:list="com.makolab.components.list.*" xmlns:layoutComponents1="com.makolab.components.layoutComponents.*"
+	>
+
+    <mx:Metadata>
+    	<![CDATA[
+	    /**
+	    * Dispatched when a user double-clicks on an item or selects an item and presses ENTER key to see item details.
+	    */
+        [Event(name="itemAccept", type="flash.events.Event")]
+        /**
+        * Dispatched when a user clicks any operation in the opeartions Panel.
+        */
+        [Event(name="operationInvoke", type="com.makolab.components.catalogue.CatalogueEvent")]
+        /**
+        * Dispatched when a user starts a new search. Should be handled so that search results are assigned
+        * to <code>searchResults</code>.
+        */
+        [Event(name="itemSearch", type="com.makolab.components.catalogue.CatalogueEvent")]
+        /**
+        * Dispatched when the grid selection changes. Should be handled so that data of the newly selected
+        * item is assigned to <code>itemData</code>.
+        */
+        [Event(name="itemGetData", type="com.makolab.components.catalogue.CatalogueEvent")]
+        /**
+        * Dispatched when an error appears while searching.
+        */
+        [Event(name="itemSearchError", type="com.makolab.components.catalogue.CatalogueEvent")]
+        /**
+        * Dispatched when an error appears while getting item details.
+        */
+        [Event(name="itemGetDataError", type="com.makolab.components.catalogue.CatalogueEvent")]
+        /**
+        * Dispatched when a user assignes an item to a group.
+        */
+        [Event(name="itemToGroupAssign", type="com.makolab.components.catalogue.CatalogueEvent")]
+        /**
+        * Dispatched when a user changes groups Tree structure.
+        */
+        [Event(name="groupStructureChange", type="com.makolab.components.catalogue.GroupTreeEditorEvent")]
+        ]]>
+    </mx:Metadata>
+    
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.groupTree.GroupTreeEvent;
+			import com.makolab.components.inputComponents.FiltersTemplatesSelector;
+			import com.makolab.components.layoutComponents.CollapsablePanel;
+			import com.makolab.components.layoutComponents.TileForm;
+			import com.makolab.components.list.MakoListEvent;
+			import com.makolab.components.list.PageSwitcher;
+			import com.makolab.components.util.ComponentExportManager;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.EventManager;
+			import com.makolab.fractus.model.GlobalEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.documents.documentLists.DocumentList;
+			import com.makolab.fraktus2.utils.DynamicAssetsInjector;
+			
+			import mx.binding.utils.ChangeWatcher;
+			import mx.collections.ICollectionView;
+			import mx.collections.XMLListCollection;
+			import mx.containers.ControlBar;
+			import mx.containers.Form;
+			import mx.containers.Grid;
+			import mx.containers.HBox;
+			import mx.containers.Panel;
+			import mx.containers.Tile;
+			import mx.controls.Alert;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.core.Container;
+			import mx.core.DragSource;
+			import mx.core.IDataRenderer;
+			import mx.core.IFlexDisplayObject;
+			import mx.core.IUIComponent;
+			import mx.core.UIComponent;
+			import mx.events.DataGridEvent;
+			import mx.events.DividerEvent;
+			import mx.events.DragEvent;
+			import mx.events.ListEvent;
+			import mx.managers.DragManager;
+			import mx.messaging.SubscriptionInfo;
+			import mx.rpc.AbstractOperation;
+			import mx.rpc.AsyncToken;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.soap.Operation;
+			
+			import assets.IconManager;
+			
+			import flight.binding.Bind;
+			import flight.utils.config;
+			
+			/* publiczne pola i wlasciwosci */
+			
+			[Bindable]
+			public var showGroupColor:Boolean = false;
+			
+			
+			
+			/**
+			 * Specifies which node to use when filtering search results.
+			 */
+			public var filterValue:String = "value";
+			
+			[Bindable]
+			public var rightPanelLabel:String;
+			
+			[Bindable]
+			public var listPermissionKey:String;
+			
+			private var filtersApplyButton:Button = new Button();
+			// zbior rendererow (ClassFactory)
+			/**
+			 * Specifies item renderer for each column- <i>dataField : itemRenderer</i>, where <i>dataField</i> is the <code>dataField</code> property of a grid column and <i>itemRenderer</i> is a <code>classFactory</code> object.
+			 * If you don't specify any itemRenderer for a column, it uses the default one.
+			 */
+			public var itemRenderers:Object;
+			// szablony parametrow operacji wyszukiwania i pobierania danych
+			/**
+			 * An XML with search parameters.
+			 * @example 
+			 * <pre>
+			 * &lt;searchParams&gt;
+			 *	  &lt;query/&gt;
+			 *	  &lt;columns&gt;
+			 *	    &lt;column field=&quot;shortName&quot; sortOrder=&quot;1&quot; sortType=&quot;ASC&quot; label=&quot;Nazwa&quot;/&gt;
+			 *	    &lt;column field=&quot;code&quot; sortOrder=&quot;1&quot; sortType=&quot;ASC&quot; label=&quot;Kod&quot;/&gt;
+			 *	    &lt;column field=&quot;nip&quot; sortOrder=&quot;1&quot; sortType=&quot;ASC&quot; label=&quot;NIP&quot;/&gt;
+			 *	  &lt;/columns&gt;
+			 *	  &lt;sortColumn&gt;shortName&lt;/sortColumn&gt;
+			 *	&lt;/searchParams&gt;
+			 * </pre> 
+			 */
+			[Bindable]
+			public var searchParams:XML;
+			[Bindable]
+			public var searchEventType:String;
+			
+			//kopia searchParams - przechowuje oryginalną wartość.
+			private var basicSearchParams:XML;
+			public var getItemDataParams:XML;
+			[Bindable]
+			public var dblClickPermissionKey:String;
+			// Nagłówek drzewa grup
+			/**
+			 * GroupTree's title text.
+			 */
+			[Bindable]
+			public var groupsTreeTitle:String = "";
+			[Bindable]
+			public var groupsTreeSaveCommandClass:Class = null;
+			/**
+			 * Free-form string specifing what type of items can be dropped onto groupTree area. 
+			 */
+			[Bindable]
+			public var itemsType:String = "";
+
+			private var _selectedItem:Object;
+			/**
+			 * A reference to the selected item in the tree data provider.
+			 */
+			[Bindable]
+			public function set selectedItem(value:Object):void
+			{
+				_selectedItem = value;
+				// w ta petle wchodzimy jesli selectedItem jest ustawiane programatycznie a nie na skutek eventa.
+				if (grid && selectedItem != grid.selectedItem)
+				{
+					grid.selectedItem = _selectedItem;
+					showItemDetails(_selectedItem);
+				}
+			}
+			public function get selectedItem():Object
+			{
+				return _selectedItem;
+			}
+			
+			private var _resultFiltering:Boolean = true;
+			public function set resultFiltering(value:Boolean):void
+			{
+				_resultFiltering = value;
+			}
+			public function get resultFiltering():Boolean
+			{
+				return _resultFiltering;
+			}
+			
+			/**
+			 * <code>rowTextColorFunction</code> of <code>CommonGrid</code> displaying the list of columns.
+			 */
+			[Bindable]
+			public var rowTextColorFunction:Function = null;
+
+			/**
+			 * Current page of results number.
+			 */
+			[Bindable]
+			public var pageNumber:int = 1;
+			/**
+			 * Number of all search results.
+			 */
+			[Bindable]
+			public var rowCount:int = 0;
+			[Bindable]
+			public var itemClass:Class;
+			
+			public static var ITEM_TYPE_CONTRACTOR:String = "contractor";
+			public static var ITEM_TYPE_ITEM	:String = "item";
+			public static var ITEM_TYPE_PARCEL	:String = "parcel";
+			[Bindable]
+			public var dockContainers:Object = {"dc1" : leftP,"dc2" : leftPane, "dc3" : rightP};
+			[Bindable]
+			public var dockObjects:Object = {"do1" : groupsConfigurator,"do2" : clipboardDockPanel,"do3" : clipboardDockProductionPanel};
+			[Bindable]
+			public function set showLeftPanel(value:Boolean):void
+			{
+				if(value)currentState = "leftpanel";
+				else currentState = null;
+			}
+			public function get showLeftPanel():Boolean
+			{
+				if(currentState == "leftpanel")return true;
+				else return false;
+			}
+			[Bindable]
+			public var showClipboard:Boolean = true;
+			
+			[Bindable]
+			public var showProdClipboard:Boolean = false;
+			
+			private var dynamicOperations:Boolean = false;
+			
+			public var pendingDynamicOperation:Boolean = false;
+			
+			private var draftDocumentTypes:Array = [4, 13, 15];
+			
+			[Bindable]
+			public var documentList:DocumentList;
+			
+			// szczegolowe dane o wybranej pozycji
+			/**
+			 * Contains item detailed data.
+			 */
+			[Bindable]
+			public function set itemData(value:Object):void
+			{
+				_itemData = value;
+				
+				this.dynamicOperations = false;
+				
+				if(value != null && value.operations.length() > 0) //jezeli wystepuja dynamiczne operacje
+				{
+					//trace("----")
+					//trace(value);
+					//trace("----")
+					//trace("1")
+					this.dynamicOperations = true;
+					this.operationsPanel.vBox.visible = false;
+					this.operationsPanel.vBox.includeInLayout = false;
+					this.operationsPanel.dynamicVBox.itemData = value;
+					this.operationsPanel.dynamicVBox.visible = true;
+					this.operationsPanel.dynamicVBox.includeInLayout = true;
+				}
+				else //w przeciwnym razie same statyczne
+				{
+					//trace("2")
+					this.operationsPanel.vBox.visible = true;
+					this.operationsPanel.vBox.includeInLayout = true;
+					this.operationsPanel.dynamicVBox.visible = false;
+					this.operationsPanel.dynamicVBox.includeInLayout = false;
+				}
+				
+				if (itemOperations && !dynamicOperations) 
+				{
+					//trace("3")
+					//trace(itemOperations)
+					//trace(itemOperations);
+					
+					for(var i:String in itemOperations)
+					{
+						itemOperations[i].itemData = _itemData;
+						//if(itemOperations[i].operationId!="addPictureToPresta")
+						if(itemOperations[i].extraPermissionKey && itemData != null && grid.selectedItem) {
+							if(draftDocumentTypes.indexOf(Number(XML(DictionaryManager.getInstance().getById(itemData.@documentTypeId)).documentCategory)) != -1) {
+								itemOperations[i].enabled = ml.permissionManager.isEnabled(itemOperations[i].extraPermissionKey[1]);
+							} else {
+								
+								itemOperations[i].enabled = ml.permissionManager.isEnabled(itemOperations[i].extraPermissionKey[0]);
+							}
+						}
+					}
+				}
+				
+				if (_itemData != null && itemOperations && pendingOperation == true && !dynamicOperations)
+				{
+					//trace("4")
+					for (var j:String in itemOperations) //jezeli istnieja statyczne operacje a dynamiczne sa w tej chwili nieaktywne
+					{
+						var operation:CatalogueOperation = itemOperations[j];
+						if (operation.defaultOperation)
+						{
+							operation.invokeOperation();
+							break;
+						}
+					}
+					
+					pendingOperation = false;
+				}
+				
+				/* if(_itemData != null)
+					trace("itemData: NOT null");
+				else
+					trace("itemData: null");
+				
+				trace("pendingDynamicOperation: " + this.pendingDynamicOperation.toString());
+				trace("dynamicOperations: " + this.dynamicOperations.toString()); */
+				
+				if(_itemData != null && this.pendingOperation && dynamicOperations)
+				{
+					trace("5")
+					this.pendingOperation = false;
+					this.operationsPanel.dynamicVBox.invokeDefaultOperation();	
+				}
+			}
+			/**
+			 * @private
+			 */
+			public function get itemData():Object { return _itemData; }
+			
+			[Bindable]
+			public var allowGroupsChange:Object;
+			
+			[Bindable]
+			public var allowItemToGroupAssign:Boolean;
+			
+			[Bindable]
+			public var resultAttributes:Object;
+			
+			// wyniki ostatnio przeprowadzonego wyszukiwania
+			/**
+			 * Contains latest search results.
+			 */
+			[Bindable]
+			public function set searchResults(value:ICollectionView):void
+			{
+				_searchResults = value;
+				//_selectedItem = null;
+				if (_searchResults)
+				{
+					realTimeFilter.collection = _searchResults;
+					
+					if(leftPane.enabled) {
+						grid.dataProvider = _searchResults;
+					}					
+				}
+				
+				/* if (searchParams.sortColumn){
+					newSearch = true;
+					for(var i:int=0;i<columns.length;i++){
+						if((columns[i].dataField.toString() as String).substring(1) == searchParams.sortColumn.*.toString()){
+							if(searchParams.sortDescending.* == "1"){
+								(columns[i] as DataGridColumn).sortDescending = true;
+							}else{
+								(columns[i] as DataGridColumn).sortDescending = false;
+							}
+							var evt:DataGridEvent = new DataGridEvent(DataGridEvent.HEADER_RELEASE,false,false,i);
+							
+							grid.dispatchEvent(evt);
+							//(columns[i] as DataGridColumn).sortDescending = !(columns[i] as DataGridColumn).sortDescending;
+							break;
+						}
+					}
+				} */
+				/*
+				jakub - wylaczenie sorta
+				newSearch = true;
+				if(searchParams.columns){
+					var columnIndex:int;
+					for each(var a:Object in searchParams.columns.*){
+						for(var c:int=0; c < columns.length; c++){
+							if((columns[c].dataField as String).substring(1) == a.@field){
+								columnIndex = c;
+								break;
+							}
+						}
+						if(a.@sortOrder == "1"){
+							if(a.@sortType == "DESC"){
+								(columns[columnIndex] as DataGridColumn).sortDescending = true;
+							}
+							if(a.@sortType == "ASC"){
+								(columns[columnIndex] as DataGridColumn).sortDescending = false;
+							}
+							
+							var evt:DataGridEvent = new DataGridEvent(DataGridEvent.HEADER_RELEASE,false,false,columnIndex);
+							
+							grid.dispatchEvent(evt);
+							break;
+						}
+					}
+				}
+				*/
+				//currentState = "";
+			}
+			/**
+			 * @private
+			 */
+			public function get searchResults():ICollectionView { return _searchResults; }
+			
+			/**
+			 * An instance of Clipboard component.
+			 * @see com.makolab.components.catalogue.Clipboard
+			 */
+			[Bindable]
+			public var clipboard:Clipboard = Clipboard.getInstance();
+			/**
+			 * An instance of ClipboardProd component.
+			 * @see com.makolab.components.catalogue.ClipboardProd
+			 */
+			[Bindable]
+			public var clipboardProd:ClipboardProd = ClipboardProd.getInstance();
+			// operacje na poziomie wybranej pozycji
+			/**
+			 * An array of operations that a user can invoke for the selected item.
+			 * @see com.makolab.components.catalogue.CatalogueOperation
+			 */
+			public var itemOperations:Array;
+			// filtry
+			/**
+			 * List of search filters.
+			 * The search parameters are pass through each filter in the array before sending the search request.
+			 * A filter must be type of UIComponent and implement ICatalogueFilter interface.
+			 * @see com.makolab.components.catalogue.ICatalogueFilter
+			 */
+			public function set searchFilters(value:Array):void { 
+				_searchFilters = value; 
+				initializeFilters(); }
+			/**
+			 * @private
+			 */
+			public function get searchFilters():Array { return _searchFilters; }
+			private var _searchFilters:Array;
+			
+			public var initialFilters:XMLList;
+			// operacje globalne
+			/**
+			 * An array of operations that a user can invoke independently of selected item (i.e. new item).
+			 */
+			public var generalOperations:Array;
+			// operacja sluzaca do wyszukiwania towarow
+			/**
+			 * Operation invoked when a user starts a new search.
+			 */
+			public var searchOperation:AbstractOperation;
+			// operacja sluzaca do pobrania danych o towarze
+			/**
+			 * Operation invoked on grid selection change event.
+			 * You use it to load item details.
+			 */
+			public var getItemDataOperation:AbstractOperation;
+			// funkcja odpowiedzialna za mapowanie wynikow wyszukiwania na tabele searchResults
+			/**
+			 * A function, you use to map search results to the <code>searchResults</code> table.
+			 */
+			public var getSearchResults:Function;
+			// poczatek komunikatu dot. wyszukiwania
+			/**
+			 * A text that apears on the progress bar while searching.
+			 * CatalogueBrowser automatically adds the searching word at the end of searchLabel.
+			 */
+			[Bindable]
+			public var searchLabel:String;
+			// panel informacji o wybranej pozycji - musi implementowac IDataRenderer
+			/*
+			 * Control that shows details of selected item.
+			 * <code>infoPanel</code> must implement IDataRenderer interface.
+			 * @see mx.core.IDataRenderer
+			 */
+			/* public function set infoPanel(val:DisplayObject):void
+			{
+				if (val == _infoPanel) return;
+				if (!val is IDataRenderer) throw new Error("infoPanel must implement IDataRenderer interface.");
+				if (rightP != null && _infoPanel != val && contains(_infoPanel))	removeChild(_infoPanel);
+				if (infoPanelWatcher) infoPanelWatcher.unwatch();
+				_infoPanel = val;
+				UIComponent(_infoPanel).percentHeight = 100;
+				infoPanelWatcher = BindingUtils.bindProperty(_infoPanel, "data", this, "itemData");
+				//BindingUtils.bindSetter(setterFunc, this, "itemData");
+				if (rightPane != null && !rightPane.contains(_infoPanel)) rightPane.addChildAt(_infoPanel, 1);
+			} */
+			
+			private var _rightPanel:Array = [];
+			
+			public function set rightPanel(value:Array):void
+			{
+				_rightPanel = value;
+			}
+			
+			public function get rightPanel():Array
+			{
+				return _rightPanel;
+			}
+			
+			private function setterFunc():void	{
+				//this.infoPanel.xmlItemInfoPanel.data = "";
+			}
+			/**
+			 * @private
+			 */
+			/* public function get infoPanel():DisplayObject
+			{
+				return _infoPanel;
+			} */
+			
+			private var _config:XML;
+			
+			/**
+			 * CatalogueBrowser's configuration.
+			 * columns template:<br/>
+			 * <pre>
+			 *	&lt;columns&gt;<br/>
+			 * 	    &lt;column field=&quot;[grid column dataField]&quot; sortOrder=&quot;[int]&quot; sortType=&quot;[DESC|ASC]&quot; label=&quot;&quot;/&gt;<br/>
+			 * 	&lt;/columns&gt;<br/>
+			 * </pre>
+			 */
+			public function set config(value:XML):void
+			{
+				//trace(value)
+				_config = value;
+				initializeConfig();
+			}
+			/**
+			 * @private
+			 */
+			public function get config():XML { return _config; }
+			
+			private var _itemData:Object;
+			private var _searchResults:ICollectionView;
+			
+			[Bindable]
+			private var realTimeFilter:RealTimeFilter = new RealTimeFilter();
+			
+			//private var _infoPanel:DisplayObject;
+			//private var _selectedItem:Object;
+			private var pendingOperation:Boolean = false;
+			//private var infoPanelWatcher:ChangeWatcher;
+			private var filtersPanel:Panel;
+			private var filtersForm:TileForm;
+			/**
+			 * Reference to the LanguageManager instance.
+			 */
+			public var lm:LanguageManager = LanguageManager.getInstance();
+			/**
+			 * Reference to the ModelLocator instance.
+			 */
+			[Bindable]
+			public var ml:ModelLocator = ModelLocator.getInstance();
+			
+			public var widthRightPanel:Number = 350;
+			public var widthLeftPanel:Number = 350;  
+			
+			/**
+			 * Sets bindings, context menu, initializes operations and filters.
+			 */
+			
+			public function saveListener(e:GlobalEvent):void {
+	           
+	           	switch (e.type)
+				{
+					case GlobalEvent.DOCUMENT_CHANGED:
+						if(getItemDataParams.type == "Document") {
+							
+							var docCategories:Array = e.objectCategory.split(",");
+							var apply:Boolean = false;
+							
+							/*if there is docTypeFilter in config*/
+							var a:XMLList = config.filters.filter.(@type == "docTypeFilter");
+							if(a!=null && a.length() > 0){ 
+								var arr:Array = String(a[0].@itemsType).split(",");       
+								for (var i:int=0; i<arr.length; i++)
+						        {
+						        	for (var j:int=0; j<docCategories.length; j++)
+						        	{
+						        		if(docCategories[j] == arr[i]) apply=true; 
+						        	}
+						        }
+						 	}
+						 	/*if there isn't docTypeFilter in config check searchParams type*/
+						 	else{
+						 		for (var k:int=0; k<docCategories.length; k++)
+						        {
+						 			if(config.searchParams.@type == DocumentTypeDescriptor.getDocumentCategory(Number(docCategories[k]))) apply=true;					
+						        }
+						 	} 
+						 	/*
+					 		if(apply)//applyFilers(new MouseEvent(MouseEvent.CLICK));
+					 		{
+								setFilters();
+								search(searchParams.query.*,null,false);
+					 		}
+					 		*/
+					 	}
+					 	setFilters();
+						search(searchParams.query.*,null,false);
+						break;
+					case GlobalEvent.CONTRACTOR_CHANGED:
+						if(getItemDataParams.type == "Contractor")
+						{
+							setFilters();
+							search(searchParams.query.*,null,false);
+							//applyFilers(new MouseEvent(MouseEvent.CLICK));//prepareSearch();
+						}
+						break;
+					case GlobalEvent.ITEM_CHANGED:
+						if(getItemDataParams.type == "Item")
+						{
+							setFilters();
+							search(searchParams.query.*,null,false);
+						}
+						break;
+			
+					case GlobalEvent.LIST_CHANGED:
+						setFilters();
+						search(searchParams.query.*,null,false);
+						break;
+				}     
+	        }	
+	        
+			protected function init():void
+			{
+				var model:ModelLocator = ModelLocator.getInstance();
+				model.eventManager.addEventListener(GlobalEvent.CONTRACTOR_CHANGED, saveListener, false, 0 , true);
+				model.eventManager.addEventListener(GlobalEvent.DOCUMENT_CHANGED, saveListener, false, 0 , true);
+				model.eventManager.addEventListener(GlobalEvent.ITEM_CHANGED, saveListener, false, 0 , true);
+				model.eventManager.addEventListener(GlobalEvent.LIST_CHANGED, saveListener, false, 0 , true);
+				contextMenu = new ContextMenu();
+				contextMenu.hideBuiltInItems();
+				initializeOperations();
+				initializeRightPanel();
+				initializeFilters();
+				textInput.setFocus();
+				/* dockManager.dockContainers = dockContainers;
+				dockManager.dockObjects = dockObjects;
+				dockManager.getState(); */
+				placePanelsInLayout();
+				if (clipboard) clipboard.addEventListener(Event.CHANGE,clipboardChangeHandler);
+				
+				if (tabNavigator.width>0) widthRightPanel = tabNavigator.width;
+			}
+			
+			private function clipboardChangeHandler(event:Event):void
+			{
+				clipboardDockPanel.open = true;
+			}
+			
+			private function preinit():void
+			{
+				dockContainers = {
+					dc1 : leftP,
+					dc2 : leftPane,
+					dc3 : rightP
+				};
+				dockObjects = {
+					do1 : groupsConfigurator,
+					do2 : clipboardDockPanel,
+					do3 : clipboardDockProductionPanel
+				};
+			}
+			
+			private function applyInitialFilters():void
+			{
+				if (!initialFilters) return;
+				for each (var initFilter:XML in initialFilters)
+				{
+					if (searchParams.filters.length() > 0 && searchParams.filters.column.(@field.toString() == initFilter.@field.toString()).length() > 0)
+					{
+						searchParams.filters.column.(@field.toString() == initFilter.@field.toString())[0] = initFilter.toString();
+					}else{
+						if (searchParams.filters.length() == 0 ) searchParams.filters = "";
+						searchParams.filters[0].appendChild(initFilter.copy());
+					}
+				}
+			}
+			
+			private function initializeConfig():void
+			{
+				/* var ca:Array = [];
+				for each(var node:XML in config.columns.column)
+				{
+					var column:DataGridColumn = new DataGridColumn(node.@field);
+					column.dataField = node.@field;
+					if(itemRenderers){if(itemRenderers[node.@field])column.itemRenderer = itemRenderers[node.@field];}
+					if((node.@label.toString()).charAt(0)=="{" && (node.@label.toString()).charAt(node.@label.toString().length-1)=="}"){
+						var path:Array = parsePath(node.@label.toString());
+						if(path[0]=="LanguageManager"){
+							path[0]="lm";
+							BindingUtils.bindProperty(column, "headerText", this, path);
+						}
+					}else{
+						column.headerText = node.@label;
+					}
+					ca.push(column);
+				}
+				this.columns = ca; 
+				*/
+				for each(var node:XML in config.columns.column)
+				{
+					var dt:String = node.@dataType;
+					if(dt == "color") 
+						this.showGroupColor=true;
+				}
+				
+				grid.config = _config.columns;
+				if (config.searchParams){
+					this.searchParams = XML(config.searchParams); 
+					this.basicSearchParams = this.searchParams.copy();
+					if(int(basicSearchParams.page.*) == 0)basicSearchParams.page.* = "1";
+				};
+				if (config.resultFiltering && config.resultFiltering.toString() == "false") resultFiltering = false;
+				if (config.getItemDataParams) this.getItemDataParams = XML(config.getItemDataParams);
+				if (config.filterField) this.filterValue = config.filterField;
+				/* if (config.clipboard.columns){
+					this.clipboard.columns = config.clipboard.columns.*;
+				}
+				this.clipboard.quantities = Boolean(parseInt(config.clipboard.quantities)); */
+				var filtersArray:Array = [];
+				if(config.filters){
+					for each(var filter:XML in config.filters.filter){
+						var filterClass:Class = FilterClassMapper.CLASSES[filter.@type];
+						if (filterClass) {
+							filtersArray.push(new filterClass());
+						} else {
+							throw new Error("Unknown filter type: '" + filter.@type + "'");
+						}
+						filtersArray[filtersArray.length-1].config = filter;
+					}
+					searchFilters = filtersArray;
+				}
+				// inicjalizacja filtra do odsiewania wynikow przy wpisywaniu tekstu w pole
+				realTimeFilter.setFilterFields(_config.columns.column);
+				
+				if(leftPane.enabled) {
+					if(_searchResults)grid.dataProvider = _searchResults;
+				}
+				
+				var operations:XMLList = config.itemOperations.*
+				for each (var operation:XML in operations)
+				{
+					//trace("8")
+					var itemOperation:CatalogueOperation = CatalogueOperation.getOperation(operation);
+					if (itemOperation) itemOperations.push(itemOperation);
+				}
+				
+				listSummary.config = config.summary.column;
+				
+			}
+			
+			private function handleHeaderRelease(event:DataGridEvent):void
+			{
+				event.preventDefault();
+				sortSearch(event.columnIndex);
+			}
+			
+			private function sortSearch(columnIndex:int):void
+			{
+				var spColList:XMLList = searchParams.columns.column.(@field == (grid.columns[columnIndex].dataField as String).replace(/^@/, ''));				
+				if (spColList.length() > 0)
+				{
+					var spCol:XML = spColList[0];
+					var sortType:String = spCol.@sortType == 'ASC' ? 'DESC' : 'ASC';
+					delete searchParams.columns.column.@sortOrder;
+					delete searchParams.columns.column.@sortType;
+					spCol.@sortOrder = 1;
+					spCol.@sortType = sortType;
+				}
+
+				searchParams.page.* = "1";
+				
+				search(searchParams.query.*, null, false);				
+			}
+			
+			private function pageChangeHandler(event:MakoListEvent):void
+			{
+				//if(searchParams.sortDescending.* == "1")searchParams.sortDescending.* = "";
+				//else searchParams.sortDescending.* = "1";
+				searchParams.page.* = event.pageNumber;
+				search(searchParams.query.*,null,false);
+			}
+		
+			private function parsePath(path:String):Array
+			{
+				if (!path.match(/^\{.+\}$/)) return null;
+				return path.substring(1,path.length-1).split(".");
+			}
+			
+			/**
+			 * Initializes search. Use it when you want to simulate a new search. 
+			 */
+			public function initSearch(s:String):void
+			{
+				search(s);
+				textInput.setFocus();
+			}
+			
+			private function operationInvokeHandler(event:CatalogueEvent):void
+			{
+				dispatchEvent(event);
+				if (event.deselectItem) this.clearSelection();
+			}
+			
+			private function get alwaysShowOperationsPanel():Boolean
+			{
+				if(this.config != null && this.config.alwaysShowOperationsPanel.length() > 0 &&
+					this.config.alwaysShowOperationsPanel[0].* == "true")
+					return true;
+				else
+					return false;
+			}
+			
+			private function initializeOperations():void
+			{
+				//trace("now");
+				var i:String;
+				var operation:CatalogueOperation;
+				var showPanel:Boolean = false;
+				
+				if (generalOperations) {
+					for(i in generalOperations)
+					{
+						showPanel = true;
+						operation = generalOperations[i] as CatalogueOperation;
+						operation.enabled = ml.permissionManager.isEnabled(operation.permissionKey);
+						operationsPanel.vBox.addChild(operation);
+						operation.addEventListener(CatalogueEvent.OPERATION_INVOKE, operationInvokeHandler);
+					}
+				}
+				if (itemOperations) {
+					for(i in itemOperations)
+					{
+						//trace("add")
+						showPanel = true;
+						operation = itemOperations[i] as CatalogueOperation;
+						operationsPanel.vBox.addChild(operation);
+						//BindingUtils.bindProperty(operation, "itemData", this, "itemData");
+						// operacje pozycji domyslnie niedostepne jezeli nie jest wybrana pozycja
+						//operation.visible = false;
+						operation.addEventListener(CatalogueEvent.OPERATION_INVOKE, operationInvokeHandler);
+					}
+				}
+				if (showPanel || this.alwaysShowOperationsPanel)
+				{
+					operationsPanel.visible = true;
+					operationsPanel.height = NaN;
+				}
+				
+				this.operationsPanel.dynamicVBox.config = this.config;
+			}
+			//dodaje filtry wizualnie.
+			private function initializeFilters():void
+			{
+				if (!leftPane) return;
+				var i:String;
+				var filter:ICatalogueFilter;
+				var showFilters:Boolean = false;
+				for (var j:String in searchFilters) if(searchFilters[j] is DisplayObject) showFilters = true;
+				if (showFilters)
+				{
+					if (!filtersPanel)
+					{
+						filtersPanel = new DockPanel();
+						filtersPanel.percentWidth = 100;
+						filtersPanel.title = LanguageManager.getInstance().labels.catalogue.filters;
+						filtersPanel.setStyle("paddingLeft", 5);
+						filtersForm = new TileForm();
+						filtersForm.setStyle("paddingLeft",0);
+						filtersForm.setStyle("paddingRight",0);
+						filtersForm.setStyle("paddingTop",4);
+						filtersForm.setStyle("paddingBottom",4);
+						filtersForm.setStyle("verticalGap",2);
+						filtersPanel.addChild(filtersForm);
+						filtersForm.percentWidth = 100;
+						//filtersForm.maxWidth = 300;
+						filtersApplyButton.addEventListener(MouseEvent.CLICK,applyFilers);
+						filtersApplyButton.label = LanguageManager.getInstance().labels.common.filterResults;
+						filtersApplyButton.toolTip = LanguageManager.getInstance().labels.common.applyFilters;
+						filtersApplyButton.percentWidth = 100;
+						var filtersControlBar:ControlBar = new ControlBar();
+						filtersControlBar.setStyle("paddingBottom",2);
+						filtersControlBar.setStyle("paddingTop",0);
+						filtersControlBar.addChild(filtersApplyButton);
+						if (resultFiltering) filtersPanel.addChild(filtersControlBar);
+						rightP.addChildAt(filtersPanel, 1);
+						filtersPanel.addEventListener(KeyboardEvent.KEY_DOWN, function (event:KeyboardEvent):void{if(event.keyCode == Keyboard.ENTER)filtersApplyButton.dispatchEvent(new MouseEvent(MouseEvent.CLICK))});	
+					}
+					else filtersForm.removeAllChildren();
+					
+					if (!filtersPanel.parent) rightP.addChildAt(filtersPanel, 1);
+					filtersPanel.visible = true;
+					//hBox.percentWidth = 100;
+					
+					for (i in searchFilters) if (searchFilters[i] is UIComponent)
+					{
+						if (!(searchFilters[i] is ICatalogueFilter)) throw new Error("Filter must implement ICatalogueFilter.");
+						filter = searchFilters[i] as ICatalogueFilter;
+						if (filter is UIComponent) filtersForm.addChild(filter as UIComponent);
+						(filter as UIComponent).percentWidth = 100;
+					}
+					//filtersPanel.addChild(hBox);
+				}
+				else if (filtersPanel)
+				{
+					filtersPanel.visible = false;
+					filtersForm.removeAllChildren();
+				}
+				
+				if(config.filtersTemplates.toString()!=""){	
+						var templateComboButton:FiltersTemplatesSelector = new FiltersTemplatesSelector();
+							templateComboButton.config = config.filtersTemplates;
+							templateComboButton.filtersArray = filtersForm.getChildren();
+							(filtersPanel as DockPanel).panelTitleBar.addChild(templateComboButton);
+					}
+			}
+			
+			private function placePanelsInLayout():void
+			{
+				if (config) {
+					if (config.layout.length() > 0)
+					{
+						var parentContainer:DisplayObjectContainer;
+						
+						for each (var container:XML in config.layout..*.(valueOf().name() != 'panel'))
+						{
+							if (this.hasOwnProperty(container.name()) && this[container.name()] is Container)
+							// czy schowac panel boczny:
+								if (container.localName() == "rightP" && Tools.parseBoolean(container.@collapsed)) showHide(rightB,rightP);
+								if (container.localName() == "leftP" && Tools.parseBoolean(container.@collapsed)){leftB.setStyle("icon", DynamicAssetsInjector.currentIconAssetClassRef.showHideButton_left); showHide(leftB,leftP)};
+								for each (var panel:XML in container.panel)
+								{
+									if (this[panel.@name.toString()]/*  && this[panel.@name.toString()] is DockPanel */)
+									{
+										if (this[panel.@name.toString()] is DockPanel && panel.@movable.length() > 0 && panel.@movable.toString() == 'false') this[panel.@name.toString()].movable = false;
+										if (this[panel.@name.toString()] is CollapsablePanel && panel.@collapsable.length() > 0 && panel.@collapsable.toString() == 'false') this[panel.@name.toString()].collapsable = false;
+										if (this[panel.@name.toString()] is CollapsablePanel && panel.@showTitleBar.length() > 0 && panel.@showTitleBar.toString() == 'false') this[panel.@name.toString()].showTitleBar = false;
+										if (this[panel.@name.toString()] is CollapsablePanel && panel.@open.length() > 0)
+											if (panel.@open.toString() == 'false') this[panel.@name.toString()].open = false;
+											else if (panel.@open.toString() == 'true') this[panel.@name.toString()].open = true;
+										
+										if (panel.@order.length() > 0) this[container.name()].addChildAt(this[panel.@name.toString()],Number(panel.@order));
+										else this[container.name()].addChild(this[panel.@name.toString()]);
+										if (panel.@width.length() > 0) this[panel.@name.toString()].width = parseFloat(panel.@width.toString());
+									}
+								}
+						}
+					}
+					/* else 
+					{
+						if (filtersPanel) rightP.addChildAt(filtersPanel, 1);
+						// TODO dolozyc pozostale panele jak beda trzymane w zmiennych.
+					} */
+					
+					if (config.hiddenComponents.rightP.length() > 0)
+					{
+						tabNavigator.visible = !config.hiddenComponents.rightP;
+						tabNavigator.includeInLayout = !config.hiddenComponents.rightP;						
+						rightB.visible = !config.hiddenComponents.rightP;
+						rightB.includeInLayout = !config.hiddenComponents.rightP;
+					}
+					else{
+						tabNavigator.visible = true;
+						tabNavigator.includeInLayout = true;						
+						rightB.visible = true;
+						rightB.includeInLayout = true;
+					}
+					
+					if(config.hiddenComponents.leftP.length() > 0)
+					{
+						showLeftPanel = !config.hiddenComponents.leftP;
+						//showClipboard = !config.hiddenComponents.leftP;
+						leftB.visible = !config.hiddenComponents.leftP;
+						leftB.includeInLayout = !config.hiddenComponents.leftP;							
+					}
+					/* else
+					{
+						showLeftPanel = true;
+						showClipboard = true;
+						leftB.visible = true;
+						leftB.includeInLayout = true;	
+					} */	
+								
+					if(config.hiddenComponents.leftPane.length() > 0)
+					{
+						// do dorobienia				
+					}
+				}
+			}
+			
+			private function applyFilers(event:MouseEvent):void
+			{
+				setFilters();
+				if (resultFiltering) search(searchParams.query.*);
+				else search(textInput.text);
+			}
+			
+			private function getParams(input:Object, paramsTemplate:XML):Object
+			{
+				if (!paramsTemplate) return input;
+				else
+				{
+					var output:XML = paramsTemplate.copy();
+					for (var i:String in input) output[i] = String(input[i]);
+					return output;
+				}
+			}
+			
+			private function search(query:String, type:String = null, newSearch:Boolean = true):void
+			{
+				if(groupsEditor && !groupsEditor.isSaved){Alert.show(LanguageManager.getInstance().labels.group.saveGroupsToSearch, LanguageManager.getInstance().labels.common.message);return};
+				var params:Object;
+				if (searchParams) {
+					if(newSearch)searchParams = basicSearchParams.copy();
+					params = searchParams;
+				}
+				else params = {};
+				params.query = query;
+				params.pageSize = pageSwitcher.pageSize;
+				var phrase:String = query;
+				if(phrase != "")phrase = " ("+query+")";
+				filtersApplyButton.label = LanguageManager.getInstance().labels.common.filterResults + phrase;
+				try{
+					for (var i:String in searchFilters) ICatalogueFilter(searchFilters[i]).setParameters(params);
+					applyInitialFilters();
+					initialFilters = null;
+					setGroupSearchParameters(params);
+					var parameters:Object = params is XML ? params.toXMLString() : params;
+					if (searchOperation) searchOperation.send(XML(parameters).toXMLString()).addResponder(new mx.rpc.Responder(this.handleSearchResult, this.handleSearchFault));
+					var catalogueEvent:CatalogueEvent = new CatalogueEvent(CatalogueEvent.ITEM_SEARCH);
+					catalogueEvent.parameters = parameters;
+					dispatchEvent(catalogueEvent);
+					//currentState = "loading";
+					progressBar.label = LanguageManager.getInstance().labels.common.searching+ ": " + query;
+					if(resultFiltering) textInput.text = "";
+					grid.selectedItem = null;
+					
+					grid.searchParams=searchParams;
+					grid.searchEventType=itemsType;
+				}
+				
+				catch(error:CatalogueFilterError)
+				{
+					Alert.show(error.message, LanguageManager.getInstance().labels.common.error);//todo use LanguageManager
+				}
+			}
+			
+			private function acceptItem(item:Object):void
+			{
+				//_selectedItem = item;
+				//grid.selectedItem = null;
+				if(!itemData)
+					this.pendingOperation = true;
+				else
+				{
+					if (itemOperations && !this.dynamicOperations) for (var i:String in itemOperations) //jezeli istnieja statyczne operacje a dynamiczne sa w tej chwili nieaktywne
+					{
+						var operation:CatalogueOperation = itemOperations[i];
+						if (operation.defaultOperation)
+						{
+							operation.invokeOperation();
+							break;
+						}
+					}
+					else if(this.dynamicOperations)
+					{
+						this.operationsPanel.dynamicVBox.invokeDefaultOperation();
+					}
+				}
+			}
+			
+			/**
+			 * Supports ENTER key (search), UP key and DOWN key (data grid navigation).
+			 */
+			protected function keyEventHandler(event:KeyboardEvent):void
+			{
+				var key:int = event.keyCode;
+				if (key == 13)
+				{
+					if (grid.selectedItem)
+					{
+						acceptItem(grid.selectedItem);
+					}
+					else
+					{
+						prepareSearch();
+						event.stopImmediatePropagation();
+						event.stopPropagation();
+						event.target.setFocus();
+					}
+				}
+				else if (key == 38 || key == 40)
+				{
+					if(searchResults){
+						grid.dispatchEvent(event);
+					}
+				}
+			}
+			
+			public function prepareSearch():void
+			{
+				setFilters();
+				search(textInput.text);
+			}
+			
+			private function setFilters():void
+			{
+				selectedGroups = groupsEditor && groupsEditor.cbGroupFilter.selected ? groupsEditor.getSelectedGroups() : null;
+				selectedUnassignedGroup = groupsEditor && groupsEditor.cbGroupFilter.selected ? groupsEditor.isUnassignedSelected() : false;
+			}
+			
+			private function changeHandler(event:Event):void
+			{
+				grid.selectedItem = null;
+				filterResults(event.target["text"]);
+			}
+			
+			private function handleSearchResult(event:ResultEvent):void
+			{
+				filters = [];
+				searchResults = getSearchResults(event.result);
+			}
+			
+			private function handleSearchFault(event:FaultEvent):void
+			{
+				//currentState = "error";
+				dispatchEvent(new CatalogueEvent(CatalogueEvent.ITEM_SEARCH_ERROR, null, null, event.fault));
+			}
+			
+			/**
+			 * Filters search results with a given text.
+			 */
+			public function filterResults(txt:String):void
+			{
+				realTimeFilter.setFilterText(txt);
+			}
+			
+			private function gridDoubleClickHandler(event:MouseEvent):void
+			{
+				acceptItem(grid.selectedItem);
+			}
+			
+			/**
+			 * Sets the operation of a given ID the default operation.
+			 */
+			public function setDefaultOperation(operationId:String):void
+			{
+				//trace("set")
+				if (itemOperations) for (var i:String in itemOperations)
+				{
+					var operation:CatalogueOperation = itemOperations[i];
+					operation.defaultOperation = (operation.operationId == operationId);
+				}
+			}
+			
+			/**
+			 * Returns an operation of a given ID.
+			 */
+			public function getOperation(operationId:String):CatalogueOperation
+			{
+				var i:String, operation:CatalogueOperation;
+				//trace("9")
+				if (itemOperations) for (i in itemOperations)
+				{
+					operation = itemOperations[i];
+					if (operation.operationId == operationId) return operation;
+				}
+				if (generalOperations) for (i in generalOperations)
+				{
+					operation = generalOperations[i];
+					if (operation.operationId == operationId) return operation;
+				}				
+				return null;
+			}
+				
+			private function showItemDetails(selectedItem:Object):void
+			{
+				if(selectedItem != null)
+				{
+					itemData = null;
+					var params:Object = getParams({'id' : selectedItem.@id}, getItemDataParams);
+					if (getItemDataOperation)
+					{
+						getItemDataOperation.send(params).addResponder(new mx.rpc.Responder(this.getItemInfoResult, this.getItemInfoFault));
+						//itemDataLoadingBar.visible = true;
+					}
+					var catalogueEvent:CatalogueEvent = new CatalogueEvent(CatalogueEvent.ITEM_GET_DATA);
+					catalogueEvent.parameters = params;
+					dispatchEvent(catalogueEvent);
+					pendingOperation = false;
+					
+				}
+				else
+				{
+					itemData = null;
+				}					
+			}
+			
+			private function getItemInfoResult(event:ResultEvent):void
+			{
+				if (event.result is String) itemData = XML(event.result);
+				else itemData = event.result;
+				var params:Object = getParams({'id' : itemData.id.toString()}, getItemDataParams);
+				var catalogueEvent:CatalogueEvent = new CatalogueEvent(CatalogueEvent.ITEM_DETAILS_LOADED);
+				catalogueEvent.parameters = params;
+				dispatchEvent(catalogueEvent);
+				//itemDataLoadingBar.visible = false;
+			}
+			
+			private function getItemInfoFault(event:FaultEvent):void
+			{
+				//itemDataLoadingBar.visible = false;
+				pendingOperation = false;
+				dispatchEvent(new CatalogueEvent(CatalogueEvent.ITEM_SEARCH_ERROR, null, null, event.fault));
+			}
+			
+			private var selectedGroups:Array = null;
+			private var selectedUnassignedGroup:Boolean;
+			
+			private function handleGroupDoubleClick(event:GroupTreeEvent):void
+			{
+				selectedGroups = event.leaves;
+				selectedUnassignedGroup = event.unassignedSelected;
+				search(textInput.text);
+				//selectedUnassignedGroup = false;
+				//selectedGroups = null;
+			}
+			
+			private function setGroupSearchParameters(parameters:Object):void
+			{
+				//if ((!selectedGroups || selectedGroups.length == 0) && !selectedUnassignedGroup) return;
+				var a:Array = [];
+				for (var i:String in selectedGroups) a.push("'" + selectedGroups[i] + "'");
+				parameters.groups = a.join(',');
+				if (selectedUnassignedGroup) parameters.groups.@includeUnassigned = "1";
+			}
+			
+			public function exportXml(format:String):XML
+			{
+				if (!_searchResults) return <list/>;
+				var result:XML = <list><columns/><elements/></list>;
+				result.columns = config.columns.copy();
+				for (var i:int = 0; i < result.columns.column.length(); i++) result.columns.column[i].@label = grid.columns[i].headerText;
+				result.elements.* = XMLListCollection(searchResults).source;
+				Alert.show(result);
+				return result;
+			}
+			
+			private function resetWidthsAndButtons(event:DividerEvent):void
+			{
+				if(showLeftPanel && event.dividerIndex == 0){
+					if(leftP.width == 0 && event.delta>0) leftB.setStyle("icon", DynamicAssetsInjector.currentIconAssetClassRef.showHideButton_left);
+					rightB.setStyle("icon", DynamicAssetsInjector.currentIconAssetClassRef.showHideButton_right);		
+				}
+				else 
+				{
+					if(tabNavigator.width == 0 && event.delta<0) rightB.setStyle("icon", DynamicAssetsInjector.currentIconAssetClassRef.showHideButton_right);
+					leftB.setStyle("icon", DynamicAssetsInjector.currentIconAssetClassRef.showHideButton_left);
+				}	
+			}
+			
+			private function showHide(b:Button,p:Container):void
+			{				
+				if(p.width == 0)
+					{ 
+						p.width = (b.id == "leftB") ? widthLeftPanel : widthRightPanel;
+					}
+				else{
+					if(b.id == "leftB") widthLeftPanel = p.width;
+					else widthRightPanel = p.width;
+					p.width = 0;
+				} 
+				if(b.getStyle("icon") == DynamicAssetsInjector.currentIconAssetClassRef.showHideButton_right) b.setStyle("icon", DynamicAssetsInjector.currentIconAssetClassRef.showHideButton_left);
+				else b.setStyle("icon", DynamicAssetsInjector.currentIconAssetClassRef.showHideButton_right);	
+			}
+			
+			private function groupsStructureChange(event:GroupTreeEditorEvent):void
+			{
+				var newEvent:GroupTreeEditorEvent = new GroupTreeEditorEvent("groupStructureChange",event.groups);
+				dispatchEvent(newEvent);
+			}
+			
+			private function itemDragDropHandler(event:GroupTreeEvent):void
+			{
+				dispatchEvent(new CatalogueEvent(CatalogueEvent.ITEM_TO_GROUP_ASSIGN,null,{groupId : event.groupId,itemId : event.itemId,itemIds : event.itemIds}));
+			}
+			
+			private function drag(event:MouseEvent,value:Object):void
+			{
+				var dragInitiator:UIComponent = event.currentTarget as UIComponent;
+				var dragSource:DragSource = new DragSource();
+				dragSource.addData(value,'value');
+				
+				DragManager.doDrag(dragInitiator,dragSource,event);
+			}
+			
+			private function showLeftButton(value:Boolean):Number
+			{
+				return showLeftPanel ? 30 : 0;
+			}
+			
+			private function initializeRightPanel():void
+			{
+				for(var i:int=0;i<rightPanel.length;i++){
+					if (!rightPanel[i] is IDataRenderer) throw new Error("rightPanel element must implement IDataRenderer interface.");
+					rightP.addChild(rightPanel[i]);
+				}
+			}
+			
+			public function clearSelection():void
+			{
+				this.selectedItem = null;
+			}
+			
+			private function tabNavigatorCreationComplete():void
+			{
+				if (tabNavigator.numChildren == 1 && ((tabNavigator.getChildAt(0) as Container).label == null || (tabNavigator.getChildAt(0) as Container).label == ""))
+				{
+					tabNavigator.setStyle("tabHeight",0);
+					tabNavigator.setStyle("borderStyle","none");
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:XML id="groupsConfiguration"/>
+	<layoutComponents1:DockingVBox id="leftPane" enabled="{ModelLocator.getInstance().permissionManager.isEnabled(listPermissionKey)}" paddingTop="8" paddingLeft="2" height="100%" minHeight="10" width="100%" minWidth="280" verticalAlign="top">
+		<mx:HBox id="searchPanel" width="100%">
+			<mx:Button id="leftB" icon="{IconManager.getIcon('showHideButton_left')}" click="showHide(leftB,leftP)" minWidth="0" visible="{showLeftPanel}" width="{showLeftButton(showLeftPanel)}"/>
+			<mx:TextInput
+				id="textInput"
+				width="100%"
+				keyDown="keyEventHandler(event)"
+				change="changeHandler(event)"
+				/>
+			<mx:Button label="{LanguageManager.getInstance().labels.common.search}" click="prepareSearch()"/>
+			<mx:Button id="rightB" icon="{IconManager.getIcon('showHideButton_right')}" width="30" click="showHide(rightB,tabNavigator)"/>
+		</mx:HBox>
+
+		<mx:VBox width="100%" height="100%" minHeight="200" minWidth="260">
+			<mx:Canvas width="100%" height="100%">
+				<list:CommonGrid
+					allowMultipleSelection="true"
+					doubleClick="gridDoubleClickHandler(event)"
+					change="this.selectedItem = event.currentTarget.selectedItem; showItemDetails(event.currentTarget.selectedItem)"
+					doubleClickEnabled="{ml.permissionManager.isEnabled(dblClickPermissionKey)}"
+					dragEnabled="true"
+					headerRelease="handleHeaderRelease(event);"
+					id="grid" width="100%" height="100%"
+					dragItemType="{itemsType}"
+					rowTextColorFunction="{rowTextColorFunction}"
+				/>
+				<mx:Canvas id="progressBarCanvas" width="100%" height="100%" backgroundColor="black" alpha=".5" visible="false"/>			
+				<mx:ProgressBar
+					id="progressBar"
+					label="{LanguageManager.getInstance().labels.lists.loading}"
+					labelPlacement="center"
+					indeterminate="true"
+					visible="false"
+					width="90%"
+					horizontalCenter="0"
+					verticalCenter="0"
+					height="20"
+					/>
+				<mx:Label text="{LanguageManager.getInstance().labels.lists.loadingError}" fontFamily="Verdana" fontSize="18" fontWeight="bold" enabled="true" id="errorLabel" horizontalCenter="0" verticalCenter="0" color="#ffffff" visible="false"/>
+			</mx:Canvas>
+			<mx:HBox width="100%">
+				<list:PageSwitcher id="pageSwitcher" width="100%" rowCount="{rowCount}" currentPage="{pageNumber}" pageSize="{searchParams.pageSize}" setPage="pageChangeHandler(event)"/>
+				<catalogue:ListSummary id="listSummary" values="{this.resultAttributes}"/>
+			</mx:HBox>
+		</mx:VBox>
+	</layoutComponents1:DockingVBox>
+	
+	<mx:TabNavigator id="tabNavigator" creationPolicy="all" minWidth="250" height="100%" width="70%" minHeight="10" creationComplete="tabNavigatorCreationComplete()" paddingTop="0">
+		<mx:Canvas width="100%" height="100%" label="{(rightP.label == '' ? null : rightP.label)}">
+			<layoutComponents1:DockingVBox label="{rightPanelLabel}" paddingTop="10" width="100%" minWidth="250" height="100%" minHeight="10" paddingLeft="2" verticalAlign="top" id="rightP">
+				<catalogue:OperationsPanel id="operationsPanel" documentList="{documentList}" title="{LanguageManager.getInstance().labels.lists.operationsTitle}" width="100%" height="0" visible="false" clearSelectionFunction="{this.clearSelection}" />
+				<mx:VBox id="rightPane" left="0" top="0" width="100%" verticalAlign="top"/>
+			</layoutComponents1:DockingVBox>
+		</mx:Canvas>
+	</mx:TabNavigator>
+	
+	<mx:states>
+		<mx:State name="leftpanel">
+			<mx:AddChild position="firstChild" creationPolicy="all">
+				<layoutComponents1:DockingVBox paddingTop="10" height="100%" minHeight="10" id="leftP" width="60%" minWidth="250" verticalAlign="top" creationComplete="placePanelsInLayout()">
+					<layoutComponents1:DockPanel id="groupsConfigurator" height="100%" width="100%" minWidth="230" minHeight="215"  verticalGap="0" title="{groupsTreeTitle}">
+					<!--
+					<layoutComponents1:DockPanel id="groupsConfigurator" height="100%" width="100%" minWidth="230" minHeight="215"  verticalGap="0" title="{LanguageManager.getInstance().labels.items.forms.item.groups}">
+					-->
+						<!--
+						<mx:CheckBox id="cbGroupFilter" label="{LanguageManager.getInstance().labels.catalogue.enableGroupFilter}" height="20" paddingLeft="5"/>
+						-->
+						<inputComponents:GroupsConfigurationEditor id="groupsEditor" height="100%" width="100%" minWidth="230" minHeight="165"
+							groupDoubleClick="handleGroupDoubleClick(event)" 
+							allowItemToGroupAssign="{allowItemToGroupAssign}"
+							editable="{allowGroupsChange}"
+							saveCommandClass="{groupsTreeSaveCommandClass}"
+							change="groupsStructureChange(event)"
+							showGroupColor="{showGroupColor}"
+							data="{groupsConfiguration}"
+							itemDragDrop="itemDragDropHandler(event)"
+							itemsType="{this.itemsType}" 
+							filterButtonClick="prepareSearch()"
+							/>
+							<!--
+							groupsTreeTitle="{groupsTreeTitle}"
+							enableCheckboxSelection="{cbGroupFilter.selected}"
+							-->
+					</layoutComponents1:DockPanel>
+					<layoutComponents1:DockPanel id="clipboardDockProductionPanel" visible="{showProdClipboard}" open="false" includeInLayout="{showProdClipboard}" width="100%" height="100%" minWidth="230" minHeight="215" verticalGap="0" title="{LanguageManager.getInstance().labels.menu.production.productionOrderDocument}">
+						<catalogue:ClipboardProductionPanel id="clipboardProdPanel" width="100%"  height="100%" minWidth="230" minHeight="165" itemsType="{itemsType}" clipboard="{clipboardProd}"/>
+					</layoutComponents1:DockPanel>
+					<layoutComponents1:DockPanel id="clipboardDockPanel" visible="{showClipboard}" open="false" includeInLayout="{showClipboard}" width="100%" height="100%" minWidth="230" minHeight="215" verticalGap="0" title="{LanguageManager.getInstance().labels.cart.cart}">
+						<catalogue:ClipboardPanel id="clipboardPanel" width="100%"  height="100%" minWidth="230" minHeight="165" itemsType="{itemsType}" clipboard="{clipboard}"/>
+					</layoutComponents1:DockPanel>
+				</layoutComponents1:DockingVBox>
+			</mx:AddChild>
+		</mx:State>
+	</mx:states>
+</mx:HDividedBox>

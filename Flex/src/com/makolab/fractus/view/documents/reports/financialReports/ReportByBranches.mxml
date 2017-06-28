@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReportBase doubleClickEnabled="true" alternateExportXmlGeneration="true" xmlns="com.makolab.fractus.view.documents.reports.*" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:layoutComponents="com.makolab.components.layoutComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.view.finance.ReportByBranchesFinancialDocumentsDetails;
+			import com.makolab.fractus.view.finance.ReportByBranchesSalesDocumentsDetails;
+			import mx.events.ListEvent;
+			import com.makolab.components.layoutComponents.SummaryColumn;
+			import com.makolab.components.util.CurrencyManager;
+			import mx.controls.advancedDataGridClasses.AdvancedDataGridListData;
+			import com.makolab.fractus.view.payments.PaymentList;
+			import com.makolab.fractus.view.finance.PaymentSettlementEditor;
+			import com.makolab.components.util.Tools;
+			import mx.formatters.CurrencyFormatter;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			[Bindable] 
+			public var languageManager:LanguageManager = LanguageManager.getInstance();
+			
+			public function getLabel(item:Object, column:Object):String
+			{
+				var c1:String, c2:String;
+				var v1:Number, v2:Number;
+				var s1:String, s2:String;
+				
+				if(column is DataGridColumn)
+				{
+					for each(var col:Object in this.grid.columns)
+					{
+						if(col.headerText == DataGridColumn(column).headerText)
+						{
+							column = col;
+							break;
+						}
+					}
+				}
+				
+				switch (column)
+				{
+					case sales: c1 = 'netValue'; c2 = 'grossValue'; break;
+					case retail: c1 = 'retailNetValue'; c2 = 'retailGrossValue'; break;
+					case goods: c1 = 'goodNetValue'; c2 = 'goodGrossValue'; break;
+					case services: c1 = 'serviceNetValue'; c2 = 'serviceGrossValue'; break;
+					case margin:
+					case marginNoServices:
+						var netValue:Number = parseFloat(item['netValue']);
+						var goodNetValue:Number = parseFloat(item['goodNetValue']);
+						var costValue:Number = parseFloat(item['costValue']);
+						if (column == margin)
+						{
+							v2 = netValue - costValue;
+							v1 = 100 * v2 / netValue;
+						}
+						else if (column == marginNoServices)
+						{
+							v2 = goodNetValue - costValue;
+							v1 = 100 * v2 / goodNetValue;
+						}
+						if (!isNaN(v1)) s1 = CurrencyManager.formatCurrency(v1, '-') + '%';
+						else s1 = '-';
+						s2 = CurrencyManager.formatCurrency(v2, '-');
+						break;
+					case initialBalance: c1 = 'initialBalance'; s2 = ''; break;
+					case cash: c1 = 'incomeValue'; c2 = 'outcomeValue'; break;
+					case balance: c1 = 'cashReportBalance'; s2 = ''; break;
+					case bank: c1 = 'bank'; s2 = ''; break;
+					case warehouse: c1 = 'income'; c2 = 'outcome'; break;
+					//case warehouseValue: break;
+				}
+				if (c1) v1 = parseFloat(item[c1]);
+				if (c2) v2 = parseFloat(item[c2]);
+				if (s1 == null) s1 = CurrencyManager.formatCurrency(v1, '-');
+				if (s2 == null) s2 = CurrencyManager.formatCurrency(v2, '-');
+				return s1 + '\n' + s2;
+			}
+			
+			private function marginSortFunction(object1:Object, object2:Object):int
+			{
+				var margin1:Number = parseFloat(object1['netValue']) - parseFloat(object1['costValue']);
+				var margin2:Number = parseFloat(object2['netValue']) - parseFloat(object2['costValue']);
+				if (margin1 < margin2) return -1;
+				else if (margin1 > margin2) return 1;
+				else return 0;
+			}
+			
+			private function marginSortFunction2(object1:Object, object2:Object):int
+			{
+				var margin1:Number = parseFloat(object1['goodNetValue']) - parseFloat(object1['costValue']);
+				var margin2:Number = parseFloat(object2['goodNetValue']) - parseFloat(object2['costValue']);
+				if (margin1 < margin2) return -1;
+				else if (margin1 > margin2) return 1;
+				else return 0;
+			}
+			
+			private function calculateSummary(gridDataProvider:Object):Object
+			{
+				var line:XML = <line/>;
+				
+				if (gridDataProvider.source)
+				{
+					for each (var srcLine:XML in gridDataProvider.source)
+					{
+						for each(var srcColumn:XML in srcLine.*)
+						{
+							if(line[srcColumn.localName()].length() > 0 && 
+								srcColumn.localName() != "branchId" && 
+								srcColumn.localName() != "symbol" && 
+								srcColumn.localName() != "label")
+							{
+								line[srcColumn.localName()].* = (parseFloat(line[srcColumn.localName()].*) + parseFloat(srcColumn.*)).toString();																
+							}
+							else
+								line[srcColumn.localName()].* = srcColumn.*;
+						}
+					}
+				}
+				
+				line.label.* = "Razem";
+				
+				return line;
+			}
+			
+			private function handleItemDoubleClick(event:ListEvent):void
+			{
+				if (event.itemRenderer.data.branchId.length() == 0) return;
+				var branchId:String = event.itemRenderer.data.branchId[0].*;
+				if(!branchId || branchId == "") return;
+				
+				var col:AdvancedDataGridColumn = this.grid.columns[event.columnIndex];
+				
+				switch (col)
+				{
+					case sales:
+					case retail:
+					case goods:
+					case services:
+					case margin:
+					case marginNoServices:
+						ReportByBranchesSalesDocumentsDetails.showWindow(this.lastSearchParams, branchId);
+						break;
+					case cash:
+					case balance:
+					case initialBalance:
+					case bank:
+						ReportByBranchesFinancialDocumentsDetails.showWindow(this.lastSearchParams, branchId);
+						break;
+				}
+			}
+		]]>
+	</mx:Script>
+	<table>
+		<mx:AdvancedDataGrid id="grid" width="100%" height="100%" wordWrap="true" rowHeight="35" lockedColumnCount="1" horizontalScrollPolicy="on" itemDoubleClick="handleItemDoubleClick(event)" doubleClickEnabled="true">
+			<mx:columns>
+				<mx:AdvancedDataGridColumn id="nameColumn" headerText="Oddział" dataField="label" width="150"/>
+				<mx:AdvancedDataGridColumn id="sales" headerText="Sprzedaż ogółem netto/brutto" sortCompareFunction="{Tools.getSortFunction('netValue')}" labelFunction="getLabel" textAlign="right" width="110"/>
+				<mx:AdvancedDataGridColumn id="retail" headerText="Sprzedaż&#13;detal" sortCompareFunction="{Tools.getSortFunction('retailNetValue')}" labelFunction="getLabel" textAlign="right" width="100"/>
+				<mx:AdvancedDataGridColumn id="goods" headerText="Towary" sortCompareFunction="{Tools.getSortFunction('goodNetValue')}" labelFunction="getLabel" textAlign="right" width="100"/>
+				<mx:AdvancedDataGridColumn id="services" headerText="Usługi" sortCompareFunction="{Tools.getSortFunction('serviceNetValue')}" labelFunction="getLabel" textAlign="right" width="100"/>
+				<mx:AdvancedDataGridColumn id="margin" headerText="Marża / zysk" sortCompareFunction="marginSortFunction" labelFunction="getLabel" textAlign="right" width="100"/>
+				<mx:AdvancedDataGridColumn id="marginNoServices" headerText="Marża (bez usług)" sortCompareFunction="marginSortFunction2" labelFunction="getLabel" textAlign="right" width="100"/>
+				<mx:AdvancedDataGridColumn id="initialBalance" headerText="Bilans otwarcia kasy" sortCompareFunction="{Tools.getSortFunction('initialBalance')}" labelFunction="getLabel" textAlign="right" width="100"/>
+				<mx:AdvancedDataGridColumn id="cash" headerText="Kasa&#13;+/-" sortable="false" labelFunction="getLabel" textAlign="right" width="100"/>
+				<mx:AdvancedDataGridColumn id="balance" headerText="Stan kasy" sortCompareFunction="{Tools.getSortFunction('cashReportBalance')}" labelFunction="getLabel" textAlign="right" width="100"/>
+				<mx:AdvancedDataGridColumn id="bank" headerText="Bank" sortCompareFunction="{Tools.getSortFunction('bank')}" labelFunction="getLabel" textAlign="right" width="90"/>
+				<mx:AdvancedDataGridColumn id="warehouse" headerText="Ruch towaru&#13;+/-" sortable="false" labelFunction="getLabel" textAlign="right" width="100"/>
+				<!--<mx:AdvancedDataGridColumn id="warehouseValue" headerText="Wartość magazynu" sortCompareFunction="{Tools.getSortFunction('@settledIncome')}" labelFunction="getLabel" textAlign="right" width="120"/>-->
+			</mx:columns>
+		</mx:AdvancedDataGrid>
+	</table>
+	<summary>
+		<layoutComponents:AdvancedDataGridSummary2 source="{grid}" createDataProviderFunction="calculateSummary" rowCount="1">
+			<layoutComponents:summaryColumns>
+				<layoutComponents:SummaryColumn sourceColumn="{nameColumn}"/>
+				<layoutComponents:SummaryColumn sourceColumn="{sales}"/>
+				<layoutComponents:SummaryColumn sourceColumn="{retail}"/>
+				<layoutComponents:SummaryColumn sourceColumn="{goods}"/>
+				<layoutComponents:SummaryColumn sourceColumn="{services}"/>
+				<layoutComponents:SummaryColumn sourceColumn="{margin}"/>
+				<layoutComponents:SummaryColumn sourceColumn="{marginNoServices}"/>
+				<layoutComponents:SummaryColumn sourceColumn="{initialBalance}"/>
+				<layoutComponents:SummaryColumn sourceColumn="{cash}"/>
+				<layoutComponents:SummaryColumn sourceColumn="{balance}"/>
+				<layoutComponents:SummaryColumn sourceColumn="{bank}" operations="{[SummaryColumn.SUM]}"/><!-- to tylko po to zeby pods.bylo w jednym wierszu. nie byloby problemu gdyby wszedzie byly zastosowane operacje zamiast tworzenia data providera. tomek-->
+				<layoutComponents:SummaryColumn sourceColumn="{warehouse}"/>
+			</layoutComponents:summaryColumns>
+		</layoutComponents:AdvancedDataGridSummary2>
+	</summary>
+</ReportBase>

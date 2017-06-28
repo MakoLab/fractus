@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:generic="com.makolab.fractus.view.generic.*" xmlns:layoutComponents="com.makolab.components.layoutComponents.*"
+		paddingTop="4"
+		paddingBottom="4"
+		paddingLeft="4"
+		paddingRight="4"
+	>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.SearchCommand;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			protected var window:ComponentWindow;
+			
+			public static function showWindow():ComponentWindow
+			{
+				var component:ContractorsExportComponent = new ContractorsExportComponent();
+				var window:ComponentWindow = ComponentWindow.showWindow(component, 0, null, LanguageManager.getInstance().labels.accounting.exportContractors);
+				component.window = window;
+				return window;
+			}
+			
+			public function search():void
+			{
+				var cmd:SearchCommand = new SearchCommand(SearchCommand.CONTRACTORS, searchParams);
+
+				cmd.query = queryInput.text;
+				if (cbExported.selectedIndex > 0) cmd.addFilter('objectExported', cbExported.selectedItem.value);
+				
+				if (cbDocRelated.selectedIndex > 0) cmd.addFilter('contractorsRelated', cbDocRelated.selectedItem.value);
+
+				cmd.addEventListener(ResultEvent.RESULT, handleResult);
+				cmd.execute();
+			}
+			
+			private function handleResult(event:ResultEvent):void
+			{
+				var l:XMLList = XML(event.result).*;
+				exportComponent.list = l;
+			}
+
+			private function getContractorLabel(item:Object):String
+			{
+				return String(item.@shortName);
+			}
+			
+			private function getTaskParams(id:String):XMLList
+			{
+				return XMLList(<contractorId>{id}</contractorId>);
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox horizontalGap="0" verticalGap="0">
+		<mx:VBox horizontalGap="0" verticalGap="0">
+			<mx:Form horizontalGap="0" paddingBottom="0" paddingTop="0">
+				<mx:FormItem label="Szukaj w indeksie">
+					<mx:TextInput id="queryInput" width="100%" enter="search()"/>
+				</mx:FormItem>
+				<mx:FormItem label="Filtruj">
+					<mx:ComboBox labelField="label" id="cbExported" dataProvider="{[ { label : 'Wszystkie', value : 'all' }, { label : 'Wyeksportowane, które uległy zmianie', value : 'exportedAndChanged' }, { label : 'Wyeksportowane, które nie uległy zmianie', value : 'exportedAndUnchanged' }, { label : 'Niewyeksportowane', value : 'unexported' }]}" selectedIndex="3"/>
+				</mx:FormItem>
+			</mx:Form>
+		</mx:VBox>
+		<mx:VBox horizontalGap="0" verticalGap="0">
+			<mx:Form horizontalGap="0" paddingBottom="0" paddingTop="0">
+				<mx:FormItem label="Powiązanie z dokumentami">
+					<mx:ComboBox labelField="label" id="cbDocRelated" dataProvider="{[ { label : 'Wszyscy', value : 'all'}, { label : 'Powiązani', value : 'related' }, { label : 'Niepowiązani', value : 'unrelated' }]}" selectedIndex="1"/>
+				</mx:FormItem>
+				
+			</mx:Form>
+		</mx:VBox>
+	</mx:HBox>
+	<mx:Button width="100" label="Szukaj" click="search()"/>
+	
+	<generic:ObjectExportComponent id="exportComponent" itemLabelFunction="{getContractorLabel}" taskParamsFunction="{getTaskParams}" width="100%" height="100%">
+		<generic:columns>
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.code')}" dataField="@code" editable="false" width="100"/> 
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.shortName')}" dataField="@shortName" editable="false"/> 
+			<mx:DataGridColumn headerText="NIP" dataField="@nip" editable="false" width="100"/>
+		</generic:columns>
+	</generic:ObjectExportComponent>
+	<mx:XML id="searchParams">
+		<searchParams>
+			<query/>
+		    <pageSize>0</pageSize>
+			<columns>
+				<column field="code"/>
+				<column field="shortName"/>
+				<column field="nip"/>
+				<column field="objectExported"/>
+				<column field="version"/>
+			</columns>
+		</searchParams>
+	</mx:XML>
+</mx:VBox>

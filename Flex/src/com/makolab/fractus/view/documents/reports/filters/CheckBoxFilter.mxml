@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem 
+	implements="com.makolab.fractus.view.documents.reports.filters.IReportFilter" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.CatalogueFilterError;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			private var _parameters:XML
+			
+			[Bindable]
+			public var columnName:String = "";
+			[Bindable]
+			public var labelForCheckBox:String = "";
+			private var _selected:Boolean = false;
+			
+			[Bindable]
+			public function set selected(value:Boolean):void
+			{
+				if(checkBox)checkBox.selected = value;
+				_selected = value;
+				setParameters(parameters);
+			}
+			
+			public function get selected():Boolean
+			{
+				return (checkBox)?checkBox.selected:_selected;
+			}
+			
+			[Bindable]
+			public var changeFunction:Function = null;
+			
+			[Bindable]
+			public function set parameters(value:XML):void
+			{
+				_parameters = value;
+			}
+			
+			public function get parameters():XML
+			{
+				return _parameters;
+			}
+			
+			private function setParameters(params:XML):void
+			{
+				if(checkBox){
+					
+					var value:int = selected ? 1 : 0;
+					if(!params.filters)params.filters = "";
+					var filterNodes:XMLList = params.filters.column.(@field == columnName);
+					if(filterNodes.length() == 0){
+						var newCondition:XML = <column/>;
+						newCondition.@field = columnName;
+						newCondition.* = value;
+						params.filters.columns += newCondition;
+					}else{
+						filterNodes[0].* = value;
+					}
+				}
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			private function setSelection():void
+			{
+				checkBox.selected = _selected;
+				setParameters(parameters);
+			}
+			public function get validationError():String
+			{
+				return null;
+			}
+			
+			public function get stringValue():String
+			{
+				return checkBox.selected ? "włączony" : null;
+			}
+	
+		]]>
+	</mx:Script>
+		<!--
+		<inputComponents:CheckBoxCombo id="combo" change="setParameters(parameters)" creationComplete="setSelection()" width="100%" labelFunction="comboLabelFunction">
+			<inputComponents:dataProvider>
+				{DictionaryManager.getInstance().dictionaries.numberSettings}
+			</inputComponents:dataProvider>
+		</inputComponents:CheckBoxCombo>
+		-->
+		<mx:CheckBox id="checkBox" label="{labelForCheckBox}" click="{if(changeFunction != null)changeFunction()}" change="{setParameters(parameters);}" creationComplete="{setSelection();}"/>
+</mx:FormItem>

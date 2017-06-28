@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="getList()" xmlns:lineList="com.makolab.components.lineList.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.lineList.LineImageButton;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			import mx.controls.Alert;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.events.CloseEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			[Bindable] public var list:XMLList;
+			public var lm:LanguageManager=LanguageManager.getInstance();
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:PriceLists = new PriceLists();
+				window.innerComponent = component;
+				if(component.icon)window.titleIcon = component.icon;
+				window.show(null,new Rectangle(0,0,500,400),LanguageManager.getInstance().labels.title.priceLists);
+				return window;
+			}
+			
+			private function addPriceList():void
+			{
+				var window:ComponentWindow = PriceListEditor.showWindow();
+				window.addEventListener("change",priceListChangeHandler);
+			}
+			
+			private function editPriceList():void
+			{
+				if(grid.selectedItem){
+					var window:ComponentWindow = PriceListEditor.showWindow(grid.selectedItem.@id);
+					window.addEventListener("change",priceListChangeHandler);
+				}
+			}
+			
+			private function getList():void
+			{
+				var requestXML:XML = 	<searchParams><columns><column field="label"/></columns></searchParams>;
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("item.p_getPriceLists",requestXML);
+				cmd.addEventListener(ResultEvent.RESULT,getPriceListsHandler);
+				cmd.execute();
+				//list = testXML.priceListHeader.entry;
+			}
+			
+			private function getPriceListsHandler(event:ResultEvent):void
+			{
+				list = XML(event.result).priceListHeader;
+			}
+			
+			private function priceListChangeHandler(event:Event):void
+			{
+				getList();
+				(event.target as ComponentWindow).hide();
+			}
+			
+			private var removingIndex:int = -1;
+			
+			public function removePriceList(event:MouseEvent):void
+			{
+				removingIndex = grid.itemRendererToIndex(event.target as LineImageButton);
+				var txt:String = "Czy na pewno usunąć cennik '" + grid.dataProvider[removingIndex].@label + "'?";
+				Alert.show(txt,"",Alert.YES | Alert.NO,null,deleteConfirmation);
+			}
+			
+			private function deleteConfirmation(event:CloseEvent):void
+			{
+				var parameter:XML = <root><id>{grid.dataProvider[removingIndex].@id}</id></root>
+				if (event.detail == Alert.YES){
+					var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("item.p_deletePriceList",parameter);
+					cmd.addEventListener(ResultEvent.RESULT,removePriceListHandler);
+					cmd.execute();
+				}
+			}
+			
+			private function removePriceListHandler(event:ResultEvent):void
+			{
+				getList();
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:XML id="testXML" xmlns="">
+		<root>
+			<priceListHeader>
+				<entry>
+					<label>Test</label>
+				</entry>
+			</priceListHeader>
+		</root>
+	</mx:XML>
+	
+	<mx:DataGrid id="grid" width="100%" height="100%" dataProvider="{list}" doubleClickEnabled="true" doubleClick="editPriceList()">
+		<mx:columns>
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.shortName')}" dataField="@label"/>
+			<mx:DataGridColumn width="26" sortable="false" editable="false">
+				<mx:itemRenderer>
+					<mx:Component>
+						<lineList:LineImageButton width="100%" height="100%" click="outerDocument.removePriceList(event)" iconsName="status_canceled" toolTip="{outerDocument.lm.getLabel('common.Delete')}"/>
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn> 
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:HBox>
+		<mx:Button label="Dodaj cennik" click="addPriceList()"/>
+		<mx:Button label="Edytuj" enabled="{grid.selectedItem}" click="editPriceList()"/>
+	</mx:HBox>
+</mx:VBox>

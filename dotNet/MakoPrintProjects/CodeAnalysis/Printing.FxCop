@@ -1,0 +1,329 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FxCopProject Version="1.36" Name="My FxCop Project">
+ <ProjectOptions>
+  <SharedProject>True</SharedProject>
+  <Stylesheet Apply="False">c:\program files\microsoft fxcop 1.36\Xml\FxCopReport.xsl</Stylesheet>
+  <SaveMessages>
+   <Project Status="Active, Excluded" NewOnly="False" />
+   <Report Status="Active" NewOnly="False" />
+  </SaveMessages>
+  <ProjectFile Compress="True" DefaultTargetCheck="True" DefaultRuleCheck="True" SaveByRuleGroup="" Deterministic="True" />
+  <EnableMultithreadedLoad>True</EnableMultithreadedLoad>
+  <EnableMultithreadedAnalysis>True</EnableMultithreadedAnalysis>
+  <SourceLookup>True</SourceLookup>
+  <AnalysisExceptionsThreshold>10</AnalysisExceptionsThreshold>
+  <RuleExceptionsThreshold>1</RuleExceptionsThreshold>
+  <Spelling Locale="en-US" />
+  <OverrideRuleVisibilities>False</OverrideRuleVisibilities>
+  <CustomDictionaries SearchFxCopDir="True" SearchUserProfile="True" SearchProjectDir="True" />
+  <SearchGlobalAssemblyCache>False</SearchGlobalAssemblyCache>
+  <DeadlockDetectionTimeout>120</DeadlockDetectionTimeout>
+  <IgnoreGeneratedCode>False</IgnoreGeneratedCode>
+ </ProjectOptions>
+ <Targets>
+  <AssemblyReferenceDirectories>
+   <Directory>$(ProjectDir)/../ThirdPartyLibraries/</Directory>
+  </AssemblyReferenceDirectories>
+  <Target Name="$(ProjectDir)/../MakoPrint/bin/Debug/MakoPrint.dll" Analyze="True" AnalyzeAllChildren="True" />
+  <Target Name="$(ProjectDir)/../MakoPrint/bin/Debug/MakoPrintCSV.dll" Analyze="True" AnalyzeAllChildren="True" />
+  <Target Name="$(ProjectDir)/../MakoPrint/bin/Debug/MakoPrintXLS.dll" Analyze="True" AnalyzeAllChildren="True" />
+ </Targets>
+ <Rules>
+  <RuleFiles>
+   <RuleFile Name="$(FxCopDir)\Rules\DesignRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\GlobalizationRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\InteroperabilityRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\MobilityRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\NamingRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\PerformanceRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\PortabilityRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\SecurityRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\UsageRules.dll" Enabled="True" AllRulesEnabled="True" />
+  </RuleFiles>
+  <Groups />
+  <Settings />
+ </Rules>
+ <FxCopReport Version="1.36">
+  <Namespaces>
+   <Namespace Name="Makolab.Printing">
+    <Messages>
+     <Message TypeName="AvoidNamespacesWithFewTypes" Category="Microsoft.Design" CheckId="CA1020" Status="Excluded" Created="2008-07-25 09:47:52Z">
+      <Issue>
+       <Item>Makolab.Printing</Item>
+      </Issue>
+      <Notes>
+       <User Name="Szymon">
+        <Note Id="4" />
+       </User>
+      </Notes>
+     </Message>
+    </Messages>
+   </Namespace>
+   <Namespace Name="Makolab.Printing.CSV">
+    <Messages>
+     <Message Id="CSV" TypeName="IdentifiersShouldBeCasedCorrectly" Category="Microsoft.Naming" CheckId="CA1709" Status="Excluded" Created="2008-07-25 09:47:52Z">
+      <Issue Name="Namespace">
+       <Item>CSV</Item>
+       <Item>Makolab.Printing.CSV</Item>
+       <Item>Csv</Item>
+      </Issue>
+      <Notes>
+       <User Name="Szymon">
+        <Note Id="2" />
+       </User>
+      </Notes>
+     </Message>
+    </Messages>
+   </Namespace>
+   <Namespace Name="Makolab.Printing.XLS">
+    <Messages>
+     <Message Id="XLS" TypeName="IdentifiersShouldBeCasedCorrectly" Category="Microsoft.Naming" CheckId="CA1709" Status="Excluded" Created="2008-07-25 09:47:52Z">
+      <Issue Name="Namespace">
+       <Item>XLS</Item>
+       <Item>Makolab.Printing.XLS</Item>
+       <Item>Xls</Item>
+      </Issue>
+      <Notes>
+       <User Name="Szymon">
+        <Note Id="2" />
+       </User>
+      </Notes>
+     </Message>
+    </Messages>
+   </Namespace>
+  </Namespaces>
+  <Targets>
+   <Target Name="$(ProjectDir)/../MakoPrint/bin/Debug/MakoPrint.dll">
+    <Modules>
+     <Module Name="makoprint.dll">
+      <Messages>
+       <Message Id="Mako" TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704" Status="Excluded" Created="2008-07-15 12:38:46Z">
+        <Issue Name="Assembly">
+         <Item>Mako</Item>
+         <Item>'MakoPrint.dll'</Item>
+        </Issue>
+        <Notes>
+         <User Name="Szymon">
+          <Note Id="0" />
+         </User>
+        </Notes>
+       </Message>
+      </Messages>
+      <Namespaces>
+       <Namespace Name="Makolab.Printing">
+        <Types>
+         <Type Name="MakoPrint">
+          <Messages>
+           <Message Id="Mako" TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704" Status="Excluded" Created="2008-07-15 12:38:46Z">
+            <Issue Name="Type">
+             <Item>Mako</Item>
+             <Item>'MakoPrint'</Item>
+            </Issue>
+            <Notes>
+             <User Name="Szymon">
+              <Note Id="0" />
+             </User>
+            </Notes>
+           </Message>
+          </Messages>
+          <Members>
+           <Member Name="#GeneratePdf(System.String,System.IO.Stream)">
+            <Messages>
+             <Message TypeName="MarkMembersAsStatic" Category="Microsoft.Performance" CheckId="CA1822" Status="Excluded" Created="2008-07-15 12:38:46Z" FixCategory="DependsOnFix">
+              <Issue>
+               <Item>'MakoPrint.GeneratePdf(string, Stream)'</Item>
+              </Issue>
+              <Notes>
+               <User Name="Szymon">
+                <Note Id="0" />
+               </User>
+              </Notes>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#LoadXsltParameters(System.Xml.Linq.XDocument,System.Xml.Xsl.XsltArgumentList)">
+            <Messages>
+             <Message TypeName="MarkMembersAsStatic" Category="Microsoft.Performance" CheckId="CA1822" Status="Excluded" Created="2008-07-25 11:39:55Z" FixCategory="NonBreaking">
+              <Issue>
+               <Item>'MakoPrint.LoadXsltParameters(XDocument, XsltArgumentList)'</Item>
+              </Issue>
+              <Notes>
+               <User Name="Szymon">
+                <Note Id="5" />
+               </User>
+              </Notes>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="OutputFormat">
+          <Members>
+           <Member Name="#Xls">
+            <Messages>
+             <Message Id="Xls" TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704" Status="Excluded" Created="2008-07-31 11:16:09Z">
+              <Issue Name="Member">
+               <Item>Xls</Item>
+               <Item>'OutputFormat.Xls'</Item>
+              </Issue>
+              <Notes>
+               <User Name="Szymon">
+                <Note Id="3" />
+               </User>
+              </Notes>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+        </Types>
+       </Namespace>
+      </Namespaces>
+     </Module>
+    </Modules>
+   </Target>
+   <Target Name="$(ProjectDir)/../MakoPrint/bin/Debug/MakoPrintCSV.dll">
+    <Modules>
+     <Module Name="makoprintcsv.dll">
+      <Messages>
+       <Message Id="CSV" TypeName="IdentifiersShouldBeCasedCorrectly" Category="Microsoft.Naming" CheckId="CA1709" Status="Excluded" Created="2008-07-17 14:41:45Z">
+        <Issue Name="Assembly">
+         <Item>CSV</Item>
+         <Item>'MakoPrintCSV.dll'</Item>
+         <Item>Csv</Item>
+        </Issue>
+        <Notes>
+         <User Name="Szymon">
+          <Note Id="1" />
+         </User>
+        </Notes>
+       </Message>
+       <Message Id="Mako" TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704" Status="Excluded" Created="2008-07-17 14:41:45Z">
+        <Issue Name="Assembly">
+         <Item>Mako</Item>
+         <Item>'MakoPrintCSV.dll'</Item>
+        </Issue>
+        <Notes>
+         <User Name="Szymon">
+          <Note Id="1" />
+         </User>
+        </Notes>
+       </Message>
+      </Messages>
+      <Namespaces>
+       <Namespace Name="Makolab.Printing.CSV">
+        <Types>
+         <Type Name="MakoPrintCsv">
+          <Messages>
+           <Message Id="Mako" TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704" Status="Excluded" Created="2008-07-25 09:47:52Z">
+            <Issue Name="Type">
+             <Item>Mako</Item>
+             <Item>'MakoPrintCsv'</Item>
+            </Issue>
+            <Notes>
+             <User Name="Szymon">
+              <Note Id="2" />
+             </User>
+            </Notes>
+           </Message>
+          </Messages>
+         </Type>
+        </Types>
+       </Namespace>
+      </Namespaces>
+     </Module>
+    </Modules>
+   </Target>
+   <Target Name="$(ProjectDir)/../MakoPrint/bin/Debug/MakoPrintXLS.dll">
+    <Modules>
+     <Module Name="makoprintxls.dll">
+      <Messages>
+       <Message Id="XLS" TypeName="IdentifiersShouldBeCasedCorrectly" Category="Microsoft.Naming" CheckId="CA1709" Status="Excluded" Created="2008-07-15 12:38:46Z">
+        <Issue Name="Assembly">
+         <Item>XLS</Item>
+         <Item>'MakoPrintXLS.dll'</Item>
+         <Item>Xls</Item>
+        </Issue>
+        <Notes>
+         <User Name="Szymon">
+          <Note Id="0" />
+         </User>
+        </Notes>
+       </Message>
+       <Message Id="Mako" TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704" Status="Excluded" Created="2008-07-15 12:38:46Z">
+        <Issue Name="Assembly">
+         <Item>Mako</Item>
+         <Item>'MakoPrintXLS.dll'</Item>
+        </Issue>
+        <Notes>
+         <User Name="Szymon">
+          <Note Id="0" />
+         </User>
+        </Notes>
+       </Message>
+      </Messages>
+      <Namespaces>
+       <Namespace Name="Makolab.Printing.XLS">
+        <Types>
+         <Type Name="MakoPrintXls">
+          <Messages>
+           <Message Id="Mako" TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704" Status="Excluded" Created="2008-07-25 09:47:52Z">
+            <Issue Name="Type">
+             <Item>Mako</Item>
+             <Item>'MakoPrintXls'</Item>
+            </Issue>
+            <Notes>
+             <User Name="Szymon">
+              <Note Id="2" />
+             </User>
+            </Notes>
+           </Message>
+           <Message Id="Xls" TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704" Status="Excluded" Created="2008-07-25 09:47:52Z">
+            <Issue Name="Type">
+             <Item>Xls</Item>
+             <Item>'MakoPrintXls'</Item>
+            </Issue>
+            <Notes>
+             <User Name="Szymon">
+              <Note Id="2" />
+             </User>
+            </Notes>
+           </Message>
+          </Messages>
+         </Type>
+        </Types>
+       </Namespace>
+      </Namespaces>
+     </Module>
+    </Modules>
+   </Target>
+  </Targets>
+  <Notes>
+   <User Name="Szymon">
+    <Note Id="0" Modified="2008-07-15 13:07:28Z">olac</Note>
+    <Note Id="1" Modified="2008-07-17 14:42:05Z">olac</Note>
+    <Note Id="2" Modified="2008-07-25 09:49:10Z">olac to</Note>
+    <Note Id="3" Modified="2008-07-31 11:16:42Z">jakis lol</Note>
+    <Note Id="4" Modified="2008-07-25 09:57:15Z">olac</Note>
+    <Note Id="5" Modified="2008-07-25 11:40:02Z">olac</Note>
+   </User>
+  </Notes>
+  <Rules>
+   <Rule TypeName="AvoidNamespacesWithFewTypes" Category="Microsoft.Design" CheckId="CA1020">
+    <Resolution Name="Default">Consider merging the types defined in '{0}' with another namespace.</Resolution>
+   </Rule>
+   <Rule TypeName="IdentifiersShouldBeCasedCorrectly" Category="Microsoft.Naming" CheckId="CA1709">
+    <Resolution Name="Assembly">Correct the casing of '{0}' in assembly name {1} by changing it to '{2}'.</Resolution>
+    <Resolution Name="Namespace">Correct the casing of '{0}' in namespace name '{1}' by changing it to '{2}'.</Resolution>
+   </Rule>
+   <Rule TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704">
+    <Resolution Name="Assembly">Correct the spelling of '{0}' in assembly name {1}.</Resolution>
+    <Resolution Name="Member">Correct the spelling of '{0}' in member name {1} or remove it entirely if it represents any sort of Hungarian notation.</Resolution>
+    <Resolution Name="Type">Correct the spelling of '{0}' in type name {1}.</Resolution>
+   </Rule>
+   <Rule TypeName="MarkMembersAsStatic" Category="Microsoft.Performance" CheckId="CA1822">
+    <Resolution Name="Default">The 'this' parameter (or 'Me' in Visual Basic) of {0} is never used. Mark the member as static (or Shared in Visual Basic) or use 'this'/'Me' in the method body or at least one property accessor, if appropriate.</Resolution>
+   </Rule>
+  </Rules>
+ </FxCopReport>
+</FxCopProject>

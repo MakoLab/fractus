@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	width="100%" height="100%" xmlns:documents="com.makolab.fractus.view.documents.*" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.warehouse.ShiftTransactionEditor;
+			
+			[Bindable]
+			public var documentXML:XML;
+			
+			[Bindable]
+			public var lineLabelFunction:Function;
+			
+			[Bindable]
+			public var typeDescriptor:DocumentTypeDescriptor;
+			
+			private var map:XML = ModelLocator.getInstance().configManager.getXML("warehouse.warehouseMap");
+			
+			private function handleGridChange(event:Event):void
+			{
+				var xml:XML = null;
+				
+				if(this.typeDescriptor.isWarehouseIncome)
+					xml = <param><incomeId>{this.tableDG.selectedItem.id.*}</incomeId></param>;
+				else
+				{
+					xml = <param/>;
+					
+					for each(var incomeOutcomeRelation:XML in this.tableDG.selectedItem.incomeOutcomeRelations.*)
+					{
+						xml.appendChild(<incomeId>{incomeOutcomeRelation.relatedLine.line.id.*}</incomeId>);						
+					}
+				} 
+				
+				this.shiftGrid.data = xml;
+			}
+			
+			private function shiftLabelFunction(data:Object, column:DataGridColumn):String
+			{
+				var ordinalNumber:String = String(data[column.dataField]);
+				var shfitTransaction:XML = this.documentXML.parent().shiftTransaction[0];
+				
+				var lbl:String = "";
+				var first:Boolean = false;
+				
+				if(shfitTransaction)
+				{
+					for each(var shift:XML in shfitTransaction.shifts.shift.(@lineOrdinalNumber == ordinalNumber))
+					{
+						if(first) lbl += ", ";
+						var qty:Number = parseFloat(shift.quantity.*);
+						var containerLabel:String = map..slot.(@id == String(shift.containerId.*)).@label;
+						lbl += containerLabel + " (" + String(qty) + ")";
+						first = true;
+					} 
+				}
+				
+				return lbl;
+			}
+		]]>
+	</mx:Script>
+	<mx:DataGrid
+		id="tableDG"
+		width="100%"
+		variableRowHeight="true" 
+		rowHeight="20"
+		wordWrap="true"
+		labelFunction="{this.lineLabelFunction}" 
+		dataProvider="{this.documentXML.lines.line}"
+		change="handleGridChange(event)">
+		<mx:columns>
+			<mx:DataGridColumn dataField="ordinalNumber" width="30" headerText="{LanguageManager.getLabel('common.lp')}"/>
+			<mx:DataGridColumn dataField="itemName" headerText="{LanguageManager.getLabel('common.shortName')}" />
+			<mx:DataGridColumn dataField="quantity" width="40" headerText="{LanguageManager.getLabel('common.quantity')}" />
+			<mx:DataGridColumn dataField="unitId" width="40" headerText="{LanguageManager.getLabel('dictionaries.unitIdShort')}"  />
+			<mx:DataGridColumn dataField="ordinalNumber" width="100" headerText="Alokacje" labelFunction="shiftLabelFunction" />
+		</mx:columns>
+	</mx:DataGrid>
+	
+	<documents:ShiftGrid 
+		id="shiftGrid"
+		width="100%" 
+		height="100%" />
+</mx:VBox>

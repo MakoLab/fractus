@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DocumentList icon="{IconManager.getIcon('purchase_documentList')}" 
+	themeColor="{IconManager.PURCHASE_COLOR}" 
+	xmlns="com.makolab.fractus.view.documents.documentLists.*" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:catalogue="com.makolab.components.catalogue.*" 
+	xmlns:data="data.*"
+	dblClickPermissionKey="purchase.preview"
+	documentCategory="purchaseDocument"
+	config="{listConfig}"
+	listPermissionKey="purchase.list"
+	>
+	<!-- OPERATIONS -->
+	
+	<itemOperations>
+		<catalogue:CatalogueOperation permissionKey="purchase.preview" operationId="operationPreviewDocument" label="{LanguageManager.getInstance().labels.documents.preview}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" defaultOperation="true"/>
+		<EditDocumentOperation permissionKey="purchase.edit" category="{DocumentTypeDescriptor.CATEGORY_PURCHASE}"/>
+		<CorrectDocumentOperation permissionKey="purchase.correct" documentTypeDescriptor="{this.currentDocumentTypeDescriptor}"/>
+		<catalogue:CatalogueOperation permissionKey="purchase.printGraphical" operationId="operationPrintDocumentGraphical" label="{LanguageManager.getInstance().labels.documents.printPdf}" image="{IconManager.getIcon('print_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="purchase.printTextual" operationId="operationPrintDocumentText" label="{LanguageManager.getInstance().labels.documents.printText}" image="{IconManager.getIcon('print_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="purchase.printBarCodes" operationId="operationPrintBarcodeLabelsForPurchase" label="{LanguageManager.getInstance().labels.documents.printBarcodeLabels}" image="{IconManager.getIcon('barcode_label_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="purchase.export" operationId="operationExportDocument" label="{LanguageManager.getInstance().labels.common.export}" image="{IconManager.getIcon('export_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<DocumentStatusChangeOperation permissionKey="purchase.cancel" status="{DocumentStatusChangeOperation.CANCELLED}"/>
+		<catalogue:CatalogueOperation permissionKey="purchase.binding" operationId="operationEditBinding" label="{LanguageManager.getInstance().labels.documents.bind}" image="{IconManager.getIcon('add_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="purchase.accountancy" operationId="operationAccountancy" label="{LanguageManager.getInstance().labels.documents.accountancy}" image="{IconManager.getIcon('add_small')}" operationInvoke="operationInvokeHandler(event)" visible="{model.headquarters}"/>
+		<catalogue:CatalogueOperation permissionKey="purchase.addToCart" operationId="addLinesToCart" label="{LanguageManager.getInstance().labels.cart.addLinesToCart}" image="{IconManager.getIcon('item_toCart_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="purchase.addToClipboard" operationId="operationAddDocumentToClipboard" label="{LanguageManager.getInstance().labels.common.addToClipboard}" image="{IconManager.getIcon('add_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink1Item" label="{LanguageManager.getLabel(listConfig.operations['link1'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link1OperationVisible}" includeInLayout="{link1OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink2Item" label="{LanguageManager.getLabel(listConfig.operations['link2'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link2OperationVisible}" includeInLayout="{link2OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink3Item" label="{LanguageManager.getLabel(listConfig.operations['link3'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link3OperationVisible}" includeInLayout="{link3OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink4Item" label="{LanguageManager.getLabel(listConfig.operations['link4'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link4OperationVisible}" includeInLayout="{link4OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink5Item" label="{LanguageManager.getLabel(listConfig.operations['link5'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link5OperationVisible}" includeInLayout="{link5OperationVisible}"/>
+	</itemOperations>
+	<generalOperations>
+		<ImportDocumentOperation permissionKey="purchase.addFromXML" id="importPorta" documentCategory="{DocumentTypeDescriptor.CATEGORY_PURCHASE}" template="purchaseInvoice" expectedFileType="externalPortaSalesInvoice" customLabel="{LanguageManager.getInstance().labels.documents.createPurchaseInvoiceFromXML}"  customImage="{IconManager.getIcon('toDocument_small')}"/>
+		<LwzVerification id="lwzVerify" documentCategory="{DocumentTypeDescriptor.CATEGORY_PURCHASE}" label="{LanguageManager.getInstance().labels.documents.lwzVerification}" customImage="{IconManager.getIcon('barcode_scan_small')}"/>
+	</generalOperations>
+
+	<!-- CONFIGURATION -->
+	<!--
+	<config>
+		<mx:XML xmlns="">
+			<config title="{LanguageManager.getInstance().labels.documents.list.purchase}">
+				<headerColor>PURCHASE_COLOR</headerColor>
+				<headerColorLight>PURCHASE_COLOR_LIGHT</headerColorLight>
+				<objectType>CommercialDocument</objectType>
+				<exportProfile>defaultCommercialDocumentXml</exportProfile>
+				<columns>
+					<column field="@status" dataType="documentStatus" width="25"/>
+					<column field="@documentTypeId" labelKey="documents.type" dataType="documentType" width="70"/>
+					<column field="@fullNumber" labelKey="documents.documentNumber" width="120"/>
+					<column field="@issueDate" labelKey="documents.issueDateShort" dataType="date" width="80"/> 
+					<column field="@contractor" labelKey="contractors.contractor"/>
+					<column field="@grossValue" labelKey="documents.grossValue" dataType="currency" width="100"/>
+				</columns>
+				<summary>
+					<column field="@netValue" labelKey="documents.netValueSummary" dataType="currency"/>
+					<column field="@grossValue" labelKey="documents.grossValueSummary" dataType="currency"/>
+				</summary>
+				<getItemDataParams>
+					<type>Document</type>
+					<id/>
+				</getItemDataParams>
+				<filterField>@fullNumber</filterField>
+				<searchParams type="CommercialDocument">
+					<pageSize>200</pageSize>
+					<page>1</page>
+					<columns>
+						<column field="documentTypeId" column="documentTypeId"/>
+						<column field="status" column="status"/>
+						<column field="fullNumber"/>
+						<column field="issueDate" sortOrder="1" sortType="DESC"/>
+						<column field="contractor" column="fullName" relatedObject="contractor"/>
+						<column field="grossValue"/>
+					</columns>
+				</searchParams>
+				<filters>
+				  	<filter label="" type="dateFilter">
+					  		<parameters>
+					  			<parameter label="" name="nip" type="nip"/>
+					  		</parameters>
+					</filter>
+				  	<filter label="Numer dokumentu" type="docNumberFilter"/>
+				  	<filter label="Status dokumentu" type="docStatusFilter"/>
+				  	<filter labelKey="documents.documentType" label="Typ dokumentu" type="docTypeFilter" itemsType="2,6"/>
+				  	<filter label="Firma" type="docCompanyFilter"/>
+				  	<filter label="Magazyn" type="docWarehouseFilter"/>
+				  	<filter label="Ustawienia numerowania" type="docNumSettingsFilter"/>
+				  	<filter label="Powiązania" type="docRelationsFilter"/>
+				  	<filter label="Rozliczone" type="docUnsettledFilter"/>
+				</filters>
+			</config>
+		</mx:XML>
+	</config>
+	-->
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import assets.IconManager;
+			import com.makolab.fractus.model.LanguageManager;
+		
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+			[Bindable]
+			public var listConfig:XML = model.configManager.getXML("documents.lists.purchase");
+					
+		]]>
+	</mx:Script>
+
+</DocumentList>

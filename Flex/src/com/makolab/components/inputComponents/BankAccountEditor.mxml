@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" verticalGap="0">
+
+	<mx:Metadata>
+        [Event(name="change", type="flash.events.Event")]
+    </mx:Metadata>
+    
+	<mx:Script>
+		<![CDATA[
+			public var _dataObject:Object=new Object();
+		
+			/**
+			 * Lets you pass a value to the editor.
+			 * @see #dataObject
+			 */
+			override public function set data(value:Object):void{
+				_dataObject = value;
+				
+				if(countryCmb){
+					for(var i:int=0;i<country.length;i++){
+						if(_dataObject.country == country[i].data.toString()){
+							countryCmb.selectedItem = country[i];
+						}
+					}
+				}
+				
+				accountNo.text=_dataObject.accountNo;
+				bankName.text=_dataObject.bankName;
+				bankAddress.text=_dataObject.bankAddress;
+			}
+			
+			private function changeCountry(event:Event):void{
+				_dataObject.country = countryCmb.selectedItem.data;
+				dispatchEvent(new Event("change"));
+			}
+			
+			private function changeAccountNo(event:Event):void{
+				_dataObject.accountNo = accountNo.text;
+				dispatchEvent(new Event("change"));
+			}
+			
+			private function changeBankName(event:Event):void{
+				_dataObject.bankName = bankName.text;
+				dispatchEvent(new Event("change"));
+			}
+			
+			private function changeBankAddress(event:Event):void{
+				_dataObject.bankAddress = bankAddress.text;
+				dispatchEvent(new Event("change"));
+			}
+			/**
+			 * Contains editor's value.
+			 * @see #data
+			 */
+			public function get dataObject():Object{
+				return _dataObject;
+			}
+		]]>
+	</mx:Script>
+	
+	
+	<mx:ArrayCollection id="country">
+		<mx:Object label="PL" data="pl"/>
+		<mx:Object label="DE" data="de"/>
+		<mx:Object label="UK" data="uk"/>
+	</mx:ArrayCollection>
+	<mx:HBox width="100%">
+		<mx:Label text="Nr konta:" fontWeight="bold" textAlign="right" width="90"/>
+		<mx:ComboBox id="countryCmb" width="50" dataProvider="{country}" change="changeCountry(event)"/>
+		<mx:TextInput id="accountNo" width="100%" change="changeAccountNo(event)"/>
+	</mx:HBox>
+	<mx:HBox width="100%">
+		<mx:Label text="Bank:" fontWeight="bold" width="90" textAlign="right"/>
+		<mx:TextInput id="bankName" width="100%" change="changeBankName(event)"/>
+	</mx:HBox>
+	<mx:HBox width="100%">
+		<mx:Label text="Adres Banku:" fontWeight="bold" width="90" textAlign="right"/>
+		<mx:TextInput id="bankAddress" width="100%" change="changeBankAddress(event)"/>
+	</mx:HBox>
+</mx:VBox>

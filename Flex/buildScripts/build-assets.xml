@@ -1,0 +1,12 @@
+<!--
+    Assets definition file for complex project application.
+
+    This file defines all declared assets in subprojects; the
+    definitions are shared across those subprojects so that assets
+    exported by one project can be referenced by another,
+    without knowing the exact location of the exported asset.
+-->
+<project name="Main.assets">
+    <!-- Define SWC exported by this library. -->
+	    <property name="libRaVis.swc" location="${libs.dir}/libRaVis.swc"/>
+</project>

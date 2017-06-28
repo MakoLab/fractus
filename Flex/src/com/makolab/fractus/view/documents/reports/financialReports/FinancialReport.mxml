@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<reports:ReportContainer xmlns:mx="http://www.adobe.com/2006/mxml" configurationName="finance" change="changeHandler()" width="400" height="300" xmlns:reports="com.makolab.fractus.view.documents.reports.*" xmlns:financialReports="com.makolab.fractus.view.documents.reports.financialReports.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			import com.makolab.components.catalogue.CatalogueItemWindowEvent;
+			import mx.utils.ObjectProxy;
+			import mx.collections.ArrayCollection;
+			import com.makolab.fractus.view.documents.reports.filters.BranchFilter;
+			import com.makolab.fractus.view.documents.reports.ReportGenerator;
+			import com.makolab.fractus.view.documents.reports.ReportBase;
+			import mx.events.CloseEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import com.makolab.fractus.commands.SearchCommand;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			[Bindable]
+			private var showProgressBar:Boolean = false;
+			
+			private var _filtersInfo:Object = {};
+			[Bindable]
+			public function set filtersInfo(value:Object):void
+			{
+				_filtersInfo = value;
+			}
+			public function get filtersInfo():Object
+			{
+				return _filtersInfo;
+			}
+			
+			public static function showWindow(contractorIdString:String = null):ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:FinancialReport = new FinancialReport();
+				window.innerComponent = component;
+				window.show(null,/* new Rectangle(-1,-1,800,500) */null,LanguageManager.getInstance().labels.reports.financialReports);
+				component.reportsName = LanguageManager.getInstance().labels.reports.financialReports;
+				
+				if(contractorIdString) {
+					component.filtersTab.contractorId.useThisFilter.selected = true;
+					component.filtersTab.contractorId.contractorSearch.autoLoadName = true;
+					
+					var event:CatalogueItemWindowEvent = new CatalogueItemWindowEvent('generateCode');
+					event.itemId = contractorIdString;
+					
+					component.filtersTab.contractorId.contractorSearch.reloadData(event);
+					component.addEventListener(FlexEvent.CREATION_COMPLETE,showContractorPaymentStructure);
+				}
+				
+				return window;
+			}
+			
+			public static function showContractorPaymentStructure(event:FlexEvent):void {
+				event.target.selectedChild = event.target.contractorPaymentStructure;
+			}
+			/* 
+			private function init():void
+			{
+				ModelLocator.getInstance().configManager.requestList(["reports.definition"], addReports);
+			}
+			
+			private function addReports():void
+			{
+				var model:ModelLocator = ModelLocator.getInstance();
+				model.configManager.requestValue("reports.definition");
+				var configuration:XML = XML(model.configManager.getXML("reports.definition").configValue.reports);
+				for each(var x:XML in configuration.financial.*)	{
+					var rg:ReportGenerator = new ReportGenerator();
+					rg.procedure = x.@procedure;
+					rg.label = x.@label;
+					rg.reportXML = x;
+					this.addChild(rg);
+				}
+			} */
+			
+			private function filtersInfoChangedHandler(event:Event):void
+			{
+				this.filtersInfo = filtersTab.filtersInfo;
+			}
+		]]>
+	</mx:Script>
+	<reports:defaultSearchParams>
+		<mx:XML xmlns="">
+			<searchParams type="CommercialDocument">
+				 <filters>
+					<column field="payments"/>
+					<column field="debt"/> 
+				 </filters> 
+			</searchParams>
+		</mx:XML>
+	</reports:defaultSearchParams>
+	
+	<reports:filtersComponent>
+		<reports:FinancialReportFilters id="filtersTab" documentCategories="0,5" label="{LanguageManager.getInstance().labels.reports.filters.filters}" filterInfoChanged="filtersInfoChangedHandler(event)" filtersInfo="{filtersInfo}" searchParams="{defaultSearchParams}" width="100%" height="100%"/>
+	</reports:filtersComponent>
+	<financialReports:ReportByDocument label="raport bankowy" procedure="reports.p_getFinancialReport" width="100%" height="100%"   /> 
+	<financialReports:ReportByContractor label="wg kontrahentów" procedure="reports.p_getContractorsPaymentsBalance" width="100%" height="100%" showProgressBar="{showProgressBar}"/> 
+	<financialReports:ReportByContractorPaymentStructure id="contractorPaymentStructure" label="{LanguageManager.getInstance().labels.reports.tabs.settlement_structure}" reportsName="{reportsName}" filtersInfo="{filtersInfo}" procedure="reports.p_getContractorsPaymentStructure" width="100%" height="100%" showProgressBar="{showProgressBar}"/>
+	<financialReports:ReportByBranches label="{LanguageManager.getInstance().labels.reports.tabs.dayReport}" reportsName="{reportsName}" filtersInfo="{filtersInfo}" procedure="reports.p_getDailyReport" width="100%" height="100%"/>
+</reports:ReportContainer>

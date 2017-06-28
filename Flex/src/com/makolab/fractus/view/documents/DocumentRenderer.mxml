@@ -1,0 +1,907 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" xmlns:components="com.makolab.components.lineList.*" height="100%" creationComplete="init()" xmlns:documents="com.makolab.fractus.view.documents.*" xmlns:generic="com.makolab.fractus.view.generic.*" xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*" xmlns:layoutComponents="com.makolab.components.layoutComponents.*" xmlns:permission="com.makolab.components.permission.*">
+	
+	<!--
+	<mx:Style source="/assets/stylesheets/documentRenderer.css"/>
+	-->
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.Clipboard;
+			import com.makolab.components.catalogue.ItemInfoPanel;
+			import com.makolab.components.inputComponents.CorrectionRenderer;
+			import com.makolab.components.inputComponents.CurrencyRenderer;
+			import com.makolab.components.inputComponents.ItemRenderer;
+			import com.makolab.components.inputComponents.StringCorrectionRenderer;
+			import com.makolab.components.inputComponents.TechnologyNameRenderer;
+			import com.makolab.components.layoutComponents.DragElementProxy;
+			import com.makolab.components.util.ComponentExportManager;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.model.ConfigManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.view.catalogue.CatalogueContractorInfo;
+			import com.makolab.fractus.view.catalogue.CatalogueItemInfo;
+			import com.makolab.fractus.view.catalogue.ContractorsCatalogue;
+			import com.makolab.fractus.view.documents.documentControls.DocumentBarcodeVerificationComponent;
+			import com.makolab.fractus.view.documents.documentControls.VatTableComponent;
+			import com.makolab.fractus.view.documents.plugins.CommercialDocumentCalculationPlugin;
+			import com.makolab.fractus.view.generic.DocumentStatusRenderer;
+			import com.makolab.fractus.view.graph.DocumentRelationsGraph;
+			
+			import mx.binding.utils.BindingUtils;
+			import mx.collections.ArrayCollection;
+			import mx.containers.HBox;
+			import mx.controls.DataGrid;
+			import mx.controls.Label;
+			import mx.controls.Text;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.controls.dataGridClasses.DataGridListData;
+			import mx.controls.listClasses.IDropInListItemRenderer;
+			import mx.controls.listClasses.IListItemRenderer;
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import assets.IconManager;
+			
+			
+			
+			[Bindable]
+			protected var dictionaryManager:DictionaryManager = DictionaryManager.getInstance();
+			
+			[Bindable]
+			private var _data:Object;
+			
+			private var componentInitializedForType:String = '';
+			
+			[Bindable] public var docType:String;
+			
+			[Bindable] public var documentXML:XML;
+			
+			[Bindable] public var issuerAddressId:String;
+			
+			[Bindable] public var symbol:String;
+			
+			[Bindable] public var contractorAddressId:String;
+			
+			[Bindable] public var paid:Number;
+			
+			[Bindable] public var toPay:Number;
+			
+			[Bindable] public var sum:String;
+			
+			[Bindable] public var negativeSum:Boolean;
+			
+			[Bindable] public var value:String;
+			
+			[Bindable] public var marginValue:String;
+			
+			[Bindable] public var contractor:Boolean;
+			
+			[Bindable] private var labels:Object;
+			
+			[Bindable] private var profile:XML;
+			
+			[Bindable] private var printProfile:String;
+			[Bindable] private var exportProfile:String;
+			
+			[Bindable] private var documentId:String;
+			
+			[Bindable] private var oppositeWarehouseDocumentFieldId:String;
+			
+			[Bindable] public var typeDescriptor:DocumentTypeDescriptor;
+			[Bindable] private var linesXML:XMLList;
+			
+			[Bindable] private var paidToPayVisibility:Boolean;
+			
+			[Bindable] private var currencyInfo:String;
+			
+			[Bindable] private var currencyString:String = "";
+			
+			[Bindable] private var barcodeVerification:Boolean;
+			
+			[Bindable] private var printGPermissonKey:String;
+			[Bindable] private var printTPermissonKey:String;
+			[Bindable] private var printBPermissonKey:String;
+			[Bindable] private var printPPermissonKey:String;
+			[Bindable] private var exportPermissonKey:String;
+			[Bindable] private var addToCardPermissonKey:String;
+			
+			protected function init():void
+			{	
+				ModelLocator.getInstance().configManager.requestList(["system.barcodeVerification"],configurationLoaded);
+				initializeTables();			
+				setValues();
+			}
+			
+			private function configurationLoaded():void
+			{
+				barcodeVerification = ModelLocator.getInstance().configManager.getBoolean("system.barcodeVerification");
+			}
+					
+			public function initializeTables():void
+			{
+				printGPermissonKey = null;
+				printTPermissonKey = null;
+				printBPermissonKey = null;
+				printPPermissonKey = null;
+				exportPermissonKey = null;
+				addToCardPermissonKey = null;
+					
+				// przeprowadzamy inicjalizacje dopiero gdy znane sa dane oraz istnieja juz komponenty do zainicjalizowania 
+				if (!documentXML || !tableDG || !tableVatDG) return;
+
+				// zainicjalizuj komponent
+				if(componentInitializedForType != docType)
+				{
+					
+					var profileName:String;
+					switch (typeDescriptor.categoryNumber)
+					{
+						case DocumentTypeDescriptor.CATEGORY_SALES:
+							profileName = 'sales';
+							printGPermissonKey = 'sales.printGraphical';
+							printTPermissonKey = 'sales.printTextual';
+							exportPermissonKey = 'sales.export';
+							addToCardPermissonKey = 'sales.addToCart';
+							break;
+						case DocumentTypeDescriptor.CATEGORY_SALES_ORDER_DOCUMENT:
+							profileName = 'sales';
+							printGPermissonKey = 'sales.salesOrders.printGraphical';
+							printTPermissonKey = 'sales.salesOrders.printTextual';
+							
+							break;
+						case DocumentTypeDescriptor.CATEGORY_PRODUCTION_ORDER_DOCUMENT:
+							profileName = 'productionOrder';
+							printGPermissonKey = 'production.printGraphical';
+							addToCardPermissonKey = 'production.addToCart';
+							break;
+						case DocumentTypeDescriptor.CATEGORY_PURCHASE:
+							profileName = 'purchase';
+							printGPermissonKey = 'purchase.printGraphical';
+							printTPermissonKey = 'purchase.printTextual';
+							//??
+							printBPermissonKey = 'purchase.printBarCodes';
+							exportPermissonKey = 'purchase.export';
+							addToCardPermissonKey = 'purchase.addToCart';
+							break;
+						case DocumentTypeDescriptor.CATEGORY_WAREHOUSE:
+							profileName = 'warehouse';
+							printGPermissonKey = 'warehouse.printGraphical';
+							printTPermissonKey = 'warehouse.printTextual';
+							printPPermissonKey = 'warehouse.printProduction';
+							exportPermissonKey = 'warehouse.export';
+							addToCardPermissonKey = 'warehouse.addToCart';
+							break;
+						case DocumentTypeDescriptor.CATEGORY_WAREHOUSE_ORDER:
+						case DocumentTypeDescriptor.CATEGORY_WAREHOUSE_RESERVATION:
+							profileName = 'order';
+							printGPermissonKey = 'warehouse.warehouseOrders.printGraphical';
+							printTPermissonKey = 'warehouse.warehouseOrders.printTextual';
+							exportPermissonKey = 'warehouse.warehouseOrders.export';
+							addToCardPermissonKey = 'warehouse.warehouseOrders.addToCart';
+							break;
+						case DocumentTypeDescriptor.CATEGORY_SALES_CORRECTION:
+							profileName = 'commercialCorrection';
+							printGPermissonKey = 'sales.printGraphical';
+							printTPermissonKey = 'sales.printTextual';
+							exportPermissonKey = 'sales.export';
+							addToCardPermissonKey = 'sales.addToCart';
+							break;
+						case DocumentTypeDescriptor.CATEGORY_PURCHASE_CORRECTION:
+							profileName = 'commercialCorrection';
+							printGPermissonKey = 'purchase.printGraphical';
+							printTPermissonKey = 'purchase.printTextual';
+							//??
+							printBPermissonKey = 'purchase.printBarCodes';
+							exportPermissonKey = 'purchase.export';
+							addToCardPermissonKey = 'purchase.addToCart';
+							break;
+						case DocumentTypeDescriptor.CATEGORY_WAREHOUSE_OUTCOME_CORRECTION:
+						case DocumentTypeDescriptor.CATEGORY_WAREHOUSE_INCOME_CORRECTION:
+							profileName = 'warehouse';
+							printGPermissonKey = 'warehouse.printGraphical';
+							printTPermissonKey = 'warehouse.printTextual';
+							exportPermissonKey = 'warehouse.export';
+							addToCardPermissonKey = 'warehouse.addToCart';
+							break;
+						case DocumentTypeDescriptor.CATEGORY_FINANCIAL_DOCUMENT:
+							profileName = 'financial';
+							printGPermissonKey = 'finance.printGraphical';
+							printTPermissonKey = 'finance.printTextual';
+							exportPermissonKey = 'finance.export';
+							
+							break;
+						case DocumentTypeDescriptor.CATEGORY_PROTOCOL_COMPLAINTS:
+							profileName = 'complaint';
+							printGPermissonKey = 'complaint.printGraphical';
+							printTPermissonKey = 'complaint.printConsiderationGraphical';
+							addToCardPermissonKey = 'complaint.addToCart';
+							break;
+						case DocumentTypeDescriptor.CATEGORY_SERVICE_DOCUMENT:
+							profileName = 'service';
+							printGPermissonKey = 'service.printGraphical';
+							printTPermissonKey = 'service.printTextual';
+							
+							break;
+					}
+					if(profileName&&profileName!="")
+					{
+						profile = ModelLocator.getInstance().configManager.getValue('documents.renderer.' + profileName) as XML;
+						createTableHeaders(profile.linesTableColumns, tableDG);
+						createTableHeaders(profile.vatTableColumns, tableVatDG);
+						componentInitializedForType = docType;
+					}
+					else
+					{
+						trace("trzeba dodać profileName dla kategorii:",typeDescriptor.categoryNumber);
+					}
+				}
+			}
+			
+			public function createTableHeaders(prof:XMLList, dg:DataGrid):void
+			{
+				var columns:Array = new Array();
+				for each (var column:XML in prof.column){
+					
+						var col:DataGridColumn = new DataGridColumn();
+						if(column.@labelKey.length())
+							col.headerText=LanguageManager.getInstance().getLabel(column.@labelKey);
+						else
+						col.headerText = column.@header;
+						col.dataField = column.@node;
+						if (column.@dataFormat == 'correction') col.itemRenderer = new ClassFactory(CorrectionRenderer);
+						else if (column.@dataFormat == 'decimalCorrection')
+						{
+							col.itemRenderer = new ClassFactory(CorrectionRenderer);
+							ClassFactory(col.itemRenderer).properties = { precision : -4 }; 
+						}
+						else if (column.@dataFormat == 'stringCorrection') col.itemRenderer = new ClassFactory(StringCorrectionRenderer);
+						else if (column.@dataFormat == "technologyName") col.itemRenderer = new ClassFactory(TechnologyNameRenderer);
+						if(column.@node == "cost" || column.@node == "value"){
+							col.dataTipField = "componentCosts";
+							col.showDataTips = true;
+						}
+						if(column.@node == "margin"){
+							col.dataTipField = "marginValue";
+							col.showDataTips = true;
+						}
+						col.wordWrap = true;
+						col.headerWordWrap = (parseInt(column.@headerWordWrap) != 0);
+						if(column.attribute("width").length() > 0)col.width = column.@width;
+						if(column.attribute("dataFormat").length() > 0 && column.@dataFormat == "money")col.setStyle("textAlign", "right");
+						columns.push(col);
+					}
+					dg.columns = columns;
+			}
+			
+			public function format(value:Object, dataFormat:String):String
+			{
+				var result:Object = new Object();
+				switch(dataFormat)
+				{
+					case "date":
+					return String(value).substr(0,10);
+					break;
+					case "decimal":
+					return CurrencyManager.formatCurrency(Number(value), "-", '0', -2);
+					case "decimal4":
+					return CurrencyManager.formatCurrency(Number(value), "-", '0', -4); 
+					case "money":
+					var symbol:String = dictionaryManager.getById(documentXML.documentCurrencyId).symbol.toString();
+					return CurrencyManager.formatCurrency(Number(value))+" "+symbol;
+					break;
+					case "systemMoney":
+					return CurrencyManager.formatCurrency(Number(value)) + " " + dictionaryManager.getById(ModelLocator.getInstance().systemCurrencyId).symbol.toString();
+					break;
+					case "percent":
+					return String(value)+"%";
+					break;
+					default:
+					return String(value);
+				}
+			}
+			
+			protected function getLabel(data:Object, column:DataGridColumn, columns:XMLList):String
+			{
+			 	var dataField:String = column.dataField;
+			 	var config:Object = columns.(@node == dataField);
+			 	var value:Object = data[dataField];
+			 	if (String(config.@attribute))
+			 	{
+			 		var item:XML = dictionaryManager.getById(String(value));
+			 		if (item) value = item[config.@attribute];
+			 		else return '?';
+			 	}
+			 	else if (String(config.@localizedAttribute))
+			 	{
+			 		var itm:XML = dictionaryManager.getById(String(value));
+			 		if (itm) 
+						if(itm.label.@lang.length())
+							value = itm.label.(@lang==LanguageManager.getInstance().currentLanguage)["@"+config.@localizedAttribute];
+							else
+						value = itm.label["@"+config.@localizedAttribute];
+			 		else return '?';
+			 	}
+			 	return this.format(value, config.@dataFormat);
+			}
+			
+			protected function getLineLabel(data:Object, column:DataGridColumn):String
+			{
+				if(profile)
+				return getLabel(data, column, profile.linesTableColumns.column);
+				else
+					return "";
+			}
+			
+			protected function isCorrectionVisualisationEnabled():Boolean
+			{
+				return docType=='WarehouseDocument' && !typeDescriptor.isCorrectiveDocument;
+			}
+
+			protected function getVtLabel(data:Object, column:DataGridColumn):String
+			{
+				return getLabel(data, column, profile.vatTableColumns.column);
+			}
+			
+			public override function set data(value:Object):void
+			{
+				_data = value;
+				// ustal typ dok
+				if (_data)
+				{
+					documentXML = XML(_data);
+					docType = documentXML.@type;
+					typeDescriptor = new DocumentTypeDescriptor(documentXML.documentTypeId);
+					initializeTables();
+					setValues();
+				}
+				else
+				{
+					documentXML = null;
+					docType = null;
+				}
+				oppositeWarehouseDocumentFieldId = ModelLocator.getInstance().dictionaryManager.dictionaries.documentFields.(name == 'ShiftDocumentAttribute_OppositeWarehouseId').id;
+			}
+			
+			[Bindable]
+			public override function get data():Object
+			{
+				return _data;
+			}
+			
+			private function setValues():void
+			{
+				if(documentXML && paymentMethodsVB)
+				{
+					documentId = documentXML.id;
+					
+					if(typeDescriptor.isFinancialDocument)
+						linesXML = documentXML.payments.payment;
+					else
+						linesXML = documentXML.lines.line;
+					
+					// liczenie marzy i zapamietanie skladowych kosztu na poz dok. sprzedazowego i WZ
+					if (typeDescriptor.isSalesDocument || typeDescriptor.isWarehouseOutcome)
+					{
+						var documentMarginValue:Number = 0;
+						
+						//var documentSymbol:String = dictionaryManager.getById(documentXML.documentCurrencyId).symbol.toString();
+						
+						for each (var line:XML in linesXML)
+						{
+							var total:Number = NaN;
+							var componentCosts:String = ""; 
+							var symbol:String = dictionaryManager.getById(ModelLocator.getInstance().systemCurrencyId).symbol.toString();
+					 		for each (var x:XML in line.commercialWarehouseValuations.commercialWarehouseValuation)
+					 		{
+					 			if (isNaN(total)) total = 0; 
+					 			total += parseFloat(x.value);
+					 			componentCosts += CurrencyManager.formatCurrency(Number(x.quantity),"?",null,-4) + " x " + (Number(x.value) / Number(x.quantity)) + " " + symbol + "\n";
+					 		}
+					 		var totalValue:Number = CurrencyManager.documentToSystemWithDocumentXML(parseFloat(line.netValue),documentXML);
+					 		line.margin =
+					 			isNaN(total) ?
+					 			"-" :
+					 			line.margin = CurrencyManager.formatCurrency(100 * (totalValue - total) / totalValue, '', '0', -2) + '%';
+					 		
+					 		if(!isNaN(total)){
+					 			line.marginValue = line.marginValue = CurrencyManager.formatCurrency(totalValue - total, '', '0', -2) + symbol;
+					 			var margin:Number = totalValue - total;
+						 		documentMarginValue += isNaN(margin) ? 0 : margin;
+					 		}
+					 		
+					 		line.cost = total;
+					 		line.componentCosts = componentCosts;
+					 	}
+					 	//marginValue = CurrencyManager.formatCurrency(documentMarginValue, '', '0') + " " + documentSymbol;
+					 	marginValue = CurrencyManager.formatCurrency(documentMarginValue, '', '0') + " " + dictionaryManager.getById(ModelLocator.getInstance().systemCurrencyId).symbol.toString();
+					}
+					// obliczanie ilosci zrealizowanych
+					else if (typeDescriptor.isOrderDocument)
+					{
+						for each (line in linesXML)
+						{
+							var used:Number = 0;
+							for each (x in line.commercialWarehouseRelations.commercialWarehouseRelation)
+							{
+								used += parseFloat(x.quantity);
+							}
+							line.usedQuantity = used;
+						}
+					//zapamietanie skladowych kosztu na poz WZ
+					}/* else if(typeDescriptor.isWarehouseOutcome)
+					{
+						for each (line in linesXML)
+						{
+							var componentValues:String = ""; 
+					 		for each (x in line.incomeOutcomeRelations.incomeOutcomeRelation)
+					 		{
+					 			if(Number(x.relatedLine.line.value) != 0)componentValues += CurrencyManager.formatCurrency(Number(x.quantity),"?",null,-4) + " x " + (Number(x.relatedLine.line.value) / Number(x.quantity)) + "\n";
+					 		}
+					 		if(componentValues != "")line.componentCosts = componentValues;
+					 	}
+					} */
+					
+					/* switch(typeDescriptor.automaticPrint){
+						case "text":
+							printProfile = typeDescriptor.getDefaultTextPrintProfile(); break;
+						case "pdf":
+							printProfile = typeDescriptor.getDefaultPrintProfile(); break;
+						case "fiscal":
+							printProfile = typeDescriptor.getDefaultFiscalPrintProfile(); break;
+					} */
+					printProfile = typeDescriptor.getDefaultPrintProfile();
+					
+					if (typeDescriptor.isWarehouseDocument)
+						exportProfile = 'defaultWarehouseDocumentXml';
+					else if (typeDescriptor.isCommercialDocument)
+						exportProfile = 'defaultCommercialDocumentXml';
+					
+					var sumValue:Number = parseFloat(documentXML.grossValue);
+					if (typeDescriptor.isCorrectiveDocument) sumValue -= parseFloat(documentXML.grossValueBeforeCorrection);
+					sum = format(Math.abs(sumValue), 'money');
+					negativeSum = (sumValue < 0);
+					
+					if(typeDescriptor.isFinancialDocument)
+						value = String(format(documentXML.amount, 'money'));
+					else if (typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_SERVICE_DOCUMENT)
+						value = String(format(documentXML.grossValue, 'money'));
+					else
+						value = String(format(documentXML.value, 'money'));
+					
+					issuerAddressId = documentXML.issuer.addressId;
+					if(documentXML.contractor){
+						contractor = true;
+						contractorAddressId = documentXML.contractor.addressId;
+					}
+					else contractor = false;
+					
+					//(profile.linesTableColumns,tableDG, documentXML.lines.line);
+					//createTableProvider(profile.linesTableColumns, documentXML.lines.line);
+					//createTableHeaders(profile.vatTableColumns,tableVatDG, documentXML.vatTable.vtEntry);
+					
+					if(!typeDescriptor.isFinancialDocument)
+					{
+						paid=0;
+						toPay=0;
+						paymentMethodsVB.removeAllChildren();
+						
+						var payment:XML;
+						
+						for each (payment in documentXML.payments.payment.(paymentMethodId))
+						{
+							if(dictionaryManager.getById(payment.paymentMethodId).isIncrementingDueAmount == 0) paid += Number(payment.amount);
+							else toPay += Number(payment.amount);
+							
+							var hBox:HBox = new HBox();
+							hBox.percentWidth = 100;
+							var label1:Label = new Label();
+							label1.width = 180;
+							label1.text = LanguageManager.getInstance().labels.documentRenderer.paymentMethod+":";
+							label1.styleName = "label";
+							var label2:Label = new Label();
+							label2.width = 180;
+							label2.text = LanguageManager.getInstance().labels.documentRenderer.dueDate+":";
+							label2.styleName = "label";
+							var text1:Text = new Text();
+							text1.width = 130;
+							
+							if( dictionaryManager.getById(payment.paymentMethodId).label.@lang.length())
+								text1.text = dictionaryManager.getById(payment.paymentMethodId).label.(@lang==LanguageManager.getInstance().currentLanguage)[0];
+								else
+							text1.text = dictionaryManager.getById(payment.paymentMethodId).label;
+							var text2:Text = new Text();
+							text2.width = 160;
+							text2.text = String(format(payment.dueDate, 'date'));
+						    hBox.addChild(label1);
+						    hBox.addChild(text1);
+						    hBox.addChild(label2);
+						    hBox.addChild(text2);
+						    paymentMethodsVB.addChild(hBox);
+						}
+						
+						toPayT.text = String(format(Math.abs(toPay), 'money'));
+						paidT.text = String(format(paid, 'money'));
+					}
+					
+					var numLines:int = linesXML.length();
+					if (typeDescriptor.isCorrectiveDocument) tableDG.height = 160;
+					else tableDG.rowCount = numLines > 10 ? 10 : numLines + 1;
+					//tableDG.rowCount = 5;
+					
+					if (typeDescriptor.isCorrectiveDocument)
+					{
+						var vt:ArrayCollection = DocumentObject.deserializeVatTable(documentXML.vatTable.vtEntry);
+						var vtb:ArrayCollection = DocumentObject.deserializeVatTable(documentXML.vatTableBeforeCorrection.vtEntry);
+						vatTable = CommercialDocumentCalculationPlugin.calculateDifferentialVatTable(vtb, vt);
+					}
+					else vatTable = documentXML.vatTable.vtEntry;
+					
+					if (typeDescriptor.isPurchaseDocument || typeDescriptor.isPurchaseCorrectionDocument)
+					{
+						var foreignCurrencies:Boolean;
+						for each (payment in documentXML.payments.payment)
+						{
+							if (payment.paymentCurrencyId.toString() != documentXML.documentCurrencyId.toString())
+							{
+								foreignCurrencies = true;
+								break;
+							} 
+						}
+						if (foreignCurrencies) paidToPayVisibility = false;
+						else paidToPayVisibility = true;
+					}
+					if (typeDescriptor.isSalesDocument) paidToPayVisibility = true;
+					
+					tableVatDG.rowCount = vatTable is XMLList ? vatTable.length() : vatTable.length;
+					
+					var window:ComponentWindow = this.parent as ComponentWindow;
+					if (window)
+					{
+						window.title =
+							typeDescriptor.label + " " + 
+							documentXML.number.fullNumber + " - " +
+							LanguageManager.getLabel("documents.preview"); 
+						window.titleIcon = IconManager.getIcon(typeDescriptor.iconDocumentListName);
+						window.setStyle("headerColors",[typeDescriptor.documentThemeColor,typeDescriptor.documentThemeColorLight]);
+					}
+					
+					if (!isNaN(sumValue) && documentXML.documentCurrencyId.toString() != ModelLocator.getInstance().systemCurrencyId)
+					{
+						currencyInfo = CurrencyManager.formatCurrency(CurrencyManager.documentToSystemWithDocumentXML(sumValue,documentXML)) + " " + dictionaryManager.getById(ModelLocator.getInstance().systemCurrencyId).symbol.toString();
+						currencyInfo += "\n" + LanguageManager.getLabel("common.exchangeRate")+ ": " + CurrencyManager.formatCurrency(Number(documentXML.exchangeRate));
+						currencyInfo += "\n" + LanguageManager.getLabel("common.exchangeScale")+ ": " + CurrencyManager.formatCurrency(Number(documentXML.exchangeScale));
+						currencyInfo += "\n" + LanguageManager.getLabel("common.exchangeDate")+ ": " + Tools.dateToString(Tools.isoToDate(documentXML.exchangeDate.toString()));
+						
+						currencyString = LanguageManager.getLabel("documentRenderer.currencyInfo");
+						currencyString = currencyString.replace("%exchangeDate%",Tools.dateToString(Tools.isoToDate(documentXML.exchangeDate.toString())));
+						currencyString = currencyString.replace("%documentCurrency%",CurrencyManager.formatCurrency(Number(documentXML.exchangeRate)) + " " + dictionaryManager.getById(ModelLocator.getInstance().systemCurrencyId).symbol.toString());
+						currencyString = currencyString.replace("%systemCurrency%",CurrencyManager.formatCurrency(Number(documentXML.exchangeScale)) + " " + dictionaryManager.getById(documentXML.documentCurrencyId.toString()).symbol.toString());
+					}
+				}
+			}
+			
+			private function setPercentWidth(dest:UIComponent, value:Number):Number
+			{
+				dest.percentWidth = value;
+				return NaN;
+			}
+			
+			public static function showWindow(documentCategory:String, documentId:String, maximized:Boolean = false,id:int=0):ComponentWindow
+			{
+				if(id==DocumentTypeDescriptor.CATEGORY_TECHNOLOGY_DOCUMENT)
+					return null;
+				
+				if(documentCategory == DocumentTypeDescriptor.COMPLAINT_DOCUMENT)
+					return ComplaintDocumentRenderer.showWindow(documentId);
+				
+				var window:ComponentWindow = new ComponentWindow();
+				var renderer:DocumentRenderer = new DocumentRenderer();
+				window.showLater(renderer);
+				var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand(documentCategory, documentId);
+				cmd.targetObject = renderer;
+				cmd.targetField = 'data';
+				cmd.noRoot = true;
+				cmd.addEventListener(ResultEvent.RESULT, window.showLaterHandler);
+				cmd.execute();
+				window.show(null, maximized ? null : new Rectangle(-1, -1, 1000, 590));
+				return window;
+			}
+			
+			private function exportDocument(profile:String):void
+			{
+				
+				//ComponentExportManager.getInstance().exportObject(profile, documentId, 'content');
+				
+				var docObj:DocumentObject = new DocumentObject(<root>{XML(this.data)}</root>);
+				
+				DocumentObject.exportDocument(docObj);
+				
+			}
+			
+			private function addToCart():void
+			{
+				for each (var line:XML in documentXML.lines.line)
+					Clipboard.getInstance().addElement(line);
+			}
+			
+			private var visualizationDeleted:Boolean = false;
+			private var documentLinesShiftHistoryVBDeleted:Boolean = false;
+			private var paymentTreeVBDelete:Boolean = false;
+			
+			protected override function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+			{
+				if(!this.isCorrectionVisualisationEnabled() && !visualizationDeleted)
+				{
+					this.warehouseCorrectionRelationsVB.label="";
+					this.warehouseCorrectionRelationsVB.enabled=false;
+					this.tabNavigator.removeChild(this.warehouseCorrectionRelationsVB);
+					
+					this.visualizationDeleted = true;
+				}
+				
+				
+				// kasowanie zakladki z historia shiftów
+				if(!documentLinesShiftHistoryVBDeleted &&
+					(
+						!ModelLocator.getInstance().isWmsEnabled ||
+						(!typeDescriptor.isWarehouseIncome && !typeDescriptor.isWarehouseOutcome)
+					)
+				) {
+					//this.documentLinesShiftHistoryVB.label="";
+					this.documentLinesShiftHistoryVB.enabled=false
+					this.tabNavigator.removeChild(this.documentLinesShiftHistoryVB);
+					
+					documentLinesShiftHistoryVBDeleted = true;
+				}
+				
+				if(!paymentTreeVBDelete && 
+				(typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_SALES_ORDER_DOCUMENT || 
+					typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_PRODUCTION_ORDER_DOCUMENT))
+				{
+					this.paymentTreeVB.label="";
+					this.tabNavigator.removeChild(this.paymentTreeVB);
+					paymentTreeVBDelete = true;
+				}
+				var lm:LanguageManager=LanguageManager.getInstance();
+					if(this.paymentTreeVB.parent)
+						BindingUtils.bindProperty(paymentTreeVB,"label",lm,["labels","common","paymentTree"]);
+					if(documentLinesShiftHistoryVB.parent)
+						BindingUtils.bindProperty(documentLinesShiftHistoryVB,"label",lm,["labels","title","shiftHistor"]);
+					if(this.warehouseCorrectionRelationsVB.parent)
+						BindingUtils.bindProperty(warehouseCorrectionRelationsVB,"label",lm,["labels","documents","correctionTree"]);
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+			}
+			
+			[Bindable]
+			private var vatTable:Object;
+			
+			private function handleDoubleClick(event:ListEvent):void
+			{
+				var renderer:IDropInListItemRenderer = event.itemRenderer as IDropInListItemRenderer; 
+				if (renderer && DataGridListData(renderer.listData).dataField == 'itemName')
+				{
+					CatalogueItemInfo.showWindow(String(renderer['data'].itemId));
+				}
+				else if (ModelLocator.getInstance().isDebug())
+				{
+					DocumentRelationsGraph.showWindow(event.itemRenderer.data.id);
+				}
+			}
+			
+			private function handleMouseDoubleClick(event:MouseEvent):void
+			{
+				var id:String = "";
+				if(event.currentTarget == this.contractorHB) id = documentXML.issuer.contractor.id;
+				if(event.currentTarget == this.contractorContractorHB) id = documentXML.contractor.contractor.id;
+				//if(id!="")ContractorsCatalogue.showContractorWindow(id);		
+				if(id!="")CatalogueContractorInfo.showWindow(id, CatalogueContractorInfo.CONTRACTOR_DETAILS);
+			}
+			
+			private function verifyByCode():void
+			{
+				var documentObject:DocumentObject = new DocumentObject(<root>{XML(this.data)}</root>);
+				DocumentBarcodeVerificationComponent.showWindow(documentObject).addEventListener(FlexEvent.HIDE,verificationComponentHide);
+				//DocumentBarcodeVerificationComponent.showWindow().addEventListener(FlexEvent.HIDE,verificationComponentHide);
+			}
+			
+			private function verificationComponentHide(event:FlexEvent):void
+			{
+				
+			//	this.window.setFocus();
+			}
+			
+			private function getProfitMargin(documentXML:XML):String
+			{
+				return "";
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:Binding source="LanguageManager.getInstance().labels.documentRenderer" destination="labels"/>
+	<!--
+	<mx:LinkButton icon="{IconManager.getIcon('barcode_scan_small')}" toolTip="{LanguageManager.getInstance().labels.documents.verifyDocumentTooltip}" right="101" top="2" height="27" enabled="{Boolean(documentId)}" 
+		visible="{Boolean(barcodeVerification &amp;&amp; docType!='FinancialDocument' &amp;&amp; 
+	(typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_SALES || 
+	 typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_WAREHOUSE ||
+	 typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_PURCHASE ||
+	 typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_WAREHOUSE_RESERVATION ||
+	 typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_WAREHOUSE_ORDER ||
+	 typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_SALES_ORDER_DOCUMENT))}" click="verifyByCode()"/>
+	<mx:LinkButton icon="{IconManager.getIcon('print_small')}" toolTip="{LanguageManager.getInstance().labels.common.print}" right="68" top="2" height="27" enabled="{documentId &amp;&amp; printProfile}" click="exportDocument(printProfile)"/>
+	<mx:LinkButton icon="{IconManager.getIcon('export_small')}" toolTip="{LanguageManager.getInstance().labels.common.export}" right="35" top="2" height="27" enabled="{documentId &amp;&amp; exportProfile}" click="exportDocument(exportProfile)"/>
+	<mx:LinkButton icon="{IconManager.getIcon('add_small')}" toolTip="{LanguageManager.getInstance().labels.cart.addLinesToCart}" right="2" top="2" height="27" enabled="{Boolean(documentId)}" click="addToCart()"/>
+	-->
+	
+	<mx:HBox right="2" top="2" horizontalGap="2">
+		<mx:LinkButton icon="{IconManager.getIcon('barcode_scan_small')}" toolTip="{LanguageManager.getInstance().labels.documents.verifyDocumentTooltip}" height="27" enabled="{Boolean(documentId)}" 
+			visible="{Boolean(barcodeVerification &amp;&amp; docType!='FinancialDocument' &amp;&amp; 
+			(typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_SALES || 
+			typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_WAREHOUSE ||
+			typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_PURCHASE ||
+			typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_WAREHOUSE_RESERVATION ||
+			typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_WAREHOUSE_ORDER ||
+			typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_SALES_ORDER_DOCUMENT))}" click="verifyByCode()"/>
+		<permission:LinkButtonComponent icon="{IconManager.getIcon('print_small')}" toolTip="{LanguageManager.getInstance().labels.documents.printPdf}" height="27" enabled="{documentId &amp;&amp; printProfile}" click="exportDocument(printProfile)"  permissionKey="{printGPermissonKey}" />
+		<!--
+		<permission:LinkButtonComponent icon="{IconManager.getIcon('print_small')}" toolTip="{LanguageManager.getInstance().labels.documents.printText}" height="27" enabled="{documentId &amp;&amp; printProfile}" click="exportDocument(printProfile)"  permissionKey="{printTPermissonKey}" />
+		-->
+		<permission:LinkButtonComponent icon="{IconManager.getIcon('export_small')}" toolTip="{LanguageManager.getInstance().labels.common.export}" height="27" enabled="{documentId &amp;&amp; exportProfile}" click="exportDocument(exportProfile)" permissionKey="{exportPermissonKey}" />
+		<permission:LinkButtonComponent icon="{IconManager.getIcon('add_small')}" toolTip="{LanguageManager.getInstance().labels.cart.addLinesToCart}" height="27" enabled="{Boolean(documentId)}" click="addToCart()" permissionKey="{addToCardPermissonKey}" />
+	</mx:HBox>
+	
+	<mx:TabNavigator id="tabNavigator" top="10" bottom="0" left="0" right="0">
+		<mx:VBox verticalGap="2" paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="4" label="{LanguageManager.getInstance().labels.common.document}">
+			<mx:HBox width="100%">
+				<mx:VBox width="50%" verticalGap="0">
+					<mx:HBox width="100%">
+						<mx:Label text="{LanguageManager.getInstance().labels.documents.documentType}:" width="140" styleName="label"/>
+						<mx:Text text="{dictionaryManager.getById(documentXML.documentTypeId).label.(@lang==LanguageManager.getInstance().currentLanguage)[0]}"/>
+					</mx:HBox>
+					<mx:HBox width="100%">
+						<mx:Label text="{LanguageManager.getInstance().labels.documentRenderer.status}:" width="140" styleName="label"/>
+						<generic:DocumentStatusRenderer status="{documentXML.status}"/>
+						<mx:Label text="{DocumentStatusRenderer.getStatusLabel(documentXML.status)}"/>
+					</mx:HBox>		
+				</mx:VBox>
+				<mx:VBox width="50%" verticalGap="0">
+					<mx:HBox width="100%" horizontalAlign="right">
+						<mx:Label text="{LanguageManager.getInstance().labels.documentRenderer.issuePlace}:" visible="{!typeDescriptor.isFinancialDocument &amp;&amp; !typeDescriptor.isWarehouseDocument}" styleName="label"/>
+						<mx:Text text="{dictionaryManager.getById(documentXML.issuePlaceId).name}" width="140" visible="{!typeDescriptor.isFinancialDocument &amp;&amp; !typeDescriptor.isWarehouseDocument}"/>
+					</mx:HBox>
+					<mx:HBox width="100%" horizontalAlign="right">
+						<mx:Label text="{typeDescriptor.getFieldLabel('issueDate')}" styleName="label"/>
+						<mx:Text text="{format(documentXML.issueDate, 'date')}" visible="{Boolean(typeDescriptor.getFieldLabel('issueDate'))}" width="140"/>
+					</mx:HBox>
+					<mx:HBox width="100%" horizontalAlign="right">
+						<mx:Label text="{typeDescriptor.getFieldLabel('eventDate')}" styleName="label"/>
+						<mx:Text text="{format(documentXML.eventDate, 'date')}" visible="{Boolean(typeDescriptor.getFieldLabel('eventDate'))}" width="140"/>
+					</mx:HBox>				
+				</mx:VBox>
+			</mx:HBox>
+			<mx:Text text="{dictionaryManager.getById(documentXML.documentTypeId).symbol} {documentXML.number.fullNumber}" width="100%" textAlign="center" styleName="header"/>
+			<mx:HBox width="100%">
+				<mx:HBox id="contractorHB" visible="{docType=='CommercialDocument'}" includeInLayout="{this.contractorHB.visible}" doubleClickEnabled="true" doubleClick="{handleMouseDoubleClick(event)}" mouseChildren="false" width="{this.contractorHB.visible?setPercentWidth(this.contractorHB,50):0}">
+					<mx:Label text="{!typeDescriptor.isPurchaseDocument &amp;&amp; !typeDescriptor.isPurchaseCorrectionDocument &amp;&amp; !typeDescriptor.isWarehouseOrder ? LanguageManager.getInstance().labels.documentRenderer.issuer : labels.contractor}:" width="140" styleName="label"/>
+					<mx:VBox width="100%" verticalGap="0">
+						<mx:Text text="{documentXML.issuer.contractor.fullName}" width="100%"/>
+						<mx:Text text="{documentXML.issuer.contractor.addresses.address.(id == issuerAddressId).address}" width="100%"/>
+						<mx:Text text="{documentXML.issuer.contractor.addresses.address.(id == issuerAddressId).city}" width="100%"/>
+						<mx:Text text="{documentXML.issuer.contractor.nip}" width="100%"/>
+					</mx:VBox>
+				</mx:HBox>
+				<mx:HBox id="contractorContractorHB" width="50%" includeInLayout="{contractor}" doubleClickEnabled="true" doubleClick="{handleMouseDoubleClick(event)}" mouseChildren="false">
+					<mx:Label text="{(docType=='CommercialDocument') ? (!typeDescriptor.isPurchaseDocument &amp;&amp; !typeDescriptor.isPurchaseCorrectionDocument &amp;&amp; !typeDescriptor.isWarehouseOrder ? labels.contractor : LanguageManager.getInstance().labels.documentRenderer.issuer) : labels.contractor2}:" width="140" styleName="label"/>
+					<mx:VBox width="100%" verticalGap="0">
+						<mx:Text text="{documentXML.contractor.contractor.fullName}" width="100%"/>
+						<mx:Text text="{documentXML.contractor.contractor.addresses.address.(id == contractorAddressId).address}" width="100%"/>
+						<mx:Text text="{documentXML.contractor.contractor.addresses.address.(id == contractorAddressId).city}" width="100%"/>
+						<mx:Text text="{documentXML.contractor.contractor.nip}" width="100%"/>
+					</mx:VBox>
+				</mx:HBox>
+			</mx:HBox>
+			<mx:HBox id="warehouseHB" visible="{docType=='WarehouseDocument'}" includeInLayout="{this.warehouseHB.visible}" width="{this.warehouseHB.visible?setPercentWidth(this.warehouseHB,50):0}">
+					<mx:Label text="{labels.warehouse}:" width="140" styleName="label"/>
+					<mx:VBox width="100%" verticalGap="0">
+						<mx:Text text="{dictionaryManager.getById(documentXML.warehouseId).label.(@lang==LanguageManager.getInstance().currentLanguage)[0]}" width="100%"/>
+					</mx:VBox>
+			</mx:HBox>
+			<mx:HBox id="oppositeWhHB" visible="{typeDescriptor.isShiftDocument}" includeInLayout="{this.oppositeWhHB.visible}">
+				<mx:Label text="{typeDescriptor.isIncomeShiftDocument ? LanguageManager.getInstance().labels.documents.sourceWarehouse : LanguageManager.getInstance().labels.documents.targetWarehouse}:" width="140" styleName="label"/>
+				<generic:FractusDictionaryRenderer labelField="label"
+				dataObject="{documentXML.attributes.attribute.(String(documentFieldId) == oppositeWarehouseDocumentFieldId).value}"
+				/>
+			</mx:HBox>
+			<mx:HBox id="currencyInfoHB" width="100%" visible="{(currencyString != '')}" includeInLayout="{(currencyString!='')}">
+				<mx:Label text="{LanguageManager.getInstance().labels.common.currency}:" width="140" styleName="label"/>
+				<mx:Text text="{currencyString}"/>
+			</mx:HBox>
+			<mx:DataGrid width="100%" 
+				variableRowHeight="true" 
+				rowHeight="20" 
+				id="tableDG" 
+				wordWrap="true" 
+				labelFunction="{getLineLabel}" 
+				dataProvider="{this.linesXML}" 
+				doubleClickEnabled="true" 
+				itemDoubleClick="handleDoubleClick(event)"/>
+				
+			<mx:HBox paddingTop="5" horizontalAlign="right" id="vatHB" visible="{docType=='CommercialDocument' &amp;&amp; typeDescriptor.categoryNumber != DocumentTypeDescriptor.CATEGORY_PRODUCTION_ORDER_DOCUMENT}" includeInLayout="{this.vatHB.visible}" width="{this.vatHB.visible?setPercentWidth(this.vatHB,100):0}" height="{this.vatHB.visible?NaN:0}">
+				<mx:DataGrid id="tableVatDG" dataProvider="{vatTable}" labelFunction="{getVtLabel}"/>
+			</mx:HBox>
+			<mx:HBox width="100%" verticalAlign="bottom" verticalGap="40" visible="{typeDescriptor.categoryNumber != DocumentTypeDescriptor.CATEGORY_PRODUCTION_ORDER_DOCUMENT}" includeInLayout="{typeDescriptor.categoryNumber != DocumentTypeDescriptor.CATEGORY_PRODUCTION_ORDER_DOCUMENT}">
+				<mx:Label text="{(docType=='CommercialDocument') ? (negativeSum ? labels.sumNegative : labels.sum) : labels.value}:" width="180" styleName="label"/>
+				<mx:Text id="sumT" text="{(docType=='CommercialDocument') ? sum : value}" styleName="sum" toolTip="{currencyInfo}"/>
+			</mx:HBox>
+			<mx:VBox id="bottomVB" verticalGap="0" visible="{docType=='CommercialDocument' &amp;&amp; typeDescriptor.categoryNumber != DocumentTypeDescriptor.CATEGORY_PRODUCTION_ORDER_DOCUMENT}" includeInLayout="{this.bottomVB.visible}" width="{this.bottomVB.visible?setPercentWidth(this.bottomVB,100):0}" height="{this.bottomVB.visible?NaN:0}">
+				<mx:VBox width="100%" id="paymentMethodsVB"/>
+				<!--<mx:HBox width="100%" visible="{paidToPayVisibility}" includeInLayout="{paidToPayVisibility}">
+					<mx:Label text="{LanguageManager.getInstance().labels.documentRenderer.paid}:" width="220" styleName="label"/>
+					<mx:Text id="paidT" width="25%"/>
+					<mx:Label text="{LanguageManager.getInstance().labels.documentRenderer.toPay}:" width="130" styleName="label"/>
+					<mx:Text id="toPayT" width="25%"/>
+				</mx:HBox>
+				<mx:HBox width="100%">
+					<mx:Label text="{LanguageManager.getInstance().labels.documentRenderer.issuingPerson}:" width="220" styleName="label"/>
+					<mx:Text text="{documentXML.issuingPerson.contractor.fullName}" width="25%"/>
+					<mx:Label text="{LanguageManager.getInstance().labels.documentRenderer.receivingPerson}:" width="130" styleName="label" visible="{!typeDescriptor.isPurchaseDocument}" includeInLayout="{!typeDescriptor.isPurchaseDocument}"/>
+					<mx:Text text="{documentXML.receivingPerson.contractor.fullName}" width="25%" visible="{!typeDescriptor.isPurchaseDocument}" includeInLayout="{!typeDescriptor.isPurchaseDocument}" />
+				</mx:HBox>-->
+				<mx:HBox>
+					<mx:VBox verticalGap="0">
+						<mx:HBox>
+							<mx:Label text="{LanguageManager.getInstance().labels.documentRenderer.paid}:" width="180" styleName="label"/>
+							<mx:Text id="paidT" width="130"/>
+						</mx:HBox>
+						<mx:HBox>
+							<mx:Label text="{LanguageManager.getInstance().labels.documentRenderer.toPay}:" width="180" styleName="label"/>
+							<mx:Text id="toPayT" width="130"/>
+						</mx:HBox>
+					</mx:VBox>
+					<mx:VBox verticalGap="0">
+						<mx:HBox>
+							<mx:Label text="{LanguageManager.getInstance().labels.documentRenderer.issuingPerson}:" width="180" styleName="label"/>
+							<mx:Text text="{documentXML.issuingPerson.contractor.fullName}" width="160"/>
+						</mx:HBox>
+						<mx:HBox>
+							<mx:Label text="{LanguageManager.getInstance().labels.documentRenderer.receivingPerson}:" width="180" styleName="label" visible="{!typeDescriptor.isPurchaseDocument}" includeInLayout="{!typeDescriptor.isPurchaseDocument}"/>
+							<mx:Text text="{documentXML.receivingPerson.contractor.fullName}" width="160" visible="{!typeDescriptor.isPurchaseDocument}" includeInLayout="{!typeDescriptor.isPurchaseDocument}" />
+						</mx:HBox>
+					</mx:VBox>
+					<mx:VBox verticalGap="0" visible="{typeDescriptor.isSalesDocument || typeDescriptor.isSalesOrderDocument}" includeInLayout="{typeDescriptor.isSalesDocument || typeDescriptor.isSalesOrderDocument}">
+						<mx:Label text="{LanguageManager.getInstance().labels.documentRenderer.documentValueMargin}:" width="220" styleName="label"/>
+						<mx:Text text="{marginValue}" width="220"/>
+					</mx:VBox>
+				</mx:HBox>
+			</mx:VBox>
+			<!--<mx:HBox verticalGap="0" width="100%" visible="{docType!='FinancialDocument' &amp;&amp; typeDescriptor.categoryNumber != DocumentTypeDescriptor.CATEGORY_PRODUCTION_ORDER_DOCUMENT}" >
+				<mx:Label text="{LanguageManager.getInstance().labels.documents.verifyPurchaseDocument}" styleName="label" width="220"/>						
+				<mx:Button label="{LanguageManager.getInstance().labels.documents.verify}" toolTip="{LanguageManager.getInstance().labels.documents.verifyDocumentTooltip}" click="{verifyByCode();}" />
+			</mx:HBox>-->
+			<documents:ServiceDocumentInfoRenderer visible="{docType=='ServiceDocument'}" includeInLayout="{docType=='ServiceDocument'}" documentXML="{documentXML}" />
+		</mx:VBox>
+		<mx:VBox verticalGap="2" paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10" label="{LanguageManager.getInstance().labels.common.relations}">
+			<documents:DocumentRelationsGrid width="100%" data="{&lt;root&gt;{documentXML}&lt;/root&gt;}"/>
+		</mx:VBox>
+		<mx:VBox verticalGap="2" paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10" label="{LanguageManager.getInstance().labels.common.attributes}">
+			<documents:DocumentAttributesRenderer documentXML="{documentXML}" />
+		</mx:VBox>
+		<mx:VBox id="warehouseCorrectionRelationsVB" verticalGap="2" paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10">
+			<documentControls:LinesTreeVisualizationComponent documentXML="{documentXML}" />
+		</mx:VBox>
+		<mx:VBox id="paymentTreeVB" verticalGap="2" paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10" >
+			<documentControls:DocumentPaymentTree documentXML="{documentXML}"/>
+		</mx:VBox>
+		<mx:VBox id="documentLinesShiftHistoryVB" verticalGap="2" paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10">
+			<documentControls:DocumentLinesShiftHistory lineLabelFunction="{getLineLabel}" typeDescriptor="{this.typeDescriptor}" documentXML="{documentXML}"/>
+		</mx:VBox>
+	</mx:TabNavigator>
+</mx:Canvas>

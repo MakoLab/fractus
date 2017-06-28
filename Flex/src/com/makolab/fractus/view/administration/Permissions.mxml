@@ -1,0 +1,516 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+	xmlns:groupTree="com.makolab.components.catalogue.groupTree.*"
+	xmlns:lineList="com.makolab.components.lineList.*" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	initialize="init()" 
+	xmlns:administration="com.makolab.fractus.view.administration.*">
+<mx:Script>
+	<![CDATA[
+		import com.makolab.fractus.commands.UpdatePermissionStructureCommand;
+		import com.makolab.fractus.model.ConfigManager;
+		import com.makolab.fractus.commands.DeleteBusinessObjectCommand;
+		import com.makolab.fractus.commands.GetPermissionProfilesCommand;
+		import mx.rpc.events.ResultEvent;
+		import assets.IconManager;
+		import com.makolab.fractus.commands.SaveConfigurationCommand;
+		import com.makolab.fractus.commands.LoadConfigurationCommand;
+		import com.makolab.fractus.model.ModelLocator;
+		import com.makolab.fractus.view.ComponentWindow;
+		import com.makolab.fractus.model.LanguageManager;
+		import com.makolab.components.catalogue.groupTree.GroupSelectionRenderer;
+		import mx.controls.Alert;
+		
+		[Bindable]
+		public var model:ModelLocator = ModelLocator.getInstance();
+		[Bindable]
+		private var treeVisible:Boolean = false;
+		[Bindable]
+		public var permissionStructure:XML;
+		[Bindable]
+		public var permissionSuperUserStructure:XML;
+		private var permissions:XML;
+		private var permissionsSuperUser:XML;
+		[Bindable]
+		public var permissionProfile:XML;
+		[Bindable]
+		public var permissionSuperUserProfile:XML;
+		[Bindable]
+		private var profiles:XML;
+		private var treeItemRenderer:IFactory = new ClassFactory(GroupSelectionRenderer);
+		public var window:ComponentWindow;
+		private var profileId:String;
+		private var duplicateFlag:Boolean = false;
+		
+		public static function showWindow():ComponentWindow
+		{
+			var component: Permissions = new Permissions();
+			var window:ComponentWindow = ComponentWindow.showWindow(component,ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL,new Rectangle(-1,-1,700,500),LanguageManager.getInstance().labels.title.permissions.panel);
+			window.commitButton.enabled = ModelLocator.getInstance().permissionManager.isEnabled('administration.permissions.edit');
+			window.commitFunction = component.saveFunction;
+			component.window = window;
+			return window;
+		}
+		
+		private function init():void
+		{
+			if(model.isDebug()) {
+				loadSuperUserProfile();
+			}
+			loadProfile(model.permissionProfile);
+		}
+		
+		
+		private function loadSuperUserProfile():void {
+			var cmd3:LoadConfigurationCommand = new LoadConfigurationCommand();
+			cmd3.addEventListener(ResultEvent.RESULT, handleLoadSuperUserProfileResult);
+			cmd3.execute({ key: "permissions.superUserProfiles" });								
+		}
+		
+		private function handleLoadSuperUserProfileResult(event:ResultEvent):void {
+			permissionSuperUserProfile = XML(event.result);
+			permissionsSuperUser = XML(permissionSuperUserProfile.configValue.profile.permissions);
+			var cmd:LoadConfigurationCommand = new LoadConfigurationCommand();
+			cmd.addEventListener(ResultEvent.RESULT, handleLoadSuperUserStructureResult);
+			cmd.execute({ key: "permissions.superUserStructure" });
+		}
+		
+		private function handleLoadSuperUserStructureResult(event:ResultEvent):void {
+			var result:XML = XML(event.result);
+			permissionSuperUserStructure = preparePermissionStructure(XML(result.configValue.permission), permissionsSuperUser);
+		}
+		
+		
+		
+		
+		
+		
+		
+		private function loadProfile(profile:String):void
+		{
+			profileId = profile;
+			var cmd:LoadConfigurationCommand = new LoadConfigurationCommand();
+			cmd.addEventListener(ResultEvent.RESULT, handleLoadProfileResult);
+			cmd.execute({ key: "permissions.profiles." + profile });	
+			getPermissionProfiles();							
+		}
+		
+		private function getPermissionProfiles():void
+		{
+			var cmd2:GetPermissionProfilesCommand = new GetPermissionProfilesCommand();
+			cmd2.addEventListener(ResultEvent.RESULT, handleGetPermissionProfiles);
+			cmd2.execute();	
+		}
+		
+		private function handleGetPermissionProfiles(event:ResultEvent):void	
+		{
+			profiles = XML(event.result);
+		}
+		
+		private function handleLoadProfileResult(event:ResultEvent):void
+		{
+			permissionProfile = XML(event.result);
+			permissions = XML(permissionProfile.configValue.profile.permissions);
+			var cmd:LoadConfigurationCommand = new LoadConfigurationCommand();
+			cmd.addEventListener(ResultEvent.RESULT, handleLoadStructureResult);
+			cmd.execute({ key: "permissions.structure" });
+		}
+		
+		private function checkPermissionStruct(structure:XML, thisKey:String = null, permisionStructure:XML = null):void
+		{
+			var key:String;
+			var prevKey:String;
+			var found:Boolean;
+			var keyLevels:Array;
+			var parentKey:String = "";
+			var separator:String = ".";
+			
+			for each(var x:XML in structure.subgroups.group)	{
+				key = x.@key;				
+				prevKey = (thisKey == null) ? key : thisKey + "." + key; 
+				found = false;
+				for each(var y:XML in permisionStructure.*) 
+					if(String(y.@key) == prevKey) found = true;
+				if(!found) {
+					var p:XML = <permission/>;
+					p.@key = prevKey;
+					keyLevels = prevKey.split(".");
+					for(var i:Number = 0; i < keyLevels.length - 1; i++) 
+						parentKey = (i > 0) ? parentKey + separator + keyLevels[i]: keyLevels[i]; 
+					p.@level = (parentKey != "") ? permisionStructure.permission.(@key == parentKey).@level : "0";
+					permisionStructure.appendChild(p);
+				}					
+				checkPermissionStruct(XML(x),prevKey, permisionStructure);				
+			}
+		}
+		
+		private function handleLoadStructureResult(event:ResultEvent):void {
+			var result:XML = XML(event.result);
+			permissionStructure = preparePermissionStructure(XML(result.configValue.permission), permissions);
+		}
+		
+		private function preparePermissionStructure(xmlPermissionStructure:XML, permissionSubject:XML):XML
+		{
+			var key:String;
+			var level:String;
+			var keyLevels:Array;
+			var separator:String;
+			var prevKey:String;
+			var depth:Number;
+			
+			var xml:String = StrReplace("<permissions>","<subgroups>",xmlPermissionStructure);
+			xml = StrReplace("</permissions>","</subgroups>",xml);
+			xml = StrReplace("<permission","<group",xml);
+			xml = StrReplace("</permission>","</group>",xml);	
+			//trace("XML: " + xml.toString());
+			xmlPermissionStructure = XML(xml);		
+			checkPermissionStruct(xmlPermissionStructure, null, permissionSubject);
+			for each(var x:XML in permissionSubject.*)	{
+				key = x.@key;
+				level = x.@level;
+				keyLevels = key.split(".");
+				depth = keyLevels.length;
+				if(depth > 1) prevKey = keyLevels[keyLevels.length - 2];
+				else prevKey = key;
+				if(xmlPermissionStructure.subgroups.group.(String(@key) == String(keyLevels[0])).subgroups.group.length() > 0)
+					setPermissionStructure(XML(xmlPermissionStructure.subgroups.group.(String(@key) == String(keyLevels[0]))), key, keyLevels[keyLevels.length - 1], prevKey, level, 0, depth);
+			}
+			
+			return xmlPermissionStructure;
+		}
+		
+		private function setPermission(xml:XML, key:String, nextKey:String, x:XML, nestLevel:Number):void	{
+			var keyLevels:Array;
+			var oldKey:String
+			if(key == nextKey)	{
+				if(xml.@selected == "1") x.@level = "2";
+				else x.@level = "0";		
+			}
+			else if(xml.subgroups.group.length() > 0)	{
+				nestLevel += 1;
+				oldKey = nextKey;
+				for(var i:Number = 0; i < xml.subgroups.group.length(); i++)	{
+					nextKey = oldKey + "." + xml.subgroups.group[i].@key;					
+					setPermission(xml.subgroups.group[i], key, nextKey, x, nestLevel);		
+				}
+			}
+		}
+			
+		public function saveFunction():void
+		{
+			var key:String;
+			var keyLevels:Array;
+			var level:String;
+			var ps:XML = XML(tree.dataProvider);
+			for each(var x:XML in permissions.*)	{
+				key = x.@key;
+				keyLevels = key.split(".");
+				try
+				{
+					setPermission(XML(ps.subgroups.group.(String(@key) == String(keyLevels[0]))), key, keyLevels[0], x, 0);
+				}
+				catch (error:Error)
+				{
+					ConfigManager.reportConfigurationError("Wystąpił błąd. Prawdopodobnie błąd spowodowany jest rozbieżnością w konfiguracji uprawnień dla modyfikowanych profili. Zmiany dla klucza '" + key + "' nie zostaną zapisane.", "Błąd");
+				}
+			}
+			delete permissionProfile.configValue.profile.permissions;
+			permissionProfile.configValue.profile.appendChild(permissions);
+			try
+				{
+					var cmd:SaveConfigurationCommand = new SaveConfigurationCommand();
+					if(model.isDebug()) {
+						cmd.addEventListener(ResultEvent.RESULT, saveSuperUserFunction);
+					} else {
+						cmd.addEventListener(ResultEvent.RESULT, handleSaveResult);
+					}
+					cmd.execute( { requestXml : permissionProfile } );
+				}
+			catch (e:Error)
+				{
+					Alert.show(e.message, e.name);
+				}
+		}
+		
+		public function saveSuperUserFunction(event:ResultEvent):void
+		{
+			if(treeSuperUser){
+				var key:String;
+				var keyLevels:Array;
+				var level:String;
+				var ps:XML = XML(treeSuperUser.dataProvider);
+				for each(var x:XML in permissionsSuperUser.*)	{
+					key = x.@key;
+					keyLevels = key.split(".");
+					try
+					{
+						setPermission(XML(ps.subgroups.group.(String(@key) == String(keyLevels[0]))), key, keyLevels[0], x, 0);
+					}
+					catch (error:Error)
+					{
+						ConfigManager.reportConfigurationError("Wystąpił błąd. Prawdopodobnie błąd spowodowany jest rozbieżnością w konfiguracji uprawnień dla modyfikowanych profili. Zmiany dla klucza '" + key + "' nie zostaną zapisane.", "Błąd");
+					}
+				}
+				delete permissionSuperUserProfile.configValue.profile.permissions;
+				permissionSuperUserProfile.configValue.profile.appendChild(permissionsSuperUser);
+				try
+					{
+						var cmd:SaveConfigurationCommand = new SaveConfigurationCommand();
+						cmd.addEventListener(ResultEvent.RESULT, updatePermissionsStructures);
+						cmd.execute( { requestXml : permissionSuperUserProfile } );
+					}
+				catch (e:Error)
+					{
+						Alert.show(e.message, e.name);
+					}
+			} else {
+				handleSaveResult(null);
+			}
+		}
+		
+		public function updatePermissionsStructures(event:ResultEvent):void
+		{
+			var cmd:UpdatePermissionStructureCommand = new UpdatePermissionStructureCommand();
+			cmd.addEventListener(ResultEvent.RESULT, handleSaveResult);
+			cmd.execute();
+		}
+		
+		private function handleSaveResult(event:ResultEvent):void
+		{
+			window.hide();
+		}
+		
+		public static function StrReplace(needle:String, replacement:String, haystack:String):String	{
+  			var strArr:Array = haystack.split(needle);
+  			return strArr.join(replacement);
+		}
+		
+		private function setPermissionStructure(xml:XML, key:String, nextKey:String, prevKey:String, level:String, nestLevel:Number, depth:Number):void
+		{
+			var found:Boolean = false;
+			var keyLevels:Array;			
+			//trace("nestLevel: " + nestLevel + " xmlkey: " + xml.@key + " key: " + key + " nextKey: " + nextKey + " level: " + level);
+			if(xml.@key == nextKey)	{
+				if(level == "2") xml.@selected = "1";
+				found = true;
+			}
+			nestLevel += 1;			
+			if(nestLevel < depth && !found)	{
+				for(var i:Number = 0; i < xml.subgroups.group.length(); i++)	{						
+					keyLevels = key.split(".");
+					if(!isEmpty(xml.subgroups.group.(@key == keyLevels[nestLevel])))
+						setPermissionStructure(XML(xml.subgroups.group.(@key == keyLevels[nestLevel])), key, nextKey, prevKey, level, nestLevel, depth);		
+				}
+			} 
+		}
+		
+		private function isEmpty(s:String):Boolean
+		{
+			return Boolean(s.match(/^\s*$/));
+		}
+		
+		private function changeProfile(item:XML):void
+		{
+			lbProfile.text = item.@label;
+			loadProfile(item.@id);
+		}
+		
+		private function addProfile():void
+		{
+			
+		}
+		
+		public function getIcon(name:String):Class
+		{
+			return IconManager.getIcon(name);
+		}
+		
+		private function editProfile(event:Event):void
+		{
+			var name:String = event.target.name;
+			if(name != "key")	{
+				for each (var x:XML in permissionProfile.configValue.profile.labels.label)
+					if(x.@lang == name) {
+						delete x.*;
+						x.appendChild(event.target.text);	
+					}
+			}
+			else
+				permissionProfile.configValue.@key = event.target.text;
+		}
+		
+		private function saveProfile():void
+		{
+			var found:Boolean = false;
+			if(duplicateFlag)	{
+				duplicateFlag = false;
+				var newKey:String = key.text;				
+				for each(var x:XML in profiles.*)	{
+					if('permissions.profiles.' + String(x.@id) == newKey)	{
+						Alert.show("Profil o zadanym kluczu już istnieje. Proszę wprowadzić nowy klucz");
+						found = true;
+					}
+				}
+			}
+			if(!found)	{
+				var cmd:SaveConfigurationCommand = new SaveConfigurationCommand();
+				cmd.addEventListener(ResultEvent.RESULT, saveProfileResult);
+				cmd.execute( { requestXml : permissionProfile } );
+				key.enabled = false;
+				bSave.enabled = false;
+			}
+		}
+		
+		private function saveProfileResult(event:ResultEvent):void
+		{
+			var result:XML = XML(event.result);
+			//Alert.show(result);
+			getPermissionProfiles();
+		}		
+		
+		private function deleteProfile():void
+		{
+			var used:Boolean = false;
+			for each(var x:XML in XMLList(model.dictionaryManager.dictionaries.users))	{
+				if(String(x.permissionProfile) == profileId) used = true;
+			}
+			if(!used)	{
+				var param:XML = <root>
+									<type>Configuration</type>
+									<key>{permissionProfile.configValue.@key}</key>
+									<level>System</level>
+								</root>;		
+				var cmd:DeleteBusinessObjectCommand = new DeleteBusinessObjectCommand();
+				cmd.addEventListener(ResultEvent.RESULT, deleteProfileResult);
+				cmd.execute( { requestXml : param} );
+			}	
+			else Alert.show("Nie można usunąć profilu, gdyż jest on przypisany do użytkownika"); 
+		}
+		
+		private function deleteProfileResult(event:ResultEvent):void
+		{
+			var result:XML = XML(event.result);
+			Alert.show(result);
+			getPermissionProfiles();
+			bSave.enabled = false;
+			bDelete.enabled = false;
+			bDuplicate.enabled = false;
+			key.enabled = false;
+			loadProfile(model.permissionProfile);
+		}
+		
+		private function checkEnabled():void
+		{
+			//permission hard coded
+			if(profilesList && model.permissionManager.isEnabled('administration.permissions.edit') && profilesList.selectedIndex >=0) {
+				bSave.enabled = true;
+				bDelete.enabled = true;
+				bDuplicate.enabled = true;
+				key.enabled = false;
+			}
+			else {
+				bSave.enabled = false;
+				bDelete.enabled = false;
+				bDuplicate.enabled = false;
+				key.enabled = false;
+			}
+		}
+		
+		private function duplicate():void
+		{
+			key.enabled = true;
+			key.text = key.text + "_copy";
+			permissionProfile.configValue.@key = key.text;
+			bDuplicate.enabled = false;
+			duplicateFlag = true;
+		}
+		
+		
+	]]>
+</mx:Script>
+	<mx:TabNavigator id="tabNav" width="100%" height="100%" left="0" top="4" paddingLeft="4" paddingRight="4" paddingBottom="4" creationComplete="{tabNav.getTabAt(2).visible = model.isDebug()}" >
+		<mx:VBox width="100%" height="100%" label="{LanguageManager.getInstance().labels.common.profilePermissions}">	
+			<mx:HBox height="30">			
+				<mx:PopUpButton id="pubProfiles" label="{LanguageManager.getInstance().labels.common.profilePermissions}" openAlways="true">
+					<mx:popUp>
+						<mx:List id="lProfiles" change="changeProfile(XML(lProfiles.selectedItem))" dataProvider="{profiles.*}" labelField="@label" textAlign="left" rowCount="{profiles.*.length()}"/>		
+					</mx:popUp>
+				</mx:PopUpButton>
+			</mx:HBox>
+			<mx:Label id="lbProfile" text="{permissionProfile.configValue.profile.labels.label.(@lang == model.languageManager.currentLanguage)}"/>
+			<groupTree:GroupTree
+				allowMultipleSelection="true"
+				borderSides=""
+				dataProvider="{permissionStructure}"
+				doubleClickEnabled="true"
+				editable="false"
+				height="100%"
+				id="tree"
+				multipleSelection="true"
+				showRoot="false"		 
+				width="100%"
+				enabled="{model.permissionManager.isEnabled('administration.permissions.edit')}"
+				/>
+		</mx:VBox>
+		
+		<mx:VBox width="100%" height="100%" label="{LanguageManager.getInstance().labels.common.permissionProfiles}" paddingLeft="4" paddingRight="4">
+			<lineList:LineList
+				id="profilesList"
+				width="100%"
+				height="100%"
+				dataProvider="{profiles.*}"
+				editable="false"
+				autoHeight="false"
+				rowCount="{(profiles.*.length() > 10) ? 10 : profiles.*.length()}"
+				autoAddLines="false"
+				selectable="true"		
+				enterLeavesEditor = "false"
+				change="loadProfile(profilesList.selectedItem.@id);"
+				click="checkEnabled();"
+				dragEnabled="{model.permissionManager.isEnabled('administration.permissions.edit')}"
+				>		
+				<lineList:columns>
+					<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.lp')}" minWidth="20" width="20" editable="false" itemRenderer="com.makolab.components.inputComponents.OrdinalNumberRenderer"/>
+					<mx:DataGridColumn headerText="Klucz" dataField="@id" width="50" headerWordWrap="true"/>
+					<mx:DataGridColumn headerText="Etykieta" dataField="@label" width="50" headerWordWrap="true"/>					
+				</lineList:columns>
+			</lineList:LineList>
+			<mx:VBox>
+				<mx:Form>
+					<mx:FormItem label="{model.languageManager.labels.common.key}:" labelWidth="70">
+						<mx:TextInput id="key" name="key" text="{permissionProfile.configValue.@key}" change="editProfile(event)" enabled="false" width="300"/>		
+					</mx:FormItem>
+					<mx:Repeater id="labelList" dataProvider="{permissionProfile.configValue.profile.labels.label}">
+						<mx:FormItem label="{model.languageManager.labels.common.label} {labelList.currentItem.@lang}" labelWidth="70">
+							<mx:TextInput enabled="{ModelLocator.getInstance().permissionManager.isEnabled('administration.permissions.edit')}" name="{labelList.currentItem.@lang}" text="{labelList.currentItem}" change="editProfile(event)" width="300"/>	
+						</mx:FormItem>
+					</mx:Repeater>
+					<mx:FormItem label="" labelWidth="70">
+						<mx:HBox>
+							<mx:Button id="bDuplicate" enabled="false" label="{model.languageManager.labels.common.duplicate}" click="duplicate()"/>
+							<mx:Button id="bSave" enabled="false" label="{model.languageManager.labels.common.save}" click="saveProfile()"/>
+							<mx:Button id="bDelete" enabled="false" label="{model.languageManager.labels.common.deleteAll}" click="deleteProfile()"/>					
+						</mx:HBox>
+					</mx:FormItem>
+				</mx:Form>					 	
+			</mx:VBox>		
+		</mx:VBox>
+		
+		<mx:VBox width="100%" height="100%" label="Super User Permissions" enabled="{model.isDebug()}">	
+			<mx:Label id="lbSuperUserProfile" text="{permissionSuperUserProfile.configValue.profile.labels.label.(@lang == model.languageManager.currentLanguage)}"/>
+			<groupTree:GroupTree
+				allowMultipleSelection="true"
+				borderSides=""
+				dataProvider="{permissionSuperUserStructure}"
+				doubleClickEnabled="true"
+				editable="false"
+				height="100%"
+				id="treeSuperUser"
+				multipleSelection="true"
+				showRoot="false"		 
+				width="100%"
+				enabled="{model.isDebug()}"
+				/>
+		</mx:VBox>
+	</mx:TabNavigator>
+</mx:Canvas>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	verticalGap="0" 
+	width="100%"
+	xmlns:catalogue="com.makolab.fractus.view.catalogue.*" xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*" xmlns:generic="com.makolab.fractus.view.generic.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.controls.Alert;
+			import assets.IconManager;
+			import com.makolab.components.inputComponents.FloatRenderer;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.GetItemStockCommand;
+			
+			private var _attrData:Object;
+						
+			public function set attrData(value:Object):void
+			{
+				_attrData = value;
+			}
+			
+			public function get attrData():Object
+			{
+				return _attrData;
+			}
+
+			
+		]]>
+	</mx:Script>
+	
+	<mx:Form width="100%" paddingTop="4" verticalGap="0" paddingBottom="0">
+	<mx:Repeater width="100%" id="rptr" dataProvider="{attrData}">
+		<documentControls:KeyValueAttributeRenderer idField="itemFieldId" data="{rptr.currentItem}" width="100%"/>
+	</mx:Repeater>
+	</mx:Form>
+</mx:VBox>

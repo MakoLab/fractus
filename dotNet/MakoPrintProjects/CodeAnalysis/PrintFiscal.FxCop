@@ -1,0 +1,269 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FxCopProject Version="1.36" Name="PrintFiscal">
+ <ProjectOptions>
+  <SharedProject>True</SharedProject>
+  <Stylesheet Apply="False">e:\soft\fxcop\Xml\FxCopReport.xsl</Stylesheet>
+  <SaveMessages>
+   <Project Status="Active, Excluded" NewOnly="False" />
+   <Report Status="Active" NewOnly="False" />
+  </SaveMessages>
+  <ProjectFile Compress="True" DefaultTargetCheck="True" DefaultRuleCheck="True" SaveByRuleGroup="" Deterministic="True" />
+  <EnableMultithreadedLoad>True</EnableMultithreadedLoad>
+  <EnableMultithreadedAnalysis>True</EnableMultithreadedAnalysis>
+  <SourceLookup>True</SourceLookup>
+  <AnalysisExceptionsThreshold>10</AnalysisExceptionsThreshold>
+  <RuleExceptionsThreshold>1</RuleExceptionsThreshold>
+  <Spelling Locale="en-US" />
+  <OverrideRuleVisibilities>False</OverrideRuleVisibilities>
+  <CustomDictionaries SearchFxCopDir="True" SearchUserProfile="True" SearchProjectDir="True" />
+  <SearchGlobalAssemblyCache>False</SearchGlobalAssemblyCache>
+  <DeadlockDetectionTimeout>120</DeadlockDetectionTimeout>
+  <IgnoreGeneratedCode>False</IgnoreGeneratedCode>
+ </ProjectOptions>
+ <Targets>
+  <Target Name="$(ProjectDir)/../MakoPrintFiscal/bin/Debug/MakoPrintFiscal.dll" Analyze="True" AnalyzeAllChildren="True" />
+ </Targets>
+ <Rules>
+  <RuleFiles>
+   <RuleFile Name="$(FxCopDir)\Rules\DesignRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\GlobalizationRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\InteroperabilityRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\MobilityRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\NamingRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\PerformanceRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\PortabilityRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\SecurityRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\UsageRules.dll" Enabled="True" AllRulesEnabled="True" />
+  </RuleFiles>
+  <Groups />
+  <Settings />
+ </Rules>
+ <FxCopReport Version="1.36">
+  <Namespaces>
+   <Namespace Name="System.Text">
+    <Messages>
+     <Message TypeName="AvoidNamespacesWithFewTypes" Category="Microsoft.Design" CheckId="CA1020" Status="Excluded" Created="2008-07-25 12:04:43Z">
+      <Issue>
+       <Item>System.Text</Item>
+      </Issue>
+      <Notes>
+       <User Name="Pawel">
+        <Note Id="1" />
+       </User>
+      </Notes>
+     </Message>
+    </Messages>
+   </Namespace>
+  </Namespaces>
+  <Targets>
+   <Target Name="$(ProjectDir)/../MakoPrintFiscal/bin/Debug/MakoPrintFiscal.dll">
+    <Modules>
+     <Module Name="makoprintfiscal.dll">
+      <Messages>
+       <Message Id="Mako" TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704" Status="Excluded" Created="2008-07-25 12:04:43Z">
+        <Issue Name="Assembly">
+         <Item>Mako</Item>
+         <Item>'MakoPrintFiscal.dll'</Item>
+        </Issue>
+        <Notes>
+         <User Name="Pawel">
+          <Note Id="0" />
+         </User>
+        </Notes>
+       </Message>
+      </Messages>
+      <Namespaces>
+       <Namespace Name="Makolab.Printing.Fiscal">
+        <Types>
+         <Type Name="MakoPrintFiscal">
+          <Messages>
+           <Message Id="Mako" TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704" Status="Excluded" Created="2008-07-25 12:04:43Z">
+            <Issue Name="Type">
+             <Item>Mako</Item>
+             <Item>'MakoPrintFiscal'</Item>
+            </Issue>
+            <Notes>
+             <User Name="Pawel">
+              <Note Id="6" />
+             </User>
+            </Notes>
+           </Message>
+          </Messages>
+          <Members>
+           <Member Name="#Generate(System.String,System.IO.Stream)">
+            <Messages>
+             <Message Id="output" TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801" Status="Excluded" Created="2008-07-25 12:04:43Z" FixCategory="DependsOnFix">
+              <Issue>
+               <Item>'output'</Item>
+               <Item>'MakoPrintFiscal.Generate(string, Stream)'</Item>
+              </Issue>
+              <Notes>
+               <User Name="Pawel">
+                <Note Id="7" />
+               </User>
+              </Notes>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="PosnetSpecialChars">
+          <Messages>
+           <Message Id="Posnet" TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704" Status="Excluded" Created="2008-07-25 12:04:43Z">
+            <Issue Name="Type">
+             <Item>Posnet</Item>
+             <Item>'PosnetSpecialChars'</Item>
+            </Issue>
+            <Notes>
+             <User Name="Pawel">
+              <Note Id="6" />
+             </User>
+            </Notes>
+           </Message>
+          </Messages>
+         </Type>
+         <Type Name="PrinterModel">
+          <Members>
+           <Member Name="#PosnetThermal5V">
+            <Messages>
+             <Message Id="Posnet" TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704" Status="Excluded" Created="2008-07-25 12:04:43Z">
+              <Issue Name="Member">
+               <Item>Posnet</Item>
+               <Item>'PrinterModel.PosnetThermal5V'</Item>
+              </Issue>
+              <Notes>
+               <User Name="Pawel">
+                <Note Id="6" />
+               </User>
+              </Notes>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+        </Types>
+       </Namespace>
+       <Namespace Name="System.Text">
+        <Types>
+         <Type Name="MazoviaEncoding">
+          <Messages>
+           <Message Id="Mazovia" TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704" Status="Excluded" Created="2008-07-25 12:04:43Z">
+            <Issue Name="Type">
+             <Item>Mazovia</Item>
+             <Item>'MazoviaEncoding'</Item>
+            </Issue>
+            <Notes>
+             <User Name="Pawel">
+              <Note Id="2" />
+             </User>
+            </Notes>
+           </Message>
+          </Messages>
+          <Members>
+           <Member Name="#GetBytes(System.Char[],System.Int32,System.Int32,System.Byte[],System.Int32)">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Status="Excluded" Created="2008-07-25 12:04:43Z">
+              <Issue Name="Reserved">
+               <Item>'MazoviaEncoding.GetBytes(char[], int, int, byte[], int)'</Item>
+               <Item>'IndexOutOfRangeException'</Item>
+              </Issue>
+              <Issue Name="Reserved">
+               <Item>'MazoviaEncoding.GetBytes(char[], int, int, byte[], int)'</Item>
+               <Item>'IndexOutOfRangeException'</Item>
+              </Issue>
+              <Notes>
+               <User Name="Pawel">
+                <Note Id="3" />
+               </User>
+              </Notes>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#GetChars(System.Byte[],System.Int32,System.Int32,System.Char[],System.Int32)">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Status="Excluded" Created="2008-07-25 12:04:43Z">
+              <Issue Name="Reserved">
+               <Item>'MazoviaEncoding.GetChars(byte[], int, int, char[], int)'</Item>
+               <Item>'IndexOutOfRangeException'</Item>
+              </Issue>
+              <Issue Name="Reserved">
+               <Item>'MazoviaEncoding.GetChars(byte[], int, int, char[], int)'</Item>
+               <Item>'IndexOutOfRangeException'</Item>
+              </Issue>
+              <Notes>
+               <User Name="Pawel">
+                <Note Id="4" />
+               </User>
+              </Notes>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#GetString(System.Byte[],System.Int32,System.Int32)">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Status="Excluded" Created="2008-07-25 12:04:43Z">
+              <Issue Name="Reserved">
+               <Item>'MazoviaEncoding.GetString(byte[], int, int)'</Item>
+               <Item>'IndexOutOfRangeException'</Item>
+              </Issue>
+              <Notes>
+               <User Name="Pawel">
+                <Note Id="5" />
+               </User>
+              </Notes>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Mazovia">
+            <Messages>
+             <Message Id="Mazovia" TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704" Status="Excluded" Created="2008-07-25 12:04:43Z">
+              <Issue Name="Member">
+               <Item>Mazovia</Item>
+               <Item>'MazoviaEncoding.Mazovia'</Item>
+              </Issue>
+              <Notes>
+               <User Name="Pawel">
+                <Note Id="6" />
+               </User>
+              </Notes>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+        </Types>
+       </Namespace>
+      </Namespaces>
+     </Module>
+    </Modules>
+   </Target>
+  </Targets>
+  <Notes>
+   <User Name="Pawel">
+    <Note Id="0" Modified="2008-07-25 12:08:25Z">tak ma byc</Note>
+    <Note Id="1" Modified="2008-07-25 12:09:48Z">a to ciekawe bo System.Text ma duzo types, tyle ze w dll-kach MS</Note>
+    <Note Id="2" Modified="2008-07-25 12:09:58Z">jest dobrze</Note>
+    <Note Id="3" Modified="2008-07-25 12:13:16Z">no szkoda ze nie powiesz co trzeba rzucac zamiast tego</Note>
+    <Note Id="4" Modified="2008-07-25 12:14:47Z">no szkoda ze nie powiesz co trzeba rzucac zamiast tego</Note>
+    <Note Id="5" Modified="2008-07-25 12:16:01Z">no szkoda ze nie powiesz co trzeba rzucac zamiast tego</Note>
+    <Note Id="6" Modified="2008-07-25 12:16:49Z">tak ma byc</Note>
+    <Note Id="7" Modified="2008-07-25 12:18:51Z">konieczny ze wzgledu na spojnosc</Note>
+   </User>
+  </Notes>
+  <Rules>
+   <Rule TypeName="AvoidNamespacesWithFewTypes" Category="Microsoft.Design" CheckId="CA1020">
+    <Resolution Name="Default">Consider merging the types defined in '{0}' with another namespace.</Resolution>
+   </Rule>
+   <Rule TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201">
+    <Resolution Name="Reserved">{0} creates an exception of type {1}, an exception type that is reserved by the runtime and should never be raised by managed code. If this exception instance might be thrown, use a different exception type.</Resolution>
+   </Rule>
+   <Rule TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704">
+    <Resolution Name="Assembly">Correct the spelling of '{0}' in assembly name {1}.</Resolution>
+    <Resolution Name="Member">Correct the spelling of '{0}' in member name {1} or remove it entirely if it represents any sort of Hungarian notation.</Resolution>
+    <Resolution Name="Type">Correct the spelling of '{0}' in type name {1}.</Resolution>
+   </Rule>
+   <Rule TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801">
+    <Resolution Name="Default">Parameter {0} of {1} is never used. Remove the parameter or use it in the method body.</Resolution>
+   </Rule>
+  </Rules>
+ </FxCopReport>
+</FxCopProject>

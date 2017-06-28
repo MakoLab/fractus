@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DockPanel 	xmlns="com.makolab.components.layoutComponents.*" 
+			xmlns:mx="http://www.adobe.com/2006/mxml" 
+			width="100%" maxHeight="300" height="300"
+			xmlns:list="com.makolab.components.list.*" 
+			creationComplete="callCommand();grid.contextMenu.customItems=[];" 
+			headerColors="[0xe4ff00, 0x819400]" titleStyleName="bold"
+			title="{LanguageManager.getInstance().labels.dashboard.ProdTitle}">
+			
+			<mx:VBox width="100%" height="100%" id="box">
+			<list:CommonGrid id="grid" rowCount="{grid.dataProvider.length>10?10:grid.dataProvider.length}" width="100%" height="100%">		
+				<list:columns >
+					<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.lp}" minWidth="20" width="30" editable="false" itemRenderer="com.makolab.components.inputComponents.OrdinalNumberRenderer"/>
+					<mx:DataGridColumn dataField="@itemName" headerText="{LanguageManager.getInstance().labels.dashboard.itemName}" />
+					<mx:DataGridColumn dataField="@quantity" headerText="{LanguageManager.getInstance().labels.dashboard.quantity}" width="160"/>
+					<mx:DataGridColumn dataField="@dateValue" headerText="{LanguageManager.getInstance().labels.dashboard.productionDate}" width="150" itemRenderer="com.makolab.components.inputComponents.DateRenderer"/>
+				</list:columns>
+			</list:CommonGrid>
+			<mx:LinkButton label="{LanguageManager.getInstance().labels.dashboard.refresh}" click="callCommand();"/>
+			</mx:VBox>
+			
+			<mx:Script>
+				<![CDATA[
+					import com.makolab.fractus.model.LanguageManager;
+					import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+					import com.makolab.components.inputComponents.ObjectTypeFilter;
+					import com.makolab.fractus.view.documents.DocumentRenderer;
+					import mx.controls.dataGridClasses.DataGridColumn;
+					import com.makolab.components.inputComponents.DateRenderer;
+					import com.makolab.fractus.model.ModelLocator;
+					import com.makolab.fractus.commands.AbstractCommand;
+					import com.makolab.components.util.Tools;
+					import com.makolab.fractus.view.documents.reports.salesReports.SalesReport;
+					import mx.controls.Alert;
+					import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+					import mx.rpc.events.ResultEvent;
+					
+					private var cmd:ExecuteCustomProcedureCommand;
+					private var mod:ModelLocator=ModelLocator.getInstance();
+					
+					private var searchParams:XML = <searchParams> 
+														<dateFrom/>
+  														<dateTo/>
+  														<dateFrom1/>
+  														<dateTo1/>
+  														<report>rejestr</report>
+  														<filters/>
+												   </searchParams>;
+					
+					
+					private function callCommand():void
+					{
+						var today:Date = new Date();
+						searchParams.dateTo = Tools.dateToIso(today);
+						searchParams.filters= <filters><column field="branchId">{mod.branchId}</column></filters>;
+						searchParams.report="zlecenia";
+						searchParams.pageSize=200;
+						searchParams.page=1;
+						cmd = new ExecuteCustomProcedureCommand('reports.p_getDashboard',searchParams);
+
+
+						cmd.addEventListener(ResultEvent.RESULT,generateReportResult);
+						cmd.execute();
+					}		
+					
+					private function generateReportResult(event:ResultEvent):void
+					{
+						grid.dataProvider = XML(event.result).children()[0].children();
+					}
+					
+					protected function getPayement(id_:String):String
+					{
+						return ModelLocator.getInstance().dictionaryManager.dictionaries.paymentMethod.(id.toString() == id_).label;
+					}
+					protected function getBranch(id_:String):String
+					{
+						return ModelLocator.getInstance().dictionaryManager.dictionaries.branches.(id.toString() == id_).label;
+					}
+					private function hasCell(a:Array,val:String):Boolean
+					{
+						for(var i:int=0;i<a.length;i++)
+						{
+							if(a[i]==val) return true;
+						}
+						return false;
+					}
+				]]>
+			</mx:Script>
+</DockPanel>

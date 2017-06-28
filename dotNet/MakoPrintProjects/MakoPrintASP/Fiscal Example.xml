@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" ?>
+<!-- Bill -->
+<document type="bill">
+  <configuration printerModel="PosnetThermal5V" portName="COM4" mode="ONLINE" />
+  <number>1068/S/2008</number>
+  <cashier>11</cashier>
+  <grossValue>3324.48</grossValue>
+  <lines>
+    <line position='1'>
+      <name>KLAMRA DO LISTEW MULTI 25 SZT.</name>
+      <quantity>2</quantity>
+      <!-- NOT USED BY PRINTER <unitOfMeasure>szt.</unitOfMeasure>-->
+      <vatRateType>A</vatRateType>
+      <grossPrice>15.24</grossPrice>
+      <grossValue>30.48</grossValue>
+    </line>
+    <line position='2'>
+      <name>Drzwi L mahoń 80 prawe</name>
+      <quantity>3</quantity>
+      <!-- NOT USED BY PRINTER <unitOfMeasure>szt.</unitOfMeasure>-->
+      <vatRateType>A</vatRateType>
+      <grossPrice>1098</grossPrice>
+      <grossValue>3294</grossValue>
+    </line>
+  </lines>
+</document>
+
+<!-- Daily report -->
+<document type="dailyReport">
+  <configuration printerModel="PosnetThermal5V" portName="COM2"/>
+  <date>08-09-29</date>
+</document>
+
+<!-- Put on display -->
+<document type="display">
+  <configuration printerModel="PosnetThermal5V" portName="COM2"/>
+  <displayContent>
+    <line position='1'>Pierwsza linja wyswietlacza</line>
+    <line position='2'>Druga linja wyswietlacza</line>
+  </displayContent>
+</document>

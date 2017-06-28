@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReportBase doubleClickEnabled="true" doubleClick="showPayments()" xmlns="com.makolab.fractus.view.documents.reports.*" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:layoutComponents="com.makolab.components.layoutComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.view.payments.PaymentList;
+			import com.makolab.fractus.view.finance.PaymentSettlementEditor;
+			import com.makolab.components.util.Tools;
+			import mx.formatters.CurrencyFormatter;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			[Bindable] 
+			public var languageManager:LanguageManager = LanguageManager.getInstance();
+			
+			
+			private function showPayments():void
+			{
+				PaymentList.showWindow(grid.selectedItem.@id[0]);
+			}
+		]]>
+	</mx:Script>
+	<table>
+		<mx:AdvancedDataGrid id="grid" width="100%" height="100%" selectionColor="0x8888FF"   doubleClickEnabled="true">
+			<mx:columns>
+				<mx:AdvancedDataGridColumn id="lp" headerText="{LanguageManager.getLabel('common.lp')}" minWidth="50" width="50" editable="false" itemRenderer="com.makolab.components.inputComponents.OrdinalNumberRenderer"/>
+				<mx:AdvancedDataGridColumn id="document" headerText="Dokument"     sortCompareFunction="{ReportBase.stringCompareFunction('@document')}"/>
+				<mx:AdvancedDataGridColumn  id="title"  headerText="Tytułem" dataField="@opis" width="100"   textAlign="right"/>
+				<mx:AdvancedDataGridColumn id="kontrahent" headerText="Kontrahent"    dataField="@contractor"  textAlign="right" width="200"/>
+ 
+				<mx:AdvancedDataGridColumn id="waluta"   headerText="Waluta" dataField="@currency" textAlign="right" width="70"/>
+				<mx:AdvancedDataGridColumn id="income" sortCompareFunction="{Tools.getSortFunction('@income')}" headerText="Wpłata" dataField="@income" labelFunction="quantityLabelFunction" textAlign="right" width="100"/>
+				<mx:AdvancedDataGridColumn id="outcome" sortCompareFunction="{Tools.getSortFunction('@outcome')}" headerText="Wypłata" dataField="@outcome" labelFunction="quantityLabelFunction" textAlign="right" width="100"/>
+				</mx:columns>
+		</mx:AdvancedDataGrid>
+	</table>
+	<summary>
+		<layoutComponents:AdvancedDataGridSummary2 source="{grid}">
+			<layoutComponents:summaryColumns>
+	 				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{income}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{outcome}"/>
+			</layoutComponents:summaryColumns>
+		</layoutComponents:AdvancedDataGridSummary2>
+	</summary>
+</ReportBase>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:generic="com.makolab.fractus.view.generic.*"
+		label="{LanguageManager.getInstance().labels.documents.issuePlace}"
+	>
+	<generic:FractusDictionarySelector id="selector" dictionaryName="issuePlaces" comboLabelField="name" labelField="name" selectedId="{documentObject.xml.issuePlaceId}"/>
+	<mx:Binding source="selector.selectedId" destination="documentObject.xml.issuePlaceId"/>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.document.DocumentObject;
+			private var _documentObject:DocumentObject;
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void { _documentObject = value; }
+			public function get documentObject():DocumentObject { return _documentObject; }
+		]]>
+	</mx:Script>
+</mx:FormItem>

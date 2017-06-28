@@ -1,0 +1,406 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	paddingLeft="15"
+	paddingRight="15"
+	paddingBottom="15"
+	width="100%"
+	left="20"
+	right="20"
+	top="20"
+	bottom="20"
+	verticalGap="0">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.ComponentExportManager;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import com.makolab.fractus.commands.SearchCommand;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.GetRandomCommercialDocumentLinesCommand;
+			import com.makolab.fractus.commands.GetRandomKeywordsCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			protected var window:ComponentWindow;
+			public static function showWindow():void
+			{
+				var wnd:SearchPerformanceTestWindow = new SearchPerformanceTestWindow();
+				var title:String = LanguageManager.getInstance().labels.title.diagnostics.searchTest;
+				wnd.window = ComponentWindow.showWindow(wnd,0,null,title);
+				wnd.window.closeFunction = wnd.closeFunction;
+			}
+			
+			/**
+			 * Table containing result of each test.
+			 */
+			private var elementalTestResults:Array;
+			
+			/**
+			 * Number of keywords to download and use in tests.
+			 */
+			private var numberOfKeywords:int;
+			
+			/**
+			 * Minimal number of keywords to use in each test.
+			 */
+			private var minKeywords:int;
+			
+			/**
+			 * Maximal number of keywords to use in each test.
+			 */
+			private var maxKeywords:int;
+			
+			/**
+			 * Total number of searches to execute.
+			 */
+			private var numberOfSearches:int;
+			
+			/**
+			 * Delay between each test measured in miliseconds.
+			 */
+			private var delayBetweenTests:int;
+			
+			
+			/**
+			 * Number of tests passed so far during whole test.
+			 */
+			private var testsPassed:int;
+			
+			/**
+			 * Timestamp when each test has started. The value is reseted before every document commit.
+			 */
+			private var testStartTime:Date;
+			
+			/**
+			 * Timestamp when each test has stopped. The value is reseted after every document committing.
+			 */
+			private var testStopTime:Date;
+			
+			/**
+			 * Summarized time of all individuals test timings. The formula is: totalTestTime = sum(testStopTime-testStartTime).
+			 */
+			private var totalTestTime:Date;
+			
+			/**
+			 * Shortest document committing time.
+			 */
+			private var shortestTestTime:int;
+			
+			/**
+			 * Longest document committing time.
+			 */
+			private var longestTestTime:int;
+			
+			/**
+			 * Flag that indicates that currently running test should stop.
+			 */
+			private var forceToStop:Boolean;
+			
+			/**
+			 * Type of business objects to test search.
+			 */
+			private var boType:String;
+			
+			/**
+			 * List of random keywords downloaded from the server.
+			 */
+			private var keywords:XMLList;
+			
+			/**
+			 * The search query that is randomized every search and stored in this value across event handlers.
+			 */
+			private var searchQuery:String;
+			
+			/**
+			 * Reads all values from panel that the client entered and sets other values in this object instance
+			 * to its default values.
+			 */
+			private function readValuesFromPanel():void
+			{
+				this.numberOfKeywords = int(this.txtInputNumberOfKeywords.text);
+				this.minKeywords = int(this.txtInputMinKeywords.text);
+				this.maxKeywords = int(this.txtInputMaxKeywords.text);
+				this.numberOfSearches = int(this.txtInputNumberOfSearches.text);
+				this.delayBetweenTests = int(this.txtInputDelayBetweenTests.text);
+				
+				this.testsPassed = 0;
+				this.forceToStop = false;
+				this.totalTestTime = new Date();
+				this.totalTestTime.setTime(0);
+				this.shortestTestTime = 0;
+				this.longestTestTime = 0;
+				
+				if(this.rbtnContractor.selected)
+					this.boType = "Contractor";
+				else if(this.rbtnItem.selected)
+					this.boType = "Item";
+			}
+			
+			/**
+			 * Function invoked before the window closes.
+			 * 
+			 * @return Returns always <code>true</code>.
+			 */
+			public function closeFunction():Boolean
+			{
+				this.forceToStop = true;
+				return true;
+			}
+			
+			/**
+			 * Event handler for btnStart click event.
+			 * 
+			 * @param event Event info object.
+			 */
+			private function handleBtnStartClick(event:Event):void
+			{
+				this.btnStart.enabled = false;
+				this.btnExportToXls.enabled = false;
+				this.readValuesFromPanel();
+				
+				var cmd:GetRandomKeywordsCommand = new GetRandomKeywordsCommand(this.boType, this.numberOfKeywords);
+				cmd.addEventListener(ResultEvent.RESULT, handleGetRandomKeywordsResult);
+				cmd.execute();
+			}
+			
+			/**
+			 * Event handler for GetRandomKeywordsCommand.
+			 * 
+			 * @param result ResultEvent containing collection of keywords.
+			 */
+			private function handleGetRandomKeywordsResult(result:ResultEvent):void
+			{
+				this.keywords = XML(result.result).keyword;
+				this.showMessage(LanguageManager.getInstance().labels.diagnostics.performanceTest.keywordsLoaded);
+				
+				this.btnStop.enabled = true;
+				this.elementalTestResults = new Array(this.numberOfSearches);
+				this.executeSearch();
+			}
+			
+			/**
+			 * Executes one random search.
+			 */
+			private function executeSearch():void
+			{
+				//roll how many words to put into the string
+				var words:int = this.getRandomInt(this.minKeywords, this.maxKeywords);
+				this.searchQuery = "";
+				
+				for(var i:int=0; i<words; i++)
+				{
+					this.searchQuery += String(this.keywords[this.getRandomInt(0, this.numberOfKeywords - 1)].@value);
+					
+					if (i < (words-1))
+						this.searchQuery += " ";					
+				}
+				
+				var template:XML = <searchParams>
+									  <query>{this.searchQuery}</query>
+									  <sortColumn>name</sortColumn>
+									  <sortDescending/>
+									  <page>1</page>
+									  <pageSize>500</pageSize>
+									</searchParams>;
+			
+				var cmd:SearchCommand;
+				
+				if(this.boType == "Item")
+				{
+					cmd = new SearchCommand(SearchCommand.ITEMS);
+					template.appendChild(<columns>
+											<column field="code" sortOrder="1" sortType="ASC" labelKey="common.code" label="Kod"/>
+									    	<column field="name" sortOrder="1" sortType="ASC" labelKey="common.shortName" label="Nazwa"/>
+									    </columns>);
+				}
+				else if(this.boType == "Contractor")
+				{
+					cmd = new SearchCommand(SearchCommand.CONTRACTORS);
+					template.appendChild(<columns>
+										    <column field="shortName" labelKey="common.shortName" label="Nazwa"/>
+										    <column field="code" sortOrder="1" sortType="DESC" labelKey="common.code" label="Kod"/>
+										    <column field="nip" label="NIP"/>
+										    <column field="city" label="Miasto"/>
+									    </columns>);
+				}
+				
+				cmd.searchParams = template;
+				cmd.addEventListener(ResultEvent.RESULT, handleSearchResult);
+				cmd.addEventListener(FaultEvent.FAULT, handleSearchFault);
+				this.testStartTime = new Date();
+				cmd.execute(template);	
+			}
+			
+			/**
+			 * Event handler for search faults.
+			 * 
+			 * @param fault FaultEvent object.
+			 */
+			private function handleSearchFault(fault:FaultEvent):void
+			{
+				this.btnStart.enabled = true;
+				this.btnExportToXls.enabled = true;
+				this.btnStop.enabled = false;
+			}
+			
+			/**
+			 * Event handler for search result.
+			 * 
+			 * @param result ResultEvent containing list of searched elements.
+			 */
+			private function handleSearchResult(result:ResultEvent):void
+			{
+				this.testStopTime = new Date();
+				var testTotalMilliseconds:int = int(this.testStopTime.getTime() - this.testStartTime.getTime());
+				
+				this.updateShortestAndLongestTime(testTotalMilliseconds);
+				
+				//add to total
+				this.totalTestTime.setTime(this.totalTestTime.getTime() + testTotalMilliseconds);
+				
+				this.elementalTestResults[this.testsPassed] = testTotalMilliseconds;
+				
+				this.testsPassed++;
+				
+				if(this.testsPassed % 20 == 0)
+					this.txtAreaLog.text = "";
+				
+				this.showMessage(String(LanguageManager.getInstance().labels.diagnostics.performanceTest.searchesPerformed) + ": " 
+				+ this.testsPassed.toString() + " (" + this.formatMillisecondsToTimeSpan(testTotalMilliseconds) 
+				+ ")   (" + this.searchQuery + ") " + "Results: " + XML(result.result).@rowCount);
+				
+				if(this.testsPassed < this.numberOfSearches && !this.forceToStop)
+					setTimeout(this.executeSearch, this.delayBetweenTests);
+				else //show statistics
+				{
+					this.btnStart.enabled = true;
+					this.btnExportToXls.enabled = true;
+					this.btnStop.enabled = false;
+					
+					this.showMessage("-----------------------------------");
+					this.showMessage(String(LanguageManager.getInstance().labels.diagnostics.performanceTest.timeElapsed) + ": " + this.formatMillisecondsToTimeSpan(this.totalTestTime.getTime()));
+					
+					this.showMessage(String(LanguageManager.getInstance().labels.diagnostics.performanceTest.shortestTime) + ": " + this.formatMillisecondsToTimeSpan(this.shortestTestTime));
+					this.showMessage(String(LanguageManager.getInstance().labels.diagnostics.performanceTest.longestTime) + ": " + this.formatMillisecondsToTimeSpan(this.longestTestTime));
+					this.showMessage(String(LanguageManager.getInstance().labels.diagnostics.performanceTest.averageTime) + ": " + this.formatMillisecondsToTimeSpan(this.totalTestTime.getTime() / this.testsPassed));
+					
+					this.showMessage(String(LanguageManager.getInstance().labels.diagnostics.performanceTest.searchesPerMinute) + ": " + Number(this.testsPassed*60*1000/this.totalTestTime.getTime()).toFixed(2));
+					this.showMessage(String(LanguageManager.getInstance().labels.diagnostics.performanceTest.searchesPerSecond) + ": " + Number(this.testsPassed*1000/this.totalTestTime.getTime()).toFixed(2));
+					this.showMessage("-----------------------------------");
+				}
+			}
+			
+			/**
+			 * Prints results of previously passed test to excel format using print service.
+			 */
+			private function printResultsToExcel():void
+			{
+				if(this.elementalTestResults)
+				{
+					var xml:XML = <list><columns><column label={LanguageManager.getInstance().labels.common.result} field="@time" /></columns><elements/></list>;
+					
+					var i:int = 0;
+					
+					while(i<this.testsPassed && this.elementalTestResults[i])
+					{
+						XML(xml.elements).appendChild(<result time={this.formatMillisecondsToTimeSpan(this.elementalTestResults[i])} />);
+						i++;
+						ComponentExportManager.getInstance().exportData(xml, 'defaultTableXls', 'Export');
+					}
+				}
+			}
+			
+			/**
+			 * Updates the shortes and the longest time if the specified value is the shortest or the longest value.
+			 * 
+			 * @param value A value that has to be checked whether it's the shortest or the longest.
+			 */
+			private function updateShortestAndLongestTime(value:int):void
+			{
+				if (value < this.shortestTestTime || this.shortestTestTime == 0)
+					this.shortestTestTime = value;
+					
+				if (value > this.longestTestTime)
+					this.longestTestTime = value;
+			}
+			
+			/**
+			 * Event handler for btnStop click event.
+			 * 
+			 * @param event Event info object.
+			 */
+			private function handleBtnStopClick(event:Event):void
+			{
+				this.btnStop.enabled = false;
+				this.forceToStop = true;
+			}
+			
+			/**
+			 * Gets random integer from the specified span.
+			 * 
+			 * @param min Minimal value.
+			 * @param max Maximal value.
+			 * 
+			 * @return Random integer greater or equal to min and less or equal to max.
+			 */
+			private function getRandomInt(min:int, max:int):int
+			{
+				var n:Number = Math.random();
+				
+				return int(Math.round(min + n*(max-min)));
+			}
+			
+			/**
+			 * Shows a message to the log text area.
+			 * 
+			 * @param message A message to show.
+			 */
+			private function showMessage(message:String):void
+			{
+				this.txtAreaLog.text += (message + "\n");
+			}
+			
+			/**
+			 * Formats miliseconds as an int data type to string in the following format 00h 00m 00s 00ms.
+			 * 
+			 * @param value A value to be converted to string representation.
+			 * 
+			 * @return Converted int value.
+			 */
+			private function formatMillisecondsToTimeSpan(value:int):String
+			{
+				var timeSpan:Date = new Date();
+				timeSpan.setTime(Number(value));
+				
+				return timeSpan.hoursUTC + "h " + timeSpan.minutesUTC + "m " + timeSpan.secondsUTC + "s " + timeSpan.millisecondsUTC + "ms"; 
+			}
+		]]>
+	</mx:Script>
+	<mx:Form paddingBottom="15">
+		<mx:FormItem direction="horizontal" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.numberOfKeywords}">
+			<mx:TextInput id="txtInputNumberOfKeywords" text="2000" />	
+		</mx:FormItem>
+		<mx:FormItem direction="horizontal" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.minimalNumberOfKeywords}">
+			<mx:TextInput id="txtInputMinKeywords" text="1" />	
+		</mx:FormItem>
+		<mx:FormItem direction="horizontal" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.maximalNumberOfKeywords}">
+			<mx:TextInput id="txtInputMaxKeywords" text="3" />	
+		</mx:FormItem>
+		<mx:FormItem direction="horizontal" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.searchObjectType}">
+			<mx:RadioButton id="rbtnContractor" label="{LanguageManager.getInstance().labels.contractors.contractors}" groupName="searchObjectTypeGroup" selected="true" />
+			<mx:RadioButton id="rbtnItem" label="{LanguageManager.getInstance().labels.items.itemsAndServices}" groupName="searchObjectTypeGroup" selected="false" />
+		</mx:FormItem>
+		<mx:FormItem direction="horizontal" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.delayBetweenTests}">
+			<mx:TextInput id="txtInputDelayBetweenTests" text="0" />	
+		</mx:FormItem>
+		<mx:FormItem direction="horizontal" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.numberOfSearches}">
+			<mx:TextInput id="txtInputNumberOfSearches" text="100" />	
+		</mx:FormItem>
+	</mx:Form>
+	<mx:HBox paddingBottom="15">
+		<mx:Button id="btnStart" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.start}" click="handleBtnStartClick(event)"/>
+		<mx:Button id="btnStop" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.stop}" click="handleBtnStopClick(event)" enabled="false"/>
+		<mx:Button id="btnExportToXls" label="{LanguageManager.getInstance().labels.common.export}" click="printResultsToExcel()" enabled="false"/>
+	</mx:HBox>
+	<mx:TextArea id="txtAreaLog" editable="false" width="100%" height="100%" valueCommit="txtAreaLog.verticalScrollPosition = txtAreaLog.maxVerticalScrollPosition"/>
+</mx:VBox>

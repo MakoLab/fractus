@@ -1,0 +1,16 @@
+<list>
+	<config>
+		<columns>
+			<column name="pierwsza"/>
+			<column name="druga"/>
+			<column name="trzecia"/>
+			<column name="czwarta"/>
+		</columns>
+	</config>
+	<content>
+		<contractor id="67068DA1-0645-42DC-B3AD-31C3752B804D" shortName="MAREK KOTECKI" code="595589" nip="8991390637"/>
+		<contractor id="6BDA2D9F-D429-4BB7-9400-54F6DE199275" shortName="APTEKA ELŻBIETA KOTERBICKA-STRYCHARZ" code="009805" nip="7540133903"/>
+		<contractor id="BF5F3562-6A96-4C2C-8117-9EE6BCB5F8B1" shortName="P.P.H.U. CAR-CLEAN II JAROSŁAW KOTELA" nip="6442361229"/>
+		<contractor id="BCE7B94E-BDF7-453F-A8C0-D15A5C65E083" shortName="BUDOTECH JACEK KOTELUK" code="598039" nip="7561309632"/>
+	</content>
+</list>

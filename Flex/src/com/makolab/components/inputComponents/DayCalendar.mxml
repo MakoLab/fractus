@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" verticalAlign="middle" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.formatters.DateFormatter;
+			private var dateFormatter:DateFormatter = new DateFormatter();
+			[Bindable]
+			private var date:Date = new Date();
+			
+			private function formatDate(date:Date):String
+			{
+				var result:String = "";
+				dateFormatter.formatString = "DD.MM.YY";
+				if (date) result = dateFormatter.format(date);
+				return result;
+			}
+		]]>
+	</mx:Script>
+	<mx:LinkButton label="&lt;&lt;" color="0x0000bb" fontWeight="bold"/>
+	<inputComponents:DateEditor id="dateEditor" selectedDate="{date}"/>
+	<!--mx:Label text="{formatDate(date)}" fontWeight="bold" fontSize="14" color="0x00bb00"/-->
+	<mx:Label text="poniedzialek"/>
+	<mx:LinkButton label="&gt;&gt;" color="0x0000bb" fontWeight="bold"/>
+</mx:HBox>

@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox horizontalGap="0" width="100%" height="100%" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:permission="com.makolab.components.permission.*">
+	
+	<mx:Metadata>
+        [Event(name="change", type="flash.events.Event")]
+    </mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			import mx.controls.Alert;
+			import mx.controls.CheckBox;
+			import mx.controls.List;
+			import mx.controls.Menu;
+			import mx.events.ListEvent;
+			[Bindable] private var dictionary:DictionaryManager = DictionaryManager.getInstance();
+			public var attributeTypeDictionary:String = null;
+            [Bindable]
+			private var _dataObject:Object = null;
+
+		
+			
+			[Bindable] private var _data:XML = <root></root>;
+			[Bindable] private var _data1:XML = <root></root>;
+			private var _attX1:Object;
+			private var _attX2:Object;
+			private var _lab1:String;
+			private var _lab2:String;
+			
+			private var arr:Array;
+			private var myId:String
+			public var attributeName:String;
+			public var attributeIdField:String;
+			public function set attributes(value:Object):void
+			{
+				trace("aname",value);
+			}
+			
+			public function set attribute1(value:String):void
+			{
+				
+				_lab1 = dictionary.getByName(value, this.attributeTypeDictionary).label.(@lang==LanguageManager.getInstance().currentLanguage)[0].toString();
+				_attX1= dictionary.attributeValues[value];
+			}
+			public function set attribute2(value:String):void
+			{
+				_lab2 = dictionary.getByName(value, this.attributeTypeDictionary).label.(@lang==LanguageManager.getInstance().currentLanguage)[0].toString();
+				_attX2= dictionary.attributeValues[value];
+				createData();
+			}
+		
+			private function createData():void
+			{
+				var i:int;
+				var j:int;
+				_data=<root></root>;
+				var l1:XML=<node label={_lab1} i="0" j="-1"></node>;
+				for(i=0;i<_attX1.length;i++)
+				{
+					l1.appendChild(<node i="0" j={i} label={_attX1[i]} selected="0"></node>);
+				}
+				_data.appendChild(l1);
+				var l2:XML=<node label={_lab2} i="1" j="-1"></node>;
+				for(i=0;i<_attX2.length;i++)
+				{
+					l2.appendChild(<node i="1" j={i} label={_attX2[i]} selected="0"></node>);
+				}
+				_data.appendChild(l2);
+				
+				arr=new Array();
+				for(i=0;i<_attX1.length;i++)
+				{  arr.push(new Array())
+					for(j=0;j<_attX2.length;j++)
+						{
+					arr[i].push(new Array());
+					arr[i][j]=0;
+					}
+				}
+			}
+			public function set dataObject(value:Object):void
+			{
+				_dataObject = value.copy();
+				
+				myId=dictionary.dictionaries.itemAttributes.(name == attributeName).id;
+				
+				var myVal:String=_dataObject.attribute.(itemFieldId==myId).value;
+				trace("sss");
+				
+				var a:Array=myVal.split(";");
+				var I,J;
+				var i:int
+				for(var k:int=0;k<a.length;k++)
+				{
+					J=I=-1;
+					var b:Array=a[k].split(',');
+					for(i=0;i<_attX1.length;i++)
+					{
+						if(b[0]==_attX1[i])
+						{
+							I=i;
+							break;
+						}
+					}
+					for(i=0;i<_attX2.length;i++)
+					{
+						if(b[1]==_attX2[i])
+						{
+							J=i;
+						}
+					}
+					
+					if(I!=-1&&J!=-1)
+					{
+						arr[I][J]=1;
+					}
+					
+				}
+				//ti.text = value.root.value.*;
+			}
+			
+			public function get dataObject():Object
+			{
+				return _dataObject;
+			}
+			
+			override public function set data(value:Object):void
+			{
+			
+				if(value)
+				{
+					super.data = value;
+					dataObject = value;
+				}
+			}
+			
+			private function updateRight():void
+			{
+				
+			}
+			private function addAction(param:String):void
+			{
+				
+			}
+			
+			protected function onKlikList(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				trace("klik");
+				var I:int=event.currentTarget.selectedItem.@i;
+				var J:int=event.currentTarget.selectedItem.@j;	
+				var i:int=0;
+				var j:int=0;
+				var _d:XML;
+				switch(I)
+				{
+					case 0:
+						
+						_d=<root></root>;
+						if(J!=-1)
+						{
+						for(var i:int=0;i<_attX2.length;i++)
+						{
+							_d.appendChild(<node i={J} j={i} label1={_attX1[J]} label2={_attX2[i]} selected={arr[J][i]}></node>);
+						}
+						}
+						else
+						{
+							for(var j:int=0;j<_attX1.length;j++)
+							for(var i:int=0;i<_attX2.length;i++)
+							{
+								_d.appendChild(<node i={j} j={i} label1={_attX1[j]} label2={_attX2[i]} selected={arr[j][i]}></node>);
+							}
+						}
+						_data1=_d;
+					break;
+					case 1:
+						_d=<root></root>;
+						if(J!=-1)
+						{
+							for(var i:int=0;i<_attX1.length;i++)
+							{
+								_d.appendChild(<node i={i} j={J} label1={_attX1[i]} label2={_attX2[J]} selected={arr[i][J]}></node>);
+							}
+						}
+						else
+						{
+							for(var j:int=0;j<_attX1.length;j++)
+								for(var i:int=0;i<_attX2.length;i++)
+								{
+									_d.appendChild(<node i={j} j={i} label1={_attX1[j]} label2={_attX2[i]} selected={arr[j][i]}></node>);
+								}
+						}
+						_data1=_d;
+						break;
+				}
+					
+				
+			}
+			public function changeCB(event:Event):void
+			{
+				var i:int=dr.selectedItem.@i
+				var j:int=dr.selectedItem.@j;
+				arr[i][j]=event.currentTarget.selected?1:0;
+				
+				refreshDo();
+				dispatchEvent(new Event("change"));
+			}
+			private function refreshDo():void
+			{
+				var i:int,j:int;
+				var a:Array=[];
+				for(i=0;i<_attX1.length;i++)
+				{  
+					for(j=0;j<_attX2.length;j++)
+					{
+						if(arr[i][j]==1)
+						{
+							a.push(_attX1[i]+","+_attX2[j]);
+						}
+					}
+				}
+				if(a.length)
+				{
+					if(_dataObject.attribute.(itemFieldId==myId).length())
+					_dataObject.attribute.(itemFieldId==myId).value=a.join(";");
+					else
+					{
+						_dataObject.appendChild(<attribute><itemFieldId>{myId}
+							</itemFieldId>
+							<value>{a.join(";")}</value>
+						  </attribute>);
+					}
+				}
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%">
+		<mx:HDividedBox width="100%" height="100%">
+			<mx:Canvas label="Canvas 1" width="100%" height="100%" backgroundColor="#FF0000">
+				<mx:Tree 
+					horizontalScrollPolicy="off" 
+					id="dataGrid"
+					 dataProvider="{_data.node}" 
+					 labelField="@label"
+					width="100%" 
+					height="100%"
+					click="onKlikList(event)"
+					/>
+			</mx:Canvas>
+			<mx:Canvas label="Canvas 2" width="100%" height="100%" backgroundColor="#0000FF">
+				<mx:VBox  width="100%" height="100%">
+					
+				<mx:DataGrid id ="dr" dataProvider="{_data1.node}" width="100%" height="100%" sortableColumns="false">
+					<mx:columns>
+						<mx:DataGridColumn headerText="{_lab1}" minWidth="30"  editable="false" dataField="@label1" />
+						<mx:DataGridColumn headerText="{_lab2}" minWidth="30"  editable="false" dataField="@label2"/>
+						<mx:DataGridColumn textAlign="center" headerText="{LanguageManager.getInstance().labels.catalogue.select}" minWidth="30" width="45" editable="false" 
+										 dataField="@selected" >
+						<mx:itemRenderer>
+							<mx:Component>
+								<mx:Box horizontalAlign="center" verticalAlign="middle" height="100%" width="100%">
+									<mx:Script>
+										<![CDATA[
+											override public function set data(value:Object):void
+											{
+												if(value != null)
+												{
+													super.data = value;
+													var temp:Object = value as Object;
+													chb.selected = temp.@selected==1?true:false;
+												}
+											}
+										]]>
+									</mx:Script>
+									<mx:CheckBox id="chb" change="outerDocument.changeCB(event)"/>
+								</mx:Box>
+							</mx:Component>                     
+						</mx:itemRenderer>
+						</mx:DataGridColumn>
+					</mx:columns>
+				</mx:DataGrid>
+				<!--<permission:ButtonComponent label="{LanguageManager.getInstance().labels.common.add}" width="100%" click="addAction(DictionaryEditor.ADD)" permissionKey="administration.dictionaries.add"/>
+				<permission:ButtonComponent label="{LanguageManager.getInstance().labels.common.change}" enabled="{dataGrid.selectedItem != null}" width="100%" click="addAction(DictionaryEditor.EDIT)" permissionKey="administration.dictionaries.edit"/>
+				--></mx:VBox>
+			</mx:Canvas>
+		</mx:HDividedBox>
+
+	
+	</mx:VBox>
+	
+</mx:HBox>

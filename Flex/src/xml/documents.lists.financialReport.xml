@@ -1,0 +1,53 @@
+<config title="">
+				<headerColor>FINANCIAL_COLOR</headerColor>
+				<headerColorLight>FINANCIAL_COLOR_LIGHT</headerColorLight>
+				<objectType>FinancialReport</objectType>
+				<exportProfile>defaultFinancialReportXml</exportProfile>
+				<columns>
+					<column field="@financialRegisterId" labelKey="finance.registerShort" dataType="dictionary" width="70"/>
+					<column field="@fullNumber" labelKey="finance.report"/>
+					<column field="@creationDate" labelKey="finance.reportCreationDate" dataType="dateTime" width="130"/>
+					<column field="@closureDate" labelKey="finance.reportClosureDate" dataType="dateTime" width="130"/>
+					<column field="@initialBalance" labelKey="finance.reportInitialBalanceShort" dataType="currency" width="110" dependencyField="all"/>
+					<column field="@incomeAmount" labelKey="finance.reportIncome" dataType="currency" width="110" dependencyField="all"/>
+					<column field="@outcomeAmount" labelKey="finance.reportOutcome" dataType="currency" width="110" dependencyField="all"/>
+				</columns>
+				<getItemDataParams>
+					<type>FinancialReport</type>
+					<id/>
+				</getItemDataParams>
+				<filterField>@fullNumber</filterField>
+				<searchParams type="FinancialReport">
+					<pageSize>200</pageSize>
+					<page>1</page>
+					<columns>
+						<column field="financialRegisterId"/>
+						<column field="fullNumber" column="fullNumber"/>
+						<column field="creationDate" sortOrder="1" sortType="DESC"/>
+						<column field="closureDate"/>
+						<column field="initialBalance"/>
+						<column field="incomeAmount"/>
+						<column field="outcomeAmount"/>
+						<column field="documentCurrencyId"/>
+					</columns>
+				</searchParams>
+				<filters>
+				  	<filter label="" type="dateFilter"/>
+				  	<filter label="Numer raportu" type="docNumberFilter" disableFilterType="dateFilter"/>
+				  	<filter label="Rejestr" type="docRegisterFilter"/>
+				  	<!--filter label="Firma" type="docCompanyFilter"/-->
+				  	<!--filter label="Ustawienia numerowania" type="docNumSettingsFilter"/-->
+				</filters>
+				<filtersTemplates label="Na podstawie szablonu">
+					<template label="Status zaksięgowany lub zapisany">
+						<filter type="dateFilter">
+							<dateFormat value="DD-MM-YYYY"/>
+							<dateFrom value="30-12-2007"/>
+							<dateTo value="30-12-2010"/>
+						</filter>
+						<filter type="docNumberFilter" value=""/>
+						<filter type="docNumSettingsFilter" value="0A2155CE-7598-44C2-804B-333BC6332388"/>
+						<filter type="docRegisterFilter" value="BANK_O1"/>
+					</template>
+				</filtersTemplates>
+			</config>

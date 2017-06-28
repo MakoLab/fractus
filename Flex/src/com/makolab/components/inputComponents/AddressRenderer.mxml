@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" verticalGap="-3">
+<mx:Script>
+	<![CDATA[
+		import mx.controls.Alert;
+		import flash.net.navigateToURL;
+		import com.makolab.fractus.model.LanguageManager;
+		
+		/**
+		 * Part of the query string for google maps.
+		 */
+		private var query:String;
+	
+		override public function set data(value:Object):void
+		{
+			super.data = value;
+			
+			if(value && value.length() != 0)
+			{
+				var o:Object = value;
+				this.query = o.city + "," + o.address;
+				this.query = encodeURIComponent(this.query);
+				
+				if(o.city != '' || o.postOffice != '' || o.address != '') {
+					this.lblFirstLine.text = (String(o.city) != String(o.postOffice) ? (o.city + ", ") : "") + o.address;
+					lblFirstLine.visible = true;
+					lblFirstLine.includeInLayout = true;
+				} else {
+					lblFirstLine.visible = false;
+					lblFirstLine.includeInLayout = false;
+				}
+				
+				if(o.postCode != '' || o.postOffice != '') {
+					this.lblSecondLine.text = o.postCode + " " + o.postOffice;
+					lblSecondLine.visible = true;
+					lblSecondLine.includeInLayout = true;
+				} else {
+					lblSecondLine.visible = false;
+					lblSecondLine.includeInLayout = false;
+				}
+				
+				if(String(o.city) == "" || String(o.address) == "") {
+					this.lnkBtnFindInMap.visible = false;
+					this.lnkBtnFindInMap.includeInLayout = false;
+				} else {
+					this.lnkBtnFindInMap.visible = true;
+					this.lnkBtnFindInMap.includeInLayout = true;
+				}
+			}
+			else //clear the control
+			{
+				this.lblFirstLine.text = "";
+				lblFirstLine.visible = false;
+				lblFirstLine.includeInLayout = false;
+				this.lblSecondLine.text = "";
+				lblSecondLine.visible = false;
+				lblSecondLine.includeInLayout = false;
+				this.lnkBtnFindInMap.visible = false;
+				this.lnkBtnFindInMap.includeInLayout = false;
+				this.query = "";
+			}
+		}
+		
+		/**
+		 * Event handler for <code>lnkBtnFindInMap</codE> click.
+		 * 
+		 * @param event Event.
+		 */
+		private function linkButtonClickHandler(event:Event):void
+		{
+			var request:URLRequest = new URLRequest("http://maps.google.com/maps?q=" + this.query);
+			navigateToURL(request);
+			event.stopPropagation();
+		}
+	]]>
+</mx:Script>
+	<mx:Text id="lblFirstLine" fontWeight="normal"/>
+	<mx:Text id="lblSecondLine" fontWeight="normal"/>
+	<mx:LinkButton paddingLeft="0" paddingRight="0" id="lnkBtnFindInMap" styleName="link" visible="false" label="{LanguageManager.getInstance().labels.common.findOnTheMap}" click="linkButtonClickHandler(event)" tabEnabled="false"/>
+</mx:VBox>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem direction="horizontal" implements="com.makolab.fractus.view.documents.reports.filters.IReportFilter" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import com.makolab.components.catalogue.CatalogueFilterError;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			[Bindable]
+			public var columnName:String = "";
+			
+			private var _parameters:XML
+			[Bindable]
+			public function set parameters(value:XML):void
+			{
+				_parameters = value;
+			}
+			
+			public function get parameters():XML
+			{
+				return _parameters;
+			}
+			
+			private function setParameters(params:XML):void
+			{
+				if(String(columnName) == ""){
+					//params.dateTo = dateFormatter.format(dateField.selectedDate) + "T23:59:59.997";
+					
+					if(useFilter.selected){
+						params.dateTo = dateFormatter.format(dateField.selectedDate) + "T23:59:59.997";
+					} else {
+						params.dateTo = dateFormatter.format(new Date()) + "T23:59:59.997";
+					}
+					
+				}else{
+					if(useFilter.selected){
+						if(!params.filters)params.filters = "";
+						var filterNodes:XMLList = params.filters.column.(@field == columnName);
+						if(filterNodes.length() == 0){
+							var newCondition:XML = <column/>;
+							newCondition.@field = columnName;
+							newCondition.* = dateFormatter.format(dateField.selectedDate) + "T23:59:59.997";;
+							params.filters.columns += newCondition;
+						}else{
+							filterNodes[0].* = dateFormatter.format(dateField.selectedDate) + "T23:59:59.997";
+						}
+					}else{
+						if(!params.filters)params.filters = "";
+						var filterNodes2:XMLList = params.filters.column.(@field == columnName);
+						if(filterNodes2.length() == 1)delete filterNodes2[0];
+					}
+				}
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			public function get validationError():String
+			{
+				if(dateField.selectedDate > new Date() && useFilter.selected){
+					return "Selected date comes from future.";
+				}
+				return null;
+			}
+			
+			public function get stringValue():String
+			{
+				if (!useFilter.selected) return null;
+				return dateFormatter.format(dateField.selectedDate);
+			}
+			
+			[Bindable]
+			private var _day:Date = new Date();
+			
+			public function set day(value:Object):void
+			{
+				if(value != null) {
+					_day = Tools.isoToDate(value.toString());
+					setParameters(parameters);
+				}
+			}
+			public function get day():Object
+			{
+				return _day as Object;
+			}
+		]]>
+	</mx:Script>
+		<mx:CheckBox id="useFilter" toolTip="{LanguageManager.getInstance().labels.reports.filters.turnOnOffFilter}" selected="false" change="setParameters(parameters)"/>
+		<inputComponents:DateEditor id="dateField" enabled="{useFilter.selected}" change="setParameters(parameters)" creationComplete="setParameters(parameters)" selectedDate="{_day}" formatString="YYYY-MM-DD"/>
+		<mx:DateFormatter id="dateFormatter" formatString="YYYY-MM-DD"/>
+</mx:FormItem>

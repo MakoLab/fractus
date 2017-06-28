@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		xmlns:inputComponents="com.makolab.components.inputComponents.*"
+		xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*"
+		paddingTop="0"
+		paddingBottom="0"
+		width="100%"
+	>
+	<mx:HBox width="100%">
+		<mx:VBox horizontalAlign="left">
+	<mx:Repeater id="attributeRepeater">
+		<documentControls:DocumentGenericSingleAttributeComponent attributeName="{attributeRepeater.currentItem.@name}" documentObject="{documentObject}" click="debug()"/>
+	</mx:Repeater>
+		</mx:VBox>
+<mx:VBox horizontalAlign="right" paddingLeft="20">
+	
+		<mx:Repeater id="attributeRepeater1">
+		<documentControls:DocumentGenericSingleAttributeComponent attributeName="{attributeRepeater1.currentItem.@name}" documentObject="{documentObject}" click="debug()"/>
+		</mx:Repeater>
+</mx:VBox>
+
+	</mx:HBox>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.document.DocumentObject;
+			
+			[Bindable]
+			public var attributeListNode:String;
+			
+			private var _documentObject:DocumentObject;
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				_documentObject = value;
+				var xmll:XMLList=_documentObject.typeDescriptor.xmlOptions[attributeListNode].attribute;
+				var xml1:XML=<items></items>;
+				var xml2:XML=<items></items>;
+				for(var i:int=0;i<xmll.length();i++)
+				{
+					if(xmll[i].@secCol.length()&&xmll[i].@secCol=="true")
+					{
+						xml2.child[xml2.child.length()]=xmll[i];
+					}
+					else
+						xml1.child[xml1.child.length()]=xmll[i];
+				}
+				attributeRepeater.dataProvider = xml1.*;//_documentObject.typeDescriptor.xmlOptions[attributeListNode].attribute.(@secCol!="true");
+				attributeRepeater1.dataProvider =xml2.*;// _documentObject.typeDescriptor.xmlOptions[attributeListNode].attribute.(@secCol=="true");
+			}
+			public function get documentObject():DocumentObject { return _documentObject; }
+			
+			private function debug():void
+			{
+				
+			}
+		]]>
+	</mx:Script>
+</mx:Form>

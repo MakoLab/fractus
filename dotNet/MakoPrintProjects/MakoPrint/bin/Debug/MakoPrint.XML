@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>MakoPrint</name>
+    </assembly>
+    <members>
+        <member name="T:Makolab.Printing.MakoPrint">
+            <summary>
+            Class that prints to many document formats from an input XML.
+            </summary>
+        </member>
+        <member name="M:Makolab.Printing.MakoPrint.Generate(System.String,System.String,System.String,System.String,System.String,System.IO.Stream)">
+            <summary>
+            Generates the chosen document from the input parameters.
+            </summary>
+            <param name="xml">Xml containing data.</param>
+            <param name="xslt">XSL Transformation.</param>
+            <param name="printProfileXml">Print profile XML.</param>
+            <param name="driverConfigXml">Driver config XML.</param>
+            <param name="format">Output format.</param>
+            <param name="output">Output stream.</param>
+            <exception cref="T:System.InvalidOperationException">if the output format is unknown.</exception>
+        </member>
+        <member name="M:Makolab.Printing.MakoPrint.Generate(System.String,System.String,System.String,System.String,Makolab.Printing.OutputFormat,System.IO.Stream)">
+            <summary>
+            Generates the chosen document from the input parameters.
+            </summary>
+            <param name="xml">Xml containing data.</param>
+            <param name="xslt">XSL Transformation.</param>
+            <param name="printProfileXml">Print profile XML.</param>
+            <param name="driverConfigXml">Driver config XML.</param>
+            <param name="format">Output format.</param>
+            <param name="output">Output stream.</param>
+        </member>
+        <member name="T:Makolab.Printing.OutputFormat">
+            <summary>
+            Specifies output formats.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.OutputFormat.Xml">
+            <summary>
+            XML format.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.OutputFormat.Html">
+            <summary>
+            HTML format.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.OutputFormat.Pdf">
+            <summary>
+            PDF format.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.OutputFormat.Csv">
+            <summary>
+            CSV format.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.OutputFormat.Xls">
+            <summary>
+            XLS format.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.OutputFormat.Fiscal">
+            <summary>
+            Fiscal document printing
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.OutputFormat.Vcf">
+            <summary>
+            vCard format.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.OutputFormat.Text">
+            <summary>
+            text format.
+            </summary>
+        </member>
+    </members>
+</doc>

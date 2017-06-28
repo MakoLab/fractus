@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" horizontalScrollPolicy="off">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import assets.IconManager;
+			override public function set data(value:Object):void
+			{
+				if(value){
+					var typeDescriptor:DocumentTypeDescriptor = new DocumentTypeDescriptor(value.@documentTypeId);
+					lbl.text = typeDescriptor.symbol;
+					var typeIcon:Class = null;
+					switch(typeDescriptor.documentCategory){
+						case "CommercialDocument":
+							typeIcon = IconManager.getIcon("list_sales");
+							break;
+						case "WarehouseDocument":
+							if(typeDescriptor.isWarehouseIncome)typeIcon = IconManager.getIcon("list_warehouse_income");
+							else typeIcon = IconManager.getIcon("list_warehouse_outcome");
+							break;
+					}
+					image.source = typeIcon;
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:Image id="image"/>
+	<mx:Label id="lbl"/>
+</mx:HBox>

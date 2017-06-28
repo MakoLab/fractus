@@ -1,0 +1,75 @@
+<?xml version = "1.0" encoding = "utf-8"?>
+<xs:schema xmlns="pxml" targetNamespace="pxml" xmlns:xs = "http://www.w3.org/2001/XMLSchema" elementFormDefault = "unqualified" attributeFormDefault="unqualified">
+	
+	<xs:element name="root">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="table"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="table">
+		<xs:complexType>
+			<xs:sequence maxOccurs="unbounded">
+				<xs:element ref="table" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:element ref="tr" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:element ref="th" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+			<xs:attribute name="comment" type="xs:string"/>
+			<xs:attributeGroup ref="attrs"/>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="tr" type="tRow"/>
+	<xs:element name="th" type="tRow"/>
+
+	<xs:element name="td">
+		<xs:complexType>
+			<xs:simpleContent>
+				<xs:extension base="xs:string">
+					<xs:attributeGroup ref="attrs"/>
+					<xs:attribute name="ALIGN" type="tAlign"/>
+					<xs:attribute name="FONT-STYLE" type="xs:string"/>
+					<xs:attribute name="FONT-WEIGHT" type="xs:string"/>
+          <xs:attribute name="FORCE-BORDER" type="xs:boolean" />
+          <xs:attribute name="ALLOW-N" type="xs:boolean" />
+        </xs:extension>
+			</xs:simpleContent>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:attributeGroup name="attrs">
+		<xs:attribute name="WIDTH" type="xs:string"/>
+		<xs:attribute name="BLANK" type="xs:string"/>
+		<xs:anyAttribute processContents="strict" namespace="http://www.w3.org/1999/XSL/Transform"/>
+	</xs:attributeGroup>
+
+	<xs:attributeGroup name="borders">
+		<xs:attribute name="TOPBORDER" fixed="-" />
+		<xs:attribute name="CROSSBORDER" fixed="+" />
+		<xs:attribute name="BOTTOMBORDER" fixed="-" />
+		<xs:attribute name="VERTICALBORDER" fixed="|" />
+	</xs:attributeGroup>
+
+	<xs:complexType name="tRow">
+		<xs:sequence>
+			<xs:element ref="td" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="attrs"/>
+		<xs:attributeGroup ref="borders"/>
+		<xs:attribute name="RAW-WIDTH" type="xs:long"/>
+		<xs:attribute name="FONT-SIZE" type="xs:string"/>
+    <xs:attribute name="TEXT-WRAP" type="xs:boolean"/>
+    <xs:attribute name="ALLOW-N" type="xs:boolean"/>
+	</xs:complexType>
+
+  <xs:simpleType name="tAlign">
+    <xs:restriction base="xs:string">
+      <xs:enumeration id="tAlign_left" value="left" />
+      <xs:enumeration id="tAlign_right" value="right" />
+      <xs:enumeration id="tAlign_center" value="center" />
+    </xs:restriction>  
+  </xs:simpleType>
+
+</xs:schema>

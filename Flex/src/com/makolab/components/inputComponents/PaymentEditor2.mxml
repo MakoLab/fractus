@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:lineList="com.makolab.components.lineList.*" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	width="100%"
+	xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.components.util.ColorTools;
+			import mx.utils.ColorUtil;
+			import mx.formatters.SwitchSymbolFormatter;
+			import mx.events.DataGridEvent;
+			import mx.events.ListEvent;
+			import com.makolab.components.lineList.LineOperation;
+			import com.makolab.fractus.model.document.BusinessObject;
+			import com.makolab.components.lineList.LineOperationEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.model.ModelLocator;
+			import assets.IconManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.controls.Alert;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import com.makolab.fractus.model.LanguageManager;		
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.components.util.Tools;
+			
+			private var _documentObject:DocumentObject;
+			[Bindable] public var availablePaymentMethods:XMLList = new XMLList();
+			[Bindable] public var linesObjectName:String = "lines";
+			[Bindable] public var dictionaryManager:DictionaryManager = DictionaryManager.getInstance();
+			[Bindable] public var languageManager:LanguageManager = LanguageManager.getInstance();
+			[Bindable] private var currencySymbol:String = "";
+			[Bindable] private var totalDue:Number;
+			
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				_documentObject = value;
+				if(_documentObject)_documentObject.addEventListener(DocumentEvent.DOCUMENT_PAYMENT_CHANGE,paymentChangeHandler);
+				if(_documentObject)_documentObject.addEventListener(DocumentEvent.DOCUMENT_FIELD_CHANGE,documentFieldChangeHandler);
+				
+				//dostępne metody płatności
+				availablePaymentMethods = new XMLList();
+				var documentTypes:XMLList = dictionaryManager.dictionaries.documentTypes.(valueOf().id == String(_documentObject.typeDescriptor.typeId));
+				if(documentTypes.length() > 0){
+					for each (var paymentId:XML in documentTypes.xmlOptions.root.commercialDocument.paymentMethods.id){
+						var paymentMethod:XMLList = dictionaryManager.dictionaries.paymentMethod.(id.toString() == paymentId.*);
+						if(paymentMethod.length() > 0){
+							availablePaymentMethods = availablePaymentMethods + paymentMethod[0];
+						}
+					}
+				}
+				
+				var currencies:XMLList = dictionaryManager.dictionaries.currency.(id.toString() == documentObject.xml.documentCurrencyId);
+				if(currencies.length() > 0)currencySymbol = currencies[0].symbol.toString();
+				else currencySymbol = DictionaryManager.getInstance().getById(ModelLocator.getInstance().systemCurrencyId).symbol.toString();
+				
+				calculateTotalAmount();
+			}
+			
+			public function get documentObject():DocumentObject
+			{
+				return _documentObject;
+			}
+
+			private function createLine():Object
+			{
+				var template:XML = XML(paymentTemplate.*[0]).copy();
+				template.exchangeRate.* = documentObject.xml.exchangeRate.toString();
+				template.exchangeScale.* = documentObject.xml.exchangeScale.toString();
+				template.exchangeDate.* = documentObject.xml.exchangeDate.toString();
+				return template;
+			}
+			
+			private function handleListClick(event:MouseEvent):void
+			{
+				if(documentObject.allowPaymentsEdit && event.localY > payments.dataProvider.length * payments.rowHeight) {
+					var line:Object = payments.addLine(createLine(),payments.dataProvider.length);
+				}
+			}
+			
+			private function paymentChangeHandler(event:DocumentEvent):void
+			{
+				calculateTotalAmount();
+				checkPaymentAmountSum();
+			}
+			
+			private function documentFieldChangeHandler(event:DocumentEvent):void
+			{
+				if ( event.fieldName == 'currency' )
+				{
+					currencySymbol = DictionaryManager.getInstance().getById(documentObject.xml.documentCurrencyId).symbol.toString();
+				}
+				if ( event.fieldName == 'totalForPayment' )
+				{
+					totalDue = CurrencyManager.systemToDocument(documentObject.totalForPayment,documentObject);
+				}
+			}
+			
+			public function deletePayment(line:XML):void
+			{
+				payments.deleteLine(line);
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_PAYMENT_CHANGE));
+				calculateTotalAmount();
+			}
+			
+			public function addPayment():void
+			{
+				var line:Object = payments.addLine(null);
+			}
+			
+			private function itemFieldChangeHandler(event:DataGridEvent):void
+			{
+				var fieldName:String;
+				switch(event.dataField){
+					case "paymentMethodId": fieldName = "paymentMethod"; break;
+					case "dueDate": fieldName = "dueDate"; break;
+					case "dueDays": fieldName = "dueDays"; break; 
+					case "amount": fieldName = "amount"; break; 
+					case "paymentCurrencyId": fieldName = "currency"; break; 
+				}
+				_documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_PAYMENT_CHANGE,false,false,fieldName,_documentObject.paymentsXML.payment[payments.itemRendererToIndex(event.itemRenderer)]));
+				calculateTotalAmount();
+			}
+			
+			private function handleNewLine(event:DataGridEvent):void
+			{
+				var line:Object;
+				if(payments.dataProvider[event.rowIndex]) line = payments.dataProvider[event.rowIndex];
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_PAYMENT_CHANGE,null,line));
+			}
+			
+			[Bindable] private var totalAmount:Number = 0;
+			
+			private function calculateTotalAmount():void
+			{
+				totalAmount = 0;
+				var pm:XML;
+				for each(var payment:XML in _documentObject.paymentsXML.payment){
+					pm = DictionaryManager.getInstance().getById(payment.paymentMethodId.toString());
+					if(pm && !(pm.isIncrementingDueAmount.toString() == "1")){
+						if (payment.paymentCurrencyId.toString() == documentObject.xml.documentCurrencyId.toString())
+						{
+							totalAmount += Number(payment.amount.toString());
+						}
+						else
+						{
+							totalAmount += CurrencyManager.paymentToDocument(payment,documentObject);
+						}
+					}
+				}
+			}
+			
+			[Bindable] private var amountSumValidationInfo:String = "";
+			
+			private function checkPaymentAmountSum():void
+			{
+				var amount:Number = 0;
+				for each(var payment:XML in _documentObject.paymentsXML.payment){
+					amount += CurrencyManager.paymentToDocument(payment,documentObject);
+				}
+				var difference:String = CurrencyManager.formatCurrency(Math.abs(documentObject.totalForPayment - amount));
+				//var systemCurrencyAmount:Number = CurrencyManager.systemToDocument(documentObject.totalForPayment,documentObject); 
+				if(amount < documentObject.totalForPayment){
+					totalForPaymentRenderer.setStyle("color",0xFF9911);
+					amountSumValidationInfo = "Suma kwot płatności jest mniejsza od wartości dokumentu o " + difference; // todo LM
+				}else if(amount > documentObject.totalForPayment){
+					totalForPaymentRenderer.setStyle("color",0xFF2222);
+					amountSumValidationInfo = "Suma kwot płatności jest większa od wartości dokumentu o " + difference; // todo LM
+				}else if(amount == documentObject.totalForPayment){
+					totalForPaymentRenderer.setStyle("color",0x000000);
+					amountSumValidationInfo = null;
+				}
+			}
+			
+			private function itemEditBeginningHandler(event:DataGridEvent):void
+			{
+				if(event.dataField != "dueDate" && event.dataField != "dueDays")return;
+				var payment:XML = event.target.selectedItem;
+				var allowEdit:Boolean = false;
+				if(payment)
+				{
+					var paymentMethod:XML = DictionaryManager.getInstance().getById(payment.paymentMethodId.toString());
+					if(paymentMethod && (paymentMethod.isIncrementingDueAmount.toString() == "1") && (paymentMethod.dueDays.toString() == "0"))
+					{
+						allowEdit = true;
+					} 
+				}
+				if(!allowEdit)event.preventDefault();
+			}
+			public function lFunction(item:Object):String{
+				
+				
+				if(item.label.@lang.length())
+					return item.label.(@lang==languageManager.currentLanguage)[0];
+				else
+					return item.label;
+			}
+		]]>
+	</mx:Script>
+	<mx:XML id="paymentTemplate">
+		<payments>
+		      <payment>
+		      	<exchangeRate>1</exchangeRate>
+		      	<exchangeScale>1</exchangeScale>
+		      	<exchangeDate></exchangeDate>
+		      </payment>
+		</payments>		
+	</mx:XML>
+	
+	<lineList:LineList
+		id="payments"
+		width="100%"
+		dataProvider="{documentObject.paymentsXML.*}"
+		editable="true"
+		enabled="{documentObject.allowPaymentsEdit}"
+		autoHeight="false"
+		rowCount="3"
+		autoAddLines="true"
+		selectable="true"
+		enterLeavesEditor = "false"
+		newLineTemplateFunction="createLine"
+		click="handleListClick(event)"
+		itemFieldChange="itemFieldChangeHandler(event)"
+		addLine="handleNewLine(event)"
+		itemEditBeginning="itemEditBeginningHandler(event)"
+		>
+		<lineList:columns>
+			<mx:DataGridColumn headerText=""  minWidth="20" width="20" editable="false" itemRenderer="com.makolab.components.inputComponents.OrdinalNumberRenderer"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.documents.paymentMethod}" dataField="paymentMethodId" width="100" headerWordWrap="true" editorUsesEnterKey="true" editorDataField="dataObject">
+				<mx:itemEditor>
+					<mx:Component>
+						<inputComponents:DictionarySelector  dataProvider="{outerDocument.availablePaymentMethods}" valueMapping="{{ id : '*' }}" listLabelFunction="{outerDocument.lFunction}" labelFunction="{outerDocument.lFunction}"/>
+					</mx:Component>
+				</mx:itemEditor>
+				<mx:itemRenderer>
+					<mx:Component>
+						<inputComponents:DictionaryRenderer columnIdent="paymentMethod" dataProvider="{outerDocument.availablePaymentMethods}" labelField="label" valueMapping="{{ id : '*' }}"/>
+					</mx:Component>						
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.documents.dueDate}" 
+				dataField="dueDate" width="50" headerWordWrap="true" 
+				editorDataField="dataObject"
+				editable="true">
+				<mx:itemEditor>
+					<mx:Component>
+						<inputComponents:DateEditor/>
+					</mx:Component>
+				</mx:itemEditor>
+				<mx:itemRenderer>					
+					<mx:Component>
+						<inputComponents:DateRenderer columnIdent="dueDate"/>
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.documents.dueDays}" dataField="dueDays" width="50" headerWordWrap="true" editorDataField="dataObject">
+				<mx:itemEditor>
+					<mx:Component>
+						<inputComponents:TextEditor restrict="0-9\-"/>
+					</mx:Component>
+				</mx:itemEditor>
+				<mx:itemRenderer>					
+					<mx:Component>
+						<inputComponents:LabelRenderer columnIdent="dueDays"/>
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.documents.amount}" 
+				dataField="amount" 
+				width="50" 
+				editorDataField="dataObject" 
+				headerStyleName="headerRight"
+				>
+				<mx:itemEditor>
+					<mx:Component>
+						<inputComponents:CurrencyEditor/>
+					</mx:Component>
+				</mx:itemEditor>
+				<mx:itemRenderer>
+					<mx:Component>
+						<inputComponents:CurrencyRenderer columnIdent="amount"/>
+					</mx:Component>						
+				</mx:itemRenderer>				
+			</mx:DataGridColumn>
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.dictionaries.currency}" dataField="paymentCurrencyId" width="50" headerWordWrap="true" editorDataField="dataObject" headerStyleName="headerRight" editable="false">
+				<!--<mx:itemEditor>
+					<mx:Component>
+						<inputComponents:DictionarySelector dataProvider="{outerDocument.dictionaryManager.dictionaries.currency}" valueMapping="{{ id : '*' }}" labelField="symbol" listLabelField="symbol"/>
+					</mx:Component>
+				</mx:itemEditor>-->
+				<mx:itemRenderer>
+					<mx:Component>
+						<!--<inputComponents:DictionaryRenderer columnIdent="currency" dataProvider="{outerDocument.dictionaryManager.dictionaries.currency}" labelField="symbol" valueMapping="{{ id : '*' }}" textAlign="right"/>-->
+						<documentControls:CurrencyItemRenderer documentObject="{outerDocument.documentObject}"/>
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn headerText="" minWidth="20" width="20" editable="false">
+				<mx:itemRenderer>
+					<mx:Component> 
+						<lineList:LineMenu enabled="{outerDocument.documentObject.allowPaymentsEdit}">
+							<lineList:operations>
+								<lineList:LineOperation label="{outerDocument.languageManager.labels.common.deleteAll}" operationInvoke="outerDocument.deletePayment((event.target as LineOperation).line as XML)" icon="{IconManager.getIcon('delete_small')}" textAlign="left"/>
+								<lineList:LineOperation label="{outerDocument.languageManager.labels.common.addNewF}" operationInvoke="outerDocument.addPayment()" icon="{IconManager.getIcon('add_small')}" textAlign="left"/>
+							</lineList:operations>
+							<mx:Script>
+								<![CDATA[
+									import assets.IconManager;
+								]]>
+							</mx:Script>
+						</lineList:LineMenu>
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+		</lineList:columns>
+	</lineList:LineList>
+	<mx:HBox>
+		<mx:Label text="{LanguageManager.getInstance().labels.documents.received}: "/>
+		<inputComponents:CurrencyRenderer value="{totalAmount}" nanText="0,00"/>
+		<mx:Label text="{currencySymbol}"/>
+		<mx:Label text="{LanguageManager.getInstance().labels.documents.totalDue}: "/>
+		<inputComponents:CurrencyRenderer id="totalForPaymentRenderer" value="{documentObject.totalForPayment}" nanText="0,00" toolTip="{amountSumValidationInfo}"/>
+		<mx:Label text="{currencySymbol}"/>
+		<mx:Label text="{LanguageManager.getInstance().labels.documents.dueAmount}: "/>
+		<inputComponents:CurrencyRenderer value="{Number(documentObject.totalForPayment.toFixed(2))-Number(Number(totalAmount).toFixed(2))}" nanText="0,00"/>
+		<mx:Label text="{currencySymbol}"/>
+	</mx:HBox>
+</mx:FormItem>

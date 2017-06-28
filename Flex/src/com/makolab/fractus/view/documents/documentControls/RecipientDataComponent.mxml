@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*" horizontalGap="18" creationComplete="onCreationComplete()">
+  <!-- adres odbiorcy  documentObject.xml.contractor.contractor.addresses.address.(id.* == documentObject.xml.contractor.addressId.*)-->
+  <inputComponents:AddressRenderer
+			data="{address}"
+		/>
+
+  <mx:Style>
+    .attributeLabel
+    {
+    padding-left: 0px;
+    font-size: 10px;
+    font-weight: bold;
+    }
+    .attributeValue
+    {
+    padding-left: 10px;
+    font-size: 10px;
+    }
+  </mx:Style>
+
+  <mx:Script>
+    <![CDATA[
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.document.DocumentObject;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.Sort;
+			import mx.collections.XMLListCollection;
+			import mx.rpc.events.ResultEvent;
+			import mx.utils.ObjectUtil;
+			private var _documentObject:DocumentObject;
+			
+			[Bindable]
+			private var remarks:XMLList;
+			[Bindable]
+			private var attributes:XMLList;
+			
+			[Bindable]
+			private var address:XMLList;
+			public function onCreationComplete():void 
+			{
+				this.documentObject.addEventListener(DocumentEvent.DOCUMENT_FIELD_CHANGE, documentObjectChangeHandler, false, 0, true);
+			}
+			
+			private function documentObjectChangeHandler(event:DocumentEvent):void
+			{
+				if (event.fieldName == "recipientAddress") 
+				
+			    if (documentObject.getAttribute("Attribute_RecipientAddressId") != null)
+			    {
+					adressId=documentObject.getAttribute("Attribute_RecipientAddressId").value.toString();
+					var xxx:XML=documentObject.getAttribute("Attribute_RecipientId");
+					if(xxx)
+					{
+						setContractorData(xxx.value.toString());
+					}
+			    }
+				
+			}
+			
+			private var adressId:String;
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void 
+			{ 
+				_documentObject = value;
+				adressId=documentObject.getAttribute("Attribute_RecipientAddressId").value.toString();
+				var xxx:XML=documentObject.getAttribute("Attribute_RecipientId");
+				if(xxx)
+				{
+					setContractorData(xxx.value.toString());
+				}
+			}
+			
+			
+			public function get documentObject():DocumentObject { return _documentObject; }
+			
+			
+			public function setContractorData(id:String, name:String = null):void
+			{
+				
+				if(id != null && id != '') {
+					var command:LoadBusinessObjectCommand = new LoadBusinessObjectCommand();
+					command.addEventListener(ResultEvent.RESULT, loadContractorResult);
+					command.execute( { type : "Contractor", id : id } );
+				}	
+			}
+			public function loadContractorResult(event:ResultEvent):void
+			{
+				var recipientObject:XMLList= XML(event.result).contractor;
+				if(recipientObject)
+				{
+					address=recipientObject.addresses.address.(id==adressId);
+				}
+				
+				
+			}
+	
+			
+		
+			
+		]]>
+  </mx:Script>
+</mx:HBox>

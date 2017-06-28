@@ -1,0 +1,110 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<title>Pivot Table</title>
+		<style>
+		table {
+			border-left: 1px solid #CCC;
+			border-top: 1px solid #CCC;
+		}
+
+		td {
+			width: 100px;
+			height: 24px;
+			border-right: 1px solid #CCC;
+			border-bottom: 1px solid #CCC;
+			background: #fff;
+			padding: 0px 6px;
+			color: #000;
+			font: normal 12px Verdana, Arial, Helvetica, sans-serif;
+			text-align: left;
+			vertical-align: middle;
+			white-space: nowrap;
+		}
+		
+		.headerCell {
+			font-family: Verdana;
+			font-size: 12px;
+			color: #FFFFFF;
+			text-indent:2px;
+			background-color: #336600;
+			padding-left: 2px;
+		}
+		
+		.expandedHeaderCell:before {
+			content: "- ";
+		}
+		.expandedHeaderCell {
+			text-indent: 2px;
+		}
+		
+		.collapsedHeaderCell:before {
+			content: "+ ";
+		}
+		.collapsedHeaderCell {
+			text-indent: 2px;
+		}
+		
+		.dataCell {
+			font-family: Verdana;
+			font-size: 12px;
+			color: #000000; 
+			background-color: #FFFFFF;
+		}
+		
+		.totalCell {
+			font-size: 11px;
+			font-weight: bold;
+		}
+		
+		.redCell {
+			background-color: #974d06;
+			color: #FFFFFF; 
+		}
+
+		.orangeCell {
+			background-color: #f9f3d6;
+			color: #000000; 
+		}
+
+		.greenCell {
+			background-color: #669900;
+			color: #FFFFFF; 
+		}
+		
+		.level0 {
+			padding-left: 2px;
+		}
+		.level1 {
+			padding-left: 17px;
+		}
+		.level2 {
+			padding-left: 32px;
+		}
+		.level3 {
+			padding-left: 47px;
+		}
+		.level4 {
+			padding-left: 62px;
+		}
+		.level5 {
+			padding-left: 77px;
+		}
+		.level6 {
+			padding-left: 92px;
+		}
+		.level7 {
+			padding-left: 107px;
+		}
+		.level8 {
+			padding-left: 122px;
+		}
+		</style>
+	</head>
+	<body>
+	<h3>{0}</h3>
+		<table cellspacing="0">
+{1}
+		</table>
+	</body>

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DockPanel 	xmlns="com.makolab.components.layoutComponents.*" 
+			xmlns:mx="http://www.adobe.com/2006/mxml"  
+			headerColors="[0x0048ff, 0x002a94]" titleStyleName="bold" title="" 
+			width="100%" height="200" creationComplete="URLRequestExample();" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+		 
+		    <panelTitleBar>
+			 <mx:VBox paddingTop="5" width="100%">
+			 	<mx:HBox width="100%" id="titleBarBox" styleName="bold"/>
+			 </mx:VBox>
+			 </panelTitleBar>
+		    <mx:DataGrid id="mdGrid" height="100%" width="100%" wordWrap="true" variableRowHeight="true">
+					<mx:columns>
+						<mx:DataGridColumn headerText="Waluta" dataField="kod_waluty" />
+						<mx:DataGridColumn headerText="Kurs średni" dataField="kurs_sredni" textAlign="right" />
+					</mx:columns>
+			</mx:DataGrid>		
+
+			
+			<mx:Script>
+				<![CDATA[
+					import com.makolab.components.util.CurrencyManager;
+					import mx.formatters.CurrencyFormatter;
+					import com.makolab.components.inputComponents.CurrencyRenderer;
+					import mx.collections.XMLListCollection;
+					import mx.collections.ArrayCollection;
+					import mx.controls.LinkButton;
+					import mx.events.ListEvent;
+					import mx.controls.Text;
+					import mx.controls.Label;
+					import mx.controls.TextArea;
+					import mx.controls.Alert;
+					import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+					
+					[Bindable]
+					public var url:String = '';
+					
+					[Bindable]
+					public var proxyUrl:String = '';
+					
+					[Bindable]
+					private var _config:XMLList;
+       
+			        [Bindable]
+					public function set config(value:XMLList):void
+					{
+						_config = value;
+						url = config.site[0].@data;
+					}
+					
+					public function get config():XMLList
+					{
+						return _config;
+					}
+					
+					public function URLRequestExample():void {  
+			            
+			            var loader:URLLoader = new URLLoader();
+			            configureListeners(loader);
+			
+			            var request:URLRequest = new URLRequest(url);//proxyUrl);
+//			            request.method = URLRequestMethod.POST;    
+//			            request.data = url;
+			            try {
+			                loader.load(request);
+			            } catch (error:Error) {
+			                Alert.show("Unable to load requested document.");
+			            }
+			        }
+			        
+			        private function configureListeners(dispatcher:IEventDispatcher):void {
+			            dispatcher.addEventListener(Event.COMPLETE, completeHandler);
+			        }
+
+			        private function completeHandler(event:Event):void {
+			            
+			            var loader:URLLoader = URLLoader(event.target);   
+						var xml:XMLList;	
+						
+			            xml = new XMLList(loader.data);
+			            mdGrid.dataProvider = xml.pozycja;	
+			            
+			            panelTitleBarVisibleAlways = true;
+			             
+			            for each(var pozycja:XML in xml.pozycja){
+			            	if(pozycja.kod_waluty == "USD" || pozycja.kod_waluty == "EUR" || pozycja.kod_waluty == "CHF"){
+			            		var lab:Label = new Label();
+			            		var lab2:Label = new Label();
+			            		lab.text = pozycja.kod_waluty +":";
+			            		lab2.text = currencyLabel(pozycja.kurs_sredni);
+			            		lab2.setStyle("color", "white");
+			            		titleBarBox.addChild(lab);
+			            		titleBarBox.addChild(lab2);
+			            	}
+			            }
+			        }
+			        
+					//private function currencyLabel(data:Object, column:DataGridColumn):String {
+					private function currencyLabel(data:Object):String {
+						return CurrencyManager.formatCurrency(Number(data.toString().replace(',','.')));
+						//return data.kurs_sredni.toString();
+					}
+					
+				]]>
+			</mx:Script>
+</DockPanel>

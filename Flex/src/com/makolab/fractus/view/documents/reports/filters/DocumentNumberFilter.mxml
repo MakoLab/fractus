@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem direction="horizontal" implements="com.makolab.fractus.view.documents.reports.filters.IReportFilter" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:generic="com.makolab.fractus.view.generic.*">		
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import org.un.cava.birdeye.ravis.graphLayout.data.INode;
+			import com.makolab.components.catalogue.CatalogueFilterError;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			private var _parameters:XML
+			[Bindable]
+			public var columnName:String = "documentNumber";
+			
+			protected function get value():Object
+			{
+				return inputControl.text;
+			}
+			[Bindable]
+			public function set parameters(value:XML):void
+			{
+				_parameters = value;
+			}
+			
+			public function get parameters():XML
+			{
+				return _parameters;
+			}
+			
+			private function setParameters(params:XML):void
+			{
+				if(useFilter.selected){
+					if(value.toString() != ""){
+						if(!params.filters)params.filters = "";
+						var filterNodes:XMLList = params.filters.column.(@field == columnName);
+						if(filterNodes.length() == 0){
+							var newCondition:XML = <column/>;
+							newCondition.@field = columnName;
+							newCondition.* = value;
+							params.filters.columns += newCondition;
+						}else{
+							filterNodes[0].* = value;
+						}
+					}
+				}else{
+					if(!params.filters)params.filters = "";
+					var filterNodes2:XMLList = params.filters.column.(@field == columnName);
+					if(filterNodes2.length() == 1)delete filterNodes2[0];
+				}
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			private function comboLabelFunction(item:Object):String
+			{
+				var ret:String = item.label.(@lang == LanguageManager.getInstance().currentLanguage).*; 
+				return ret;
+			}
+			
+			[Bindable]
+			public var allowEmptySelection:Boolean = false;
+			
+			public function get validationError():String
+			{
+				if(!this.allowEmptySelection && inputControl.text.replace(" ","").length == 0 && useFilter.selected){
+					this.setStyle("backgroundColor",0xff0000);
+					this.setStyle("backgroundAlpha",0.2);
+					this.errorString = LanguageManager.getInstance().labels.reports.filters.noDocumentNumberSelected;
+					return LanguageManager.getInstance().labels.reports.filters.noDocumentNumberSelected;
+				}
+				this.setStyle("backgroundColor",0xffffff);
+				this.setStyle("backgroundAlpha",0.0);
+				errorString = "";
+				return null;
+			}
+			
+			public function get stringValue():String
+			{
+				if (!useFilter.selected) return null;
+				return inputControl.text;
+			}
+		]]>
+	</mx:Script>
+		<mx:CheckBox id="useFilter" toolTip="{LanguageManager.getInstance().labels.reports.filters.turnOnOffFilter}" change="setParameters(parameters)"/>
+		<mx:TextInput id="inputControl" width="100%" change="{setParameters(parameters)}" enabled="{useFilter.selected}"/>
+</mx:FormItem>

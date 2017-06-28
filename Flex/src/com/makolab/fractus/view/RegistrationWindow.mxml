@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+	layout="absolute"
+	width="630"
+	height="350"
+	title="Rejestracja">
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.RegisterFractusCommand;
+			import com.makolab.fractus.commands.CloseApplicationCommand;
+			import com.makolab.fractus.commands.AbstractCommand;
+			import com.makolab.fractus.commands.OpenExternalWebBrowserCommand;
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			import mx.core.UIComponent;
+			
+			private static var regWindow:RegistrationWindow;
+			private var parentWindow:UIComponent;
+						
+			[Bindable]
+			public var verificationCode:String;
+
+			public static function hide():void
+			{
+				regWindow.visible = false;
+				PopUpManager.removePopUp(regWindow);
+			}
+			
+			public static function show(parent:UIComponent, verificationCode:String):void
+			{
+				if (!regWindow) regWindow = new RegistrationWindow();
+				regWindow.verificationCode = verificationCode;
+				regWindow.parentWindow = parent;
+				PopUpManager.addPopUp(regWindow, parent, true);
+				PopUpManager.centerPopUp(regWindow);
+				regWindow.visible = true;	
+			}
+			
+			private function registrationUrlClickHandler(event:Event):void
+			{
+				var cmd:OpenExternalWebBrowserCommand = new OpenExternalWebBrowserCommand("http://www.fractus.pl/register.aspx");
+				cmd.execute();
+			}
+			
+			private function btnCopyToClipboardHandler(event:Event):void
+			{
+				System.setClipboard(this.verificationCode);	
+			}
+			
+			private function txtAreaVerificationCodeHandler(event:Event):void
+			{
+				this.txtAreaVerificationCode.setSelection(0, this.txtAreaVerificationCode.text.length);
+			}
+			
+			private function btnCloseHandler(event:Event):void
+			{
+				var cmd:CloseApplicationCommand = new CloseApplicationCommand();
+				cmd.execute();
+			}
+			
+			private function btnRegisterHandler(event:Event):void
+			{
+				var cmd:RegisterFractusCommand = new RegisterFractusCommand(this.txtAreaLicenseKey.text);
+				cmd.addEventListener(ResultEvent.RESULT, handleRegistrationResult, false, 0, true);
+				cmd.execute();	
+			}
+			
+			private function handleRegistrationResult(event:ResultEvent):void
+			{
+				var response:String = String(event.result);
+				
+				if(response == "error")
+					Alert.show("Nieprawidłowy klucz licencyjny");
+				else if (response == "exception")
+					Alert.show("Wystąpił błąd podczas rejestrowania aplikacji");
+				else
+				{
+					hide();
+					LogInWindow.show(this.parentWindow);
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox height="100%" width="100%" verticalGap="0" paddingBottom="3" paddingLeft="3" paddingRight="3" paddingTop="3">
+		<mx:Label text="Witamy w testowej wersji systemu zarządzania Fractus 2.0"/>
+		<mx:Label text="Wersja, którą dysponujesz jest darmowa, wymaga jednak zarejestrowania w celu aktywacji."/>
+		<mx:Label text=""/>
+		<mx:Label text="Procedura:"/>
+		<mx:HBox horizontalGap="0">
+			<mx:Label text="1. Wejdź na stronę"/>
+			<mx:Label htmlText="&lt;font color='#0000ff'&gt;&lt;u&gt;&lt;a href='http://www.fractus.pl/register.aspx'&gt;www.fractus.pl/register.aspx&lt;/a&gt;&lt;/u&gt;&lt;/font&gt;"
+				click="registrationUrlClickHandler(event)" />
+		</mx:HBox>
+		<mx:Label text="2. Wprowadź wymagane dane rejestracyjne i poniższy kod weryfikujący"/>
+		<mx:Label text="3. W zwrotnej wiadomości e-mail otrzymasz klucz licencyjny, który należy wkleić w pole poniżej"/>
+		<mx:Label text=""/>
+		<mx:Label text="Kod weryfikujący:"/>
+		<mx:TextArea 
+			id="txtAreaVerificationCode" 
+			text="{verificationCode}" 
+			doubleClickEnabled="true" 
+			doubleClick="txtAreaVerificationCodeHandler(event)"
+			width="100%"
+			height="20"
+			editable="false" />
+		<mx:Button click="btnCopyToClipboardHandler(event)" label="Kopiuj do schowka" />
+		<mx:Label text=""/>
+		<mx:Label text="Klucz licencyjny:"/>
+		<mx:TextArea 
+			id="txtAreaLicenseKey" 
+			width="100%"
+			height="20"/>
+		<mx:Label text=""/>
+		<mx:HBox horizontalAlign="center" width="100%">
+			<mx:Button label="Dalej" click="btnRegisterHandler(event)"/>
+			<mx:Button label="Anuluj" click="btnCloseHandler(event)"/>
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>

@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:tns="http://tempuri.org/" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" name="SynchronizationService" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://tempuri.org/Imports">
+      <xsd:import namespace="http://schemas.microsoft.com/Message" />
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="ISynchronizationService_GetData_InputMessage">
+    <wsdl:part xmlns:q1="http://schemas.microsoft.com/Message" name="data" type="q1:MessageBody" />
+  </wsdl:message>
+  <wsdl:message name="ISynchronizationService_GetData_OutputMessage">
+    <wsdl:part xmlns:q2="http://schemas.microsoft.com/Message" name="GetDataResult" type="q2:MessageBody" />
+  </wsdl:message>
+  <wsdl:message name="ISynchronizationService_SendData_InputMessage">
+    <wsdl:part xmlns:q3="http://schemas.microsoft.com/Message" name="data" type="q3:MessageBody" />
+  </wsdl:message>
+  <wsdl:message name="ISynchronizationService_SendData_OutputMessage">
+    <wsdl:part xmlns:q4="http://schemas.microsoft.com/Message" name="SendDataResult" type="q4:MessageBody" />
+  </wsdl:message>
+  <wsdl:portType name="ISynchronizationService">
+    <wsdl:operation name="GetData">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISynchronizationService/GetData" message="tns:ISynchronizationService_GetData_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISynchronizationService/GetDataResponse" message="tns:ISynchronizationService_GetData_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="SendData">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISynchronizationService/SendData" message="tns:ISynchronizationService_SendData_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISynchronizationService/SendDataResponse" message="tns:ISynchronizationService_SendData_OutputMessage" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="basicHttp" type="tns:ISynchronizationService">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GetData">
+      <soap:operation soapAction="http://tempuri.org/ISynchronizationService/GetData" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="SendData">
+      <soap:operation soapAction="http://tempuri.org/ISynchronizationService/SendData" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="SynchronizationService">
+    <wsdl:port name="basicHttp" binding="tns:basicHttp">
+      <soap:address location="http://localhost:3322/Fractus2/SynchronizationService" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

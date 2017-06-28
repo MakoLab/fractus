@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Accordion xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300" xmlns:catalogue="catalogue.*" dataChange="getRemoteData();" xmlns:ns1="inputComponents.*">
+	<mx:XMLList id="infoDataProvider">
+		<item labelKey="common.shortName" label="Nazwa" value="{data.kontrahent.nazwa}"/>
+		<item label="Terminowe" value="{data.kontrahent.zalega_term}"/>
+		<item label="Przeterminowane" value="{data.kontrahent.zalega_przeterm}"/>
+		<item label="Nierozliczone" value="{}"/>
+		<item label="Saldo" value="{data.kontrahent.saldo}"/>
+		<item label="Data ostatniego zamówienia" value="{}"/>
+		<item label="Wartość ostatniego zamówienia" value="{}"/>
+	</mx:XMLList>
+	<mx:XMLList id="treeData">
+        <node label="root">
+            <node label="lisc1"></node>
+            <node label="lisc2"></node>
+        </node>    
+    </mx:XMLList>
+
+	<mx:Script >
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.DateField;
+			import mx.rpc.AbstractOperation;
+			import mx.rpc.AsyncToken;
+			import mx.rpc.Responder;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import catalogue.GroupTreeRenderer;
+			
+			[Bindable]
+			private var dataZaleglosci:ArrayCollection;
+			[Bindable]
+			private var dataTransakcje:ArrayCollection;
+			
+			
+			//funkcja pobiera zewnętrzne dane
+			private function getRemoteData():void{
+						if(this.data!=null){
+							
+							var idMMCon:String = this.data.kontrahent.idMM;
+							
+							if(this.textAreaNotes!=null)
+							{
+								this.textAreaNotesNew.text = "";
+							}
+						//	if(this.dateFrom!=null)
+						//	{
+						//		this.dateFrom.selectedDate = null;								
+						//	}
+						//	if(this.dateTo!=null)
+						//	{
+						//		this.dateTo.selectedDate = null;
+						//	}	
+							if(this.filtr!=null)
+							{
+								this.filtr.selected=false;
+							}				
+							this.getContractorDataFromMM.send({idMM: idMMCon, plik: "transakcje"}).addResponder(new mx.rpc.Responder(handleResultTransakcje, handleFaultTransakcje));
+							this.getContractorDataFromMM.send({idMM: idMMCon, plik: "zaleglosci"}).addResponder(new mx.rpc.Responder(handleResultZaleglosci, handleFaultZaleglosci));
+					//		this.dataTransakcje.getData(this.data.kontrahent.idMM); //pobieranie transakcji z MegaManage dla kontrahenta o podanym idMM 
+					//		this.dataZaleglosci.getData(this.data.kontrahent.idMM); //pobieranie zaległości z MegaManage dla kontrahenta o podanym idMM
+						}
+						
+			}
+			
+			private function handleResultTransakcje(event:ResultEvent):void
+			{			
+				//Alert.show(event.message.body.toString());
+				if (event.result.transakcje!=null){
+					if (event.result.transakcje.pozycja is ArrayCollection) 
+					{
+						this.dataTransakcje = event.result.transakcje.pozycja; 					
+					}
+					else
+					{ 
+						this.dataTransakcje = new ArrayCollection([event.result.transakcje.pozycja]);
+					}
+				}
+				else
+				{
+					this.dataTransakcje = null;
+				}				
+			}
+			
+			private function handleFaultTransakcje(event:FaultEvent):void
+			{
+				
+			}
+			
+			private function handleResultZaleglosci(event:ResultEvent):void
+			{			
+				//Alert.show(event.message.body.toString());
+				if (event.result.zaleglosci!=null){
+					if (event.result.zaleglosci.pozycja is ArrayCollection) 
+					{
+						this.dataZaleglosci = event.result.zaleglosci.pozycja; 					
+					}
+					else
+					{ 
+						this.dataZaleglosci = new ArrayCollection([event.result.zaleglosci.pozycja]);
+					}
+				}
+				else
+				{
+					this.dataZaleglosci = null;					
+				}
+			}
+			
+			private function handleFaultZaleglosci(event:FaultEvent):void
+			{
+			}
+			
+			//funkcja mapujaca wyniki transakcji
+	/*		private function getDataTransactions(result:Object):ArrayCollection
+			{
+				if (result.transakcje!=null){
+					if (result.transakcje.pozycja is ArrayCollection) return result.transakcje.pozycja;
+					else return new ArrayCollection([result.transakcje.pozycja]);
+				}
+				Alert.show("getDataTransactions: " + result);
+				return null;
+			}*/
+			
+			//funkcja mapująca wyniki zaległości
+	/*		private function getDataArrears(result:Object):ArrayCollection
+			{
+				if (result.zaleglosci!=null){	
+					if (result.zaleglosci.pozycja is ArrayCollection) return result.zaleglosci.pozycja;
+					else return new ArrayCollection([result.zaleglosci.pozycja]);
+				}
+				Alert.show("getDataArrears: " + result);
+				return null;
+			}*/
+			
+			//funkcja zapisująca notatki kontrahenta
+			private function saveNote():void
+			{
+				if(this.data!=null){
+					var idK:String = this.data.kontrahent.id; 
+					var note:String = this.textAreaNotes.text + this.textAreaNotesNew.text;
+			
+				
+					if (saveNoteOperation!=null)
+					{
+						saveNoteOperation.send({id:idK, textNote:note}).addResponder(new mx.rpc.Responder(handleResult, handleFault));
+					
+					}		
+					this.textAreaNotesNew.text = "";
+					this.textAreaNotes.text = note;	
+				}
+			
+			}
+			
+			//funkcja dodajaca notatki kontrahenta
+			private function addNote():void
+			{
+				if(this.data!=null){
+					var time:Date = new Date();
+					var oldNote:String;
+					var newNote:String;
+				
+					oldNote = this.textAreaNotesNew.text;
+				
+					newNote =LanguageManager.getLabel('common.user') +": " + this.data.kontrahent.uzytkownikImie + " " + this.data.kontrahent.uzytkownikNazwisko + " Data:" + DateField.dateToString(time,'DD-MM-YYYY') + " Przeterminowane:" + this.data.kontrahent.zalega_przeterm + " zł. Terminowe:" + this.data.kontrahent.zalega_term + " zł. Saldo:" + this.data.kontrahent.saldo + " zł. \nTutaj wpisz treść uwagi.";
+				
+					this.textAreaNotesNew.text = newNote + "\n" + oldNote;	
+				}	
+			}
+			
+			private function handleResult(event:ResultEvent):void
+			{			
+				//trace("result");			
+			}
+			
+			private function handleFault(event:FaultEvent):void
+			{
+				//trace("fault");
+			}
+			
+			private var xml:XMLList;
+			
+			
+			//operacja służąca do zapisu notatek 
+			public var saveNoteOperation:AbstractOperation;
+			//operacja służąca do pobrania danych z MegaManage
+			public var getContractorDataFromMM:AbstractOperation;
+			
+			private function initNotes():void
+			{
+				if(this.data!=null)
+				{
+					if(this.data.kontrahent.upz=="M")
+					{
+						this.textAreaNotes.editable=false;			
+					}
+				}
+			}
+			
+			private function filter():void
+			{			
+			//	Alert.show("ok12:" + this.filtr.selected);
+				if(this.filtr.selected==true && this.dataTransakcje!=null)
+				{
+			//		Alert.show("ok11:" + this.filtr.selected);
+					this.dataTransakcje.filterFunction = filterFunction;
+					this.transakcjeDataGrid.dataProvider = this.dataTransakcje;	
+					this.dataTransakcje.refresh();	
+				}
+				else
+				{
+					this.dataTransakcje.filterFunction = filterFunctionClear;
+					this.transakcjeDataGrid.dataProvider = this.dataTransakcje;	
+					this.dataTransakcje.refresh();					
+				}
+			}
+			
+			private function filterFunctionClear(item:Object):Boolean
+			{
+				return true;
+			}
+			
+			private function filterFunction(item:Object):Boolean
+			{
+				//if(item.dataWyst!=null)
+				var dateXml:Date = DateField.stringToDate(item.dataWyst, "YYYY-MM-DD");
+				//Alert.show("dateXml: " + dateXml);
+			//	Alert.show("dateFrom:" + this.dateFrom.selectedDate);
+				var dateFrom:Date = this.dateFrom.selectedDate;
+				//Alert.show("dateTo:" + this.dateTo.selectedDate);
+				var dateTo:Date = this.dateTo.selectedDate;
+				//Alert.show("ok5:" + item.dataWyst);
+				if (dateFrom!=null && dateTo!=null)
+				{
+					if ((dateXml>=dateFrom) && (dateXml<=dateTo))
+					{
+						return true;	
+					}
+					else
+					{
+						return false;
+					}
+				}
+				else
+				{
+					
+				}
+				
+				//Alert.show("ok8");
+				return true;
+			}
+			
+		//	public var rootUrlMegaManage:String;
+		//	public var authorizationString:String;
+			
+		//	private function init():void
+		//	{
+		//		BindingUtils.bindProperty(this.dataTransakcje, 'rootUrlMegaManage', this, 'rootUrlMegaManage');
+		//		BindingUtils.bindProperty(this.dataZaleglosci, 'rootUrlMegaManage', this, 'rootUrlMegaManage');
+		//		BindingUtils.bindProperty(this.dataTransakcje, 'authorizationString', this, 'authorizationString');
+		//		BindingUtils.bindProperty(this.dataZaleglosci, 'authorizationString',this, 'authorizationString');				
+		//	}
+			
+		/*	private function initFiltersGroups():void
+			{
+				if(this.data!=null)
+				{
+					if(this.data.kontrahent.upz=="A")
+					{
+						this.filtry.visible=true;
+					}
+				}
+			}*/
+			
+		]]>
+	</mx:Script>
+	<!--<catalogue:DataFromMegaManage id="dataTransakcje" urlMegaManage="transakcje.xml.asp" getDataResult="getDataTransactions"/>
+	<catalogue:DataFromMegaManage id="dataZaleglosci" urlMegaManage="zaleglosci.xml.asp" getDataResult="getDataArrears"/>-->
+		
+	<!--
+	<mx:Canvas id="filtry" label="Filtry grupy kontrahentów" visible="false" width="100%" height="100%">
+		<mx:Label x="63" y="52" text="Label"/>
+	</mx:Canvas>-->
+	
+	<mx:Canvas id="parametry" label="{LanguageManager.getLabel('common.detailsTab')}" width="100%" height="100%">
+		<mx:DataGrid top="0" left="0" right="0" bottom="0" dataProvider="{infoDataProvider}">
+			<mx:columns>
+				<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.attribute')}" dataField="@label" fontWeight="bold" textAlign="right"/>
+				<mx:DataGridColumn headerText="{LanguageManager.getLabel('documents.value')}" dataField="@value"/>
+			</mx:columns>
+		</mx:DataGrid>
+	</mx:Canvas>
+	<mx:Canvas id="transakcje" label="Transakcje" width="100%" height="100%">
+		<mx:VBox width="100%" height="100%">
+			<mx:Panel width="100%">
+				<mx:HBox width="100%">	
+					<mx:Label id="dataOd" text="Data od:"/><ns1:DateEditor id="dateFrom" width="150" change="filter()"/><mx:Label id="dataDo" text="Data do:"/><ns1:DateEditor id="dateTo" width="150" change="filter()"/>
+					<mx:CheckBox id="filtr" label="Filtr" click="filter()"/>
+				</mx:HBox>
+			</mx:Panel>
+			<mx:DataGrid dataProvider="{this.dataTransakcje}" id="transakcjeDataGrid" width="100%" height="100%">
+				<mx:columns>
+					<mx:DataGridColumn headerText="Data wyst. dok." dataField="dataWyst"/>
+					<mx:DataGridColumn headerText="Kod towaru" dataField="kod"/>
+					<mx:DataGridColumn headerText="Nazwa towaru" dataField="nazwa"/>
+					<mx:DataGridColumn headerText="Ilość towaru" dataField="ilosc"/>
+					<mx:DataGridColumn headerText="Wartość brutto towaru" dataField="wartBrutto" itemRenderer="inputComponents.CurrencyRenderer"/>
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:VBox>
+	</mx:Canvas>
+		<mx:Canvas id="zaleglosci" label="Rozliczenia" width="100%" height="100%">
+		<mx:DataGrid dataProvider="{this.dataZaleglosci}" id="zaleglosciDataGrid" width="100%" height="100%">
+			<mx:columns>
+				<mx:DataGridColumn headerText="Nr dokumentu" dataField="nrDok"  itemRenderer="inputComponents.ColorRenderer" />
+				<mx:DataGridColumn headerText="Termin płatności" dataField="termin"  itemRenderer="inputComponents.ColorRenderer"/>
+				<mx:DataGridColumn headerText="{LanguageManager.getLabel('documents.grossValue')}" dataField="kwota" itemRenderer="inputComponents.ColorCurrencyRenderer"/>
+				<mx:DataGridColumn headerText="Wartość pozostała do zapłaty" dataField="pozostaje" itemRenderer="inputComponents.ColorCurrencyRenderer"/>
+			</mx:columns>
+		</mx:DataGrid>
+	</mx:Canvas>
+	<mx:Canvas id="notatki" label="Notatki" width="100%" height="100%" creationComplete="initNotes()">
+		<mx:VBox x="0" y="0" height="100%" width="100%">
+			<mx:Label id="oldText" text="Notatki archiwalne"/>
+			<mx:TextArea id="textAreaNotes" width="100%" height="85%" text="{data.kontrahent.notatki}" maxChars="4000"/>			
+			<mx:HBox width="100%">
+				<mx:Button label="Nowa notatka" textAlign="center" click="addNote()"/>
+			</mx:HBox>
+			<mx:TextArea id="textAreaNotesNew" width="100%" height="25%" text=""/>
+			<mx:Button label="Zatwierdź" textAlign="center" click="saveNote()"/>
+		</mx:VBox>
+	</mx:Canvas>
+</mx:Accordion>

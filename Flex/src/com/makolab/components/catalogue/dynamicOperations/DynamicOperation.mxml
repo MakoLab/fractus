@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	click="invokeOperation()"
+	width="100%"
+	height="25"
+	paddingLeft="5"
+	paddingRight="5"
+	paddingTop="0"
+	paddingBottom="0"
+	backgroundColor="#f8f8f8"
+	visible="true"
+	enabled="true">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.CatalogueEvent;
+			import mx.controls.LinkButton;
+			import mx.skins.halo.PopUpButtonSkin;
+			import mx.skins.halo.LinkButtonSkin;
+			import mx.events.DropdownEvent;
+			import mx.events.MenuEvent;
+			import mx.controls.Menu;
+			import mx.controls.PopUpButton;
+			import com.makolab.components.catalogue.DynamicOperationsPanel;
+			
+			[Bindable]
+			public var image:Class;
+			
+			[Bindable]
+			public var labelKey:String;
+			
+			[Bindable]
+			public var order:int;
+			
+			public var isDefaultOperation:Boolean = false;
+			
+			[Bindable]
+			public var panel:DynamicOperationsPanel;
+			
+			[Bindable]
+			public var permissionKey:String;
+			
+			public virtual function invokeOperation(operationIndex:int = -1):void
+			{	
+				//if(this.visible && this.enabled) dispatchEvent(new CatalogueEvent(CatalogueEvent.OPERATION_INVOKE, this, _itemData, null, extendedOperationId));
+			}
+			
+			public virtual function loadParameters(operation:XML):void
+			{
+			}
+			
+			protected function replaceDynamicParameters(operation:XML):XML
+			{
+				var str:String = operation.toString();
+				str = str.replace(/{documentId}/g, this.panel.documentId);
+				return XML(str);
+			}
+			
+			public var extendedOperations:Array;
+			
+			protected var popUpButton:PopUpButton;
+			
+			protected override function createChildren():void
+			{
+				super.createChildren();
+				if (this.extendedOperations != null && this.extendedOperations.length > 0)
+				{
+					popUpButton = new PopUpButton();
+					popUpButton.label = this.label;
+					popUpButton.percentWidth = 100;
+					popUpButton.setStyle('skin', Class(null));
+					popUpButton.setStyle('upSkin', LinkButtonSkin);
+					popUpButton.setStyle('downSkin', PopUpButtonSkin);
+					popUpButton.setStyle('overSkin', PopUpButtonSkin);
+					popUpButton.setStyle('popUpDownSkin', PopUpButtonSkin);
+					popUpButton.setStyle('popUpOverSkin', PopUpButtonSkin);
+					popUpButton.setStyle('paddingLeft', 6);
+					popUpButton.setStyle('textAlign', 'left');
+					popUpButton.setStyle('themeColor', 0x9E9E9E);
+					popUpButton.setStyle('fillColors', [0xFFFFFF, 0xCCD1D1D1]);
+					popUpButton.addEventListener(DropdownEvent.OPEN, popupHandler);
+					popUpButton.addEventListener(DropdownEvent.CLOSE, popupHandler);
+					var menu:Menu = new Menu();
+					popUpButton.popUp = menu;
+					menu.dataProvider = this.extendedOperations;
+					menu.labelField = 'label';
+					menu.addEventListener(MenuEvent.ITEM_CLICK, handleItemClick);
+					menu.setStyle('paddingLeft', 0);
+					this.addChild(popUpButton);
+				}
+				else
+				{
+					var linkButton:LinkButton = new LinkButton();
+					linkButton.label = this.label;
+					linkButton.percentWidth = 100;
+					linkButton.setStyle('textAlign', 'left');
+					this.addChild(linkButton);
+				}
+			}
+			
+			protected function popupHandler(event:DropdownEvent):void
+			{
+				if (event.type == DropdownEvent.OPEN) this.popUpButton.setStyle('upSkin', PopUpButtonSkin);
+				else if (event.type == DropdownEvent.CLOSE) this.popUpButton.setStyle('upSkin', LinkButtonSkin);
+			}
+			
+			public function handleItemClick(event:MenuEvent):void
+			{
+				this.invokeOperation(event.index);
+			}
+		]]>
+	</mx:Script>
+	<mx:Image source="{image}" width="40" height="25" scaleContent="false" horizontalAlign="center" verticalAlign="middle"/>
+	<!--<mx:LinkButton id="linkButton" label="{label}" width="100%" textAlign="left"/>-->
+</mx:HBox>

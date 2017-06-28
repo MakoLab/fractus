@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DocumentList icon="{IconManager.getIcon('finance_documentList_bank')}" 
+	themeColor="{IconManager.FINANCIAL_COLOR}" 
+	xmlns="com.makolab.fractus.view.documents.documentLists.*" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:catalogue="com.makolab.components.catalogue.*" 
+	xmlns:data="data.*"
+	dblClickPermissionKey="sales.preview"
+	config="{listConfig}"
+	listPermissionKey="finance.reports.list"
+	>
+	<!-- OPERATIONS -->
+	<itemOperations>
+		<catalogue:CatalogueOperation permissionKey="finance.reports.preview" operationId="operationPreviewDocument" label="{LanguageManager.getInstance().labels.documents.preview}" image="{IconManager.getIcon('properties_small')}" operationInvoke="previewReport()" defaultOperation="true"/>
+		<catalogue:CatalogueOperation permissionKey="finance.reports.printGraphical" operationId="operationPrintDocumentGraphical" label="{LanguageManager.getInstance().labels.documents.printPdf}" image="{IconManager.getIcon('print_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="finance.reports.printTextual" operationId="operationPrintDocumentText" label="{LanguageManager.getInstance().labels.documents.printText}" image="{IconManager.getIcon('print_small')}" operationInvoke="operationInvokeHandler(event)" visible="false" includeInLayout="{visible}"/>
+		<catalogue:CatalogueOperation permissionKey="finance.reports.export" operationId="operationExportDocument" label="{LanguageManager.getInstance().labels.common.exportPdf}" image="{IconManager.getIcon('export_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="finance.reports.reopen" operationId="operationOpenDocument" label="{LanguageManager.getInstance().labels.documents.open}" image="{IconManager.getIcon('edit_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink1Item" label="{LanguageManager.getLabel(listConfig.operations['link1'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link1OperationVisible}" includeInLayout="{link1OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink2Item" label="{LanguageManager.getLabel(listConfig.operations['link2'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link2OperationVisible}" includeInLayout="{link2OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink3Item" label="{LanguageManager.getLabel(listConfig.operations['link3'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link3OperationVisible}" includeInLayout="{link3OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink4Item" label="{LanguageManager.getLabel(listConfig.operations['link4'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link4OperationVisible}" includeInLayout="{link4OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink5Item" label="{LanguageManager.getLabel(listConfig.operations['link5'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link5OperationVisible}" includeInLayout="{link5OperationVisible}"/>
+	</itemOperations>
+	
+
+	<!-- CONFIGURATION -->
+	<!--
+	<config>
+		<mx:XML xmlns="">
+			<config title="">
+				<headerColor>FINANCIAL_COLOR</headerColor>
+				<headerColorLight>FINANCIAL_COLOR_LIGHT</headerColorLight>
+				<objectType>FinancialReport</objectType>
+				<exportProfile>defaultFinancialReportXml</exportProfile>
+				<columns>
+					<column field="@financialRegisterId" labelKey="finance.registerShort" dataType="dictionary" width="70"/>
+					<column field="@fullNumber" labelKey="finance.report"/>
+					<column field="@creationDate" labelKey="finance.reportCreationDate" dataType="dateTime" width="130"/>
+					<column field="@closureDate" labelKey="finance.reportClosureDate" dataType="dateTime" width="130"/>
+					<column field="@initialBalance" labelKey="finance.reportInitialBalanceShort" dataType="currency" width="70"/>
+					<column field="@incomeAmount" labelKey="finance.reportIncome" dataType="currency" width="70"/>
+					<column field="@outcomeAmount" labelKey="finance.reportOutcome" dataType="currency" width="70"/>
+				</columns>
+				<getItemDataParams>
+					<type>FinancialReport</type>
+					<id/>
+				</getItemDataParams>
+				<filterField>@fullNumber</filterField>
+				<searchParams type="FinancialReport">
+					<pageSize>200</pageSize>
+					<page>1</page>
+					<columns>
+						<column field="financialRegisterId"/>
+						<column field="fullNumber" column="fullNumber"/>
+						<column field="creationDate" sortOrder="1" sortType="DESC"/>
+						<column field="closureDate"/>
+						<column field="initialBalance"/>
+						<column field="incomeAmount"/>
+						<column field="outcomeAmount"/>
+					</columns>
+				</searchParams>
+				<filters>
+				  	<filter label="" type="dateFilter"/>
+				  	<filter label="Numer raportu" type="docNumberFilter"/>
+				  	<filter label="Rejestr" type="docRegisterFilter"/>
+				  	<filter label="Ustawienia numerowania" type="docNumSettingsFilter"/>
+				</filters>
+				<filtersTemplates label="Na podstawie szablonu">
+					<template label="Status zaksięgowany lub zapisany">
+						<filter type="dateFilter">
+							<dateFormat value="DD-MM-YYYY"/>
+							<dateFrom value="30-12-2007"/>
+							<dateTo value="30-12-2010"/>
+						</filter>	
+						<filter type="docNumberFilter" value="123"/>
+						<filter type="docNumSettingsFilter" value="0A2155CE-7598-44C2-804B-333BC6332388"/>
+						<filter type="docRegisterFilter" value="BANK_O1"/>
+					</template>
+				</filtersTemplates>
+			</config>		
+		</mx:XML>
+	</config>
+	-->
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.components.catalogue.CatalogueEvent;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import assets.IconManager;
+			import com.makolab.fractus.model.LanguageManager;
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+			[Bindable]
+			public var listConfig:XML = model.configManager.getXML("documents.lists.financialReport");
+		]]>
+	</mx:Script>
+
+</DocumentList>

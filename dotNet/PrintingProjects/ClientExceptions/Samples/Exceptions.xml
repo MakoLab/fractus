@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<exceptions>
+  <exception id="UnknownBusinessObjectType">
+    <customMessage lang="pl">Nieznany typ: %objType%.</customMessage>
+  </exception>
+  <exception id="DictionaryChanged">
+    <customMessage lang="pl">Podczas przetwarzania zapytania nastąpiła zmiana w konfiguracji słowników systemowych. Proszę ponowić próbę.</customMessage>
+    <customMessage lang="en">Dictionary has been changed.</customMessage>
+    <title>ABC</title>
+  </exception>
+</exceptions>

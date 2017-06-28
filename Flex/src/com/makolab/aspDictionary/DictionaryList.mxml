@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" >
+	<mx:Script>
+		<![CDATA[
+			import mx.events.DataGridEvent;
+			import com.makolab.aspDictionary.LineMenuRenderer;
+			import com.makolab.components.data.FractusKernelOperation;
+			import com.makolab.components.data.FractusKernelService;
+			import com.makolab.components.catalogue.CatalogueItemWindow;
+			import mx.rpc.AsyncToken;
+			import mx.core.ComponentDescriptor;
+			import mx.rpc.AbstractOperation;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.components.catalogue.CatalogueItemWindow;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.controls.Alert;
+			import mx.controls.Label;
+			import com.makolab.fractus.model.LanguageManager;
+			[Bindable]
+			private var listData:XML ; // lista z danymi
+			
+			public var kernelService:FractusKernelService;   //kernelService
+			public var table:String;
+			[Bindable]
+			public var title: String;
+			
+			private var editDataWindow:CatalogueItemWindow = new CatalogueItemWindow();  //okno edycji
+			private var operationColumn :String;
+			
+			
+			public function init():void
+			{
+				var searchOperation:AbstractOperation = kernelService.getOperation('dictionaryLanguage') ;
+				searchOperation.send({}).addResponder(new mx.rpc.Responder(this.languageLoaded, this.failedLoading));		
+				this.getItemsData(true,true);
+				this.editDataWindow.addEventListener("accept", handleAccept);
+				this.editDataWindow.addEventListener("cancel", handleCancel);
+			}
+//komunikacja z Serverem		
+
+			//pobiera dane i config do edycji wiersza
+			private function getItemData(id:String, identity:String, getConfig:Boolean, getItem:Boolean ,param:String):void
+			{
+				currentState = "loading";
+				var item:String="";
+				var config:String = "";
+				if(getItem == true)
+					item = "get";
+				if(getConfig == true)
+					config = "get";
+				var searchOperation:AbstractOperation = kernelService.getOperation('dictionaryItem') ;
+				searchOperation.send({ dictionaryTable: this.table, item:item, config:config, id:id , identity:identity,param:param}).addResponder(new mx.rpc.Responder(this.itemLoaded, this.failedLoading));	
+			}
+			// pobiera dane i confik do wyswietlenia listy
+			private function getItemsData(getConfig:Boolean,getItems:Boolean):void
+			{
+				currentState = "loading";
+				var items:String="";
+				var config:String = "";
+				if(getItems == true)
+					items = "get";
+				if(getConfig == true)
+					config = "get";
+				
+				var searchOperation:AbstractOperation = kernelService.getOperation('dictionaryList') ;
+				searchOperation.send({ dictionaryTable : this.table ,items: items ,config:config}).addResponder(new mx.rpc.Responder(this.itemsLoaded, this.failedLoading));	
+			}
+			
+			//zapis zmian w db
+			private function saveItemData(xml:XML, id:String,deleteItem:Boolean ,identity:String):void
+			{	
+				currentState = "save";
+				var searchOperation:AbstractOperation
+				if(deleteItem == true){  //kasuj 
+					searchOperation = kernelService.getOperation('dictionaryDeleteItem') ;
+					searchOperation.send({ dictionaryTable : this.table,identity:identity, id:id}).addResponder(new mx.rpc.Responder(this.itemSaveResult, this.failedLoading));	
+				}else{ //edytuj
+					var operation:FractusKernelOperation= (FractusKernelOperation)(kernelService.getOperation('dictionarySaveItem'));
+					var token:AsyncToken = operation.send( { dictionaryTable : this.table, identity : identity, id : id, xml : xml.toString()} );
+					token.addResponder(new mx.rpc.Responder(this.itemSaveResult, this.failedLoading));
+				}
+				
+			}
+//komunikacja z Serverem	
+//odpowiedzi servera	
+			private function languageLoaded(event:ResultEvent):void
+			{
+				var lang:XML = new XML(event.message.body);
+				LanguageManager.getInstance().setLabelsXML(lang);
+			}			
+			//blad komunikacj z serverem		
+			private function failedLoading(event:FaultEvent):void
+			{
+				Alert.show(event.fault.faultString, "Błąd ładowania");
+				currentState = "error";
+			}
+			//wyswietlenie danych -do edycj
+			private function itemLoaded(event:ResultEvent):void
+			{	
+				var dct:XML = new XML(event.message.body);
+				var item:XML =  new XML(dct.item);
+				var config:XML = new XML(dct.configuration.form);
+				editItem(item, config,int(dct.configuration.@width),int(dct.configuration.@height));
+				currentState = "";
+			}
+			//EditItem
+			private function editItem( data:XML, formConfig:XML,width:int, height:int):void
+			{
+				editDataWindow.title = this.title;
+				if(data is XML)
+					editDataWindow.data = data;
+				if(formConfig is XML)
+					editDataWindow.formConfig = formConfig;
+				if(editDataWindow.visible == false)
+					editDataWindow.show(this);
+				if(width is int)
+					editDataWindow.width = width;
+				if(height is int)
+				 	editDataWindow.height =  height;
+			}
+			//jesli zapisało  przeładuj liste
+			public function itemSaveResult(event:ResultEvent):void
+			{
+				var dct:XML = new XML(event.message.body);
+				if(dct.toString() != "")
+					Alert.show(dct.toString());
+				this.getItemsData(false,true);
+				currentState = "";
+			}
+			//wyswietlenie danych -do listy
+			private function itemsLoaded(event:ResultEvent):void
+			{	
+				var config:XML ;
+				var items:XML;
+				var dct:XML = new XML(event.message.body);
+				
+				if(dct.items.toString() != "")
+					items = new XML(dct.items);
+				if(dct.configuration.toString() != "")
+					config = new XML(dct.configuration);
+					
+				if(config is XML )
+				{
+					this.buildGrid(config.items.children());
+ 					this.newItem.label = config.newItem.toString();
+ 					 if(config.newItem.@visible.toString() =="false")
+ 					 	this.newItem.visible  = false
+				}
+				if(items is XML)
+					this.listData = items;
+				currentState = "";
+			}
+//odpowiedzi servera			
+//dynamiczna budowa listy			
+			//build grid 
+
+
+						
+			private function buildGrid(configGrid:XMLList):void
+			{  
+				var columnsNew:Array = new Array();
+				
+				if (configGrid is XMLList){
+					var autoSize:int = countAutoSize(configGrid)
+					for (var i:int = 0 ; i < configGrid.length() ; i++)
+					{
+						var column: DataGridColumn = new DataGridColumn();
+						column.dataField = configGrid[i].name();
+						column.headerText= configGrid[i].toString();
+
+						if(int(configGrid[i].@width) is int)
+							column.width =int(configGrid[i].@width);
+						if(configGrid[i].@autoSize=="1")
+							column.width =autoSize;
+						column.editable = (configGrid[i].@editable == "1") ? true:false;
+						column.sortable = (configGrid[i].@sortable == "1") ? true:false;
+						column.visible =  (configGrid[i].@visible == "1" ) ? true:false;
+						column.wordWrap = (configGrid[i].@wordwrap == "1") ? true:false;
+						column.resizable = (configGrid[i].@resizable == "1") ? true:false;
+						if(configGrid[i].@type=="operation")
+							{
+							 operationColumn =configGrid[i].name();
+							 var lm:LineMenuRenderer = new LineMenuRenderer()
+							 lm.operationFunction = operationItemFunction;
+							 column.rendererIsEditor =  true;
+							 column.itemRenderer  =  lm;
+							 column.width = 100;
+							}
+						columnsNew.push(column);
+					}
+					dicList.columns = columnsNew;
+				}
+			}
+			//build grid 
+			
+			 private function countAutoSize(columns:XMLList):int
+            {
+            	var iAutoSize:int = this.parent.width;
+			    var iNumberOfAutosizeableColumns:int = 0;
+			    iAutoSize = iAutoSize-100; //minus opcje 
+			    for (var u:int=0;u<columns.length();u++)  {
+			    	if(columns[u].@visible == "1") {
+				    	if(columns[u].@autoSize!="1")
+				    		iAutoSize -= int(columns[u].@width);
+				    	else
+				    		iNumberOfAutosizeableColumns++;
+			    	}
+			    }
+			    
+			    if(iNumberOfAutosizeableColumns>0)
+				    iAutoSize = int(iAutoSize/iNumberOfAutosizeableColumns);
+				return iAutoSize;
+            }//countAutoSize
+//dynamiczna budowa listy				
+
+//akcje uzytkownika			
+			//operacje linie
+			public function operationItemFunction(xmlData:Object,operationName:String):void
+			{
+				var id:String = xmlData.@id.toString();
+				var identity:String = xmlData.@identity.toString();
+				var param:String = xmlData.@param.toString();
+				var operationType:String = xmlData.*.(@name.toString()==operationName).@type.toString();
+				if(operationType=="save")
+					this.saveItemData(null,id,true,identity); 
+				if(operationType=="load")
+					this.getItemData(id,identity,true,true,param);
+			} 
+			private function gridDoubleClickHandler(event:MouseEvent):void
+			{
+				var o:XML = dicList.selectedItem.*.(name() == operationColumn)[0];
+				if(o is XML)
+				{
+					if(o.@defaultOperation.toString() != "")
+						operationItemFunction(o,o.@defaultOperation.toString());
+				}
+			}
+			//nowa liniia
+			private function addItem():void
+			{
+				getItemData("0","",true,true,"");
+			}
+			private function handleAccept(event:Event):void
+			{
+				this.editDataWindow.hide();
+				var id:String = this.editDataWindow.data.@id.toString();
+				var identity:String = this.editDataWindow.data.@identity.toString();
+				saveItemData(this.editDataWindow.data as XML,id,false,identity)
+			}
+			private function handleCancel(event:Event):void
+			{
+				this.editDataWindow.hide()
+				this.editDataWindow.data=null;
+			}
+			
+//akcje uzytkownika	
+		]]>
+	</mx:Script>
+	<mx:VBox  width="100%" height="100%" left="30" right="30" top ="10" bottom="10" >
+		
+		<mx:Canvas width="100%" height="30">
+			<mx:Label id="header" width="100%"  paddingLeft="0" text="{title}" fontSize="24" textAlign="center"  fontStyle="italic"/>
+			<mx:Button id="newItem" click="addItem()"  bottom="0" right="0" width="100" icon="{IconManager.getIcon('add_small')}"/>
+		</mx:Canvas>
+		<mx:DataGrid id="dicList" width="100%" height="100%" dataProvider="{this.listData.item}" editable="false" horizontalScrollPolicy="off"  doubleClick="gridDoubleClickHandler(event)"  doubleClickEnabled="true"/>
+		<mx:Label id="footer" width="100%" height="40" />
+	</mx:VBox>
+	
+	<mx:states>
+		<mx:State name="loading">
+			<mx:SetProperty target="{progressBarCanvas}" name="visible" value="true"/>
+			<mx:SetProperty target="{progressBarLoad}" name="visible" value="true"/>
+		</mx:State>
+		<mx:State name="save">
+			<mx:SetProperty target="{progressBarCanvas}" name="visible" value="true"/>
+			<mx:SetProperty target="{progressBarSave}" name="visible" value="true"/>
+		</mx:State>
+		<mx:State name="error">
+			<mx:SetProperty target="{progressBarCanvas}" name="visible" value="true"/>
+		</mx:State>
+	</mx:states>
+	<mx:Canvas id="progressBarCanvas" width="100%" height="100%" backgroundColor="black" alpha=".5" y="0" x="0" visible="false"/>			
+	<mx:ProgressBar id="progressBarLoad" label="Load" labelPlacement="center" indeterminate="true" visible="false" width="30%" horizontalCenter="0" verticalCenter="0" height="20"/>
+	<mx:ProgressBar id="progressBarSave" label="Save" labelPlacement="center" indeterminate="true" visible="false" width="30%" horizontalCenter="0" verticalCenter="0" height="20"/>
+	<mx:Label text="Błąd ładowania" fontFamily="Verdana" fontSize="18" fontWeight="bold" enabled="true" id="errorLabel" horizontalCenter="0" verticalCenter="0" color="#ffffff" visible="false"/>
+
+
+</mx:Canvas>

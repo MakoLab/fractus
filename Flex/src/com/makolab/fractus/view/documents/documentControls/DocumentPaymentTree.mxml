@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.GetDocumentPaymentsCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			import mx.rpc.events.ResultEvent;
+			
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+			
+			private var _documentXML:XML;
+			[Bindable]
+			private var payments:XML;
+			[Bindable]
+			private var treeData:XML;
+			private var documentType:String;
+			private var documentNumber:String;
+			
+			public function set documentXML(value:XML):void
+			{
+				_documentXML = value;				
+				documentType = model.dictionaryManager.dictionaries.documentTypes.(valueOf().id == String(documentXML.documentTypeId)).symbol;
+				documentNumber = value.number.fullNumber;
+				getPayments();
+			}
+			
+			public function get documentXML():XML
+			{
+				return _documentXML;
+			}
+			
+			private function getPayments():void
+			{
+				var cmd:GetDocumentPaymentsCommand = new GetDocumentPaymentsCommand(documentXML.id, documentXML.@type);
+				cmd.addEventListener(ResultEvent.RESULT, getPaymentsResult);
+				cmd.execute();
+			}
+			
+			private function getPaymentsResult(event:ResultEvent):void
+			{
+				payments = XML(event.result);
+				treeData = <node/>;
+				treeData.@label = documentType + " " + documentNumber;
+				
+				var paymentNode:XML = <node/>;
+				var prevId:String = "";
+				var totalPayment:Number = 0;
+				var currency:String;
+				var dueAmount:Number;
+				
+				for each(var x:XML in payments.*)	{
+					var settlementNode:XML = <node/>;
+					var id:String = String(x.id);
+					var direction:Number;				
+								
+					if(prevId != id)	{
+						currency = model.dictionaryManager.dictionaries.currency.(valueOf().id == String(x.paymentCurrencyId)).symbol;
+						paymentNode.@label += " (" + dueAmount.toFixed(2).replace(".",",") + " " + currency + ")"
+						paymentNode = <node/>;	
+						paymentNode.@label = x.paymentAmount.toString().replace(".",",");
+						paymentNode.@label += model.dictionaryManager.dictionaries.currency.(valueOf().id == String(x.paymentCurrencyId)).symbol;
+						var str:Object;
+						var lab:Object= model.dictionaryManager.dictionaries.paymentMethod.(valueOf().id == String(x.paymentMethodId)).label;
+						if(lab.@lang.length())
+						{
+							str=lab.(@lang==LanguageManager.getInstance().currentLanguage);
+						}
+						else
+							str=lab;
+						
+						paymentNode.@label += " - " +str;
+						treeData.appendChild(paymentNode);
+						totalPayment = 0;
+						direction = x.direction;
+						dueAmount = Number(x.paymentAmount);
+					}
+					if(x.paymentSettlement.paymentAmount.toString() != "")	{
+						settlementNode.@label = x.paymentSettlement.paymentAmount.toString().replace(".",",");
+						settlementNode.@label += model.dictionaryManager.dictionaries.currency.(valueOf().id == String(x.paymentCurrencyId)).symbol;
+						settlementNode.@label += " - " + x.paymentSettlement.documentInfo;
+						settlementNode.@label += " (" + x.paymentSettlement.amount.toString().replace(".",",") + " " + model.dictionaryManager.dictionaries.currency.(valueOf().id == String(x.paymentCurrencyId)).symbol + ")";
+						direction = x.paymentSettlement.direction;
+						totalPayment += Number(x.paymentSettlement.amount);
+						//Fix me
+						//dueAmount = Number(x.paymentAmount) - totalPayment;
+						dueAmount = totalPayment;
+					}
+					if (x.paymentSettlement.length() == 0) settlementNode.@label = LanguageManager.getLabel("common.noDocuments"); 
+					paymentNode.appendChild(settlementNode);
+					prevId = id;		
+				}
+				paymentNode.@label += " (" + dueAmount.toFixed(2).replace(".",",") + " " + currency + ")";
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:Tree
+		 dataProvider="{treeData}"
+		 showRoot="true"
+		 editable="false"
+		 height="100%"
+		 width="100%"
+		 labelField="@label"
+		 selectedIndex="0"
+		/>			
+</mx:VBox>

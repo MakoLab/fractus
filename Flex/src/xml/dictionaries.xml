@@ -1,0 +1,258 @@
+<root version="10">
+
+  <country>
+    <entry>
+
+      <id>FB805E64-A985-459C-80D1-04602BDF7D21</id>
+
+      <symbol>GB</symbol>
+
+      <label lang="pl">Wielka Brytania</label>
+
+      <version>8A5380FF-12C9-42D0-8518-CC411408882A</version>
+
+    </entry>
+
+    <entry>
+
+      <id>8C67F218-903D-4A1D-8D21-E8040E7DCBCC</id>
+
+      <symbol>PL</symbol>
+
+      <label lang="pl">Polska</label>
+
+      <version>7DE69489-AF82-46FC-8744-49A3327AEA09</version>
+
+    </entry>
+
+  </country>
+
+  <jobPosition>
+
+    <entry>
+
+      <id>52DF9F3D-04B2-45CE-83B0-95133625704B</id>
+
+      <label lang="pl">Kiblonurek</label>
+
+      <version>242DA257-E5B6-4757-9595-8DB8E83BBC47</version>
+
+    </entry>
+
+  </jobPosition>
+
+  <contractorRelationType>
+
+    <entry>
+
+      <id>9197E1CF-C601-483A-A367-B26D5E378ED4</id>
+
+      <name>Contractor_ContactPerson</name>
+
+      <label lang="pl">Osoba kontaktowa</label>
+
+      <version>2CED3507-D8B2-48EA-9E0C-E55ECC3FF019</version>
+
+    </entry>
+
+  </contractorRelationType>
+
+  <contractorField>
+
+    <entry>
+
+      <id>1C991154-00BA-4668-A359-43F726E98DDF</id>
+
+      <name>Address_Billing</name>
+
+      <label lang="pl">Adres do fakturowania</label>
+
+      <metadata>
+
+        <dataType>ContractorAddress</dataType>
+
+      </metadata>
+
+      <version>B88621B1-1AA2-4B19-B23D-2D7486FC89DF</version>
+
+    </entry>
+
+    <entry>
+
+      <id>36BF2FB3-9D77-43F1-93B9-519CD389DC14</id>
+
+      <name>Address_Default</name>
+
+      <label lang="pl">Adres domyślny</label>
+
+      <metadata>
+
+        <dataType>ContractorAddress</dataType>
+
+      </metadata>
+
+      <version>75FDB9AF-EE31-4192-92C8-7325F31612A2</version>
+
+    </entry>
+
+    <entry>
+
+      <id>07B60EA2-75C5-41E0-A488-7962C550E68E</id>
+
+      <name>Address_Mailing</name>
+
+      <label lang="pl">Adres do wysyłki</label>
+
+      <metadata>
+
+        <dataType>ContractorAddress</dataType>
+
+      </metadata>
+
+      <version>FC19C346-65D6-456E-86A3-CCBBA51F74FC</version>
+
+    </entry>
+
+    <entry>
+
+      <id>52CA4D38-FBDA-43E6-81F3-8B19BC9AD996</id>
+
+      <name>Contact_Fax</name>
+
+      <label lang="pl">Fax</label>
+
+      <metadata>
+
+        <dataType>string</dataType>
+
+      </metadata>
+
+      <version>6E77A7B2-D28D-4D17-BAF7-6060D6AB1ACE</version>
+
+    </entry>
+
+    <entry>
+
+      <id>3D95E450-1A89-4215-8D43-941D33F71592</id>
+
+      <name>Attribute_Regon</name>
+
+      <label lang="pl">Regon</label>
+
+      <metadata>
+
+        <dataType>string</dataType>
+
+      </metadata>
+
+      <version>5DA90CA5-DE91-40AE-AFCC-4FCA9315A4B9</version>
+
+    </entry>
+
+    <entry>
+
+      <id>72CCBD38-ACA5-47FF-BAD0-A4DB9CC8A32D</id>
+
+      <name>Attribute_Passport</name>
+
+      <label lang="pl">Paszport</label>
+
+      <metadata>
+
+        <dataType>xml</dataType>
+
+        <template>
+
+          <passport>
+
+            <passportNumber/>
+
+            <issuer/>
+
+          </passport>
+
+        </template>
+
+      </metadata>
+
+      <version>80664784-BB4F-4286-A166-CC1FF2C7F22A</version>
+
+    </entry>
+
+    <entry>
+
+      <id>D950E01D-5221-4711-96F2-A84F20435581</id>
+
+      <name>Contact_Phone</name>
+
+      <label lang="pl">Telefon</label>
+
+      <metadata>
+
+        <dataType>string</dataType>
+
+      </metadata>
+
+      <version>6671541B-9FF7-46B0-B83E-D3395CACC4E2</version>
+
+    </entry>
+
+    <entry>
+
+      <id>667C3AB1-F1A7-48B7-AD33-B83B7FB0F411</id>
+
+      <name>Attribute_Pesel</name>
+
+      <label lang="pl">Pesel</label>
+
+      <metadata>
+
+        <dataType>decimal</dataType>
+
+      </metadata>
+
+      <version>769D6C70-4A1E-4C1E-BB5D-2234F5007C6B</version>
+
+    </entry>
+
+    <entry>
+
+      <id>C0913791-BF27-4115-900B-BD664AB231AB</id>
+
+      <name>Contact_GG</name>
+
+      <label lang="pl">Numer Gadu-Gadu</label>
+
+      <metadata>
+
+        <dataType>decimal</dataType>
+
+        <regExp>^\d{1,10}$</regExp>
+
+      </metadata>
+
+      <version>2B3FEDA7-2061-47FB-9D47-86B030870FAC</version>
+
+    </entry>
+
+    <entry>
+
+      <id>356AFECD-99E6-4D0B-9F27-D802AE116C1C</id>
+
+      <name>Contact_Email</name>
+
+      <label lang="pl">E-Mail</label>
+
+      <metadata>
+
+        <dataType>string</dataType>
+
+      </metadata>
+
+      <version>C6C5290E-FC66-42A7-BA85-662AB4AC1A9C</version>
+
+    </entry>
+
+  </contractorField>
+
+</root>

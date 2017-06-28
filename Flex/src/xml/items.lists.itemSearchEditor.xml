@@ -1,0 +1,33 @@
+<!-- konfiguracja wyszukiwarki towarow na dokumentach -->
+<config>
+	<searchParams>
+		<query/>
+		<columns>
+			<column field="name" sortOrder="1" sortType="ASC"/>
+			<column field="code" sortOrder="2" sortType="ASC"/>
+			<column field="version" sortOrder="3" sortType="ASC"/>
+			<column field="quantity" dataType="float"/>
+			<column field="orderedQuantity" dataType="float"/>
+			<column field="reservedQuantity" dataType="float" />
+			<column field="availableQuantity" dataType="float"/>
+		</columns>
+		<filters/> 
+	</searchParams>
+	<operations>
+		<item name="newItem" global="1">Stwórz nowy towar/usługę...</item>
+		<item name="editItem">Edytuj wybrany towar/usługę...</item>
+		<item name="duplicateItem">Powiel wybrany towar/usługę...</item>
+		<item name="itemDetails">Informacje o towarze/usłudze</item>
+	</operations>
+	<searchModes>
+		<column label="Ogólne" field=""/>
+		<!--<column labelKey="common.code" label="Kod" field="code"/>-->
+	</searchModes>
+	<columns>
+		<column field="@name" labelKey="common.shortName" filter="1" width="100%"/>
+		<column field="@code" labelKey="common.code" filter="1" width="150"/>
+		<column field="@quantity" labelKey="items.stock" dataType="currency" width="50"/>
+		<column field="@orderedQuantity" labelKey="items.orderedShort" dataType="currency" width="50"/>
+		<column field="@availableQuantity" labelKey="items.availableShort" width="50" dataType="currency"/>
+	</columns>
+</config>

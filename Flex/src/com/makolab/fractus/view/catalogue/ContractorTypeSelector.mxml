@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem
+		xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*"
+		label="{LanguageManager.getInstance().labels.contractors.supplierReceiver}"
+		direction="horizontal" implements="com.makolab.components.inputComponents.IFormBuilderComponent"
+		>
+	<mx:CheckBox
+			label="{LanguageManager.getInstance().labels.common.deliverer}"
+			selected="{parseInt(dataObject.isSupplier) == 1}"
+			change="dataObject.isSupplier = (event.target.selected ? 1 : 0)"
+		/>
+	<mx:CheckBox
+			label="{LanguageManager.getInstance().labels.common.recipient}"
+			selected="{parseInt(dataObject.isReceiver) == 1}"
+			change="dataObject.isReceiver = (event.target.selected ? 1 : 0)"
+		/>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.validators.ValidationResult;
+			import com.makolab.fractus.model.LanguageManager;
+			[Bindable]
+			public var dataObject:XML;
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				if (value is XMLList) dataObject = value[0];
+				else if (value is XML) dataObject = value as XML;
+			}
+			
+			public function validate():Object
+			{
+				var isEmployee:Boolean = data.isEmployee.* == "1";
+				var isBank:Boolean = data.isBank.* == "1";
+				var isSupplier:Boolean = data.isSupplier.* == "1";
+				var isReceiver:Boolean = data.isReceiver.* == "1";
+				var isOwnCompany:Boolean = data.isOwnCompany.* == "1";
+				
+				var ret:Array = new Array();
+				
+				/* wymuszenie dostawcy lub odbiorcy tylko przy zakładaniu nowego kontrahenta */
+				if(!String(data.version) && !isBank && !isEmployee && !isSupplier && !isReceiver)
+					ret.push(new ValidationResult(true, "contractorType", "CONTRACTOR_TYPE_ERROR", "Kontrahent musi być odbiorcą albo dostawcą."));
+				
+				return ret;
+			}
+		
+			public function commitChanges():void
+			{
+				
+			}
+		
+			public function reset():void
+			{
+				
+			}
+		]]>
+	</mx:Script>
+</mx:FormItem>

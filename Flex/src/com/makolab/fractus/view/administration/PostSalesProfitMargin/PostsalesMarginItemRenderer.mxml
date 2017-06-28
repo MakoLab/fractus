@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CurrencyRenderer xmlns="com.makolab.components.inputComponents.*" xmlns:mx="http://www.adobe.com/2006/mxml" selectable="false" postfix="%" precision="-2">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.dataGridClasses.DataGridListData;
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				var nodes:XMLList;
+				if (data && data is XML) nodes = (data as XML).value.(valueOf().@dataField == (listData as DataGridListData).dataField)
+				if (nodes && nodes.length() > 0)
+				{
+					if (nodes.length() > 1){ throw new Error("More than 1 node found for dataField '" + (listData as DataGridListData).dataField + "'")};
+					this.value = Number(nodes[0]) * 100;
+				}
+			}
+		]]>
+	</mx:Script>
+</CurrencyRenderer>

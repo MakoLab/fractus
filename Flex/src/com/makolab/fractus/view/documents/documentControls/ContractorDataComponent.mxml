@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*" horizontalGap="18" creationComplete="onCreationComplete()">
+	<!-- adres kontrahenta -->
+	<inputComponents:AddressRenderer
+			data="{documentObject.xml.contractor.contractor.addresses.address.(id.* == documentObject.xml.contractor.addressId.*)}"
+		/>
+
+	<mx:Form verticalGap="0" paddingBottom="0" paddingTop="0" width="100%" >
+		<mx:Repeater id="rpa" dataProvider="{attributes}">
+			<inputComponents:AttributeRenderer data="{rpa.currentItem}" idField="contractorFieldId"/>
+		</mx:Repeater>
+	</mx:Form>
+	
+	<mx:Style>
+		.attributeLabel
+		{
+			padding-left: 0px;
+			font-size: 10px;
+			font-weight: bold;
+		}
+		.attributeValue
+		{
+			padding-left: 10px;
+			font-size: 10px;
+		}
+	</mx:Style>
+		
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.XMLListCollection;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.components.util.Tools;
+			import mx.collections.Sort;
+			import mx.utils.ObjectUtil;
+			import mx.collections.ArrayCollection;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			private var _documentObject:DocumentObject;
+			
+			[Bindable]
+			private var remarks:XMLList;
+			[Bindable]
+			private var attributes:XMLList;
+			
+			public function onCreationComplete():void 
+			{
+				this.documentObject.addEventListener(DocumentEvent.DOCUMENT_FIELD_CHANGE, documentObjectChangeHandler, false, 0, true);
+			}
+			
+			private function documentObjectChangeHandler(event:DocumentEvent):void
+			{
+				if (event.fieldName == "contractor") prepareRemarks();
+			}
+			
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void 
+			{ 
+				_documentObject = value;
+				prepareRemarks();
+			}
+			public function get documentObject():DocumentObject { return _documentObject; }
+			
+			public function prepareRemarks():void
+			{
+				//var o:Object = XML(_documentObject.typeDescriptor.dictionaryTypeDescriptor.xmlOptions.root).children()[0];
+				var attributesShown:String = (XML(_documentObject.typeDescriptor.dictionaryTypeDescriptor.xmlOptions.root).children()[0]).@contractorAttributesShownNumber.toString();
+				var attributesMaxVisibleLength:Number = parseInt((XML(_documentObject.typeDescriptor.dictionaryTypeDescriptor.xmlOptions.root).children()[0]).@contractorAttributeMaxVisibleLength.toString());
+				if (attributesMaxVisibleLength == 0) attributesMaxVisibleLength = NaN;
+				
+				if((attributesShown == "") || (attributesShown=="all") || (attributesShown==null))
+				{
+					attributes = documentObject.xml.contractor.contractor.attributes.*;
+				}
+				else
+				{
+					attributes = new XMLList();
+					remarks = new XMLList();
+					var remarksDictionary:XMLList = DictionaryManager.getInstance().dictionaries.contractorRemarks;
+					var attrQty:int = parseInt(attributesShown);
+					var remarkQty:int = 0;
+					var availableRemarksQty:int = XMLList(documentObject.xml.contractor.contractor.attributes.*).length();
+					
+					for each (var attribute:XML in documentObject.xml.contractor.contractor.attributes.attribute)
+					{
+						var isRemark:Boolean = false;
+						for each (var remark:XML in remarksDictionary)
+							if (attribute.contractorFieldId.toString() == remark.id.toString())
+							{
+								isRemark = true;
+								
+			 					if (attribute.value.note.data.toString().length > attributesMaxVisibleLength)
+			 					{
+			 						var value:String = attribute.value.note.data.toString();
+			 						attribute.value.note.data.* = String(attribute.value.note.data).substr(0,attributesMaxVisibleLength) + "...";
+			 					}
+								remarks = remarks + attribute;
+							}
+						if (isRemark) remarkQty++;
+						else attributes = attributes + attribute;
+					}
+					
+					if(attrQty < remarkQty)
+					{
+						remarks = selectNewestRemarks(attrQty);
+					}
+					attributes = attributes + remarks;
+					
+				}
+				
+			}
+			
+			public function selectNewestRemarks(attrQty:int):XMLList
+			{
+				var baseRemarks:XMLList = remarks.copy();
+				var result:XMLList = new XMLList();
+				//var base:ArrayCollection = xmlListToArrayCollection(baseRemarks);
+				var base2:XMLListCollection = new XMLListCollection(baseRemarks);
+				//var i:int=9;
+				
+				var sort:Sort = new Sort();
+ 				sort.compareFunction = dateCompare;
+ 				//base.sort = sort;
+				//base.refresh();
+ 				base2.sort = sort;
+ 				base2.refresh();
+ 				baseRemarks = XMLList(base2);
+ 				for (var i:int = 0; i < attrQty; i++)
+ 				{
+ 					result = result + baseRemarks[i];
+ 				}
+				//var t:XMLList = arrayCollectionToXMLList(base, attrQty);
+				//return arrayCollectionToXMLList(base, attrQty);
+				return result;
+			}
+			
+ 			private function dateCompare(ObjA:Object,ObjB:Object, fields:Array = null):int
+ 			{
+ 				var dateA:Date = Tools.isoToDate(ObjA.value.note.creationDate);
+				var dateB:Date = Tools.isoToDate(ObjB.value.note.creationDate);
+ 				return -ObjectUtil.dateCompare(dateA, dateB);
+ 			}
+			
+			public function xmlListToArrayCollection(xmlList:XMLList):ArrayCollection
+			{
+				var a:ArrayCollection = new ArrayCollection();
+				for each(var x:XML in xmlList)
+				{
+					var o:Object = {xml : x, creationDate : x.value.note.creationDate.toString()};
+					a.addItem(o);
+				}
+				return a;
+			}
+			
+			public function arrayCollectionToXMLList(ac:ArrayCollection, nodesQty:int):XMLList
+			{
+				var xmlList:XMLList = new XMLList();
+				var q:int = 0;
+				for (var i:int=ac.length-1; i>ac.length-1 - nodesQty; i--)
+				{
+					xmlList[q] = ac[i].xml;
+					q++;
+				}
+				return xmlList;
+			}
+			
+		]]>
+	</mx:Script>
+</mx:HBox>

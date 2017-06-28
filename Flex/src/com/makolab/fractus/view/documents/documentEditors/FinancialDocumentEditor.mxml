@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DocumentEditor
+		xmlns="com.makolab.fractus.view.documents.documentEditors.*"
+		xmlns:lineList="com.makolab.components.lineList.*"
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		xmlns:util="com.makolab.components.util.*"
+		xmlns:inputComponents="com.makolab.components.inputComponents.*"
+		xmlns:model="com.makolab.fractus.model.*" xmlns:catalogue="com.makolab.components.catalogue.*"
+		xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*" xmlns:plugins="com.makolab.fractus.view.documents.plugins.*"
+		printProfileName="defaultWarehouseDocumentPdf"
+	xmlns:generic="com.makolab.fractus.view.generic.*" xmlns:payments="com.makolab.fractus.view.payments.*"
+	creationComplete="creationComplete()" xmlns:finance="com.makolab.fractus.view.finance.*" xmlns:catalogue1="com.makolab.fractus.view.catalogue.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.view.documents.documentControls.DefaultAttributeComponent;
+			import com.makolab.fractus.view.finance.SalesOrderEvent;
+			import com.makolab.fractus.view.payments.PaymentEvent;
+			
+			protected function paymentSelectHandler(event:PaymentEvent):void
+			{
+				lines.addSettlingLine(LanguageManager.getInstance().labels.documents.paymentsSettlement + ": " + event.getDocumentNumber(), event.unsettledAmount, event.paymentId);
+			}
+			
+			public function salesOrderSelect(x:XML, oo:Object):void
+			{
+				lines.addLineWithSalesOrder(LanguageManager.getInstance().labels.documents.forInvoiceNo + ": ", x.@commercialDocumentId);
+			}
+			
+			private function creationComplete():void
+			{
+				if(documentObject.typeDescriptor.xmlOptions.additionalAttributes.*.length() == 0)
+				{
+					this.tabNavigator.getTabAt(2).visible = false;
+					this.tabNavigator.getTabAt(2).includeInLayout = false;
+				}
+			}
+			
+			private function handleFinancialRegisterSelectorChange(event:Event):void
+			{
+				documentObject.xml.financialReport.financialReport.financialRegisterId = financialRegisterSelector.selectedId;
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_FIELD_CHANGE, 'financialRegisterId'));
+				
+				var o:Object = (DictionaryManager.getInstance().getById(event.target.selectedId)).currencyId;
+				documentObject.documentCurrencyId = o.toString();
+				var i:int = 9;
+				
+				//currencyInfo.documentObject = documentObject;
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_FIELD_CHANGE, 'documentCurrencyId'));
+			}
+			
+			override protected function handleKeyDown(event:KeyboardEvent):void
+			{
+				// Przejscie do konkretnej zakadki
+				if (event.ctrlKey && !event.altKey && !event.shiftKey && event.keyCode >= 49 && event.keyCode <= 57)
+				{
+					if (event.keyCode - 49 < tabNavigator.numChildren && tabNavigator.getTabAt(event.keyCode - 49).visible)
+					{
+						tabNavigator.selectedIndex = event.keyCode - 49;
+						tabNavigator.setFocus();
+					}
+				}
+				super.handleKeyDown(event);
+			}
+			
+			
+		]]>
+	</mx:Script>
+	
+	<!-- plugins -->
+	<plugins:DocumentValidationPlugin id="validationPlugin" documentObject="{documentObject}"/>
+	<plugins:ContractorPlugin documentObject="{documentObject}"/>
+	<plugins:DocumentNumberPlugin documentObject="{documentObject}"/>
+	<plugins:FinancialDocumentCalculationPlugin documentObject="{documentObject}"/>
+	<plugins:FinancialReportPlugin documentObject="{documentObject}"/>
+	
+	<mx:TabNavigator id="tabNavigator" width="100%" height="100%">
+		
+		<mx:Form
+				label="{LanguageManager.getInstance().labels.common.basicTab}"
+				paddingLeft="15"
+				paddingRight="15"
+				width="100%"
+				height="100%"
+				paddingTop="0"
+				paddingBottom="0"
+			>
+	
+			<!-- TYP I NUMER -->
+			<mx:HBox paddingBottom="10">
+				<mx:Label text="{getDocumentType(documentObject.xml).label.(@lang==LanguageManager.getInstance().currentLanguage)[0]}" fontSize="18"/>
+				<mx:Label text="{documentObject.xml.number.fullNumber}" fontSize="18"/>
+			</mx:HBox>
+			
+			<!-- REJESTR -->
+			
+			<mx:FormItem label="{LanguageManager.getInstance().labels.finance.registerShort}">
+			
+			<mx:HBox >
+				<generic:FinancialRegisterSelector
+						id="financialRegisterSelector"
+						enabled="{documentObject != null &amp;&amp; documentObject.isNewDocument}"
+						documentObject="{documentObject}"
+						documentTypeId="{documentObject.typeDescriptor.typeId}"
+						change="this.handleFinancialRegisterSelectorChange(event)"
+						selectedId="{documentObject.xml.financialReport.financialReport.financialRegisterId}"
+					/>
+			
+			
+			<documentControls:DocumentCurrencyRenderer id="currencyInfo" documentObject="{documentObject}" paddingLeft="10"/>
+			
+			
+			</mx:HBox>
+			</mx:FormItem>
+			
+			
+			<!-- RAPORT -->
+			<mx:FormItem label="{LanguageManager.getInstance().labels.finance.reportShort}">
+				<mx:Label text="{documentObject.xml.financialReport.financialReport.number.fullNumber}"/>
+			</mx:FormItem>
+			
+			<!-- DATA -->
+			<documentControls:DateControl documentObject="{documentObject}" fieldName="issueDate" currentState="editor"/>
+			
+			<!-- KONTRAHENT -->
+			<mx:FormItem
+					label="{LanguageManager.getInstance().labels.documents.contractorData}"
+					visible="{!documentObject.typeDescriptor.isShiftDocument}"
+					includeInLayout="{!documentObject.typeDescriptor.isShiftDocument}"
+					width="100%"
+				>
+				<mx:HBox width="100%">
+					<documentControls:ContractorComponent
+							id="contractorComponent"
+							currentState="editorNoAddress"
+							width="40%"
+							documentObject="{documentObject}"
+							contractorId="{documentObject.xml.contractor.contractor.id}"
+							enableAddressSelection="{documentObject.enableAddressSelection}"
+						/>
+					<!-- dane nabywcy -->
+					<documentControls:ContractorDataComponent
+							width="60%"
+							documentObject="{documentObject}"
+						/>
+				</mx:HBox>
+			</mx:FormItem>
+				
+			<mx:HBox verticalAlign="middle">
+				<payments:PaymentPopUp
+				contractorId="{documentObject.xml.contractor.contractor.id}"
+				direction="{-documentObject.typeDescriptor.financialDirection}"
+				paymentSelect="paymentSelectHandler(event)"
+				currencyId="{documentObject.documentCurrencyId}"
+				/>
+				<!--<finance:SalesOrderPopUp 
+					contractorId="{documentObject.xml.contractor.contractor.id}" 
+					salesOrderSelect="salesOrderSelectHandler(event)"
+					visible="{documentObject.typeDescriptor.isOutcomeFinancialDocument &amp;&amp; ModelLocator.getInstance().isSalesOrderModuleEnabled}"
+					includeInLayout="{documentObject.typeDescriptor.isOutcomeFinancialDocument &amp;&amp; ModelLocator.getInstance().isSalesOrderModuleEnabled}"/>-->
+        <!--<mx:Label text="{LanguageManager.getInstance().labels.finance.selectSalesOrder}" />
+				<documentControls:SalesOrderSearchEditor visible="{documentObject.typeDescriptor.isOutcomeFinancialDocument &amp;&amp; ModelLocator.getInstance().isSalesOrderModuleEnabled}"
+					includeInLayout="{documentObject.typeDescriptor.isOutcomeFinancialDocument &amp;&amp; ModelLocator.getInstance().isSalesOrderModuleEnabled}"
+					setFunction="{salesOrderSelect}" />-->
+			</mx:HBox>
+
+			<!-- POZYCJE -->
+			<documentControls:FinancialLinesComponent
+					id="lines"
+					width="100%"
+					height="100%"
+					documentObject="{documentObject}"
+					rowCount="10"
+					hideRecalculationButton="true"
+				/>
+				
+			<!-- PODSUMOWANIE -->
+			<mx:FormItem label="{LanguageManager.getInstance().labels.common.total}:">
+				<inputComponents:CurrencyRenderer value="{documentObject.xml.amount}" currencyId="{documentObject.xml.documentCurrencyId}"/>
+			</mx:FormItem>
+		</mx:Form>
+		
+		<!-- ZAKLADKA SZCZEGOLOW -->
+		<mx:HBox
+				label="{LanguageManager.getInstance().labels.documents.details}"
+				paddingLeft="15"
+				paddingRight="15"
+				paddingTop="15"
+				width="100%"		
+				height="100%"
+			>
+			
+			<!-- lewa kolumna szczegolow -->
+			<mx:Form
+					width="35%"
+					height="100%"
+					paddingTop="4" labelWidth="110"
+				>
+				<!-- waluta dokumentu -->
+				<documentControls:DocumentCurrencySelector documentObject="{documentObject}" width="100%" visible="{documentObject.typeDescriptor.allowOtherCurrencies}" includeInLayout="{documentObject.typeDescriptor.allowOtherCurrencies}"/>
+				<!-- daty -->		
+				<documentControls:DateControl documentObject="{documentObject}" fieldName="issueDate" label="{LanguageManager.getInstance().labels.documents.issueDate}" currentState="editor"/>
+				
+				<!-- cechy dokumentu -->
+				<documentControls:DocumentFeatureComponent documentObject="{this.documentObject}" currentState="editor" />
+				
+				<!-- atrybuty podstawowe -->
+				<mx:Repeater id="basicAttributeRepeater" dataProvider="{documentObject.typeDescriptor.xmlOptions.basicAttributes.attribute}">
+					<documentControls:DocumentGenericSingleAttributeComponent documentObject="{documentObject}" attributeName="{basicAttributeRepeater.currentItem.@name}" enabled="{basicAttributeRepeater.currentItem.@readOnly != 1}"/>
+				</mx:Repeater>
+			</mx:Form>
+			
+			<!-- prawa (szersza) kolumna -->
+			<mx:Form
+					width="65%"
+					height="100%"
+					paddingTop="4"
+				>
+				<!-- uwagi -->
+				<documentControls:RemarksComponent documentObject="{documentObject}" width="100%" height="100"/>
+			</mx:Form>
+		</mx:HBox>
+		
+		<documentControls:AdditionalAttributesTab documentObject="{documentObject}"/>
+		
+	</mx:TabNavigator>
+
+</DocumentEditor>

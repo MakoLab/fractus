@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:CheckBox xmlns:mx="http://www.adobe.com/2006/mxml" textAlign="center" 
+>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import com.makolab.components.inputComponents.DataObjectManager;
+	
+		public override function set data(value:Object):void
+		{
+			super.data = value;
+			var dataObject:Object = DataObjectManager.getDataObject(value, listData);
+			if (dataObject == null) this.selected = false;
+			else
+			{
+				this.selected = Tools.parseBoolean(dataObject);
+			}			
+		}
+		
+		
+		private var _checkBoxColor:String;
+		public function set checkBoxColor(value:String):void
+		{
+			_checkBoxColor = value;
+			updateText();			
+		}
+		public function get checkBoxColor():String
+		{
+			return _checkBoxColor;
+		}
+		
+		protected function updateText():void
+		{
+			this.setStyle("iconColor", checkBoxColor);			
+		}
+		
+		public function get text():Object
+		{
+			return selected ? "1" : "0";
+		}
+	]]>
+	</mx:Script>
+	
+	
+</mx:CheckBox>

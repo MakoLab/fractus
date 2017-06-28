@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem label="{LanguageManager.getLabel('service.servicedObjectOnDocument')}" xmlns="com.makolab.components.lineList.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" xmlns:catalogue="com.makolab.fractus.view.catalogue.*">
+	<mx:HBox width="100%">
+		<mx:VBox width="500">
+			<catalogue:ServicedObjectSearchEditor
+				id="soseObject"
+				width="100%"
+				itemId="{documentObject.xml.serviceDocumentServicedObjects.serviceDocumentServicedObject[0].servicedObjectId}"
+				autoLoadName="true"
+				setFunction="{updateData}"
+				/>
+			<mx:TextArea
+				id="taDescription"
+				width="100%"
+				height="100"
+				text="{documentObject.xml.serviceDocumentServicedObjects.serviceDocumentServicedObject[0].description}"
+				focusOut="updateData()"
+				/>
+		</mx:VBox>
+		<mx:VBox width="100%">
+			<mx:Text text="{servicedObjectData.description}"/>
+			<mx:Text text="{servicedObjectData.remarks}" fontStyle="italic"/>
+		</mx:VBox>
+
+	</mx:HBox>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import mx.collections.ICollectionView;
+			import com.makolab.fractus.view.generic.FilteredSelector;
+			import com.makolab.fractus.view.generic.FilteredList;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.GetServicedObjectsCommand;
+			import com.makolab.fractus.view.documents.documentEditors.DocumentEditor;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			[Bindable]
+			public var servicedObjectData:XML;
+			
+			private var _documentObject:DocumentObject;
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				_documentObject = value;
+				if (_documentObject)
+				{
+					updateContractor();
+					if (_documentObject.xml.serviceDocumentServicedObjects.serviceDocumentServicedObject.length() == 0)
+					{
+						createEntry();
+					}
+					else
+					{
+						loadObjectData(_documentObject.xml.serviceDocumentServicedObjects.serviceDocumentServicedObject.servicedObjectId);
+					}
+					_documentObject.addEventListener(DocumentEvent.DOCUMENT_FIELD_CHANGE, handleFieldChange);
+				}
+			}
+			public function get documentObject():DocumentObject
+			{
+				return _documentObject;
+			}
+			
+			private function handleFieldChange(event:DocumentEvent):void
+			{
+				if (event.fieldName != 'contractor') return;
+				updateContractor();
+			}
+			
+			private function updateContractor():void
+			{
+				var contractorId:String = documentObject.xml.contractor.contractor.id;
+				soseObject.contractorId = contractorId;
+				if (servicedObjectData && servicedObjectData.ownerContractorId != contractorId)
+				{
+					servicedObjectData = null;
+					soseObject.clear();
+				}
+			}
+			
+			private function createEntry():void
+			{
+				_documentObject.xml.serviceDocumentServicedObjects.appendChild(<serviceDocumentServicedObject><servicedObjectId/><description/></serviceDocumentServicedObject>);
+				dispatchChangeEvent();
+			}
+			
+			private function dispatchChangeEvent():void
+			{
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_FIELD_CHANGE, 'servicedObjects'));
+			}
+			
+			private function updateData(newId:String = null, arg2:Object = null):void
+			{
+				var node:XML = documentObject.xml.serviceDocumentServicedObjects.serviceDocumentServicedObject[0];
+				var itemId:String = soseObject.itemId;
+				var description:String = taDescription.text;
+				if (node && (newId || node.description != description || node.servicedObjectId != itemId))
+				{
+					if (newId) itemId = newId;
+					if (itemId) node.servicedObjectId = itemId;
+					else if (node.servicedObjectId.length() > 0) delete node.servicedObjectId;
+					node.description = description;
+					dispatchChangeEvent();
+					servicedObjectData = null;
+					loadObjectData();
+				}
+			}
+			
+			private function loadObjectData(id:String = null):void
+			{
+				if (!id) id = soseObject.itemId;
+				if (id)
+				{
+					var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand(LoadBusinessObjectCommand.TYPE_SERVICED_OBJECT, id);
+					cmd.addEventListener(ResultEvent.RESULT, handleLoadObjectDataResult);
+					cmd.execute();
+				}
+			}
+			
+			private function handleLoadObjectDataResult(event:ResultEvent):void
+			{
+				var result:XML = XML(event.result);
+				if (result && result.*.length() > 0) servicedObjectData = result.*[0];
+				if (servicedObjectData && String(servicedObjectData.ownerContractorId) && servicedObjectData.ownerContractorId != String(documentObject.xml.contractor.contractor.id))
+				{
+					documentObject.xml.contractor.contractor.id = String(servicedObjectData.ownerContractorId);
+					documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_FIELD_CHANGE, 'contractorId'));
+				}
+			}
+		]]>
+	</mx:Script>
+</mx:FormItem>

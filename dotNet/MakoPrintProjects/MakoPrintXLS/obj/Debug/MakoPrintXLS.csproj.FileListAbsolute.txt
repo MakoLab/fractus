@@ -1,0 +1,16 @@
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintXLS\bin\Debug\MakoPrintXLS.XML
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintXLS\bin\Debug\MakoPrintXLS.dll
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintXLS\bin\Debug\MakoPrintXLS.pdb
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintXLS\bin\Debug\org.in2bits.MyXls.dll
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintXLS\bin\Debug\org.in2bits.MyXls.xml
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintXLS\obj\Debug\MakoPrintXLS.csprojResolveAssemblyReference.cache
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintXLS\obj\Debug\MakoPrintXLS.dll
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintXLS\obj\Debug\MakoPrintXLS.pdb
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintXLS\bin\Debug\MakoPrintXLS.XML
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintXLS\bin\Debug\MakoPrintXLS.dll
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintXLS\bin\Debug\MakoPrintXLS.pdb
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintXLS\bin\Debug\org.in2bits.MyXls.dll
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintXLS\bin\Debug\org.in2bits.MyXls.xml
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintXLS\obj\Debug\MakoPrintXLS.csprojResolveAssemblyReference.cache
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintXLS\obj\Debug\MakoPrintXLS.dll
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintXLS\obj\Debug\MakoPrintXLS.pdb

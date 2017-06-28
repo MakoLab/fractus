@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" textAlign="center" keyUp="{handleKey(event)}" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:util="com.makolab.components.util.*" xmlns:plugins="com.makolab.fractus.view.documents.plugins.*" xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.document.BusinessObjectAttribute;
+			import com.makolab.fractus.view.documents.documentControls.DocumentLineGenericSingleAttributeComponent;
+			import mx.core.Repeater;
+			import com.makolab.fractus.model.document.BusinessObject;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.document.CommercialDocumentLine;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.components.document.DocumentEvent;
+			
+			[Bindable] public var dictionaryManager:DictionaryManager = DictionaryManager.getInstance();	
+			[Bindable] public var line:CommercialDocumentLine;
+			[Bindable] public var documentObject: DocumentObject;
+			public var window:ComponentWindow;
+			
+			public function saveDetails(): void	
+			{				
+				var attributesArray:Array = new Array(this.lineAttributeComponent.genSingleAttributeComponent)[0]; 
+				var attributesCount:int = attributesArray.length;
+				
+				for (var i:int = 0; i<attributesCount; i++)
+				{
+					var tempAttrComponent:DocumentLineGenericSingleAttributeComponent = attributesArray[i];
+					if(tempAttrComponent.editor.dataObject != "")
+					{
+						(BusinessObjectAttribute(this.line.getAttributeByName(tempAttrComponent.attributeName))).value = tempAttrComponent.editor.dataObject;						
+					}										
+				}
+				window.hide();
+			}
+			
+			
+			public function handleKey(event:KeyboardEvent):void
+			{
+				
+				if(event.keyCode == Keyboard.ENTER)
+				{
+					saveDetails();
+				}
+				else
+				if (event.keyCode == Keyboard.ESCAPE)
+				{
+					window.hide();
+				}
+			}		
+		]]>
+	</mx:Script>
+		
+	<mx:VBox width="100%" textAlign="left" paddingLeft="4" paddingRight="4">
+		<mx:Label text="Atrybuty linii" fontSize="16" />
+		<documentControls:DefaultLineAttributeComponent id="lineAttributeComponent" documentLine="{line}" documentObject="{documentObject}"  attributeListNode="lineAttributes"/>	
+	</mx:VBox>
+	 
+</mx:VBox>

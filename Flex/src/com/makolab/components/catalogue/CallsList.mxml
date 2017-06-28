@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:DataGrid xmlns:mx="http://www.adobe.com/2006/mxml" headerHeight="0">
+	<mx:columns>
+		<mx:DataGridColumn dataField="date" width="60">
+			<mx:itemRenderer>
+				<mx:Component>
+					<mx:VBox verticalGap="0" verticalScrollPolicy="off" horizontalScrollPolicy="off">
+					<mx:Script>
+						<![CDATA[
+							import mx.formatters.DateFormatter;
+							private var dateFormatter:DateFormatter = new DateFormatter();
+							private function getDate(line:Object):String
+							{
+								var stringValue:String = "";
+								if (line)
+								{
+									dateFormatter.formatString = "DD.MM";
+									stringValue = dateFormatter.format(line.date);
+								}
+								return stringValue;
+							}
+							private function getTime(line:Object):String
+							{
+								var stringValue:String = "";
+								if (line)
+								{
+									dateFormatter.formatString = "H:NN";
+									stringValue = dateFormatter.format(line.date);
+								}
+								return stringValue;
+							}
+						]]>
+					</mx:Script>
+						<mx:Label text="{getDate(data)}" width="100%" textAlign="center"/>
+						<mx:Label text="{getTime(data)}" width="100%" textAlign="center" color="0x00bb00" fontWeight="bold"/>
+					</mx:VBox>
+				</mx:Component>
+			</mx:itemRenderer>
+		</mx:DataGridColumn>
+		<mx:DataGridColumn dataField="description"/>
+	</mx:columns>
+	<mx:dataProvider>
+		<mx:ArrayCollection>
+	         <mx:Object>
+	            <mx:date>{new Date(2011,8,5,12,30)}</mx:date>
+	            <mx:description>Opis spotkania</mx:description>
+	         </mx:Object>
+	         <mx:Object>
+	            <mx:date>{new Date(2011,8,5,14)}</mx:date>
+	            <mx:description>Opis spotkania</mx:description>
+	         </mx:Object>
+	      </mx:ArrayCollection>
+	</mx:dataProvider>
+
+</mx:DataGrid>

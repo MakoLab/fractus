@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:generic="com.makolab.fractus.view.generic.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.commands.SearchCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			
+			import mx.rpc.events.ResultEvent;
+			
+			[Bindable] private var financialRegister:XML;
+			
+			[Bindable] private var documentList:XMLList;
+			
+			public static function showWindow(documentCategory:String, documentId:String):ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var renderer:FinancialReportPreview = new FinancialReportPreview();
+				window.showLater(renderer);
+				var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand(documentCategory, documentId);
+				cmd.targetObject = renderer;
+				cmd.targetField = 'data';
+				cmd.noRoot = true;
+				cmd.addEventListener(ResultEvent.RESULT, window.showLaterHandler);
+				cmd.execute();
+				window.show(null, new Rectangle(-1, -1, 850, 520),"Podgląd raportu finansowego");
+				return window;
+			}
+			
+			[Bindable]
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				financialRegister = DictionaryManager.getInstance().getById(value.financialRegisterId);
+				searchParams.filters.column.(@field == "reportId").* = value.id.*;
+				searchParams.filters.column.(@field == "status").* = DictionaryManager.getInstance().dictionaries.documentStatus.(name.toString() == "Booked").value.* + "," + DictionaryManager.getInstance().dictionaries.documentStatus.(name.toString() == "Committed").value.*;
+				var cmd:SearchCommand = new SearchCommand(SearchCommand.DOCUMENTS);
+				cmd.searchParams = searchParams;
+				cmd.addEventListener(ResultEvent.RESULT,createDocumentList);
+				cmd.execute();
+			}
+			
+			private function createDocumentList(event:ResultEvent):void{
+				documentList = XML(event.result).*;
+				documentsGrid.dataProvider = documentList;
+			}
+			
+			private function previewDocument():void
+			{
+				DocumentRenderer.showWindow(DocumentTypeDescriptor.FINANCIAL_DOCUMENT,documentsGrid.selectedItem.@id);
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:XML id="searchParams">
+		<searchParams type="FinancialDocument">
+			<columns>
+				<column field="documentTypeId" column="documentTypeId"/>
+				<column field="fullNumber" column="fullNumber"/>
+				<column field="issueDate" sortOrder="1"/>
+				<column field="contractorName" column="fullName" relatedObject="contractor"/>
+			</columns>
+			<filters>
+				<column field="status"/>
+				<column field="reportId"/>
+			</filters>
+		</searchParams>
+	</mx:XML>
+	
+	<mx:VBox verticalGap="2" paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10" width="100%" height="100%">
+		<mx:HBox width="100%">
+			<mx:Form width="100%" verticalGap="0">
+				<mx:FormItem label="Numer raportu"  fontWeight="bold" fontSize="16">
+					<mx:Label text="{data.number.fullNumber}" fontWeight="normal" fontSize="16"/>
+				</mx:FormItem>
+				<mx:FormItem label="Rejestr" fontWeight="bold">
+					<mx:Label text="{financialRegister.label.(@lang == ModelLocator.getInstance().languageManager.currentLanguage)}" fontWeight="normal"/>
+				</mx:FormItem>
+						
+				<mx:FormItem label="Bilans otwarcia" fontWeight="bold">
+					<inputComponents:CurrencyRenderer value="{data.initialBalance.toString() != '' ? data.initialBalance : NaN}" fontWeight="normal" currencyId="{financialRegister.currencyId}"/>
+				</mx:FormItem>
+				<mx:FormItem label="Sumaryczny przychód" fontWeight="bold">
+					<inputComponents:CurrencyRenderer value="{data.incomeAmount.toString() != '' ? data.incomeAmount : NaN}" fontWeight="normal" currencyId="{financialRegister.currencyId}"/>
+				</mx:FormItem>
+				<mx:FormItem label="Sumaryczny rozchód" fontWeight="bold">
+					<inputComponents:CurrencyRenderer value="{data.outcomeAmount.toString() != '' ? data.outcomeAmount : NaN}" fontWeight="normal" currencyId="{financialRegister.currencyId}"/>
+				</mx:FormItem>
+			</mx:Form>
+			<mx:Form width="100%" verticalGap="0">
+				<mx:FormItem label="Czas utworzenia" fontWeight="bold">
+					<inputComponents:DateRenderer data="{data.creationDate}" fontWeight="normal" displayTime="true"/>
+				</mx:FormItem>
+				<mx:FormItem label="Utworzył" fontWeight="bold">
+					<generic:FractusDictionaryRenderer data="{data.creatingUser.contractor.id}" fontWeight="normal"/>
+				</mx:FormItem>
+
+				<mx:FormItem label="Czas zamknięcia" fontWeight="bold">
+					<inputComponents:DateRenderer data="{data.closureDate}" fontWeight="normal" displayTime="true"/>
+				</mx:FormItem>
+				<mx:FormItem label="Zamknął" fontWeight="bold">
+					<generic:FractusDictionaryRenderer data="{data.closingUser.contractor.id}" fontWeight="normal"/>
+				</mx:FormItem>
+
+				<mx:FormItem label="Czas ponownego otwarcia" fontWeight="bold">
+					<inputComponents:DateRenderer data="{data.openingDate}" fontWeight="normal" displayTime="true"/>
+				</mx:FormItem>
+				<mx:FormItem label="Otworzył" fontWeight="bold">
+					<generic:FractusDictionaryRenderer data="{data.openingUser.contractor.id}" fontWeight="normal"/>
+				</mx:FormItem>
+			</mx:Form>
+		</mx:HBox>
+		<mx:DataGrid id="documentsGrid" doubleClickEnabled="true" itemDoubleClick="previewDocument()" width="100%" height="100%" dataProvider="{documentList}">
+			<mx:columns>
+				<mx:DataGridColumn sortable="false" itemRenderer="com.makolab.components.inputComponents.OrdinalNumberRenderer" width="30" textAlign="right"/>
+				<mx:DataGridColumn sortable="false" headerText="{LanguageManager.getLabel('common.type')}" dataField="@documentTypeId" itemRenderer="com.makolab.fractus.view.generic.DocumentTypeRenderer" width="70"/>
+				<mx:DataGridColumn sortable="false" headerText="{LanguageManager.getInstance().labels.documents.documentNumber}" dataField="@fullNumber" width="120"/>
+				<mx:DataGridColumn sortable="false" headerText="{LanguageManager.getLabel('common.issueDate')}" dataField="@issueDate" width="140">
+					<mx:itemRenderer>
+						<mx:Component>
+							<inputComponents:DateRenderer displayTime="true"/>
+						</mx:Component>
+					</mx:itemRenderer>
+				</mx:DataGridColumn>
+				<mx:DataGridColumn sortable="false" headerText="{LanguageManager.getLabel('common.contractor')}" dataField="@contractorName"/>
+			</mx:columns>
+		</mx:DataGrid>
+	</mx:VBox>
+</mx:Canvas>

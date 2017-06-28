@@ -1,0 +1,99 @@
+﻿<localSettings>
+	<fieldsList>
+		<values><![CDATA[价值观]]></values>
+		<title>字段列表</title>
+		<hierarchyBox>选择尺寸</hierarchyBox>
+		<measureBox>选择价值</measureBox>
+		<rowBox>行</rowBox>
+		<columnBox>列</columnBox>
+		<filterBox>报告“过滤器</filterBox>
+	</fieldsList>
+	
+	<filter>
+		<all>所有</all>
+		<multipleItems>多个项目</multipleItems>
+		<selectAll>全选</selectAll>
+		<title>过滤器：</title>
+	</filter>
+	
+	<buttons>
+		<ok>确定</ok>
+		<cancel>取消</cancel>
+		<update>中更新</update>
+		<save>保存</save>
+	</buttons>
+	
+	<grid>
+		<grandTotal>累计</grandTotal>
+	</grid>
+	
+	<aggregations>
+		<sum>
+			<caption>总和</caption>
+			<totalCaption><![CDATA[总和 {0}]]></totalCaption>
+			<grandTotalCaption><![CDATA[共有总和 {0}]]></grandTotalCaption>
+		</sum>
+		<count>
+			<caption>计数</caption>
+			<totalCaption><![CDATA[伯爵 {0}]]></totalCaption>
+			<grandTotalCaption><![CDATA[总数的 {0}]]></grandTotalCaption>
+		</count>
+		<product>
+			<caption>产品</caption>
+			<totalCaption><![CDATA[产品 {0}]]></totalCaption>
+			<grandTotalCaption><![CDATA[共有产品 {0}]]></grandTotalCaption>
+		</product>
+		<average>
+			<caption>平均</caption>
+			<totalCaption><![CDATA[平均{0}]]></totalCaption>
+			<grandTotalCaption><![CDATA[总平均{0}]]></grandTotalCaption>
+		</average>
+		<min>
+			<caption>最低限度</caption>
+			<totalCaption><![CDATA[最低 {0}]]></totalCaption>
+			<grandTotalCaption><![CDATA[共有最低 {0}]]></grandTotalCaption>
+		</min>
+		<max>
+			<caption>最大</caption>
+			<totalCaption><![CDATA[最大的 {0}]]></totalCaption>
+			<grandTotalCaption><![CDATA[共有最多 {0}]]></grandTotalCaption>
+		</max>
+		<percent>
+			<caption>百分之</caption>
+			<totalCaption><![CDATA[百分比 {0}]]></totalCaption>
+			<grandTotalCaption><![CDATA[共有百分比 {0}]]></grandTotalCaption>
+		</percent>
+		<percentOfColumn>
+			<caption>百分比列</caption>
+			<totalCaption><![CDATA[百分比列 {0}]]></totalCaption>
+			<grandTotalCaption><![CDATA[共有百分比柱 {0}]]></grandTotalCaption>
+		</percentOfColumn>
+	</aggregations>
+	
+	<messages>
+		<error>错误！</error>
+		<warning>警告</warning>
+		<confirmation>确认</confirmation>
+		<loading>载入中 ...</loading>
+		<loadingConfiguration>加载配置...</loadingConfiguration>
+		<loadingMetadata>加载元数据...</loadingMetadata>
+		<loadingData>数据载入中...</loadingData>
+		<waiting>为响应等待 {0} 秒。</waiting>
+		<progress><![CDATA[{0}К 的 {1}К]]></progress>
+		<progressUnknown><![CDATA[加载 {0}К]]></progressUnknown>
+		<analyzing>分析数据...</analyzing>
+		<analyzingProgress><![CDATA[{0} 事实的 {1} ({2}%)]]></analyzingProgress>
+		<loadingDimensions>载入中尺寸...</loadingDimensions>
+		<loadingHierarchies>载入中等级...</loadingHierarchies>
+		<loadingMeasures>载入措施...</loadingMeasures>
+		<loadingMembers>载入中成员...</loadingMembers>
+		<loadingLevels>载入中水平...</loadingLevels>
+		<loadingSkin><![CDATA[加载皮肤... {0}%]]></loadingSkin>
+		<fullscreen>打开枢轴在全屏？</fullscreen>
+		<exportComplete>出口数据创建，请点击“保存”按钮来保存数据。</exportComplete>
+		<exportProgress>出口进展...</exportProgress>
+		<cantSaveFile>不能保存文件！</cantSaveFile>
+		<noJavaScript>JavaScript是不可用！</noJavaScript>
+	</messages>
+	
+</localSettings>

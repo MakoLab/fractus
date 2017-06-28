@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.formatters.DateFormatter;
+			import mx.controls.Alert;
+			private function validate():void
+			{
+				if(dateFromControl.selectedDate && dateToControl.selectedDate)
+					if(dateFromControl.selectedDate > dateToControl.selectedDate)Alert.show("Data początkowa jest późniejsza niż końcowa");
+					else this.dispatchEvent(new Event("change"));
+			}
+			private function dateChangeHandler(event:Event):void
+			{
+				dateTo = dateToControl.selectedDate;
+				dateFrom = dateFromControl.selectedDate;
+				validate();
+			}
+			private var _dateFrom:Date;
+			private var _dateTo:Date;
+			public function set range(value:XML):void
+			{
+				if(value && value.dateFrom.length() > 0)dateFrom = new Date(value.dateFrom.substr(0,4),Number(value.dateFrom.substr(5,2))-1,value.dateFrom.substr(8,2));
+				if(value && value.dateTo.length() > 0)dateTo = new Date(value.dateTo.substr(0,4),Number(value.dateTo.substr(5,2))-1,value.dateTo.substr(8,2));
+			}
+			
+			public function get range():XML
+			{
+				var formatter:DateFormatter = new DateFormatter();
+				formatter.formatString = "YYYY-MM-DD";
+				var dateFromValue:String = formatter.format(dateFromControl.selectedDate);
+				var dateToValue:String = formatter.format(dateToControl.selectedDate) + "T23:59:59.997";
+				var xml:XML = <value><dateFrom>{dateFromValue}</dateFrom><dateTo>{dateToValue}</dateTo></value>;
+				return xml;
+			}
+			public function get rangeText():String
+			{
+				var string:String = dateFromControl.text + " - " + dateToControl.text;
+				return string;
+			}
+			
+			[Bindable]
+			public var dateFrom:Date;
+			
+			[Bindable]
+			public var dateTo:Date;
+			
+			/* [Bindable]
+			public function set dateFrom(value:Date):void
+			{
+				_dateFrom = value;
+			} 
+			public function get dateFrom():Date
+			{
+				return _dateFrom;
+			} 
+			
+			[Bindable]
+			public function set dateTo(value:Date):void
+			{
+				_dateTo = value;
+			} 
+			public function get dateTo():Date
+			{
+				return _dateTo;
+			}  */
+		]]>
+	</mx:Script>
+	
+	<mx:FormItem label="Od">
+		<inputComponents:DateEditor id="dateFromControl" allowEmptyDate="false" change="dateChangeHandler(event)" selectedDate="{dateFrom}"/>
+	</mx:FormItem>
+	<mx:FormItem label="Do">
+		<inputComponents:DateEditor id="dateToControl" allowEmptyDate="false" change="dateChangeHandler(event)" selectedDate="{dateTo}"/>
+	</mx:FormItem>
+</mx:HBox>

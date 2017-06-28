@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- klasa zasadniczo powinna się nazywac CustomFilter, bo obsluguje w sumie trzy rodzaje filtrow - opartych na filters/column, sqlConditions/condition i wezlach zagniezdzonych bezposrednio w parametrach -->
+<mx:FormItem xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="init()" implements="com.makolab.components.catalogue.ICatalogueFilter, com.makolab.fractus.view.documents.reports.filters.IReportFilter" width="100%">
+	
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import mx.utils.UIDUtil;
+			import com.makolab.fractus.view.generic.AttributeValueSelector;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.components.inputComponents.GenericAttributeEditorComponent;
+			import com.makolab.fractus.view.generic.GenericEditor;
+			import com.makolab.components.inputComponents.NIPInput;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.controls.DateField;
+			import com.makolab.components.inputComponents.DateEditor;
+			import mx.controls.Alert;
+			import mx.controls.ComboBox;
+			import mx.controls.NumericStepper;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.containers.FormItem;
+			import mx.controls.TextInput;
+			import mx.controls.Label;
+			import mx.core.Container;
+			
+			private var _config:XML = <filter/>;
+			private var _useThisFilter:Boolean = false;
+			private var editors:Object = new Object();
+			private var unique:String;
+			
+			/**
+			 * Filter's configuration.
+			 */
+			public function set config(value:XML):void
+			{
+				_config =    value;
+			}
+			/**
+			 * @private
+			 */
+			public function get config():XML
+			{
+				return _config;
+			}
+			/**
+			 * Determines if the filter should be used by search or not.
+			 * If set to <code>true</true> the checkbox is selected and the editors, if exist, are visible.
+			 */
+			[Bindable]
+			public function set useThisFilter(value:Boolean):void
+			{
+				_useThisFilter = value;
+				//enable();
+			}
+			/**
+			 * @private
+			 */
+			public function get useThisFilter():Boolean
+			{
+				return _useThisFilter;
+			}
+			
+			private var _parameters:XML;
+			public function set parameters(value:XML):void
+			{
+				_parameters = value;
+			}
+			
+			public function get parameters():XML
+			{
+				setParameters(_parameters);
+				return _parameters;
+			}
+			
+			public function get validationError():String
+			{
+				return null;
+			}
+			
+			private var _defaultValue:XMLList;
+			public function set defaultValue(data:XMLList):void
+			{
+				_defaultValue = data;
+				setDeafaults();
+			}
+			public function get defaultValue():XMLList
+			{
+				return _defaultValue;
+			}
+			
+			private function setDeafaults():void
+			{
+				if (defaultValue && editors)
+				{
+					for each (var parameter:XML in defaultValue)
+					{
+						var editor:* = editors[parameter.@name.toString()];
+						if (editor){
+							var property:String = editors[parameter.@name.toString()].property;
+							var val:Object = parameter.@value;
+							if (parameter.value.length() > 0) val = parameter.value.*;
+							editors[parameter.@name.toString()].editor[property] = val;
+						}
+					}
+					if (creationCompleted && parameters) setParameters(parameters);
+				}
+			}
+			
+			/**
+			 * A method of <code>ICatalogueFilter</code> interface.
+			 */
+			public function setParameters(parameters:Object):void
+			{
+				var condition:String;
+				var field:String;
+				
+				var existing:XMLList;
+				if (String(config.condition)) condition = config.condition;
+				field = config.field;
+				
+				if(useFilter.selected)
+				{
+					var value:String = '1';	// domyslna wartosc na wypadek braku parametru
+					for each (var param:XML in config.parameters.*)
+					{
+						var name:String = param.@name;
+						var searchString:String = "@" + name;
+						var replaceString:String = "";
+						var quot:Boolean = false;
+						if (editors[name])
+						{
+							switch (String(param.@type))
+							{
+								case "boolean":
+									value = editors[name].editor[editors[name].property] ? '1' : '0';
+									_stringValue = editors[name].editor[editors[name].property] ? "zaznaczono" : "nie zaznaczono";
+									break;
+								case "string":
+									value = editors[name].editor[editors[name].property];
+									_stringValue = value;
+									quot = true;
+									if (Tools.parseBoolean(param.@noquot)) quot = false;
+									break;
+								case "dictionary":
+									value = editors[name].editor.selectedItem.id;
+									_stringValue = editors[name].editor.selectedItem[editors[name].labelField];
+									quot = true;
+									break;
+								case "select":
+									value = editors[name].editor.selectedItem.@value;
+									_stringValue = editors[name].editor.selectedItem[editors[name].labelField];
+									quot = true;
+									break;
+								case "date":
+									value = dateFormatter.format(editors[name].editor[editors[name].property]);
+									_stringValue = value;
+									quot = true;
+									break;
+								case "nip":
+									value = editors[name].editor[editors[name].property];
+									_stringValue = value;
+									quot = true;
+									break;
+								case "autoDictionary":
+									value = editors[name].editor[editors[name].property];
+									_stringValue = value;
+									quot = true;
+									break;
+								default:
+									value = editors[name].editor[editors[name].property];
+									_stringValue = value;
+									break;		
+							}
+							if (condition) condition = condition.replace(searchString, quot ? "'" + value + "'" : value);
+							else if (!field) parameters[name] = value;
+						}
+					}
+					if (condition && parameters)
+					{
+						if (parameters.sqlConditions.length() == 0) parameters.sqlConditions = '';
+						// jesli condition zostalo juz ustawione to usuwamy, zeby sie nie powielalo.
+						existing = parameters.sqlConditions.condition.(valueOf().@filterId == unique);
+						if (existing.length() > 0) delete existing[0]; 
+						var conditionNode:XML = <condition>{condition}</condition>;
+						conditionNode.@filterId = unique;
+						conditionNode.@name = name;
+						parameters.sqlConditions.* += conditionNode;
+					}
+					else if (field && parameters)
+					{
+						if (parameters.filters.length() == 0) parameters.filters = '';
+						var xl:XMLList = parameters.filters.column.(valueOf().@field == field);
+						if (xl.length() == 0)
+						{
+							xl += <column field={field}/>
+							parameters.filters.* += xl[0];
+						}
+						xl[0].* = value;
+					}
+				}else{
+					if (parameters && parameters.sqlConditions.length() > 0)
+					{
+						existing = parameters.sqlConditions.condition.(valueOf().@filterId == unique);
+						if (existing.length() > 0) delete existing[0]; 
+					}
+					if (parameters && field)
+					{
+						delete parameters.filters.column.(valueOf().@field == field)[0];
+					}
+				}
+				if (config.parameters.length() == 0) _stringValue = useFilter.selected ? "włączony" : null;
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			private var creationCompleted:Boolean;
+			private function init():void
+			{
+				unique = UIDUtil.createUID();
+				//useFilter.label = config.@label;
+				if(config.labels.length())
+				{
+					this.label=config.labels[0].label.(@lang==LanguageManager.getInstance().currentLanguage)[0];	
+				}
+				else
+					this.label = config.@label;
+				createContent();
+				creationCompleted = true;
+				setDeafaults();
+			}
+			
+			private function createContent():void
+			{
+				if(grid){
+					if(useFilter.selected){
+						for each(var parameter:XML in config.parameters.parameter){
+							var gridRow:GridRow = new GridRow();
+							var labelGridItem:GridItem = new GridItem();
+							labelGridItem.setStyle("horizontalAlign","right");
+							var valueGridItem:GridItem = new GridItem();
+							var filterLabel:Label = new Label();
+							if(parameter.labels.length())
+							{
+								filterLabel.text=parameter.labels[0].label.(@lang==LanguageManager.getInstance().currentLanguage)[0];	
+							}
+							else
+								filterLabel.text = parameter.@label;
+							var editor:*;
+							if(parameter.@type == "string"){
+								editor = new TextInput();
+								(editor as TextInput).addEventListener(Event.CHANGE,function (event:Event):void {setParameters(_parameters);})
+								if(editors)if(editors[parameter.@name])editor.text = editors[parameter.@name].editor.text;
+								editors[parameter.@name] = new Object();
+								editors[parameter.@name].editor = editor;
+								editors[parameter.@name].property = "text";
+								labelGridItem.addChild(filterLabel);
+								valueGridItem.addChild(editor);
+								gridRow.addChild(labelGridItem);
+								gridRow.addChild(valueGridItem);
+								grid.addChild(gridRow);
+							}else if(parameter.@type == "integer"){
+								editor = new NumericStepper();
+								(editor as NumericStepper).addEventListener(Event.CHANGE,function (event:Event):void {setParameters(_parameters);})
+								if(editors)if(editors[parameter.@name])editor.value = editors[parameter.@name].editor.value;
+								editors[parameter.@name] = new Object();
+								editors[parameter.@name].editor = editor;
+								editors[parameter.@name].property = "value";
+								labelGridItem.addChild(filterLabel);
+								valueGridItem.addChild(editor);
+								gridRow.addChild(labelGridItem);
+								gridRow.addChild(valueGridItem);
+								grid.addChild(gridRow);
+							}else if(parameter.@type == "dictionary"){
+								editor = new ComboBox();
+								(editor as ComboBox).addEventListener(Event.CHANGE,function (event:Event):void {setParameters(_parameters);})
+								if (String(parameter.@dictionaryName)) editor.dataProvider = DictionaryManager.getInstance().dictionaries[String(parameter.@dictionaryName)];
+								else if (parameter.dataProvider.*.toString().charAt(0) == "{")editor.dataProvider = DictionaryManager.getInstance().dictionaries[parameter.dataProvider.*.toString().substr(1,(parameter.dataProvider.*.toString().length-2))];
+								else editor.dataProvider = parameter.dataProvider.*;
+								if(editors)if(editors[parameter.@name])editor.selectedItem = editors[parameter.@name].editor.selectedItem;
+								editors[parameter.@name] = new Object();
+								editors[parameter.@name].editor = editor;
+								editors[parameter.@name].property = "selectedItem";
+								labelGridItem.addChild(filterLabel);
+								valueGridItem.addChild(editor);
+								gridRow.addChild(labelGridItem);
+								gridRow.addChild(valueGridItem);
+								grid.addChild(gridRow);
+							}else if(parameter.@type == "select"){
+								editor = new ComboBox();
+								(editor as ComboBox).addEventListener(Event.CHANGE,function (event:Event):void {setParameters(_parameters);})
+								editor.dataProvider = parameter.option;
+								if(editors)if(editors[parameter.@name]) editor.selectedItem = editors[parameter.@name].editor.selectedItem;
+								editors[parameter.@name] = new Object();
+								editors[parameter.@name].editor = editor;
+								editors[parameter.@name].property = "selectedItem";
+								labelGridItem.addChild(filterLabel);
+								valueGridItem.addChild(editor);
+								gridRow.addChild(labelGridItem);
+								gridRow.addChild(valueGridItem);
+								grid.addChild(gridRow);
+							}else if(parameter.@type == "boolean"){
+								editor = new CheckBox();
+								(editor as CheckBox).addEventListener(Event.CHANGE,function (event:Event):void {setParameters(_parameters);})
+								if(editors)if(editors[parameter.@name])editor.selected = editors[parameter.@name].editor.selected;
+								editors[parameter.@name] = new Object();
+								editors[parameter.@name].editor = editor;
+								editors[parameter.@name].property = "selected";
+								labelGridItem.addChild(editor);
+								valueGridItem.addChild(filterLabel);
+								gridRow.addChild(labelGridItem);
+								gridRow.addChild(valueGridItem);
+								grid.addChild(gridRow);
+							} else if (parameter.@type == "date") {
+								editor = new DateField();
+								(editor as DateField).addEventListener(Event.CHANGE,function (event:Event):void {setParameters(_parameters);})
+								if(editors) if(editors[parameter.@name]) editor.selectedItem = editors[parameter.@name].editor.selectedItem;
+								editors[parameter.@name] = new Object();
+								editors[parameter.@name].editor = editor;
+								editors[parameter.@name].property = "selectedDate";
+								DateField(editor).formatString = "YYYY-MM-DD";
+								labelGridItem.addChild(filterLabel);
+								valueGridItem.addChild(editor);
+								gridRow.addChild(labelGridItem);
+								gridRow.addChild(valueGridItem);
+								grid.addChild(gridRow);
+							} else if(parameter.@type == "nip"){
+								editor = new NIPInput();
+								(editor as NIPInput).addEventListener(Event.CHANGE,function (event:Event):void {setParameters(_parameters);})
+								if(editors)if(editors[parameter.@name])editor.text = editors[parameter.@name].editor.text;
+								editors[parameter.@name] = new Object();
+								editors[parameter.@name].editor = editor;
+								editors[parameter.@name].property = "strippedNip";
+								labelGridItem.addChild(filterLabel);
+								valueGridItem.addChild(editor);
+								gridRow.addChild(labelGridItem);
+								gridRow.addChild(valueGridItem);
+								grid.addChild(gridRow);
+							} else if(parameter.@type == "autoDictionary"){
+								editor = new GenericEditor();
+								var editorFactory:ClassFactory = new ClassFactory(AttributeValueSelector);
+								editorFactory.properties = {attributeName : parameter.@attributeName};
+								(editor as GenericEditor).editorFactory = editorFactory;
+								(editor as GenericEditor).dataType = GenericEditor.STRING;
+								(editor as GenericEditor).addEventListener(Event.CHANGE,function (event:Event):void {setParameters(_parameters);});
+								
+								editors[parameter.@name] = new Object();
+								editors[parameter.@name].editor = editor;
+								editors[parameter.@name].property = "dataObject";
+								labelGridItem.addChild(filterLabel);
+								valueGridItem.addChild(editor);
+								gridRow.addChild(labelGridItem);
+								gridRow.addChild(valueGridItem);
+								grid.addChild(gridRow);
+							} else{
+								/* editor = new GenericEditor();
+								editor.dataType = parameter.@type;
+								if(editors)if(editors[parameter.@name])editor.dataObject = editors[parameter.@name].editor.dataObject;
+								editors[parameter.@name] = new Object();
+								editors[parameter.@name].editor = editor;
+								editors[parameter.@name].property = "dataObject";
+								labelGridItem.addChild(filterLabel);
+								valueGridItem.addChild(editor);
+								gridRow.addChild(labelGridItem);
+								gridRow.addChild(valueGridItem);
+								grid.addChild(gridRow); */
+								
+								Alert.show("The given filter's value type ("+parameter.@type+") is not supported.","SQL Filter");
+							}
+						}
+					}else{
+						grid.removeAllChildren();
+					}
+					setParameters(parameters);
+				}
+			}
+			
+			private function getDictionary(dictionaries:Object, dictionaryName:String, showAll:Boolean = false):Object
+			{
+				var result:Object = dictionaries && dictionaryName ? dictionaries[dictionaryName] : null;
+				if (showAll) result = XMLList(<entry><label>{LanguageManager.getLabel('documentFilters.all')}</label></entry>) + result;
+				return result;
+			}
+			
+			public function set template(valueList:XMLList):void{
+				for each (var value:XML in valueList){
+				//todo: jesli filtr ma rozpoznawac, ktory elem. z listy jest dla niego, trzeba to tu dodać
+				// todo
+				}
+			}
+			
+			public function clear():void{
+				// todo
+			}
+			
+			public function restore():void{
+				//todo
+				//trzeba dopisac cialo funkcji, jesli inny filtr ma miec mozliwosc przywracania stanu tego filtra sprzed wyczyszczenia go
+				//filtry mogą mieć wpływ na inne filtry poprzez wypelnienie w konfiguracji parametru 'disableFilterType', przyklad w DocNumberFilter
+			}
+			
+			private var _stringValue:String;
+			public function get stringValue():String
+			{
+				return _stringValue;
+			}
+		]]>
+	</mx:Script>
+	<mx:DateFormatter formatString="YYYY-MM-DD" id="dateFormatter"/>
+	<mx:HBox width="100%" horizontalGap="0">
+		<mx:CheckBox id="useFilter" selected="{useThisFilter}" change="createContent()" width="15"/>
+		<!--<mx:ViewStack id="view" selectedChild="{changeView(useFilter.selected)}" width="100%">
+			<mx:HBox id="disableFilter" width="100%">
+			</mx:HBox>-->
+		<mx:Grid id="grid" paddingLeft="0" verticalGap="2"/>
+	</mx:HBox>
+	<!--</mx:ViewStack>-->
+</mx:FormItem>

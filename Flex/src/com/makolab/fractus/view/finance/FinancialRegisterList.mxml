@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:list="com.makolab.components.list.*" creationComplete="init()" themeColor="{IconManager.FINANCIAL_COLOR}" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:DataGrid id="grid" width="100%" height="100%">
+		<mx:columns>
+			<mx:DataGridColumn itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" dataField="@financialRegisterId" headerText="Rejestr" width="80"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.finance.reportNumber}" dataField="@reportNumber" width="130"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.creationTime}" dataField="@creationDate" width="130" itemRenderer="{dateTimeRenderer}"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.creatingPerson}" dataField="@creatingUserId" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" width="150"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.balance}" dataField="@balance" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" width="70"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.currency}" dataField="@currency" width="70"/>
+			
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.lists.operationsTitle}" dataField="@registerId">
+				<mx:itemRenderer>
+					<mx:Component>						
+						<mx:Button label="{String(data.@financialReportId) ? outerDocument.languageManager.labels.finance.closeReport : outerDocument.languageManager.labels.finance.openReport}"
+							enabled="{String(data.@financialReportId) ? outerDocument.model.permissionManager.isEnabled('finance.reports.close') : outerDocument.model.permissionManager.isEnabled('finance.reports.open')}"
+							alpha="{String(data.@financialReportId) ? Number(outerDocument.model.permissionManager.isEnabled('finance.reports.close')) : Number(outerDocument.model.permissionManager.isEnabled('finance.reports.open'))}"
+							>
+							<mx:click>
+								<![CDATA[
+									if (String(data.@financialReportId)) outerDocument.closeReport(data.@financialReportId);
+									else outerDocument.openReport(data.@financialRegisterId);
+								]]>
+							</mx:click>
+						</mx:Button>
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+		</mx:columns>
+	</mx:DataGrid>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.charts.DateTimeAxis;
+			import com.makolab.components.inputComponents.DateRenderer;
+			import com.makolab.components.util.ClassFactory2;
+			import com.makolab.fractus.view.generic.FractusDictionaryRenderer;
+			import assets.IconManager;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.GetRegistersOpenReportsCommand;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			[Bindable]
+			private var dateTimeRenderer:ClassFactory = new ClassFactory2(DateRenderer, { displayTime : true });
+			[Bindable] 
+			public var languageManager:LanguageManager = LanguageManager.getInstance();
+			[Bindable] 
+			public var model:ModelLocator = ModelLocator.getInstance();
+			
+			public static function showWindow():ComponentWindow
+			{
+				var win:ComponentWindow = ComponentWindow.showWindow(new FinancialRegisterList, 0, new Rectangle(-1, -1, 800, 200));
+				win.setStyle("headerColors", [IconManager.FINANCIAL_COLOR, IconManager.FINANCIAL_COLOR_LIGHT]);
+				win.setStyle("themeColor", IconManager.FINANCIAL_COLOR);
+				win.title = LanguageManager.getInstance().labels.title.financialRegister.list;
+				return win; 
+			}
+			
+			protected function init():void
+			{
+				loadData();
+			}
+			
+			public function loadData(arg:Object = null):void
+			{
+				var cmd:GetRegistersOpenReportsCommand = new GetRegistersOpenReportsCommand();
+				cmd.execute(setResult);
+			}
+			
+			protected function setResult(result:XML):void
+			{				
+				var temp:XMLList = result.*;
+				
+				for each(var x:XML in temp)
+				{
+					var currencyId:String = DictionaryManager.getInstance().getById(x.@financialRegisterId).currencyId;					
+					var currencySymbol:String = DictionaryManager.getInstance().getById(currencyId).symbol;					
+					x.@currency = currencySymbol;
+				}				
+				grid.dataProvider = temp;
+			}
+			
+			public function openReport(registerId:String):void
+			{
+				FinancialReportEditor(
+					FinancialReportEditor.showWindow(registerId, FinancialReportEditor.CONTEXT_CREATE_REPORT).innerComponent
+				).addEventListener('dataCommited', loadData);
+			}
+			
+			public function closeReport(reportId:String):void
+			{
+				FinancialReportEditor(
+					FinancialReportEditor.showWindow(reportId, FinancialReportEditor.CONTEXT_CLOSE_REPORT).innerComponent
+				).addEventListener('dataCommited', loadData);
+			}
+		]]>
+	</mx:Script>
+</mx:VBox>

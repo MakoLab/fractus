@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow creationComplete="creationCompleteHandler(event)" xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="500" height="400" showCloseButton="true" close="close()" xmlns:catalogue="com.makolab.fractus.view.catalogue.*" xmlns:editors="com.makolab.fractus.view.dictionaries.editors.*" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:generic="com.makolab.fractus.view.generic.*">
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			
+			private function creationCompleteHandler(event:FlexEvent):void
+			{
+				updateValues();
+			}
+			
+			public function close():void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			
+			private var controlAttributeRelations:Object = {};
+			
+			private var _attributesXML:XML;
+			public function set attributesXML(value:XML):void
+			{
+				_attributesXML = value;
+				updateValues();
+			}
+			public function get attributesXML():XML
+			{
+				return _attributesXML;
+			}
+			
+			private function getAttributeValue(attributeName:String,attributes:XML,control:UIComponent,dataField:String):String
+			{
+				var value:String = null;
+				var attributeId:String = DictionaryManager.getInstance().getIdByName(attributeName,"itemFields");
+				if (attributeId && attributes)
+				{
+					var list:XMLList = attributes.attribute;
+					var attributesList:XMLList = attributes.attribute.(@id.toString().toLowerCase() == attributeId.toLowerCase());
+					if (attributesList.length() > 0) 
+					{
+						value = attributesList[0].toString();
+						controlAttributeRelations[attributeName] = { attribute : attributesList[0], control : control, dataField : dataField };
+					}else{
+						var newAttribute:XML = <attribute/>;
+						newAttribute.@id = attributeId;
+						attributes.appendChild(newAttribute);
+						controlAttributeRelations[attributeName] = { attribute : newAttribute, control : control, dataField : dataField};
+					}
+				} 
+				return value;
+			}
+			
+			private function updateValues():void
+			{
+				if (!attributesXML || !initialized)return;
+				vehicleType.selectedItem = getAttributeValue("Attribute_VehicleType",_attributesXML,vehicleType,"selectedItem");
+				manufacturer.selectedItem = getAttributeValue("Attribute_Manufacturer",_attributesXML,manufacturer,"selectedItem");
+				season.text = getAttributeValue("Attribute_Season",_attributesXML,season,"text");
+			}
+			
+			private function commit():void
+			{
+				for each (var relation:Object in controlAttributeRelations)
+				{
+					Tools.setXMLValue(attributesXML,"attribute.@id",relation.control[relation.dataField],relation.attribute.@id); //relation.attribute.* = relation.control[relation.dataField];
+				}
+				dispatchEvent(new Event("change"));
+				close();
+			}
+		]]>
+	</mx:Script>
+	<mx:Form width="100%">
+		<mx:FormItem label="Typ pojazdu" width="100%">
+			<generic:AttributeValueSelector id="vehicleType" attributeName="Attribute_VehicleType"/>
+		</mx:FormItem>
+		<mx:FormItem label="Producent" width="100%">
+			<generic:AttributeValueSelector id="manufacturer" attributeName="Attribute_Manufacturer"/>
+		</mx:FormItem>
+		<mx:FormItem label="Sezon" width="100%">
+			<mx:TextInput id="season"/>
+		</mx:FormItem>
+	</mx:Form>
+	<mx:ControlBar>
+		<mx:Button label="OK" click="commit()"/>
+		<mx:Button label="Anuluj" click="close()"/>
+	</mx:ControlBar>
+</mx:TitleWindow>

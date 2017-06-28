@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DocumentSingleAttributeComponent xmlns="com.makolab.fractus.view.documents.documentControls.*" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:generic="com.makolab.fractus.view.generic.*"
+		width="100%"
+	>
+	<generic:GenericEditor
+			id="editor"
+			wait="true"
+			dictionaryName="{attributeEntry.metadata.dictionaryName}"
+			dataType="{editor.dictionaryName ? GenericEditor.DICTIONARY : attributeEntry.metadata.dataType}"
+			dataSubType="{attributeEntry.metadata.dataSubType?attributeEntry.metadata.dataSubType:''}"
+			isSelected="{attributeEntry.metadata.value}"
+			permission="{permission}"
+			regExp="{attributeEntry.metadata.regExp}"
+			values="{attributeEntry.metadata.values.value}"
+			dataSetName="{attributeEntry.metadata.dataSetName}"
+			dataObject="{attribute.value}"
+			change="editorChanged = true"
+			focusIn="editorChanged = false"
+			focusOut="handleEditorFocusOut(event)"
+			width="100%"
+			labelFunction="{labelFunction}"
+			creationComplete="init()"
+		/>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.document.DocumentEvent;
+			private var editorChanged:Boolean;
+			private var _isNew:Boolean;
+			public function set isNew(a:Boolean):void{_isNew=a;}
+			public function get isNew():Boolean{return _isNew;}
+			
+			private function init():void
+			{
+				/* waiting for documenObject to add initial values
+				*/
+			//	trace("documentObject.isNewDocument",documentObject.isNewDocument)
+				editor.isNew=documentObject.isNewDocument;
+				if(editor.isSelected||editor.dataObject)
+				{
+				attribute.value = editor.dataObject;
+				//trace("editor.dataObject:",editor.dataObject);
+				
+				dispatchChangeEvent();
+				}
+			}
+			/**
+			 * Update attribute value and dispatch documentAttributeChange event if the value has been changed.
+			 */
+			private function handleEditorFocusOut(event:FocusEvent):void
+			{
+		
+				if (editorChanged)
+				{
+					attribute.value = editor.dataObject;
+					dispatchChangeEvent();
+					
+					// gdereck - nie wiem dlaczego to jest warunkowo a nie na stale ale nie mam czasu w to sie zaglebiac wiec dokladam warunek
+					if(this.attributeName == "Attribute_SupplierDocumentDate" || this.attributeName == "Attribute_SupplierCorrectiveDocumentDate")
+					{
+						var devent:DocumentEvent = DocumentEvent.createEvent(DocumentEvent.DOCUMENT_ATTRIBUTE_CHANGE, this.attributeName);
+						this.documentObject.dispatchEvent(devent);
+					}
+					
+					if(this.attributeName == "Attribute_ComplaintDiscount")
+					{
+						if(attribute.value.* != "")
+						{
+							if(parseFloat(attribute.value.*) <= 0) //jezeli uzytkownik wpisal zero to czyscimy
+								attribute.value.* = "";
+							else if (parseFloat(attribute.value.*) > 99)
+								attribute.value.* = "99";
+						}
+							
+						this.documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_RECALCULATE));
+					}
+				}
+			}
+			
+			[Bindable]
+			public var labelFunction:Function;
+		]]>
+	</mx:Script>
+</DocumentSingleAttributeComponent>

@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:PopUpButton xmlns:mx="http://www.adobe.com/2006/mxml"
+		skin="{Class(null)}"
+		creationComplete="creationCompleteHandler(event)"
+		click="handleClick(event)"
+		labelPlacement="bottom"
+	>
+	<mx:Metadata>
+		[Event(type="com.makolab.components.menu.MultiButtonEvent", name="itemSelect")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.ConfigManager;
+			import com.makolab.fractus.model.GlobalEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.MenuManager;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			import mx.controls.Alert;
+			import mx.controls.List;
+			import mx.controls.Menu;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.events.MenuEvent;
+			import mx.messaging.channels.StreamingAMFChannel;
+			import mx.skins.halo.PopUpButtonSkin;
+			
+			import assets.IconManager;
+			private var labels:Array;
+			
+			[Bindable]
+			public var listStyleName:String;
+			
+			[Bindable]
+			private var _toolTipKey:String;
+			
+			[Bindable]
+			public var iconName:String;
+			
+			[Bindable]
+			public var _dataProvider:Object;
+			
+			[Bindable]
+			public var functionName:String;
+			
+			[Bindable]
+			public var functionClass:String;
+			
+			[Bindable]
+			private var menu:Menu = new Menu();
+			
+			[Bindable]
+			public var defaultItem:Object;
+			
+			[Bindable]
+			public var toggleDefaultItem:Boolean = false;
+			
+			[Bindable]
+			public function set dataProvider(value:Object):void
+			{
+				_dataProvider = value;
+				menu.dataProvider = _dataProvider;
+				/* 
+				var list:List = List(this.popUp);
+				list.dataProvider = value;
+				list.rowCount = value.length();
+				 */
+				//if (_dataProvider && XMLList(_dataProvider).length() > 0)
+				//	menu.selectedItem = defaultItem ? defaultItem : XMLList(_dataProvider)[0];
+				
+				activeItem = defaultItem ? defaultItem : ((_dataProvider && _dataProvider[0]) ? _dataProvider[0] : null);
+				if (activeItem)
+				{
+					setStyle("icon", IconManager.getIcon(activeItem.@icon));
+					setStyle("disabledIcon", IconManager.getIcon("dis_" + activeItem.@icon));
+					labels=new Array();
+					
+					//labelEn=";Towar;Item"
+					var str:String=activeItem.@labelEn;
+					var a:Array=str.split(";");
+					if(a.length)
+					{
+						labels.push(a[0]);
+						labels.push(a[1]);
+					}
+				}
+				else
+				{
+					trace("ssss");
+				}
+				
+		
+				
+			}
+			public function get dataProvider():Object { return _dataProvider; }
+			
+			private function creationCompleteHandler(event:FlexEvent):void
+			{
+				toggleDefaultItem = Tools.parseBoolean(model.configManager.getXML("menu").@toggleDefaultItem);
+				popUp = menu;
+				menu.iconFunction = this.iconFunction;
+				//menu.labelField = '@labelEn';
+				menu.addEventListener(MenuEvent.ITEM_CLICK,handleItemClick);
+				menu.styleName = listStyleName;
+				menu.setStyle("backgroundAlpha",0.9);
+				menu.setStyle("backgroundColor",0x7f91b3);
+				menu.setStyle("cornerRadius",5);
+				menu.setStyle("selectionColor",0xa5b9d2);
+				menu.setStyle("focusAlpha",0.5);
+				menu.setStyle("focusRoundedCorners",5);
+				menu.setStyle("rollOverColor",0xbbc4d0);
+				menu.labelFunction=this.popUpMenuButton_labelFunc;
+				if (defaultItem && !activeItem) 
+					activeItem = defaultItem;
+				
+				model.eventManager.addEventListener(GlobalEvent.LANGUAGE_CHANGED, langChanged, false, 0 , true);
+				langChanged();
+			}
+			
+			private function popUpMenuButton_labelFunc(item:Object):String {
+				if(item)
+				{
+					var str:String=	item.@labelEn;
+					var a:Array=str.split(";");
+					if(a.length)
+					{
+						var c:String=LanguageManager.getInstance().currentLanguage;
+						var i:int=0;
+						var I:int=0;
+						for( i=0;i< LanguageManager.getInstance().languagesList.length;i++)
+						{
+							if(LanguageManager.getInstance().languagesList[i].toLocaleUpperCase()==c.toLocaleUpperCase())
+							I=i+1;
+							
+						}
+						if(a.length>I)
+						return a[I];
+						else
+							if(item.@label.length())
+							{
+								return item.@label;
+							}
+							else
+								return "uzupełnij język";
+					
+					}
+					else 
+						if(item.@label.length())
+						{
+							return item.@label;
+						}
+						else
+							return "";
+				}
+				else 
+					return "mamy nula";
+				
+			}
+			private function langChanged(e:Event=null):void
+			{
+				this.toolTip = getLab();
+				if(_activeItem)
+				label = popUpMenuButton_labelFunc(_activeItem);
+				else
+				{
+					trace("mamy nula");
+				}
+			}
+			
+			[Bindable]
+			public var icons:Object;
+			
+			protected function iconFunction(item:Object):Class
+			{
+				if (item.@icon) return IconManager.getIcon(item.@icon); 
+				else return null;
+			}
+			
+			private var _activeItem:Object;
+			[Bindable]
+			public function set activeItem(value:Object):void
+			{
+				_activeItem = value;
+				if (_activeItem)
+				{
+			
+					label = popUpMenuButton_labelFunc(_activeItem);
+					setStyle("icon", IconManager.getIcon(_activeItem.@icon));
+					setStyle("disabledIcon", IconManager.getIcon("dis_" + _activeItem.@icon));
+				}
+				else
+				{
+					trace("mamy nula");
+				}
+			}
+			public function get activeItem():Object { return _activeItem; }
+			
+			public function handleItemClick(event:MenuEvent):void
+			{
+				//setStyle("icon", IconManager.getIcon(menu.selectedItem.@icon));
+				//setStyle("disabledIcon", IconManager.getIcon("dis_" + menu.selectedItem.@icon));
+				if(!event.item)
+					trace("kkk");
+				if (toggleDefaultItem) 
+					activeItem = event.item;
+				var newEvent:MultiButtonEvent = new MultiButtonEvent(MultiButtonEvent.ITEM_SELECT);
+				if (event.item)
+					newEvent.itemId = event.item.@id;//_activeItem.@id;
+				newEvent.item = event.item;
+				dispatchEvent(newEvent);
+				if (functionName && !functionClass) ModelLocator.getInstance().menuManager[functionName](newEvent);
+				else if (functionName && functionClass)
+				{ 
+					try 
+					{
+						var cls:Class = getDefinitionByName(functionClass) as Class;
+						(cls[functionName] as Function).apply(this,event.item);
+					}
+					catch (error:Error)
+					{
+						var errorText:String = "Klasa " + functionClass + " nie istnieje, nie znajduje się w kompilacji lub parametry funkcji " + functionName + " są niezgodne.";
+						ConfigManager.reportConfigurationError(errorText,"Błąd konfiguracji");
+						//throw new Error(errorText,"Błąd");
+					}
+				}
+			}
+			
+			private function handleClick(event:MouseEvent):void
+			{
+				var newEvent:MultiButtonEvent = new MultiButtonEvent(MultiButtonEvent.ITEM_SELECT);
+				if (activeItem) 
+				{
+					newEvent.itemId = activeItem.@id;//_activeItem.@id;
+					dispatchEvent(newEvent);
+					if (functionName) ModelLocator.getInstance().menuManager[functionName](newEvent);
+				}
+			}
+			
+			/* private function listItemClick(event:ListEvent):void
+			{
+				activeItem = event.target.selectedItem;
+				handleClick(null);
+			} */
+			[Bindable]
+			public function getLab():String
+			{
+				return model.languageManager.getLabel(_toolTipKey);
+			}
+			public function set toolTipKey(value:String):void
+			{
+				// TODO: aktualizacja etykiet przy zmianie jezyka (binding lub zdarzenie)
+				_toolTipKey = value;
+				//this.toolTip = model.languageManager.getLabel(_toolTipKey);
+				this.toolTip = getLab();
+			}
+			public function get toolTipKey():String
+			{
+				return _toolTipKey;
+			}
+			
+			private function get model():ModelLocator
+			{
+				return ModelLocator.getInstance();
+			}
+			
+			override protected function createChildren():void {
+				super.createChildren();
+				if (textField){
+					textField.wordWrap = true;
+					textField.multiline = true;		
+				}
+				this.height = 65;
+			}
+	 
+			override public function measureText(s:String):TextLineMetrics {
+				textField.text = s;
+				var lineMetrics:TextLineMetrics = textField.getLineMetrics(0);
+				lineMetrics.width = textField.textWidth;
+				if(textField.numLines<=1)lineMetrics.height = 2*textField.textHeight;
+				else lineMetrics.height = textField.textHeight;		
+				return lineMetrics;
+			}
+			
+			override protected function keyDownHandler(event:KeyboardEvent):void
+			{
+				super.keyDownHandler(event);
+				/* if (event.keyCode == Keyboard.DOWN)
+				{
+					popUp.setVisible(true);
+				} */
+			}
+			
+		]]>
+	</mx:Script>
+	<!--<mx:popUp>
+		<mx:List
+				iconFunction="{iconFunction}"
+				labelField="@label"
+				styleName="{listStyleName}" 
+				itemClick="listItemClick(event)"
+				backgroundAlpha="0.9"
+				backgroundColor="0x7f91b3"
+				cornerRadius="5" 
+				selectionColor="0xa5b9d2" 
+				focusAlpha="0.5" 
+				focusRoundedCorners="5" 
+				rollOverColor="0xbbc4d0" 
+			/>
+	</mx:popUp>-->
+</mx:PopUpButton>

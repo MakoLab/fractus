@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	width="100%"
+	initialize="onInitialize()"
+	paddingTop="-5" paddingBottom="-5"
+	>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.commands.GetSalesLockInfoCommand;
+			import com.makolab.components.util.Tools;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			[Bindable]
+			private var isVisible:Boolean = false;
+			
+			[Bindable]
+			private var isEnabled:Boolean = false;
+			
+			[Bindable]
+			private var isDebt:Boolean = false;
+			
+			private var _documentObject:DocumentObject;
+			
+			private var totalDebt:Number;
+			private var oldestPaymentDueDate:Date;
+			private var allowCashPayment:Boolean;
+			private var maxDebtAmount:Number;
+			private var maxDocumentDebtAmount:Number;
+			private var maxOverdueDays:Number;
+			private var systemMaxDueDays:Number = ModelLocator.getInstance().configManager.getNumber("salesLock.maxDueDays");
+			private var contractorMaxDueDays:Number;
+			private var isInitialized:Boolean = false;
+			
+			public function get documentObject():DocumentObject { return this._documentObject; }
+			
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				if(!this.isEnabled) return;
+				
+				if(this._documentObject)
+				{
+					this._documentObject.removeEventListener(DocumentEvent.DOCUMENT_LINE_CHANGE, this.documentLineChangeHandler);
+					this._documentObject.removeEventListener(DocumentEvent.DOCUMENT_LINE_ADD, this.documentLineChangeHandler);
+					this._documentObject.removeEventListener(DocumentEvent.DOCUMENT_LINE_DELETE, this.documentLineChangeHandler);
+					this._documentObject.removeEventListener(DocumentEvent.DOCUMENT_RECALCULATE, this.documentLineChangeHandler);
+					this._documentObject.removeEventListener(DocumentEvent.DOCUMENT_PAYMENT_CHANGE, this.documentLineChangeHandler);
+					
+					this._documentObject.removeEventListener(DocumentEvent.DOCUMENT_LOAD, this.contractorChangeHandler);
+					this._documentObject.removeEventListener(DocumentEvent.DOCUMENT_FIELD_CHANGE, this.contractorChangeHandler);
+					this._documentObject.removeEventListener(DocumentEvent.DOCUMENT_FIELD_CHANGE, this.issueDateChangeHandler);
+				}
+				
+				this._documentObject = value;
+				
+				if(this._documentObject)
+				{
+					this._documentObject.addEventListener(DocumentEvent.DOCUMENT_FIELD_CHANGE, this.contractorChangeHandler, false, 0, true);
+					this._documentObject.addEventListener(DocumentEvent.DOCUMENT_FIELD_CHANGE, this.issueDateChangeHandler, false, 0, true);
+					this._documentObject.addEventListener(DocumentEvent.DOCUMENT_LOAD, this.contractorChangeHandler, false, 0, true);
+					
+					this._documentObject.addEventListener(DocumentEvent.DOCUMENT_LINE_CHANGE, this.documentLineChangeHandler, false, 0, true);
+					this._documentObject.addEventListener(DocumentEvent.DOCUMENT_LINE_ADD, this.documentLineChangeHandler, false, 0, true);
+					this._documentObject.addEventListener(DocumentEvent.DOCUMENT_LINE_DELETE, this.documentLineChangeHandler, false, 0, true);
+					this._documentObject.addEventListener(DocumentEvent.DOCUMENT_RECALCULATE, this.documentLineChangeHandler, false, 0, true);
+					this._documentObject.addEventListener(DocumentEvent.DOCUMENT_PAYMENT_CHANGE, this.documentLineChangeHandler, false, 0, true);	
+				}
+			}
+			
+			private function documentLineChangeHandler(event:Event):void
+			{
+				this.checkConditions();
+			}
+			
+			private function issueDateChangeHandler(event:DocumentEvent):void
+			{
+				this.checkConditions();
+			}
+			
+			private function contractorChangeHandler(event:DocumentEvent):void
+			{
+				if((event.type == DocumentEvent.DOCUMENT_FIELD_CHANGE && event.fieldName == 'contractor') ||
+					(event.type == DocumentEvent.DOCUMENT_LOAD && this.documentObject.xml.contractor.contractor.id.length() > 0))
+				{
+					this.totalDebt = 0;
+					this.oldestPaymentDueDate = new Date();
+					this.allowCashPayment = false;
+					this.maxDebtAmount = 0;
+					this.maxDocumentDebtAmount = 0;
+					this.maxOverdueDays = 0;
+					this.contractorMaxDueDays = NaN;
+					this.isInitialized = false;
+					
+					this.checkSalesLock(this.documentObject.xml.contractor.contractor.id);
+				}
+			}
+			
+			private function checkSalesLock(contractorId:String):void
+			{
+				var cmd:GetSalesLockInfoCommand = new GetSalesLockInfoCommand(contractorId);
+				cmd.addEventListener(ResultEvent.RESULT, this.getSalesLockInfoResult, false, 0, true);
+				cmd.execute();	
+			}
+			
+			private function getSalesLockInfoResult(event:ResultEvent):void
+			{
+				var responseXml:XML = XML(event.result);
+				/*
+				<root> 
+				  <totalDebt>...</totalDebt> <!-- suma nierozliczonych platnosci kontrahenta, brak node'a jezeli nie ma zadnego paymenta dla kontrahenta --> 
+				
+				  <oldestPaymentDueDate>...</oldestPaymentDueDate> <!-- najstarszy TERMIN (dueDate) przeterminowanej/nierozliczonej platnosci. Jezeli nie ma takiej to brak node'a --> 
+				 
+				  <allowCashPayment>...</allowCashPayment> 
+				  <maxDebtAmount>...</maxDebtAmount> 
+				  <maxDocumentDebtAmount>...</maxDocumentDebtAmount> 
+				  <maxOverdueDays>...</maxOverdueDays> 
+				</root>
+				*/
+				
+				if(responseXml.totalDebt.length() > 0) totalDebt = parseFloat(responseXml.totalDebt);
+				if(totalDebt != 0) {
+					isDebt = true;
+				} else {
+					isDebt = false;
+				}
+				if(responseXml.oldestPaymentDueDate.length() > 0) oldestPaymentDueDate = Tools.isoToDate(responseXml.oldestPaymentDueDate);
+				if(responseXml.allowCashPayment.length() > 0) allowCashPayment = responseXml.allowCashPayment.* == "true";
+				if(responseXml.maxDebtAmount.length() > 0) maxDebtAmount = parseFloat(responseXml.maxDebtAmount);
+				if(responseXml.maxDocumentDebtAmount.length() > 0) maxDocumentDebtAmount = parseFloat(responseXml.maxDocumentDebtAmount);
+				if(responseXml.maxOverdueDays.length() > 0) maxOverdueDays = parseInt(responseXml.maxOverdueDays);
+				if(responseXml.maxDueDays.length() > 0) contractorMaxDueDays = parseInt(responseXml.maxDueDays);
+				
+				oldestPaymentDueDate = new Date(oldestPaymentDueDate.getFullYear(), oldestPaymentDueDate.getMonth(), oldestPaymentDueDate.getDate(), 0, 0, 0, 0);
+				
+				this.isInitialized = true;
+				
+				this.checkConditions();
+			}
+			
+			private function checkConditions():void
+			{
+				trace("checkConditions")
+				if(!this.isInitialized)
+				{
+					this.setError(false, null);
+					return;
+				}
+				
+				//var dueAmount:Number = 0;
+				var unsettledDueAmount:Number = 0;
+				
+				var dueDate:Date = new Date(this.oldestPaymentDueDate.getFullYear(), this.oldestPaymentDueDate.getMonth(), this.oldestPaymentDueDate.getDate() + this.maxOverdueDays, 0, 0, 0, 0);
+				var today:Date = new Date();
+				today = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+				
+				for each(var payment:XML in this.documentObject.paymentsXML.*)
+				{
+					var pm:XML = DictionaryManager.getInstance().getById(payment.paymentMethodId);
+					
+					//if(pm && pm.isIncrementingDueAmount == "1")
+					if(pm)
+					{
+						//dueAmount += parseFloat(payment.amount);
+						
+						var settled:Number = 0;
+						
+						for each(var settlement:XML in payment.settlements.*)
+						{
+							settled += parseFloat(settlement.amount);
+						}
+						
+						unsettledDueAmount += (parseFloat(payment.amount) - settled); 
+					}
+				}
+				
+				unsettledDueAmount = CurrencyManager.documentToSystem(unsettledDueAmount,documentObject);
+				
+				var totalDebtWithDoc:Number = this.totalDebt;
+				
+				if(documentObject.isNewDocument)
+					totalDebtWithDoc += unsettledDueAmount;
+				
+				var simulatedInvoice:Boolean = false;
+				if(documentObject.typeDescriptor.xmlOptions.@simulatedInvoice.length() > 0 && documentObject.typeDescriptor.xmlOptions.@simulatedInvoice != ""){
+					simulatedInvoice = true;
+				}
+				var issueDate:Date = Tools.isoToDate(documentObject.xml.issueDate);
+				
+				var contractorMaxDueDaysOverpass:Boolean = false;
+				var systemMaxDueDaysOverpass:Boolean = false;
+				
+				for each (var p:XML in documentObject.paymentsXML.*){
+					if(p.dueDays.length() > 0 && !isNaN(contractorMaxDueDays) && Number(p.dueDays.toString()) > contractorMaxDueDays)contractorMaxDueDaysOverpass = true;
+					if(p.dueDays.length() > 0 && !isNaN(systemMaxDueDays) && Number(p.dueDays.toString()) > systemMaxDueDays)systemMaxDueDaysOverpass = true;
+				}
+				
+				//Sprawdzenie blokady patnoci zwizanej z gup kontrachenta
+				var cashPaymentMethod:XMLList = DictionaryManager.getInstance().dictionaries.paymentMethod.(isIncrementingDueAmount.toString() == "0").id;
+				var cashPayments:XMLList = new XMLList();
+				for each (var payment2:XML in documentObject.paymentsXML.payment){
+					for each (var method:XML in cashPaymentMethod) {
+						if(payment2.paymentMethodId.toString() == method.toString()){
+							cashPayments += payment2;
+						}
+					}
+				}
+				
+				
+				//Kontrachent ma możliwo patnoci tylko gotwka, kart i wykonujc przedpate.
+				
+				/*
+				if((unsettledDueAmount == 0 && this.allowCashPayment) || simulatedInvoice || (issueDate < ModelLocator.getInstance().systemStartDate))
+					this.setError(false, null);
+				else if(contractorMaxDueDaysOverpass)
+					this.setError(true, "Istnieją płatności, których termin przekracza maksymalną dopuszczalną ilość dni dla kontrahenta. (" + contractorMaxDueDays + ")");
+				else if(systemMaxDueDaysOverpass)
+					this.setError(true, "Istnieją płatności, których termin przekracza maksymalną dopuszczalną ilość dni w systemie. (" + systemMaxDueDays + ")");
+				else if(totalDebtWithDoc > this.maxDebtAmount)
+					this.setError(true, "Przekroczono dopuszczalny limit zadłużenia dla kontrahenta o " + CurrencyManager.formatCurrency(totalDebtWithDoc - this.maxDebtAmount) + " " + DictionaryManager.getInstance().getById(ModelLocator.getInstance().systemCurrencyId).symbol.toString());
+				else if (unsettledDueAmount > this.maxDocumentDebtAmount)
+					this.setError(true, "Przekroczono dopuszczalny limit zadłużenia dla dokumentu o " + CurrencyManager.formatCurrency(unsettledDueAmount - this.maxDocumentDebtAmount) + " " + DictionaryManager.getInstance().getById(ModelLocator.getInstance().systemCurrencyId).symbol.toString());
+				else if (dueDate.getTime() < today.getTime())
+					this.setError(true, "Kontrahent posiada nierozliczoną płatność ponad dopuszczalną ilość dni");
+				else
+					this.setError(false, null);
+				*/
+				
+				
+				this.setError(false, null);
+				
+				if(simulatedInvoice || (issueDate < ModelLocator.getInstance().systemStartDate)) {
+					
+				} else {
+					var tempError:String = '';
+					if(systemMaxDueDaysOverpass) {
+						tempError += "<li>" + LanguageManager.getInstance().labels.documents.messages.paymentsDueDaysOverpass + ". (" + systemMaxDueDays + ").</li>";
+					}
+					if(totalDebtWithDoc > this.maxDebtAmount) {
+						tempError += "<li>" + LanguageManager.getInstance().labels.documents.messages.paymentsOverMaxDebtAmount + " " + CurrencyManager.formatCurrency(totalDebtWithDoc - this.maxDebtAmount) + " " + DictionaryManager.getInstance().getById(ModelLocator.getInstance().systemCurrencyId).symbol.toString() + ".</li>";
+					}
+					if (unsettledDueAmount > this.maxDocumentDebtAmount) {
+						tempError += "<li>" + LanguageManager.getInstance().labels.documents.messages.paymentsOverMaxDebtAmountForDocument + " " + CurrencyManager.formatCurrency(unsettledDueAmount - this.maxDocumentDebtAmount) + " " + DictionaryManager.getInstance().getById(ModelLocator.getInstance().systemCurrencyId).symbol.toString() + ".</li>";
+					}
+					if (dueDate.getTime() < today.getTime()) {
+						tempError += "<li>" + LanguageManager.getInstance().labels.documents.messages.paymentsOverDueDate + ".</li>";
+						lblPayment.visible = true;
+						lblPayment.includeInLayout = true;
+						lblPayment.toolTip = LanguageManager.getInstance().labels.documents.messages.paymentsOverDueDate;
+					} else {
+						lblPayment.visible = false;
+						lblPayment.includeInLayout = false;
+						lblPayment.toolTip = null;
+					}
+					
+					if(tempError != '') {
+						if(allowCashPayment) {
+							if(Boolean(cashPayments.length())) {
+								tempError = '';
+							} else {
+								tempError += "<li>" + LanguageManager.getInstance().labels.documents.messages.paymentsOnlyCash + ".</li>";
+							}
+						} else {
+							tempError += "<li>" + LanguageManager.getInstance().labels.documents.messages.paymentsOnlyCash + ".</li>";
+						}
+					}
+					
+					if(tempError != '') {
+						this.setError(true, tempError);
+					}
+				}
+				
+			}
+			
+			private function setError(error:Boolean, msg:String):void
+			{
+				this.isVisible = error;
+				documentObject.commitBlock = msg;
+				var removeHtmlRegExp:RegExp = new RegExp("<[^<]+?>", "gi");
+				if(msg) {
+					this.lblLock.toolTip = msg.replace(removeHtmlRegExp, "");
+				}
+			}
+			
+			private function onInitialize():void
+			{
+				this.isEnabled = ModelLocator.getInstance().isSalesLockEnabled;
+				this.isInitialized = false;
+			}
+		]]>
+	</mx:Script>
+	<mx:Label id="lblPayment" visible="false" includeInLayout="false" text="{LanguageManager.getInstance().labels.documents.messages.noPayments}" color="red" fontWeight="bold" fontSize="16" />
+	<mx:Label id="lblLock" visible="{isVisible &amp;&amp; isEnabled}" text="{LanguageManager.getInstance().labels.documents.messages.lock}" color="red" fontWeight="bold" fontSize="16" />
+</mx:HBox>

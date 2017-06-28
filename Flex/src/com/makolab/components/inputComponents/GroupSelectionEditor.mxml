@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox implements="com.makolab.components.inputComponents.IFormBuilderComponent"
+		creationComplete="expandTree()"
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		xmlns:catalogue="com.makolab.components.catalogue.*"
+		xmlns:groupTree="com.makolab.components.catalogue.groupTree.*"
+		height="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.events.CollectionEvent;
+			import mx.events.FlexEvent;
+			import com.makolab.components.catalogue.groupTree.GroupSelectionRenderer;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.ConfigManager;
+			import mx.controls.Alert;
+			import assets.IconManager;
+			
+			private var _dataObject:Object;
+
+			private var _groupsXML:XML;
+			[Bindable]
+			public function set groupsXML(value:XML):void
+			{
+				_groupsXML = value;
+				if(value){
+					
+					if(value.hasOwnProperty("@expandTreeToLevel")) {
+						tree.expandChildren =value.@expandTreeToLevel;
+						trace("expand treedp: ",tree.expandChildren);
+					}
+					
+				}else
+					{
+						
+						trace("expand brak value");
+					}
+				expandTree();
+			
+			}
+			public function get groupsXML():XML
+			{
+				return _groupsXML;
+			}
+			
+			private var _groups:XML = new XML();
+			
+			[Bindable]
+			public var groupsConfigKey:String;
+			
+			/**
+			 * Name of the group's id field.
+			 */
+			[Bindable]
+			public var idVariableName:String = "";
+		
+			private var selectedGroups:Array = new Array();
+			
+			//Zawiera zaznaczone elementy
+			/**
+			 * Selected groups
+			 * 
+			 * @exampleText
+			 * <pre>
+			 * <code>
+			 * 	<groupMemberships>
+			 *	  <groupMembership type="ContractorGroupMembership">
+			 *	    <contractorGroupId>6F602AF7-1D35-4C7C-950D-461E44E0B9A0</contractorGroupId>
+			 *	    <id>CED5B9C8-3BB3-4E43-B73C-C998A47D06AE</id>
+			 *	    <version>E01C3792-B171-4335-A29A-635FBCC648EC</version>
+			 *	  </groupMembership>
+			 *	  <groupMembership type="ContractorGroupMembership">
+			 *	    <contractorGroupId>A282551C-D98D-4F0A-94D2-0DB11CB41150</contractorGroupId>
+			 *	    <id>EB653EDB-B258-4194-8594-EC606D3551C3</id>
+			 *	    <version>A35FDCA8-21AA-48C4-8BDA-3FA1AF25151F</version>
+			 *	  </groupMembership>
+			 *	</groupMemberships>
+			 * </code>
+			 * </pre>
+			 */
+			public function set dataObject(value:Object):void
+			{
+				_dataObject = value;
+				if (data != value) data = value;
+			}
+			
+			/**
+			 * @private
+			 */
+			public function get dataObject():Object
+			{
+				return _dataObject;
+			}
+			
+			//Zawiera strukturę drzewa
+			/**
+			 * Groups structure
+			 * 
+			 * @exampleText
+			 * <p>Format:
+			 * <code>
+			 *  <configValue key="contractors.group" level="System">
+			 * 		<group id="1">
+			 * 			<labels>
+			 * 				<label lang="pl"></label>
+			 * 				<label lang="en"></label>
+			 * 			</labels>
+			 * 			<subgroups>
+			 * 				<group id="2">
+			 * 					<label lang="pl"></label>
+			 * 					<label lang="en"></label>
+			 * 				</group>
+			 * 				<group id="3">
+			 * 					<label lang="pl"></label>
+			 * 					<label lang="en"></label>
+			 * 					<subgroups>
+			 * 						<group id="2">
+			 * 							<label lang="pl"></label>
+			 * 							<label lang="en"></label>
+			 * 						</group>
+			 * 						<group id="3">
+			 *		 					<label lang="pl"></label>
+			 *		 					<label lang="en"></label>
+			 * 						</group>
+			 * 					</subgroups>
+			 * 				</group>
+			 * 			</subgroups>
+			 * 		</group>
+			 * 	</cofigValue>
+			 * </code>
+			 * </p>
+			 */
+			public function set groups(value:XML):void
+			{
+				_groups = value;
+				main();
+			}
+			
+			/**
+			 * @private
+			 */
+			public function get groups():XML
+			{
+				return _groups;
+			}
+			/**
+			 * Lets you pass a value to the editor.
+			 * the <code>data</code> property doesn't change while editing values in editor. The value of <code>data</code> is copied to <code>dataObject</code>. To read modified values use <code>dataObject</code> property.
+			 * @see #dataObject
+			 */
+			//[Bindable]
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				dataObject = value;
+			}
+			override public function get data():Object 
+			{ 
+				return dataObject;
+			}
+		
+			private function main():void
+			{
+				if(groups == null || !dataObject)return;
+				tree.enabled = true;
+				/*
+				jakub - niepotrzebne, reset inicjalizuje komponent
+				
+				if(!groupsXML)groupsXML = groups.configValue.*[0].copy();
+				for each (var i:XML in _dataObject.*)
+				{
+					selectGroups(groupsXML.*,i[idVariableName]);
+				}
+				*/
+				
+				
+			}
+			
+			//zaznaczanie grup w drzewie wg tego co otrzymano w dataObject
+			private function selectGroups(val:XMLList,id:String):void
+			{
+				for each (var i:XML in val.*)
+				{
+					if(i.name() == "group")
+					{
+						if(i.attribute("id") == id){
+							i.@selected = 1;
+						}
+						selectGroups(i.*,id);
+					}
+					if(i.name() == "subgroups")
+					{
+						selectGroups(i.*,id);
+					}
+				}
+			}
+			
+			private function getSelectedGroups(val:XMLList):void
+			{
+				selectedGroups = [];
+				var ii:int = 0;
+				for each (var i:XML in val..group.(attribute("selected").valueOf() != undefined && attribute("selected").toString() == "1"))
+				{
+					if(i.subgroups == undefined) {
+						selectedGroups.push(i.@id);
+					}
+				}
+			}
+			
+			private function expandTree():void
+			{
+				/* if (tree && groupsXML)
+				{
+					var items:XMLList = new XMLList();
+					items = groupsConfigKey ? XML(ModelLocator.getInstance().configManager.values[groupsConfigKey])..group : groupsXML..group;
+					tree.openItems = items;
+				}*/ 
+				trace("Expand tree");
+			}
+			
+		
+			/**
+			 * A method of IFormBuilderComponent interface.
+			 * @see com.makolab.components.inputComponents.IFormBuilderComponent
+			 */
+			public function commitChanges():void{
+				var dataObjectCopy:Object = dataObject.copy();
+				getSelectedGroups(groupsXML.*);
+				for(var i:int=0;i<selectedGroups.length;i++)
+				{
+					var change:Boolean = true;
+					for each (var j:XML in dataObjectCopy.*)
+					{
+						if(j[idVariableName] == selectedGroups[i]){
+							change = false;
+							break;
+						}else{
+							change = true;
+						}
+					}
+					if(change)
+					{
+							var gm:XML =	<groupMembership>
+											</groupMembership>;
+							gm[idVariableName] = selectedGroups[i];
+							dataObjectCopy.appendChild(gm);
+					}
+				}
+				for each (var k:XML in dataObjectCopy.*)
+				{
+					change = true;
+					for(var l:int=0;l<selectedGroups.length;l++)
+					{
+						if(k[idVariableName] == selectedGroups[l])
+						{
+							change = false;
+							break;
+						}else{
+							change = true;
+						}
+					}
+					if(change){
+						delete(k.parent().children()[k.childIndex()]);
+					}
+				}
+				dataObject = dataObjectCopy
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			public function validate():Object
+			{
+				return null;
+			}
+			
+			/**
+			 * A method of IFormBuilderComponent interface.
+			 * @see IFormBuilderComponent
+			 */
+			public function reset():void 
+			{
+				groupsXML = groups.configValue.*[0].copy();
+				for each (var i:XML in _dataObject.*)
+				{
+					selectGroups(groupsXML.*,i[idVariableName]);
+				} 
+			}
+			
+			private function expandAll():void {
+				if(tree.dataProvider.length > 0) {
+				callLater( tree.expandChildrenOf, [ tree.dataProvider[0], true ]);
+				}
+			}
+			
+			private function closeAll():void {
+				tree.removeEventListener(CollectionEvent.COLLECTION_CHANGE, tree_collectionChange);
+				tree.openItems = [];
+			}
+			
+			private function initTree():void {
+				tree.addEventListener(CollectionEvent.COLLECTION_CHANGE, tree_collectionChange);
+            
+			}
+			
+			private function tree_collectionChange(evt:CollectionEvent):void {
+				if(tree.dataProvider.length > 0) {
+            	;//	expandAll();
+   				}
+            }
+			
+		]]>
+	</mx:Script>
+	
+	<mx:VBox width="100%" height="100%">
+		<mx:HBox width="100%" horizontalGap="30">
+			<mx:Button label="{LanguageManager.getInstance().labels.common.openAll}" click="expandAll()" width="150" />
+			<mx:Button label="{LanguageManager.getInstance().labels.common.closeAll}" click="closeAll()" width="150" />
+		</mx:HBox>
+		<groupTree:GroupTree
+				initialize="initTree()"
+				x="10"
+				y="40"
+				id="tree"
+				expandChildren="-1"
+				width="100%"
+				height="100%"
+				dataProvider="{groupsConfigKey ? XML(ModelLocator.getInstance().configManager.values[groupsConfigKey]) : groupsXML}"
+				groupIcon="{IconManager.getIcon('group_subgroup_small')}"
+				groupFolderIcon="{IconManager.getIcon('group_group_small')}"
+				multipleSelection="true"
+				editable="false"
+				enabled="false"
+				showRoot="true"
+				focusOut="if (event.target is GroupSelectionRenderer) event.stopImmediatePropagation()"
+		/>
+		<!--mx:TextArea text="{groupsXML.*}" height="100%" width="100%"/-->
+	</mx:VBox>
+	<!--mx:Button label="zapisz" click="commitChanges()"/-->
+	<!--<mx:XML id="originGroupsXML" source="/xml/contractors.groups.xml"/>-->
+	
+</mx:VBox>

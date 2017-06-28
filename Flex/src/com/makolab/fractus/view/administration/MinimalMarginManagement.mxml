@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300" initialize="getConfiguration()">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.LoadConfigurationCommand;
+			import com.makolab.fractus.commands.SaveConfigurationCommand;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.controls.CheckBox;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			//permission hard coded
+			[Bindable]
+			public var editableMargin:Boolean = ModelLocator.getInstance().permissionManager.isEnabled('administration.minimalMargin.edit');
+			
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:MinimalMarginManagement = new MinimalMarginManagement();
+				window.innerComponent = component;
+				
+				//permission hard coded
+				if(ModelLocator.getInstance().permissionManager.isEnabled('administration.minimalMargin.edit')) {
+					window.buttons = ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL;
+				} else {
+					window.buttons = ComponentWindow.BUTTON_CANCEL;
+				}
+				
+				window.commitFunction = component.commit;
+				component.addEventListener("dataSaved",function ():void{window.hide()});
+				if(component.icon)window.titleIcon = component.icon;
+				window.show(null,new Rectangle(0,0,500,400),LanguageManager.getInstance().labels.menu.minimalMargin);
+				component.addEventListener("commit",function():void{window.hide()});
+				return window;
+			}
+			
+			public function commit():void
+			{
+				//Alert.show(dataProvider.toXMLString());
+				saveConfiguration();
+				//var cmd:SaveConfigurationCommand = new SaveConfigurationCommand();
+				//cmd.
+			}
+			
+			public function setEnabled(event:Event):void
+			{
+				var index:int = list.itemRendererToIndex(event.target as CheckBox);
+				dataProvider[index].@value = (event.target as CheckBox).selected ? "true" : "false";
+			}
+			
+			[Bindable]
+			private var dataProvider:XMLList; 
+			
+			private function createDataProvider(configuration : XML):void
+			{
+				var branches:XMLList = DictionaryManager.getInstance().dictionaries.branches;
+				var temp:XMLList = new XMLList();
+				dataProvider = new XMLList();
+				for each(var branch:XML in branches){
+					var item:XML = <branch/>;
+					item.@id = branch.id.toString();
+					item.@value = "false";
+					var filtered:XMLList = configuration.configValue.root.branch.(@id.toString() == branch.id.toString());
+					if(filtered.length() > 0 && filtered[0].@value.toString() == "true") item.@value = "true";
+					item.@label = branch.label.(@lang = LanguageManager.getInstance().currentLanguage);
+					temp = temp + item;
+				}
+				dataProvider = temp.copy();
+				//list.dataProvider = dataProvider;
+			}
+			
+			private function getConfiguration():void
+			{
+				var cmd:LoadConfigurationCommand = new LoadConfigurationCommand();
+				cmd.addEventListener(ResultEvent.RESULT,handleLoadResult);
+				cmd.execute({key : "document.validation.minimalProfitMargin"});
+			}
+			
+			private function handleLoadResult(event:ResultEvent):void
+			{
+				createDataProvider(XML(event.result));
+			}
+			
+			private function saveConfiguration():void
+			{
+				var cmd:SaveConfigurationCommand = new SaveConfigurationCommand();
+				cmd.addEventListener(ResultEvent.RESULT,handleSaveResult);
+				var xml:XML = <root><configValue key="document.validation.minimalProfitMargin" level="System"><root>{dataProvider}</root></configValue></root>;
+				cmd.execute( { requestXml : xml } );
+			}
+			
+			private function handleSaveResult(event:ResultEvent):void
+			{
+				this.dispatchEvent(new Event("dataSaved"));
+				
+				for each(var x:XML in dataProvider)
+				{
+					if(x.@id == ModelLocator.getInstance().branchId)
+					{
+						if(x.@value == "true")
+							ModelLocator.getInstance().minimalProfitMarginValidation = true;
+						else
+							ModelLocator.getInstance().minimalProfitMarginValidation = false;
+						break;
+					}
+				}
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:DataGrid width="100%" height="100%" id="list" dataProvider="{dataProvider}">
+		<mx:columns>
+			<mx:DataGridColumn width="20" rendererIsEditor="true" textAlign="center" >
+				<mx:itemRenderer>
+					<mx:Component>
+						<mx:CheckBox selected="{(data.@value.toString() == 'true' ? true : false)}" enabled="{outerDocument.editableMargin}" change="outerDocument.setEnabled(event)" />
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.branch}" dataField="@label"/>
+		</mx:columns>
+	</mx:DataGrid>
+	
+	<mx:XML id="testXML" xmlns="">
+		<root>
+			<branch id="" value="1"/>
+			<branch id="" value="1"/>
+		</root>
+	</mx:XML>
+</mx:VBox>

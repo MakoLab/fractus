@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:DataGridColumn xmlns="*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100"  headerWordWrap="true" editorDataField="dataObject"  rendererIsEditor="true"
+	 xmlns:view="com.makolab.fractus.view.*"
+	 xmlns:complaint="com.makolab.fractus.view.complaint.*" xmlns:generic="com.makolab.fractus.view.generic.*">
+	 <mx:itemRenderer>
+		 <mx:Component> 
+		 		<generic:CellDetailsButton 
+		 				labelFunction="{outerDocument.labelFunction is Function ? outerDocument.labelFunction : null}" 
+		 				click="outerDocument.clickButton(data)"
+		 				enabled="{outerDocument.enabled}"
+		 		/>
+		 </mx:Component>
+	 </mx:itemRenderer>
+	 <mx:Script>
+	 	<![CDATA[
+	 		import com.makolab.fractus.view.documents.documentControls.DecisionWindowEditor;
+	 		import flight.vo.DynamicObject;
+	 		import mx.controls.Alert;
+	 		
+	 		[Bindable] public var enabled:Boolean = true;
+	 		
+	 		public var cellWindowEditor:CellDetailsWindowEditor;
+	 		
+	 		public var titleWindow:String = "" ;
+	 		
+	 		public var parent:DisplayObject
+	 		
+		 	public function clickButton(value:Object):void
+		 	{
+		 		if (cellWindowEditor is CellDetailsWindowEditor)
+		 		{
+		 			//new DecisionWindowEditor
+		 			CellDetailsWindowEditor.showWindow(parent, value, cellWindowEditor, titleWindow);
+		  		}
+		 	}	
+	 	]]>
+	 </mx:Script>
+</mx:DataGridColumn>

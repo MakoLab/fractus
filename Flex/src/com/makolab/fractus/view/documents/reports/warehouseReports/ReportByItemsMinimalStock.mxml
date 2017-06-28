@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReportBase xmlns="com.makolab.fractus.view.documents.reports.*" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:list="com.makolab.components.list.*" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:layoutComponents="com.makolab.components.layoutComponents.*"
+	createOrderButtonVisible="true">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.controls.advancedDataGridClasses.AdvancedDataGridItemRenderer;
+			import com.makolab.fractus.view.catalogue.ItemsCatalogue;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.controls.CheckBox;
+			import com.makolab.components.util.Tools;
+			import com.makolab.components.layoutComponents.SummaryColumn;
+			import mx.messaging.channels.StreamingAMFChannel;
+			import com.makolab.components.layoutComponents.SummaryOperation;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.formatters.CurrencyFormatter;
+			
+			public function checkBoxChangeHandler(event:Event):void
+			{
+				var x:Object = CheckBox(event.target).data;
+				
+				if(x)
+					x.@selected = CheckBox(event.target).selected;
+			}
+			
+			public function setHeaderCheckBoxSelection(conditions:Object):Boolean
+			{
+				var selected:Boolean = true;
+				for each(var item:XML in this.dataProvider){
+					if(item.@selected.length() == 0 || item.@selected == 0){
+						selected = false;
+						break;
+					}
+				}
+				return selected;
+			}
+			
+			public function headerCheckBoxChangeHandler(event:Event):void
+			{
+				for each(var item:XML in this.dataProvider){
+					item.@selected = event.target.selected ? "true" : "false";
+				}
+			}
+			
+			protected override function createOrder():void
+			{
+				var cmd:ShowDocumentEditorCommand = new ShowDocumentEditorCommand(DocumentTypeDescriptor.CATEGORY_PURCHASE);
+				cmd.template = "order";
+				cmd.editorType = ShowDocumentEditorCommand.EDITOR_ADVANCED;
+				
+				var source:XML = <source type="clipboard"><clipboard /></source>;
+				cmd.source = source;
+				
+				for each (var line:XML in this.dataProvider)
+				{
+					if(line.@selected.length() > 0 && line.@selected == "true")
+					{
+						var quantity:Number = parseFloat(line.@minimalStock);
+						quantity -= parseFloat(line.@stock);
+						//stan minimalny - stan aktualny, nie mniejsze niz 0
+						quantity = Math.max(Tools.round(quantity, 2), 0);
+						
+						XML(source.clipboard).appendChild(<item id={line.@id} quantity={quantity} name={line.@itemName} code={line.@itemCode} />);
+					}
+				}
+			
+				if(source.clipboard.*.length() > 0)	
+					cmd.execute();
+			}
+			
+			private function gridDblClickHandler(event:MouseEvent):void
+			{
+				if(event.target is AdvancedDataGridItemRenderer == false) return;
+				
+				var row:XML = event.target.data as XML;
+				
+				if(row)
+					ItemsCatalogue.showRelatedDocumentsItemWindow(row.@id, row.@itemName);
+			}
+		]]>
+	</mx:Script>
+		<table>
+			<mx:AdvancedDataGrid id="grid" width="100%" height="100%" doubleClickEnabled="true" doubleClick="gridDblClickHandler(event)">
+				<mx:columns>
+					<mx:AdvancedDataGridColumn id="checkBoxColumn" headerText=" " rendererIsEditor="true" width="20" textAlign="center" sortable="false">
+						<mx:headerRenderer>
+							<mx:Component>
+								<mx:CheckBox paddingLeft="10" selected="{outerDocument.setHeaderCheckBoxSelection(outerDocument.grid.dataProvider)}" change="outerDocument.headerCheckBoxChangeHandler(event)"/>
+							</mx:Component>
+						</mx:headerRenderer>
+						<mx:itemRenderer>
+							<mx:Component>
+								<mx:CheckBox change="outerDocument.checkBoxChangeHandler(event)" selected="{data &amp;&amp; data.@selected.length() &gt; 0 &amp;&amp; data.@selected == 'true'}" />
+							</mx:Component>
+						</mx:itemRenderer>
+					</mx:AdvancedDataGridColumn>
+					<mx:AdvancedDataGridColumn headerText="{LanguageManager.getInstance().labels.common.itemCode}" dataField="@itemCode" width="150"/>
+					<mx:AdvancedDataGridColumn headerText="{LanguageManager.getInstance().labels.common.itemName}" dataField="@itemName" sortCompareFunction="{ReportBase.stringCompareFunction('@itemName')}"/>
+					<mx:AdvancedDataGridColumn headerText="{LanguageManager.getInstance().labels.reports.filters.manufacturer}" dataField="@manufacturer"/>
+					
+					<mx:AdvancedDataGridColumn headerText="{LanguageManager.getInstance().labels.reports.filters.manufacturerCode}" dataField="@manufacturerCode"/>
+					
+					<mx:AdvancedDataGridColumn sortCompareFunction="{Tools.getSortFunction('@minimalStock')}" headerText="{LanguageManager.getInstance().labels.items.stockMin}" dataField="@minimalStock" labelFunction="quantityLabelFunction" textAlign="right" width="100"/>
+					<mx:AdvancedDataGridColumn sortCompareFunction="{Tools.getSortFunction('@stock')}" headerText="{LanguageManager.getInstance().labels.items.stockActual}" dataField="@stock" labelFunction="quantityLabelFunction" textAlign="right" width="100"/>
+					<mx:AdvancedDataGridColumn sortCompareFunction="{Tools.getSortFunction('@outcome14')}" headerText="{LanguageManager.getInstance().labels.reports.headers.quantitativeTrading14days}" dataField="@outcome14" textAlign="right" labelFunction="quantityLabelFunction" width="120"/>
+					<mx:AdvancedDataGridColumn sortCompareFunction="{Tools.getSortFunction('@outcome30')}" headerText="{LanguageManager.getInstance().labels.reports.headers.quantitativeTrading30days}" dataField="@outcome30" textAlign="right" labelFunction="quantityLabelFunction" width="120"/>
+					<mx:AdvancedDataGridColumn sortCompareFunction="{Tools.getSortFunction('@outcome60')}" headerText="{LanguageManager.getInstance().labels.reports.headers.quantitativeTrading30days}" dataField="@outcome60" textAlign="right" labelFunction="quantityLabelFunction" width="120"/>
+					<mx:AdvancedDataGridColumn sortCompareFunction="{Tools.getSortFunction('@outcome90')}" headerText="{LanguageManager.getInstance().labels.reports.headers.quantitativeTrading30days}" dataField="@outcome90" textAlign="right" labelFunction="quantityLabelFunction" width="120"/>
+				</mx:columns>
+			</mx:AdvancedDataGrid>
+		</table>
+	
+</ReportBase>

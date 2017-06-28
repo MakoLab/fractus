@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<vCard>
+  <name></name>
+  <fullName></fullName>
+  <address type="work/home/postal" pref="true">
+    <street></street>
+    <city></city>
+    <postCode></postCode>
+    <country></country>
+  </address>
+  <telephone type="home/work/cell" voice="true" fax="true" pref="true"></telephone>
+  <email></email>
+  <url type="home/work"></url>
+</vCard>

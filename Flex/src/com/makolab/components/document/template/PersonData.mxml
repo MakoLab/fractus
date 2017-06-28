@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"  horizontalScrollPolicy="off" verticalScrollPolicy="off" >
+	<mx:Script>
+		<![CDATA[
+			import mx.charts.chartClasses.StackedSeries;
+			[Bindable]
+			public var typePerson:String = "Kontrahent:";
+			[Bindable]
+			public var personDataObject : XML ;
+
+			
+		]]>
+	</mx:Script>
+	<mx:VBox >
+		 <mx:HBox>
+			<mx:Label text="{typePerson} " fontSize="14" scaleY="0.9" />
+			<mx:Label text="{personDataObject.FullName}" fontSize="12" scaleY="0.9" width="250"  fontWeight="bold"/>
+		</mx:HBox>
+ 		<mx:HBox>
+ 			<mx:Label text="Adres: " fontSize="12" scaleY="0.85" /> 
+ 			<mx:VBox>
+ 				<mx:Label text="{personDataObject.Address.@StreetName + ' ' +  personDataObject.Address.@StreetNumber +  ' ' + personDataObject.Address.@FlatNumber }" fontSize="12" scaleY="0.85" fontWeight="bold" />
+ 				<mx:Label text="{personDataObject.PostalCode + ' ' + personDataObject.City }" fontSize="12" scaleY="0.85" fontWeight="bold" />
+ 			</mx:VBox>
+ 		</mx:HBox>
+ 		<mx:HBox>
+ 			<mx:Label text="Tel. " fontSize="12" scaleY="0.85" />
+ 			<mx:Label  text="{personDataObject.PhoneNumber}" fontSize="12" scaleY="0.85" fontWeight="bold" />
+ 		</mx:HBox>
+		<mx:HBox>
+ 			<mx:Label text="NIP. " fontSize="12" scaleY="0.85" />
+ 			<mx:Label text="{personDataObject.NIP}" fontSize="12" scaleY="0.85" fontWeight="bold" />
+ 		</mx:HBox>
+	</mx:VBox>	 
+	
+</mx:Canvas>

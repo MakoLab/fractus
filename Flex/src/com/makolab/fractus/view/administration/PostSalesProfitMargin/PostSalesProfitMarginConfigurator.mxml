@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:list="com.makolab.components.list.*" initialize="initializeHandler(event)" xmlns:PostSalesProfitMargin="com.makolab.fractus.view.administration.PostSalesProfitMargin.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.events.DataGridEventReason;
+			import mx.containers.Grid;
+			import mx.collections.XMLListCollection;
+			import com.makolab.components.util.Tools;
+			import mx.formatters.DateFormatter;
+			import com.makolab.fractus.model.WindowManager;
+			import com.makolab.components.util.ErrorReport;
+			import mx.events.IndexChangedEvent;
+			import mx.events.DataGridEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			private function initializeHandler(event:Event):void
+			{
+				dataXML = example;
+				grid.addEventListener("addColumn",addColumnEventHandler);
+				grid.addEventListener("removeColumn",removeColumnEventHandler);
+				grid.addEventListener("editColumnHeader",editColumnHeaderEventHandler);
+				
+				var factory:ClassFactory = new ClassFactory(PostsalesMarginAttributesItemRenderer);
+			}
+			
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:PostSalesProfitMarginConfigurator = new PostSalesProfitMarginConfigurator();
+				window.innerComponent = component;
+				window.showXmlFunction = component.showXML;
+				window.show(null,new Rectangle(-1,-1,850,500),LanguageManager.getInstance().labels.menu.administration.postSalesProfitMargin);
+				return window;
+			}
+			
+			[Bindable]
+			private var rows:XMLListCollection; 
+			
+			private function addColumnEventHandler(event:DataGridEvent):void
+			{
+				var columnDefinition:XML;
+				var xmlList:XMLList = new XMLList();
+				if (event.columnIndex > -1)
+				{
+					for (var i:int = 0; i < configuration.columns.column.length(); i++)
+					{
+						xmlList = xmlList + configuration.columns.column[i];
+						if (i == event.columnIndex-1)
+						{
+							columnDefinition = columnTemplate.copy();
+							xmlList = xmlList + columnDefinition;
+						}
+					}
+				}
+				configuration.columns.* = xmlList;
+				columns = getColumns(configuration.columns.column);
+				editRange(configuration.columns.column[event.columnIndex]);
+			}
+			
+			private function removeColumnEventHandler(event:DataGridEvent):void
+			{
+				var dataField:String = configuration.columns.column[event.columnIndex-1].@dataField;
+				removeAttributeDataField(dataField);
+				delete configuration.columns.column[event.columnIndex-1]; // -1 bo jest kolumna z atrybutami dokladana
+				columns = getColumns(configuration.columns.column);
+			}
+			
+			private function editColumnHeaderEventHandler(event:DataGridEvent):void
+			{
+				editRange(configuration.columns.column[event.columnIndex-1]);
+			}
+			
+			private function editRange(columnXML:XML):void
+			{
+				var addRangeWindow:ComponentWindow = RangeEditor.showWindow(columnXML);
+				var editor:RangeEditor = addRangeWindow.innerComponent as RangeEditor;
+				//editor.addEventListener("commit",function ():void {columnXML = editor.rangeXML;});
+				editor.addEventListener("commit",rangeEditCommitHandler);
+			}
+			
+			private function rangeEditCommitHandler(event:Event):void
+			{
+				var dateFrom:Date = (event.target as RangeEditor).dateFrom;
+				var dateTo:Date = (event.target as RangeEditor).dateTo;
+				var formatter:DateFormatter = new DateFormatter();
+				formatter.formatString = "YYYYMMDD";
+				
+				var columnXML:XML = (event.target as RangeEditor).rangeXML;
+				if (columnXML.@headerText.length() > 0) delete columnXML.@headerText;
+				
+				if (dateFrom && dateTo) 
+				{
+					var oldDataField:String = columnXML.@dataField;
+					var newDataField:String = "from" + formatter.format(dateFrom) + "to" + formatter.format(dateTo);
+					columnXML.@dataField = newDataField;
+					changeAttributeDataField(oldDataField,newDataField);
+				}
+				columns = getColumns(configuration.columns.column);
+			}
+			
+			private function changeAttributeDataField(oldDataField:String, newDataField:String):void
+			{
+				for each (var row:XML in rows)
+				{
+					var values:XMLList = row.value.(valueOf().@dataField == oldDataField);
+					for each (var value:XML in values)
+					{
+						value.@dataField = newDataField;
+					}
+				}
+			}
+			
+			private function removeAttributeDataField(dataField:String):void
+			{
+				for each (var row:XML in rows)
+				{
+					var values:XMLList = row.value.(valueOf().@dataField == dataField);
+					if (values.length() > 0) delete values[0];
+				}
+			}
+			
+			private var _dataXML:XML;
+			public function set dataXML(value:XML):void
+			{
+				_dataXML = value;
+				if (_dataXML && _dataXML.rows.length() > 0) rows = new XMLListCollection(_dataXML.rows.row);
+				if (!rows)rows = new XMLListCollection();
+				rows.addItem(rowTemplate.copy());
+				configuration = _dataXML.configuration[0];
+			}
+			public function get dataXML():XML
+			{
+				/* if (_dataXML && _dataXML.rows.length() > 0)
+				{
+					for each (var row:XML in _dataXML.rows.row)
+					{
+						if (row.attributes.length() > 0 && row.attributes.attribute.length() == 0)
+							delete _dataXML.rows.row[row.childIndex()];
+					}
+				} */
+				return _dataXML;
+			}
+			
+			private var _configuration:XML;
+			public function set configuration(value:XML):void
+			{
+				_configuration = value;
+				columns = getColumns(_configuration.columns.column);
+				
+			}
+			public function get configuration():XML
+			{
+				return _configuration;
+			}
+			
+			[Bindable] public var columns:Array = [];
+			
+			private function getColumns(columnsXMLDefinition:XMLList):Array
+			{
+				var columns:Array = [attributesColumn];
+				for each (var columnXML:XML in columnsXMLDefinition)
+				{
+					columns.push(createColumn(columnXML));
+				}
+				//if (columns.length > 1)columns[columns.length-1].minWidth = 20;
+				/* var lastColumn:DataGridColumn = new DataGridColumn();
+				lastColumn.setStyle("backgroundColor",0x444444);
+				lastColumn.sortable = false;
+				lastColumn.draggable = false;
+				columns.push(lastColumn); */
+				return columns;
+			}
+			
+			private function createColumn(columnXML:XML):DataGridColumn
+			{
+				var dataGridColumn:DataGridColumn = new DataGridColumn();
+				if (columnXML.@headerText.length() > 0) dataGridColumn.headerText = columnXML.@headerText;
+				else dataGridColumn.headerText = getHeaderText(columnXML);
+				dataGridColumn.headerWordWrap = true;
+				if (columnXML.@width.length() > 0) dataGridColumn.width = Number(columnXML.@width);
+				else dataGridColumn.width = 140;
+				//dataGridColumn.minWidth = 130;  // jak się ustawi minWidth to nie dziala poprawnie bo Flex...
+				if (columnXML.@dataField.length() > 0) dataGridColumn.dataField = columnXML.@dataField;
+				if (columnXML.@color.length() > 0) dataGridColumn.setStyle("color",columnXML.@color);
+				dataGridColumn.headerRenderer = new ClassFactory(AdvancedDataGridColumnHeaderRenderer);
+				dataGridColumn.itemRenderer = new ClassFactory(PostsalesMarginItemRenderer);
+				dataGridColumn.itemEditor = new ClassFactory(PostsalesMarginItemEditor);
+				dataGridColumn.editorDataField = "dataObject";
+				dataGridColumn.sortable = false;
+				return dataGridColumn;
+			}
+			
+			private function getHeaderText(columnXML:XML):String
+			{
+				var header:String = "";
+				if (columnXML.@dateFrom.length() > 0) header += formatHeaderDate(columnXML.@dateFrom);
+				header += "\n";
+				if (columnXML.@dateTo.length() > 0) header += formatHeaderDate(columnXML.@dateTo);
+				return header;
+			}
+			
+			private function formatHeaderDate(date:String):String
+			{
+				var formatted:String = "";
+				if(date)
+				{
+					var formatter:DateFormatter = new DateFormatter();
+					formatter.formatString = "YYYY-MM-DD";
+					var dateObject:Date = Tools.isoToDate(date);
+					formatted = formatter.format(dateObject);
+				}
+				return formatted;
+			}
+			
+			private function headerShiftHandler(event:IndexChangedEvent):void
+			{
+				if(event.oldIndex > 0 && (event.newIndex == 0 || event.newIndex == grid.columnCount - 1))
+				{
+					columns = getColumns(_configuration.columns.column);
+					return;
+				}
+				var xmlList:XMLList = new XMLList();
+				var xmlColumn:XML;
+				var i:int = 0;
+				for (i = 0; i < configuration.columns.column.length(); i++)
+				{
+					if (i == event.oldIndex-1)
+					{ 
+						xmlColumn = configuration.columns.column[i].copy();
+						delete configuration.columns.column[i];
+					}
+				}
+				for (i = 0; i < configuration.columns.column.length(); i++)
+				{
+					if (i == event.newIndex - 1 && xmlColumn) xmlList = xmlList + xmlColumn;
+					xmlList = xmlList + configuration.columns.column[i];
+				}
+				if (event.newIndex > configuration.columns.column.length()) xmlList = xmlList + xmlColumn;
+				configuration.columns.* = xmlList;
+			}
+			
+			private function itemEditEndHandler(event:DataGridEvent):void
+			{
+				if (event.columnIndex != 0 && event.itemRenderer && event.itemRenderer.data && event.itemRenderer.data is XML) 
+				{
+					event.preventDefault();
+					var list:XMLList;
+					list = (event.itemRenderer.data as XML).value.(valueOf().@dataField == event.dataField);
+					if (list.length() > 0)
+					{
+						if(grid.itemEditorInstance)
+						{
+							if (!(grid.itemEditorInstance as PostsalesMarginItemEditor).dataObject) delete (grid.editedItemRenderer.data as XML).value.(valueOf().@dataField == event.dataField)[0];
+							else (grid.editedItemRenderer.data as XML).value.(valueOf().@dataField == event.dataField)[0] = (grid.itemEditorInstance as PostsalesMarginItemEditor).dataObject;
+						}
+						event.itemRenderer.data = grid.editedItemRenderer.data;
+					}
+					
+					grid.destroyItemEditor();
+					grid.dataProvider.notifyItemUpdate(grid.editedItemRenderer);
+					if (event.reason == DataGridEventReason.NEW_COLUMN) grid.editedItemPosition = {columnIndex : event.columnIndex + 1, rowIndex : event.rowIndex};
+				}
+			}
+			
+			public function createNewRow():void
+			{
+				if (!rows)rows = new XMLListCollection();
+				for (var row:int = rows.length - 1; row >= 0; row--)
+				{
+					if (rows[row].attributes.length() == 0 && rows[row].values.length() == 0) rows.removeItemAt(row);
+				}
+				rows.addItem(rowTemplate.copy());
+			}
+			
+			public function deleteRow(row:XML):void
+			{
+				var i:int = row.childIndex();
+				rows.removeItemAt(row.childIndex());
+			}
+			
+			public function showXML():void
+			{
+				ErrorReport.showWindow("XML",dataXML.toXMLString());
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:DataGridColumn id="attributesColumn" headerText="Atrybuty" minWidth="300" textAlign="center" headerStyleName="firstHeader" draggable="false" rendererIsEditor="true" editorDataField="data">
+		<mx:itemRenderer>
+			<mx:Component>
+				<PostSalesProfitMargin:PostsalesMarginAttributesItemRenderer change="outerDocument.createNewRow()" delete="outerDocument.deleteRow(XML(data))"/>
+			</mx:Component>
+		</mx:itemRenderer>
+	</mx:DataGridColumn>
+	
+	<mx:XML id="example" xmlns="">
+		<root>
+		  <configuration>
+		    <columns>
+		      <column dataField="from20110101to20110331" dateFrom="2011-01-01T00:00:00" dateTo="2011-03-31T23:59:59"/>
+		      <column dataField="from20110401to20110630" dateFrom="2011-04-01T00:00:00" dateTo="2011-06-30T23:59:59"/>
+		      <column dateFrom="2011-07-01T00:00:00" dateTo="2011-09-30T23:59:59" dataField="from20110701to20110930"/>
+		      <column dateFrom="2011-10-01T00:00:00" dateTo="2011-12-31T23:59:59" dataField="from20111001to20111231"/>
+		    </columns>
+		  </configuration>
+		  <rows>
+		    <row>
+		      <attributes>
+		        <attribute id="9499c778-8324-49b3-a0ad-0810028283ac">4 MAX</attribute>
+		        <attribute id="3D43A111-0F1C-44CF-9A98-77D95BFD052C">zima</attribute>
+		      </attributes>
+		      <value dataField="from20110101to20110331">0.01</value>
+		      <value dataField="from20110401to20110630">0.02</value>
+		      <value dataField="from20110701to20110930">0.03</value>
+		      <value dataField="from20111001to20111231">0.04</value>
+		    </row>
+		    <row>
+		      <attributes>
+		        <attribute id="9499C778-8324-49B3-A0AD-0810028283AC">MICHELIN</attribute>
+		        <attribute id="3D43A111-0F1C-44CF-9A98-77D95BFD052C">lato</attribute>
+		      </attributes>
+		      <value dataField="from20110101to20110331">0.02</value>
+		      <value dataField="from20110401to20110630">0.03</value>
+		      <value dataField="from20110701to20110930">0.04</value>
+		      <value dataField="from20111001to20111231">0.05</value>
+		    </row>
+		  </rows>
+		</root>
+	</mx:XML>
+	
+	<mx:XML id="columnTemplate" xmlns="">
+		<column headerText="Nowy okres"/>
+	</mx:XML>
+	
+	<mx:XML id="rowTemplate" xmlns="">
+		<row/>
+	</mx:XML>
+		
+		<mx:DataGrid
+			id="grid" 
+			width="100%"
+			height="100%"
+			dataProvider="{rows}"
+			columns="{columns}" 
+			horizontalScrollPolicy="on" 
+			lockedColumnCount="1" 
+			headerShift="headerShiftHandler(event)" 
+			editable="true" 
+			itemEditEnd="itemEditEndHandler(event)"
+		/>
+</mx:VBox>

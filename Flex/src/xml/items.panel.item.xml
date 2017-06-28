@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<!--VBox id="itemInfoPanel" width="100%"-->	
+	<CollapsablePanel id="pp" title="\{LanguageManager.labels.items.forms.item.basicData\}" width="100%">
+		<Component width="100%" className="com.makolab.components.inputComponents.ItemsSetRenderer" left="0" right="0" bottom="0" data="\{data.item\}"/>
+		<Component width="100%" className="com.makolab.components.inputComponents.ItemRenderer" left="0" right="0" bottom="0" data="\{data.item\}"/>
+	</CollapsablePanel>
+	<!--
+	<CollapsablePanel id="pp4" title="\{LanguageManager.labels.items.forms.item.additional\}" width="100%">
+		<Component width="100%" className="com.makolab.components.layoutComponents.DynamicDetailRenderer" left="0" right="0" bottom="0" data="\{data.item\}" configKey="items.panel.detailsConfig"/>
+	</CollapsablePanel>
+	-->
+    <CollapsablePanel id="pp2" title="\{LanguageManager.labels.items.forms.item.equivalents\}" width="100%" open="false">
+       	<Component width="100%" className="com.makolab.components.list.CommonGrid" left="0" right="0" bottom="0" config="\{model.configManager.values.items_lists_items.equivalents.columns\}"
+          data="\{data.item.relations.relation.relatedObject.customXmlList.customXmlList.item\}"/>
+    </CollapsablePanel>
+      
+    <CollapsablePanel id="pp3" title="\{LanguageManager.labels.items.forms.item.images\}" width="100%" open="false">
+		<Component width="100%" className="com.makolab.components.inputComponents.ItemImagesRenderer" left="0" right="0" bottom="0" data="\{data.item\}"/>
+    </CollapsablePanel>
+	<!--/VBox-->
+</root>

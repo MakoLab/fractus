@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" xmlns:ns1="com.makolab.components.lineList.*" xmlns:layoutComponents="com.makolab.components.layoutComponents.*"
+		creationComplete="init()"
+	xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Style>
+		CollapsablePanel
+		{
+			corner-radius: 0;
+			border-thickness-left: 3;
+			border-thickness-right: 3;
+			rounded-bottom-corners: false;
+			shadow-distance: 0;
+			shadow-direction: center;
+		}
+	</mx:Style>
+	<mx:HDividedBox left="0" top="0" right="0" bottom="0" backgroundColor="#ffffff">
+		<mx:VBox width="300" height="100%" id="leftPane" backgroundColor="#ffffff" paddingLeft="8" paddingTop="8" paddingBottom="8"/>
+		<mx:TabNavigator width="70%" height="100%">
+			<mx:VBox width="100%" height="100%" label="Tabela">
+				<ns1:ConfigurableGrid id="grid" height="100%" width="100%" change="handleGridChange(event)" headerNode="configuration" itemNode="item" data="{searchResults}">
+					<ns1:itemRenderer>
+						<mx:Component>
+							<mx:DataGridItemRenderer selectable="true"/>
+						</mx:Component>
+					</ns1:itemRenderer>
+				</ns1:ConfigurableGrid>
+			</mx:VBox>
+			<mx:VBox width="100%" height="100%" label="Tekst">
+				<inputComponents:CSVTextArea id="csvTextArea" width="100%" height="100%" data="{searchResults}"
+						fontFamily="Courier New"
+						editable="false"
+						click="csvTextArea.setSelection(0, csvTextArea.text.length)"
+					/>
+			</mx:VBox>
+		</mx:TabNavigator>
+	</mx:HDividedBox>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.CloseEvent;
+			import mx.controls.PopUpButton;
+			import mx.managers.PopUpManager;
+			import mx.containers.TitleWindow;
+			import com.makolab.components.layoutComponents.SimpleFormBuilder;
+			import com.makolab.components.layoutComponents.CollapsablePanel;
+			import assets.IconMapper;
+			import mx.controls.LinkButton;
+			import mx.rpc.events.FaultEvent;
+			import mx.controls.Alert;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.TextArea;
+			import mx.controls.Text;
+			import com.makolab.components.layoutComponents.FormEvent;
+			import mx.controls.Button;
+			import mx.controls.ComboBox;
+			import mx.controls.TextInput;
+			import mx.containers.FormItem;
+			import com.makolab.components.inputComponents.DateEditor;
+			import mx.controls.DateField;
+			import mx.core.UIComponent;
+			
+			private var configUrl:String;
+			private var searchUrl:String;
+			private var dataUrl:String;
+			
+			private function init():void
+			{
+				this.configUrl = application.parameters.configUrl; //"xml/config.xml";
+				this.dataUrl = application.parameters.dataUrl; //"xml/data.xml";
+				this.searchUrl = application.parameters.searchUrl; //"xml/search.xml";
+				
+				configService.url = configUrl;
+				configService.send();
+			}
+			
+			private var htmlPanels:Object;
+			private var operations:Object;
+			
+			private var monthNames:Array;
+			private var dayNames:Array;
+			
+			[Bindable]
+			private var searchResults:XML;
+			
+			private var _config:XML;
+			private function set config(value:XML):void
+			{
+				_config = value;
+				var x:XML;
+				htmlPanels = {};
+				operations = {};
+				leftPane.removeAllChildren();
+				
+				if (!value) return;
+				
+				if (value.config != undefined)
+				{
+					if (value.config.monthNames)
+					{
+						monthNames = String(value.config.monthNames).split(",");
+					}
+					if (value.config.dayNames)
+					{
+						dayNames = String(value.config.dayNames).split(",");
+					}
+				}
+				
+				for each (x in value.*)
+				{
+					switch (x.localName())
+					{
+						case "searchPanel": createSearchPanel(x); break;
+						case "htmlPanel": createHtmlPanel(x); break;
+						case "operationsPanel": createOperationsPanel(x); break;
+					}
+				}
+			}
+			
+			private function createOperationsPanel(config:XML):void
+			{
+				var operationsPanel:CollapsablePanel = new CollapsablePanel();
+				operationsPanel.title = config.@label;
+				operationsPanel.percentWidth = 100;
+				operationsPanel.setStyle("paddingTop", 5);
+				operationsPanel.setStyle("paddingBottom", 5);
+				operationsPanel.setStyle("paddingLeft", 5);
+				operationsPanel.setStyle("paddingRight", 5);
+				operationsPanel.setStyle("verticalGap", 0);
+				for each (var x:XML in config.operation)
+				{
+					var linkButton:LinkButton = new LinkButton();
+					linkButton.label = x.@label;
+					linkButton.percentWidth = 100;
+					linkButton.setStyle("textAlign", "left");
+					linkButton.setStyle("icon", IconMapper.icons[String(x.@icon)]);
+					linkButton.addEventListener(MouseEvent.CLICK, handleOperationClick);
+					var alwaysVisible:Boolean = (x.@alwaysVisible == 1);
+					var functionName:String = x.@functionName != undefined ? x.@functionName : "";
+					var windowName:String = x.@windowName != undefined ? x.@windowName : "";
+					operations[String(x.@name)] = { button : linkButton, functionName : functionName, windowName : windowName, alwaysVisible : alwaysVisible };
+					operationsPanel.addChild(linkButton);
+				}
+				hideOperations();
+				leftPane.addChild(operationsPanel);
+			}
+			
+			private function createHtmlPanel(config:XML):void
+			{
+				var panel:CollapsablePanel = new CollapsablePanel();
+				panel.title = config.@label;
+				panel.percentWidth = 100;
+				var textArea:Text = new Text();
+				textArea.condenseWhite = true;
+				textArea.percentWidth = 100;
+				panel.addChild(textArea);
+				htmlPanels[String(config.@nodeName)] = { panel : panel, textArea : textArea };
+				leftPane.addChild(panel);
+			}
+			
+			private function createSearchPanel(config:XML):void
+			{
+				var panel:CollapsablePanel = new CollapsablePanel();
+				panel.title = config.@label;
+				panel.percentWidth = 100;
+				var form:SimpleFormBuilder = new SimpleFormBuilder();
+				form.monthNames = monthNames;
+				form.dayNames = dayNames;
+				form.percentWidth = 100;
+				form.config = config.field;
+				form.addEventListener(FormEvent.SUBMIT, handleSubmit);
+				panel.title = config.@label;
+				panel.addChild(form);
+				leftPane.addChild(panel);
+			}
+			
+			private function showError(code:String, details:String):void
+			{
+				Alert.show(details, code);
+			}
+			
+			private function handleSubmit(event:FormEvent):void
+			{
+				hideOperations();
+				for (var i:String in htmlPanels) htmlPanels[i].htmlText = "";
+				searchService.url = searchUrl;
+				searchService.method = "GET";
+				searchService.send(event.fieldValues);
+			}
+			
+			private function configResult(event:ResultEvent):void
+			{
+				config = getXML(event.result, "config");
+			}
+
+			private function searchResult(event:ResultEvent):void
+			{
+				var xml:XML = getXML(event.result, "search");
+				if (xml)
+				{
+					searchResults = xml;
+				}
+			}
+
+			private function dataResult(event:ResultEvent):void
+			{
+				var data:XML = getXML(event.result, "data");
+				if (!data) return;
+				for (var i:String in htmlPanels)
+				{
+					htmlPanels[i].textArea.htmlText = data[i];
+				}
+				hideOperations();
+				for each (var x:XML in data.operations.operation)
+				{
+					var operationButton:LinkButton = operations[String(x.@name)].button;
+					operationButton.visible = true;
+					operationButton.height = NaN;
+					if (x.@enabled != undefined) operationButton.enabled = (x.@enabled == 1);
+					operationButton.toolTip = x.@tooltip != undefined ? x.@tooltip : null;
+					
+				}
+			}
+			
+			private function hideOperations():void
+			{
+				for (var s:String in operations) if (!operations[s].alwaysVisible)
+				{
+					operations[s].button.visible = false;
+					operations[s].button.height = 0;
+				}
+			}
+			
+			private function getXML(s:Object, type:String = ""):XML
+			{
+				var res:XML = null;
+				try
+				{
+					res = XML(s);
+					if (res.toXMLString() == "") throw new Error();
+				}
+				catch(e:Error)
+				{
+					showError("Błąd parsowania XML [" + type + "]", String(s));
+					return null;
+				}
+				return res;
+			}
+			
+			private function handleFault(event:FaultEvent):void
+			{
+				showError(event.fault.faultString, event.fault.faultString)
+			}
+			
+			private function handleGridChange(event:Event):void
+			{
+				if (grid.selectedItem)
+				{
+					dataService.url = dataUrl;
+					dataService.method = "GET";
+					dataService.send( { id : grid.selectedItem.id } );
+				}
+			}
+			
+			private function handleOperationClick(event:MouseEvent):void
+			{
+				ExternalInterface.marshallExceptions = true;
+				try
+				{
+					for (var operationName:String in operations)
+					{
+						var opObj:Object = operations[operationName];
+						if (opObj.button == event.target)
+						{
+							if (opObj.functionName)
+							{
+								ExternalInterface.call(
+										opObj.functionName,
+										grid.selectedItem ? String(grid.selectedItem.id) : '',
+										operationName
+									);
+							}
+							else if (opObj.windowName)
+							{
+								showWindow(opObj.windowName);
+							}
+						}
+					}
+				}
+				catch(e:Error)
+				{
+					showError(e.name, e.message);
+				}
+			}
+			
+			private var window:TitleWindow;
+			private var form:SimpleFormBuilder;
+			
+			private function showWindow(name:String):void
+			{
+				var winCfg:XML = XML(_config.window.(@name == name));
+				if (winCfg)
+				{
+					window = new TitleWindow();
+					window.title = winCfg.@label;
+					window.width = winCfg.@width;
+					window.showCloseButton = true;
+					window.addEventListener(CloseEvent.CLOSE, hideWindow);
+					//window.height = winCfg.@height;
+					form = new SimpleFormBuilder();
+					form.config = winCfg.field;
+					form.percentWidth = 100;
+					
+					form.addEventListener(FormEvent.SUBMIT, formSubmit);
+					
+					windowService.url = winCfg.@url;
+					
+					window.addChild(form);
+					PopUpManager.addPopUp(window, this, true);
+					PopUpManager.centerPopUp(window);
+					
+				}
+			}
+			
+			private function formSubmit(event:FormEvent):void
+			{
+				if (event.buttonName == "ok")
+				{
+					form.enabled = false;
+					windowService.send(event.fieldValues);
+				}
+				else if (event.buttonName == "cancel")
+				{
+					hideWindow();
+				}
+			}
+			
+			private function hideWindow(o:Object = null):void
+			{
+				if (window) window.visible = false;
+				PopUpManager.removePopUp(window);
+				window = null;
+				form = null;
+			}
+			
+			private function windowResult(event:ResultEvent):void
+			{
+				var result:XML = getXML(event.result);
+				if (result && result.@error == 0)
+				{
+					if (result.message != undefined) Alert.show(result.message);
+					hideWindow();
+				}
+				else if (result)
+				{
+					form.enabled = true;
+					if (result.message != undefined) showError("Error", result.message);
+					else showError("Unknown error", result.toXMLString());
+				}
+			}
+
+			private function windowFault(event:FaultEvent):void
+			{
+				form.enabled = true;
+				showError(event.fault.faultCode, event.fault.faultDetail);
+			}
+
+		]]>
+	</mx:Script>
+	
+	<mx:HTTPService id="configService" result="configResult(event)" fault="handleFault(event)" resultFormat="text" showBusyCursor="true"/>
+	<mx:HTTPService id="searchService" result="searchResult(event)" resultFormat="text" showBusyCursor="true"/>
+	<mx:HTTPService id="dataService" result="dataResult(event)" resultFormat="text" showBusyCursor="true"/>
+	<mx:HTTPService id="windowService" result="windowResult(event)" fault="windowFault(event)" resultFormat="text" showBusyCursor="true" requestTimeout="0"/>
+
+</mx:Application>

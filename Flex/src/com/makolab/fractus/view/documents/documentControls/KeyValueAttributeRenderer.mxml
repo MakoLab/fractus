@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem xmlns:mx="http://www.adobe.com/2006/mxml" label="{getLabel(data,attributeName)}" width="100%">
+		<mx:Text id="text" width="100%" fontWeight="bold" htmlText="{getValue(data)}" selectable="true" link="handleLinkClick(event)"/>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			import flash.utils.clearTimeout;
+			import flash.utils.setTimeout;
+			
+			import mx.rpc.events.ResultEvent;
+		
+			protected var cachedType:Object;
+			protected var cachedTypeData:Object;
+			
+			public var idField:String;
+			public var dictionaryName:String = null;
+			public static const RECIPIENT_ID:String = "recipientid";
+			public static const RECIPIENT_ADDRESS:String = "recipientaddress";
+			[Bindable]
+			public var rName:String="";
+			public static var rObj:XMLList=null;
+			private var tim:uint;
+			[Bindable]
+			public var rAddress:String="";
+			
+			[Bindable] public var attributeName:String;
+			
+			/**
+			 * Returns the type of an attribute.
+			 */
+			protected function get attributeType():Object
+			{
+				if (cachedType && data == cachedTypeData) return cachedType;
+				cachedTypeData = data;
+				var typeId:String = data[idField].*;
+				cachedType = data ? DictionaryManager.getInstance().dictionaries.getById(typeId) : null;
+				return cachedType;
+			}
+			
+			/**
+			 * Returns text of a control's label.
+			 */
+			protected function getLabel(data:Object,attributeName:String = null):String
+			{
+				var attributeLabel:String = "";
+				if(!data && attributeName && attributeName != "")
+				{
+					var type:Object = DictionaryManager.getInstance().getByName(attributeName, this.dictionaryName);
+					if(type.label.@lang.length())
+						return type.label.(@lang==LanguageManager.getInstance().currentLanguage)[0];
+					else
+						return type.label;
+				}
+				else if(data)
+				{
+					if(attributeType.label.@lang.length())
+							attributeLabel = attributeType.label.(@lang==LanguageManager.getInstance().currentLanguage)[0];
+						else
+					attributeLabel = attributeType.label;
+				}
+				return attributeLabel;
+			}
+			
+			/**
+			 * Returns string value of a given object. Converts web and e-mail adresses to html &lt;a/&gt; tags.
+			 */
+			[Bindable]
+			public function getValue(data:Object):String
+			{
+				var protocol:String = attributeType.metadata.linkProtocol;
+				var dataType:String = attributeType.metadata.dataType;
+				var dataSubType:String = attributeType.metadata.dataSubType;
+				var format:String = attributeType.metadata.format;
+				var dictionary:String = attributeType.metadata.dictionary;
+
+				if (protocol)
+				{
+					var s:String = data.value;
+					var href:String = s;
+					if (!href.match(new RegExp("^" + protocol + ":"))) href = protocol + ":" + href;
+					var target:String = protocol == "http" ? " target='_blank' " : " ";
+					if (protocol == "callto") href = href.replace(/\s/g, "");
+					toolTip = href;
+					var ret:String = "<a" + target + "href='" + href + "'><font color='#0000ff'>" + s + "</font></a>";
+					return ret;
+				}
+				else if(dataType == "select")
+					return attributeType.metadata.values.value.labels.label.(valueOf().parent().parent().name.* == data.value && @lang == LanguageManager.getInstance().currentLanguage);
+				else if (dataType == "xml" && format == "dimension")
+				{
+					var unit:XML = DictionaryManager.getInstance().getById(String(data.value.root.unitId));
+					
+					return String(data.value.root.value) + " " + String(unit.label.@symbol);
+				}
+				else if (dataType == "xml")
+				{
+					this.includeInLayout = false;
+					this.visible = false;
+					return "";
+				}
+				else if (dataType == "datetime" || dataType == "booldate")
+					return String(data.value).replace(/T/, " ");
+				else if (dataType == "boolean")
+				{
+					if(data.value.* == "1") return LanguageManager.getLabel("alert.yes");
+					else return LanguageManager.getLabel("alert.no"); 
+				}
+				else if (dictionary != "" && dictionary != null)
+				{
+					return DictionaryManager.getInstance().dictionaries[dictionary].(id.* == data.value.*)[0].label;					
+				}
+				else if(dataType=="link")
+				{
+					var s:String = data.value;
+					var href:String = s;
+					
+					var ret:String = "<a target='_blank' href='" + s + "'><font color='#0000ff'>" + s + "</font></a>";
+					return ret;
+				}
+				else if(dataType=="string"&&dataSubType)
+				{
+					if(dataSubType==RECIPIENT_ADDRESS)
+					{
+						setAddress(data.value)
+						return rAddress;
+						
+					}
+					else
+						if(dataSubType==RECIPIENT_ID)
+						{
+							setContractorData(data.value);
+							return rName;
+						}
+						else
+							return data.value;
+				}
+				else
+					
+					return data.value;
+			}
+			public function setContractorData(id:String):void
+			{
+				
+				if(id != null && id != '') {
+					var command:LoadBusinessObjectCommand = new LoadBusinessObjectCommand();
+					command.addEventListener(ResultEvent.RESULT, loadContractorResult);
+					command.execute( { type : "Contractor", id : id } );
+				}
+				
+			}
+			public function setAddress(id:String):void
+			{
+				if(rObj)
+				{
+					if(tim)
+						clearTimeout(tim);
+					trace(id);
+					var add:XML;
+					for(var i:int=0;i<rObj.addresses.address.length();i++)
+					{
+						if(rObj.addresses.address[i].id.toString()==id)
+						{
+							add=rObj.addresses.address[i];
+						}
+					}
+					
+					
+					var str:String= add.city+" "+ add.postCode+ " "+ add.address;
+					rAddress=str;
+					rObj=null;
+				}
+				else
+				{
+					if(tim)
+						clearTimeout(tim);
+					tim=setTimeout(setAddress,200,id);
+				}
+			}
+			public function loadContractorResult(event:ResultEvent):void
+			{
+			
+				rObj=XML(event.result).contractor;
+				rName= rObj.fullName;
+				
+			}
+			/**
+			 * Navigates to a given url.
+			 */
+			protected function handleLinkClick(event:TextEvent):void
+			{
+            	var url:URLRequest = new URLRequest(event.text);
+            	//navigateToURL(url);
+			}
+		]]>
+	</mx:Script>	
+</mx:FormItem>

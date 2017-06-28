@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"  xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Script >
+		<![CDATA[
+			import mx.events.FlexEvent;
+			import mx.controls.Alert;
+			import com.makolab.components.util.CurrencyManager;
+			[Bindable]
+			public var dictionaryListData:XML ;
+			
+			public var inputFieldData:String ;
+			[Bindable]
+			public var comboFieldData:String ;
+			public var dictionaryIdNode:String;
+			public var dictionaryNameNode:String;
+
+			private var _dataObject:Object;
+			
+			public override function set data(value:Object):void
+			{
+				super.data = value;
+				dataObject = value;
+			}
+			
+			[Bindable]
+			public  function set dataObject(value:Object):void
+			{
+				_dataObject = value;
+				var price:String = CurrencyManager.formatCurrency(CurrencyManager.parseCurrency(dataObject[inputFieldData].toString()));
+				if(textInpytField.text != price)
+				{
+					textInpytField.text = price;
+				}
+				comboBoxField.data = dataObject;
+			}
+			public function get dataObject():Object { return _dataObject; }
+			
+			private function handleCurrencyChange(event:Event):void
+			{
+				var price:Number = CurrencyManager.parseCurrency(textInpytField.text);
+				if(dataObject[inputFieldData].toString() != price)
+				{
+					data[inputFieldData] = price;
+					textInpytField.text = CurrencyManager.formatCurrency(price);
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:TextInput 
+		id="textInpytField" 
+		textAlign="right" 
+		change="handleCurrencyChange(event)" />
+	<inputComponents:DictionaryComboBox 
+		id="comboBoxField" 
+		dataProvider="{dictionaryListData.*}" 
+		idNode="{comboFieldData}" 
+		dictionaryIdNode="@value" 
+		dictionaryNameNode="@label"  />				
+</mx:HBox>

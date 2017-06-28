@@ -1,0 +1,1179 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:tns="http://tempuri.org/" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="KernelService" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://tempuri.org/Imports">
+      <xsd:import namespace="http://tempuri.org/" />
+      <xsd:import namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+      <xsd:import namespace="http://schemas.microsoft.com/Message" />
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="IKernelService_LogOn_InputMessage">
+    <wsdl:part name="parameters" element="tns:LogOn" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_LogOn_OutputMessage">
+    <wsdl:part name="parameters" element="tns:LogOnResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_LogOff_InputMessage">
+    <wsdl:part name="parameters" element="tns:LogOff" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_LogOff_OutputMessage">
+    <wsdl:part name="parameters" element="tns:LogOffResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetVersion_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetVersion" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetVersion_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetVersionResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_Delay_InputMessage">
+    <wsdl:part name="parameters" element="tns:Delay" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_Delay_OutputMessage">
+    <wsdl:part name="parameters" element="tns:DelayResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetConfiguration_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetConfiguration" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetConfiguration_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetConfigurationResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetConfigurationByBranch_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetConfigurationByBranch" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetConfigurationByBranch_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetConfigurationByBranchResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetConfigurationKeys_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetConfigurationKeys" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetConfigurationKeys_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetConfigurationKeysResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_SaveConfiguration_InputMessage">
+    <wsdl:part name="parameters" element="tns:SaveConfiguration" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_SaveConfiguration_OutputMessage">
+    <wsdl:part name="parameters" element="tns:SaveConfigurationResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_SaveConfigurationByBranch_InputMessage">
+    <wsdl:part name="parameters" element="tns:SaveConfigurationByBranch" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_SaveConfigurationByBranch_OutputMessage">
+    <wsdl:part name="parameters" element="tns:SaveConfigurationByBranchResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_CreateNewBusinessObject_InputMessage">
+    <wsdl:part name="parameters" element="tns:CreateNewBusinessObject" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_CreateNewBusinessObject_OutputMessage">
+    <wsdl:part name="parameters" element="tns:CreateNewBusinessObjectResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_SaveBusinessObject_InputMessage">
+    <wsdl:part name="parameters" element="tns:SaveBusinessObject" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_SaveBusinessObject_OutputMessage">
+    <wsdl:part name="parameters" element="tns:SaveBusinessObjectResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetDocuments_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetDocuments" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetDocuments_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetDocumentsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetContractors_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetContractors" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetContractors_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetContractorsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetFileDescriptors_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetFileDescriptors" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetFileDescriptors_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetFileDescriptorsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetOwnCompanies_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetOwnCompanies" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetOwnCompanies_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetOwnCompaniesResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetItems_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetItems" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetItems_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetItemsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetProductionItems_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetProductionItems" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetProductionItems_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetProductionItemsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetDictionaries_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetDictionaries" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetDictionaries_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetDictionariesResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_LoadBusinessObject_InputMessage">
+    <wsdl:part name="parameters" element="tns:LoadBusinessObject" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_LoadBusinessObject_OutputMessage">
+    <wsdl:part name="parameters" element="tns:LoadBusinessObjectResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetLogByDate_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetLogByDate" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetLogByDate_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetLogByDateResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_DeleteBusinessObject_InputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteBusinessObject" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_DeleteBusinessObject_OutputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteBusinessObjectResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetHttpResponse_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetHttpResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetHttpResponse_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetHttpResponseResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_CreateItemEquivalentGroup_InputMessage">
+    <wsdl:part name="parameters" element="tns:CreateItemEquivalentGroup" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_CreateItemEquivalentGroup_OutputMessage">
+    <wsdl:part name="parameters" element="tns:CreateItemEquivalentGroupResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_CreateItemEquivalent_InputMessage">
+    <wsdl:part name="parameters" element="tns:CreateItemEquivalent" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_CreateItemEquivalent_OutputMessage">
+    <wsdl:part name="parameters" element="tns:CreateItemEquivalentResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_RemoveItemFromEquivalentGroup_InputMessage">
+    <wsdl:part name="parameters" element="tns:RemoveItemFromEquivalentGroup" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_RemoveItemFromEquivalentGroup_OutputMessage">
+    <wsdl:part name="parameters" element="tns:RemoveItemFromEquivalentGroupResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_RemoveItemFromEquivalent_InputMessage">
+    <wsdl:part name="parameters" element="tns:RemoveItemFromEquivalent" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_RemoveItemFromEquivalent_OutputMessage">
+    <wsdl:part name="parameters" element="tns:RemoveItemFromEquivalentResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_CreateItemsBarcodes_InputMessage">
+    <wsdl:part name="parameters" element="tns:CreateItemsBarcodes" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_CreateItemsBarcodes_OutputMessage">
+    <wsdl:part name="parameters" element="tns:CreateItemsBarcodesResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_LoadDictionary_InputMessage">
+    <wsdl:part name="parameters" element="tns:LoadDictionary" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_LoadDictionary_OutputMessage">
+    <wsdl:part name="parameters" element="tns:LoadDictionaryResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_SaveDictionary_InputMessage">
+    <wsdl:part name="parameters" element="tns:SaveDictionary" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_SaveDictionary_OutputMessage">
+    <wsdl:part name="parameters" element="tns:SaveDictionaryResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetDictionariesVersion_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetDictionariesVersion" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetDictionariesVersion_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetDictionariesVersionResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetFreeDocumentNumber_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetFreeDocumentNumber" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetFreeDocumentNumber_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetFreeDocumentNumberResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetTemplates_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetTemplates" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetTemplates_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetTemplatesResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_CheckNumberExistence_InputMessage">
+    <wsdl:part name="parameters" element="tns:CheckNumberExistence" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_CheckNumberExistence_OutputMessage">
+    <wsdl:part name="parameters" element="tns:CheckNumberExistenceResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetRandomContractors_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetRandomContractors" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetRandomContractors_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetRandomContractorsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetRandomCommercialDocumentLines_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetRandomCommercialDocumentLines" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetRandomCommercialDocumentLines_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetRandomCommercialDocumentLinesResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetRandomWarehouseDocumentLines_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetRandomWarehouseDocumentLines" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetRandomWarehouseDocumentLines_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetRandomWarehouseDocumentLinesResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetRandomKeywords_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetRandomKeywords" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetRandomKeywords_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetRandomKeywordsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_ExecuteCustomProcedure_InputMessage">
+    <wsdl:part name="parameters" element="tns:ExecuteCustomProcedure" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_ExecuteCustomProcedure_OutputMessage">
+    <wsdl:part name="parameters" element="tns:ExecuteCustomProcedureResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_RelateCommercialDocumentToWarehouseDocuments_InputMessage">
+    <wsdl:part name="parameters" element="tns:RelateCommercialDocumentToWarehouseDocuments" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_RelateCommercialDocumentToWarehouseDocuments_OutputMessage">
+    <wsdl:part name="parameters" element="tns:RelateCommercialDocumentToWarehouseDocumentsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_UnrelateCommercialDocumentFromWarehouseDocuments_InputMessage">
+    <wsdl:part name="parameters" element="tns:UnrelateCommercialDocumentFromWarehouseDocuments" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_UnrelateCommercialDocumentFromWarehouseDocuments_OutputMessage">
+    <wsdl:part name="parameters" element="tns:UnrelateCommercialDocumentFromWarehouseDocumentsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_ChangeDocumentStatus_InputMessage">
+    <wsdl:part name="parameters" element="tns:ChangeDocumentStatus" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_ChangeDocumentStatus_OutputMessage">
+    <wsdl:part name="parameters" element="tns:ChangeDocumentStatusResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_FiscalizeCommercialDocument_InputMessage">
+    <wsdl:part name="parameters" element="tns:FiscalizeCommercialDocument" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_FiscalizeCommercialDocument_OutputMessage">
+    <wsdl:part name="parameters" element="tns:FiscalizeCommercialDocumentResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetUserLanguageVersion_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetUserLanguageVersion" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetUserLanguageVersion_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetUserLanguageVersionResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_TestProc_InputMessage">
+    <wsdl:part name="parameters" element="tns:TestProc" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_TestProc_OutputMessage">
+    <wsdl:part name="parameters" element="tns:TestProcResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetContractorDealing_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetContractorDealing" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetContractorDealing_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetContractorDealingResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetPermissionProfiles_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetPermissionProfiles" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetPermissionProfiles_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetPermissionProfilesResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetWarehouseDocumentLinesTree_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetWarehouseDocumentLinesTree" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetWarehouseDocumentLinesTree_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetWarehouseDocumentLinesTreeResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetOpenedFinancialReport_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetOpenedFinancialReport" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetOpenedFinancialReport_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetOpenedFinancialReportResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_CreateTask_InputMessage">
+    <wsdl:part name="parameters" element="tns:CreateTask" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_CreateTask_OutputMessage">
+    <wsdl:part name="parameters" element="tns:CreateTaskResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_QueryTask_InputMessage">
+    <wsdl:part name="parameters" element="tns:QueryTask" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_QueryTask_OutputMessage">
+    <wsdl:part name="parameters" element="tns:QueryTaskResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetTaskResult_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetTaskResult" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetTaskResult_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetTaskResultResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_TerminateTask_InputMessage">
+    <wsdl:part name="parameters" element="tns:TerminateTask" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_TerminateTask_OutputMessage">
+    <wsdl:part name="parameters" element="tns:TerminateTaskResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_SaveWarehouseMap_InputMessage">
+    <wsdl:part name="parameters" element="tns:SaveWarehouseMap" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_SaveWarehouseMap_OutputMessage">
+    <wsdl:part name="parameters" element="tns:SaveWarehouseMapResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetItemsDetails_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetItemsDetails" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetItemsDetails_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetItemsDetailsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_LoadShiftTransactionByShiftId_InputMessage">
+    <wsdl:part name="parameters" element="tns:LoadShiftTransactionByShiftId" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_LoadShiftTransactionByShiftId_OutputMessage">
+    <wsdl:part name="parameters" element="tns:LoadShiftTransactionByShiftIdResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetDocumentOperations_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetDocumentOperations" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetDocumentOperations_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetDocumentOperationsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_ChangeProcessState_InputMessage">
+    <wsdl:part name="parameters" element="tns:ChangeProcessState" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_ChangeProcessState_OutputMessage">
+    <wsdl:part name="parameters" element="tns:ChangeProcessStateResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_UpdateItemCataloguePrices_InputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateItemCataloguePrices" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_UpdateItemCataloguePrices_OutputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateItemCataloguePricesResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_SavePivotReport_InputMessage">
+    <wsdl:part name="parameters" element="tns:SavePivotReport" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_SavePivotReport_OutputMessage">
+    <wsdl:part name="parameters" element="tns:SavePivotReportResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetPivotReport_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetPivotReport" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetPivotReport_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetPivotReportResponse" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetPivotReportsList_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetPivotReportsList" />
+  </wsdl:message>
+  <wsdl:message name="IKernelService_GetPivotReportsList_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetPivotReportsListResponse" />
+  </wsdl:message>
+  <wsdl:portType name="IKernelService">
+    <wsdl:operation name="LogOn">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/LogOn" message="tns:IKernelService_LogOn_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/LogOnResponse" message="tns:IKernelService_LogOn_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="LogOff">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/LogOff" message="tns:IKernelService_LogOff_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/LogOffResponse" message="tns:IKernelService_LogOff_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetVersion">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetVersion" message="tns:IKernelService_GetVersion_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetVersionResponse" message="tns:IKernelService_GetVersion_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="Delay">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/Delay" message="tns:IKernelService_Delay_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/DelayResponse" message="tns:IKernelService_Delay_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetConfiguration">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetConfiguration" message="tns:IKernelService_GetConfiguration_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetConfigurationResponse" message="tns:IKernelService_GetConfiguration_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetConfigurationByBranch">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetConfigurationByBranch" message="tns:IKernelService_GetConfigurationByBranch_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetConfigurationByBranchResponse" message="tns:IKernelService_GetConfigurationByBranch_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetConfigurationKeys">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetConfigurationKeys" message="tns:IKernelService_GetConfigurationKeys_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetConfigurationKeysResponse" message="tns:IKernelService_GetConfigurationKeys_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="SaveConfiguration">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/SaveConfiguration" message="tns:IKernelService_SaveConfiguration_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/SaveConfigurationResponse" message="tns:IKernelService_SaveConfiguration_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="SaveConfigurationByBranch">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/SaveConfigurationByBranch" message="tns:IKernelService_SaveConfigurationByBranch_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/SaveConfigurationByBranchResponse" message="tns:IKernelService_SaveConfigurationByBranch_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="CreateNewBusinessObject">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/CreateNewBusinessObject" message="tns:IKernelService_CreateNewBusinessObject_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/CreateNewBusinessObjectResponse" message="tns:IKernelService_CreateNewBusinessObject_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="SaveBusinessObject">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/SaveBusinessObject" message="tns:IKernelService_SaveBusinessObject_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/SaveBusinessObjectResponse" message="tns:IKernelService_SaveBusinessObject_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetDocuments">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetDocuments" message="tns:IKernelService_GetDocuments_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetDocumentsResponse" message="tns:IKernelService_GetDocuments_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetContractors">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetContractors" message="tns:IKernelService_GetContractors_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetContractorsResponse" message="tns:IKernelService_GetContractors_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetFileDescriptors">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetFileDescriptors" message="tns:IKernelService_GetFileDescriptors_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetFileDescriptorsResponse" message="tns:IKernelService_GetFileDescriptors_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetOwnCompanies">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetOwnCompanies" message="tns:IKernelService_GetOwnCompanies_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetOwnCompaniesResponse" message="tns:IKernelService_GetOwnCompanies_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetItems">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetItems" message="tns:IKernelService_GetItems_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetItemsResponse" message="tns:IKernelService_GetItems_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetProductionItems">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetProductionItems" message="tns:IKernelService_GetProductionItems_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetProductionItemsResponse" message="tns:IKernelService_GetProductionItems_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetDictionaries">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetDictionaries" message="tns:IKernelService_GetDictionaries_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetDictionariesResponse" message="tns:IKernelService_GetDictionaries_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="LoadBusinessObject">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/LoadBusinessObject" message="tns:IKernelService_LoadBusinessObject_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/LoadBusinessObjectResponse" message="tns:IKernelService_LoadBusinessObject_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetLogByDate">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetLogByDate" message="tns:IKernelService_GetLogByDate_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetLogByDateResponse" message="tns:IKernelService_GetLogByDate_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="DeleteBusinessObject">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/DeleteBusinessObject" message="tns:IKernelService_DeleteBusinessObject_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/DeleteBusinessObjectResponse" message="tns:IKernelService_DeleteBusinessObject_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetHttpResponse">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetHttpResponse" message="tns:IKernelService_GetHttpResponse_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetHttpResponseResponse" message="tns:IKernelService_GetHttpResponse_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="CreateItemEquivalentGroup">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/CreateItemEquivalentGroup" message="tns:IKernelService_CreateItemEquivalentGroup_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/CreateItemEquivalentGroupResponse" message="tns:IKernelService_CreateItemEquivalentGroup_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="CreateItemEquivalent">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/CreateItemEquivalent" message="tns:IKernelService_CreateItemEquivalent_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/CreateItemEquivalentResponse" message="tns:IKernelService_CreateItemEquivalent_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="RemoveItemFromEquivalentGroup">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/RemoveItemFromEquivalentGroup" message="tns:IKernelService_RemoveItemFromEquivalentGroup_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/RemoveItemFromEquivalentGroupResponse" message="tns:IKernelService_RemoveItemFromEquivalentGroup_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="RemoveItemFromEquivalent">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/RemoveItemFromEquivalent" message="tns:IKernelService_RemoveItemFromEquivalent_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/RemoveItemFromEquivalentResponse" message="tns:IKernelService_RemoveItemFromEquivalent_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="CreateItemsBarcodes">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/CreateItemsBarcodes" message="tns:IKernelService_CreateItemsBarcodes_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/CreateItemsBarcodesResponse" message="tns:IKernelService_CreateItemsBarcodes_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="LoadDictionary">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/LoadDictionary" message="tns:IKernelService_LoadDictionary_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/LoadDictionaryResponse" message="tns:IKernelService_LoadDictionary_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="SaveDictionary">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/SaveDictionary" message="tns:IKernelService_SaveDictionary_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/SaveDictionaryResponse" message="tns:IKernelService_SaveDictionary_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetDictionariesVersion">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetDictionariesVersion" message="tns:IKernelService_GetDictionariesVersion_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetDictionariesVersionResponse" message="tns:IKernelService_GetDictionariesVersion_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetFreeDocumentNumber">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetFreeDocumentNumber" message="tns:IKernelService_GetFreeDocumentNumber_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetFreeDocumentNumberResponse" message="tns:IKernelService_GetFreeDocumentNumber_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetTemplates">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetTemplates" message="tns:IKernelService_GetTemplates_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetTemplatesResponse" message="tns:IKernelService_GetTemplates_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="CheckNumberExistence">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/CheckNumberExistence" message="tns:IKernelService_CheckNumberExistence_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/CheckNumberExistenceResponse" message="tns:IKernelService_CheckNumberExistence_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetRandomContractors">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetRandomContractors" message="tns:IKernelService_GetRandomContractors_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetRandomContractorsResponse" message="tns:IKernelService_GetRandomContractors_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetRandomCommercialDocumentLines">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetRandomCommercialDocumentLines" message="tns:IKernelService_GetRandomCommercialDocumentLines_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetRandomCommercialDocumentLinesResponse" message="tns:IKernelService_GetRandomCommercialDocumentLines_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetRandomWarehouseDocumentLines">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetRandomWarehouseDocumentLines" message="tns:IKernelService_GetRandomWarehouseDocumentLines_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetRandomWarehouseDocumentLinesResponse" message="tns:IKernelService_GetRandomWarehouseDocumentLines_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetRandomKeywords">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetRandomKeywords" message="tns:IKernelService_GetRandomKeywords_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetRandomKeywordsResponse" message="tns:IKernelService_GetRandomKeywords_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="ExecuteCustomProcedure">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/ExecuteCustomProcedure" message="tns:IKernelService_ExecuteCustomProcedure_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/ExecuteCustomProcedureResponse" message="tns:IKernelService_ExecuteCustomProcedure_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="RelateCommercialDocumentToWarehouseDocuments">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/RelateCommercialDocumentToWarehouseDocuments" message="tns:IKernelService_RelateCommercialDocumentToWarehouseDocuments_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/RelateCommercialDocumentToWarehouseDocumentsResponse" message="tns:IKernelService_RelateCommercialDocumentToWarehouseDocuments_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="UnrelateCommercialDocumentFromWarehouseDocuments">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/UnrelateCommercialDocumentFromWarehouseDocuments" message="tns:IKernelService_UnrelateCommercialDocumentFromWarehouseDocuments_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/UnrelateCommercialDocumentFromWarehouseDocumentsResponse" message="tns:IKernelService_UnrelateCommercialDocumentFromWarehouseDocuments_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="ChangeDocumentStatus">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/ChangeDocumentStatus" message="tns:IKernelService_ChangeDocumentStatus_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/ChangeDocumentStatusResponse" message="tns:IKernelService_ChangeDocumentStatus_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="FiscalizeCommercialDocument">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/FiscalizeCommercialDocument" message="tns:IKernelService_FiscalizeCommercialDocument_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/FiscalizeCommercialDocumentResponse" message="tns:IKernelService_FiscalizeCommercialDocument_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetUserLanguageVersion">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetUserLanguageVersion" message="tns:IKernelService_GetUserLanguageVersion_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetUserLanguageVersionResponse" message="tns:IKernelService_GetUserLanguageVersion_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="TestProc">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/TestProc" message="tns:IKernelService_TestProc_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/TestProcResponse" message="tns:IKernelService_TestProc_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetContractorDealing">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetContractorDealing" message="tns:IKernelService_GetContractorDealing_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetContractorDealingResponse" message="tns:IKernelService_GetContractorDealing_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetPermissionProfiles">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetPermissionProfiles" message="tns:IKernelService_GetPermissionProfiles_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetPermissionProfilesResponse" message="tns:IKernelService_GetPermissionProfiles_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetWarehouseDocumentLinesTree">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetWarehouseDocumentLinesTree" message="tns:IKernelService_GetWarehouseDocumentLinesTree_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetWarehouseDocumentLinesTreeResponse" message="tns:IKernelService_GetWarehouseDocumentLinesTree_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetOpenedFinancialReport">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetOpenedFinancialReport" message="tns:IKernelService_GetOpenedFinancialReport_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetOpenedFinancialReportResponse" message="tns:IKernelService_GetOpenedFinancialReport_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="CreateTask">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/CreateTask" message="tns:IKernelService_CreateTask_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/CreateTaskResponse" message="tns:IKernelService_CreateTask_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="QueryTask">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/QueryTask" message="tns:IKernelService_QueryTask_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/QueryTaskResponse" message="tns:IKernelService_QueryTask_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetTaskResult">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetTaskResult" message="tns:IKernelService_GetTaskResult_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetTaskResultResponse" message="tns:IKernelService_GetTaskResult_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="TerminateTask">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/TerminateTask" message="tns:IKernelService_TerminateTask_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/TerminateTaskResponse" message="tns:IKernelService_TerminateTask_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="SaveWarehouseMap">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/SaveWarehouseMap" message="tns:IKernelService_SaveWarehouseMap_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/SaveWarehouseMapResponse" message="tns:IKernelService_SaveWarehouseMap_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetItemsDetails">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetItemsDetails" message="tns:IKernelService_GetItemsDetails_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetItemsDetailsResponse" message="tns:IKernelService_GetItemsDetails_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="LoadShiftTransactionByShiftId">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/LoadShiftTransactionByShiftId" message="tns:IKernelService_LoadShiftTransactionByShiftId_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/LoadShiftTransactionByShiftIdResponse" message="tns:IKernelService_LoadShiftTransactionByShiftId_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetDocumentOperations">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetDocumentOperations" message="tns:IKernelService_GetDocumentOperations_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetDocumentOperationsResponse" message="tns:IKernelService_GetDocumentOperations_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="ChangeProcessState">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/ChangeProcessState" message="tns:IKernelService_ChangeProcessState_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/ChangeProcessStateResponse" message="tns:IKernelService_ChangeProcessState_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdateItemCataloguePrices">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/UpdateItemCataloguePrices" message="tns:IKernelService_UpdateItemCataloguePrices_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/UpdateItemCataloguePricesResponse" message="tns:IKernelService_UpdateItemCataloguePrices_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="SavePivotReport">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/SavePivotReport" message="tns:IKernelService_SavePivotReport_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/SavePivotReportResponse" message="tns:IKernelService_SavePivotReport_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetPivotReport">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetPivotReport" message="tns:IKernelService_GetPivotReport_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetPivotReportResponse" message="tns:IKernelService_GetPivotReport_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetPivotReportsList">
+      <wsdl:input wsaw:Action="http://tempuri.org/IKernelService/GetPivotReportsList" message="tns:IKernelService_GetPivotReportsList_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IKernelService/GetPivotReportsListResponse" message="tns:IKernelService_GetPivotReportsList_OutputMessage" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="BasicHttpBinding_IKernelService" type="tns:IKernelService">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="LogOn">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/LogOn" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LogOff">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/LogOff" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetVersion">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetVersion" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Delay">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/Delay" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetConfiguration">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetConfiguration" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetConfigurationByBranch">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetConfigurationByBranch" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetConfigurationKeys">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetConfigurationKeys" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="SaveConfiguration">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/SaveConfiguration" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="SaveConfigurationByBranch">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/SaveConfigurationByBranch" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CreateNewBusinessObject">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/CreateNewBusinessObject" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="SaveBusinessObject">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/SaveBusinessObject" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDocuments">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetDocuments" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetContractors">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetContractors" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetFileDescriptors">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetFileDescriptors" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetOwnCompanies">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetOwnCompanies" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetItems">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetItems" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetProductionItems">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetProductionItems" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDictionaries">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetDictionaries" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LoadBusinessObject">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/LoadBusinessObject" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetLogByDate">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetLogByDate" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="DeleteBusinessObject">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/DeleteBusinessObject" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetHttpResponse">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetHttpResponse" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CreateItemEquivalentGroup">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/CreateItemEquivalentGroup" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CreateItemEquivalent">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/CreateItemEquivalent" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RemoveItemFromEquivalentGroup">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/RemoveItemFromEquivalentGroup" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RemoveItemFromEquivalent">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/RemoveItemFromEquivalent" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CreateItemsBarcodes">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/CreateItemsBarcodes" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LoadDictionary">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/LoadDictionary" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="SaveDictionary">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/SaveDictionary" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDictionariesVersion">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetDictionariesVersion" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetFreeDocumentNumber">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetFreeDocumentNumber" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetTemplates">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetTemplates" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CheckNumberExistence">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/CheckNumberExistence" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetRandomContractors">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetRandomContractors" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetRandomCommercialDocumentLines">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetRandomCommercialDocumentLines" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetRandomWarehouseDocumentLines">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetRandomWarehouseDocumentLines" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetRandomKeywords">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetRandomKeywords" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ExecuteCustomProcedure">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/ExecuteCustomProcedure" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RelateCommercialDocumentToWarehouseDocuments">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/RelateCommercialDocumentToWarehouseDocuments" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="UnrelateCommercialDocumentFromWarehouseDocuments">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/UnrelateCommercialDocumentFromWarehouseDocuments" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ChangeDocumentStatus">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/ChangeDocumentStatus" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="FiscalizeCommercialDocument">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/FiscalizeCommercialDocument" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetUserLanguageVersion">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetUserLanguageVersion" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="TestProc">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/TestProc" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetContractorDealing">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetContractorDealing" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetPermissionProfiles">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetPermissionProfiles" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetWarehouseDocumentLinesTree">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetWarehouseDocumentLinesTree" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetOpenedFinancialReport">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetOpenedFinancialReport" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CreateTask">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/CreateTask" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="QueryTask">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/QueryTask" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetTaskResult">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetTaskResult" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="TerminateTask">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/TerminateTask" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="SaveWarehouseMap">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/SaveWarehouseMap" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetItemsDetails">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetItemsDetails" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LoadShiftTransactionByShiftId">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/LoadShiftTransactionByShiftId" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDocumentOperations">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetDocumentOperations" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ChangeProcessState">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/ChangeProcessState" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="UpdateItemCataloguePrices">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/UpdateItemCataloguePrices" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="SavePivotReport">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/SavePivotReport" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetPivotReport">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetPivotReport" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetPivotReportsList">
+      <soap:operation soapAction="http://tempuri.org/IKernelService/GetPivotReportsList" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="KernelService">
+    <wsdl:port name="BasicHttpBinding_IKernelService" binding="tns:BasicHttpBinding_IKernelService">
+      <soap:address location="http://127.0.0.1:3131/KernelServices/KernelService/" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

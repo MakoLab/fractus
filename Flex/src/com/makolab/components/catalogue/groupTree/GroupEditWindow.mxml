@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow 
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		layout="absolute"
+		width="400" height="300"
+		creationComplete="init()"
+		showCloseButton="true"
+	>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.TextInput;
+			import mx.containers.FormItem;
+			
+			public var languages:XMLList;
+			
+			public function init():void
+			{
+				for each (var x:XML in languages)
+				{
+					var formItem:FormItem = new FormItem();
+					formItem.label = String(x.symbol);
+					var ti:TextInput = new TextInput();
+					ti.percentWidth = 100;
+					ti.data = XML(data).labels.label.(String(@lang) == String(x.symbol));
+					formItem.addChild(ti);
+					form.addChild(formItem);
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:Form id="form" labelWidth="100"/>
+</mx:TitleWindow>

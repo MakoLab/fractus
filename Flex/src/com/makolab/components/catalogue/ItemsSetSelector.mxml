@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="300" height="500" showCloseButton="true" close="closeHandler()" xmlns:list="com.makolab.components.list.*" xmlns:lineList="com.makolab.components.lineList.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.lineList.LineImageButton;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.fractus.commands.SaveConfigurationCommand;
+			
+			import flash.events.Event;
+			import flash.events.MouseEvent;
+			
+			import mx.controls.Alert;
+			import mx.controls.listClasses.ListData;
+			import mx.events.DataGridEvent;
+			import mx.events.ListEvent;
+			import mx.events.ResizeEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			[Bindable] private var _setsList:XMLList;
+			[Bindable] private var _setsListCopy:XMLList;
+			public var selectedSet:XML;
+			
+			public function set setsList(value:XMLList):void
+			{
+				_setsList = value;
+				_setsListCopy = value.copy();
+			}
+			
+			public function get setsList():XMLList
+			{
+				return _setsList;
+			}
+			
+			private function handleChange(event:ListEvent):void
+			{
+				selectedSet = XML(grid.selectedItem);
+			}
+			
+			private function handleItemEditEnd(event:DataGridEvent):void
+			{
+				for each(var item:XML in _setsListCopy){
+					if(item !== selectedSet && grid.itemEditorInstance && item.label.toString() == grid.itemEditorInstance["text"]){
+						grid.itemEditorInstance["text"] = selectedSet.label.toString();
+						Alert.show("Zbiór o podanej nazwie już istnieje.");
+						//event.preventDefault();
+						break;
+					}
+					if(grid.itemEditorInstance && grid.itemEditorInstance["text"] == ""){
+						grid.itemEditorInstance["text"] = selectedSet.label.toString();
+						Alert.show("Wartość w kolumnie nazwa nie może być pusta!");
+					}
+				}
+				if(_setsListCopy !== _setsList)saveChangesButton.enabled = true;
+			}
+			
+			private function closeHandler():void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function commitHandler():void
+			{
+				_setsList = _setsListCopy.length() > 0 ? _setsListCopy : XMLList(<dupa/>); //zabezpieczenie przed wysłaniem pustego requesta.
+				this.dispatchEvent(new Event(Event.CHANGE));
+				PopUpManager.removePopUp(this);
+			}
+			
+			public function removeSet(event:MouseEvent):void
+			{
+				
+				var newList:XMLList = new XMLList();
+				var removingIndex:int = grid.itemRendererToIndex(event.target as LineImageButton);
+				for each(var node:XML in _setsListCopy){
+					if(node != XML(grid.dataProvider[removingIndex])) newList = newList + node; 
+				}
+				_setsListCopy = newList;
+			}
+			
+			private function tipFunction(item:Object):String
+			{
+				var ret:String = "";
+				for each(var i:XML in item.lines.line){
+					ret = ret + i.name.toString() + " x" + CurrencyManager.formatCurrency(Number(i.quantity.toString())) + "\n";
+				}
+				return ret;
+			}
+		]]>
+	</mx:Script>
+	<list:DoubleClickDataGrid id="grid" change="handleChange(event)" itemEditEnd="handleItemEditEnd(event)" dataProvider="{_setsListCopy}" width="100%" height="100%" editable="true">
+		<list:columns>
+			<mx:DataGridColumn headerText="Nazwa zbioru" dataField="label" dataTipFunction="tipFunction" showDataTips="true"/>
+			<mx:DataGridColumn width="30" sortable="false" editable="false">
+				<mx:itemRenderer>
+					<mx:Component>
+						<lineList:LineImageButton width="100%" height="100%" click="outerDocument.removeSet(event)" iconsName="status_canceled" toolTip="{LanguageManager.getLabel('common.Delete')}">
+							<mx:Script>
+								<![CDATA[
+									import com.makolab.fractus.model.LanguageManager;
+								]]>
+							</mx:Script>
+						</lineList:LineImageButton>
+
+						<!--mx:Button width="100%" height="100%" label="x" click="outerDocument.removeSet(event)" /-->
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn> 
+		</list:columns>
+	</list:DoubleClickDataGrid>
+	<mx:ControlBar>
+		<mx:Button label="Wstaw" width="100%" enabled="{grid.selectedItem}" click="{this.dispatchEvent(new Event('select'));PopUpManager.removePopUp(this)}"/>
+		<mx:Button label="Zapisz zmiany" id="saveChangesButton" enabled="{_setsList != _setsListCopy}" width="50%" click="commitHandler()"/>
+		<mx:Button label="Zamknij" width="50%" click="closeHandler()"/>
+	</mx:ControlBar>
+</mx:TitleWindow>

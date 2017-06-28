@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" initialize="onInitialize()" layout="vertical" width="400" showCloseButton="true" close="closeHandler(event)" xmlns:lineList="com.makolab.components.lineList.*">
+	<mx:Metadata>
+		<![CDATA[
+			[Event(name="change", type="flash.events.Event")]
+		]]>
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.lineList.LineImageButton;
+			import com.makolab.fractus.commands.GetPivotReportsListCommand;
+			import com.makolab.fractus.commands.LoadConfigurationCommand;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.ListEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			[Bindable] public var list:XMLList;
+			private var userReport:Object;
+			
+			private var removingIndex:int;
+			public function deleteReport(event:MouseEvent):void
+			{
+				removingIndex = grid.itemRendererToIndex(event.target as LineImageButton);
+				var txt:String = "Czy na pewno usunąć raport '" + list[removingIndex].@name + "'?";
+				Alert.show(txt,"",Alert.YES | Alert.NO,null,deleteConfirmation);
+			}
+			
+			private function deleteConfirmation(event:CloseEvent):void
+			{
+				if (event.detail == Alert.YES){
+					delete list[removingIndex];
+					grid.dataProvider = list;
+				}
+			}
+			
+			private function closeHandler(event:CloseEvent):void
+			{
+				hide();
+			}
+			
+			public function hide():void
+			{
+				this.visible = this.includeInLayout = false;
+			}
+			
+			public function show():void
+			{
+				this.visible = this.includeInLayout = true;
+			}
+			
+			private function onInitialize():void
+			{
+				var loadConfigCmd:GetPivotReportsListCommand = new GetPivotReportsListCommand();
+				loadConfigCmd.addEventListener(ResultEvent.RESULT, userReportsLoadHandler);
+				loadConfigCmd.execute(/* {key : 'reports.userReport.*'} */);
+				//ModelLocator.getInstance().configManager.requestList(["reports.userReport.reportName"],configurationLoaded);
+			}
+			
+			private function userReportsLoadHandler(event:ResultEvent):void
+			{
+				var result:XML = XML(event.result);
+				list = result.report;
+			}
+			
+			public function get selectedReport():Object
+			{
+				return grid.selectedItem;
+			}
+			
+			private function doubleClickHandler(event:ListEvent):void
+			{
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+		]]>
+	</mx:Script>
+	<mx:DataGrid 
+		id="grid" 
+		dataProvider="{list}" 
+		headerHeight="0" 
+		width="100%" 
+		height="100%" 
+		dragEnabled="true" 
+		dropEnabled="true"
+		dragMoveEnabled="true"
+		doubleClickEnabled="true"
+		allowMultipleSelection="true"
+		itemDoubleClick="doubleClickHandler(event)"
+		>
+		<mx:columns>
+			<mx:DataGridColumn dataField="name"/>
+			<mx:DataGridColumn width="26" sortable="false" editable="false">
+				<mx:itemRenderer>
+					<mx:Component>
+						<lineList:LineImageButton width="100%" height="100%" click="outerDocument.deleteReport(event)" iconsName="status_canceled" toolTip="{LanguageManager.getLabel('common.Delete')}">
+							<mx:Script>
+								<![CDATA[
+									import com.makolab.fractus.model.LanguageManager;
+								]]>
+							</mx:Script>
+						</lineList:LineImageButton>
+
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn> 
+		</mx:columns>
+	</mx:DataGrid>
+</mx:TitleWindow>

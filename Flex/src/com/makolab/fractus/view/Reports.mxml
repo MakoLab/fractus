@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TabNavigator xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:view="com.makolab.fractus.view.*" creationComplete="init()">
+	<!--view:Report label="Zestawienie" config="{config.report[0]}"/-->
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			public static function showWindow():ComponentWindow
+			{
+				var win:ComponentWindow = new ComponentWindow();
+				win.title = "Zestawienia";
+				var reports:Reports = new Reports();
+				win.innerComponent = reports;
+				win.show(null,null,LanguageManager.getInstance().labels.title.reports);
+				return win;
+			}
+			
+			private function init():void
+			{
+				updateConfig();
+			}
+			
+			private var _config:XML;
+			
+			public function set config(value:XML):void
+			{
+				if (value != _config)
+				{
+					_config = value;
+					updateConfig();
+				}
+			}
+			public function get config():XML { return _config; }
+			
+			private function updateConfig():void
+			{
+				if (!(_config is XML)) return;
+				removeAllChildren();
+				for each (var x:XML in _config.report)
+				{
+					var report:Report = new Report();
+					report.label = x.@label;
+					report.config = x;
+					this.addChild(report);
+				}				
+			}
+		]]>
+	</mx:Script>
+	
+	<!--XML(ModelLocator.getInstance().configManager.values.reports_reports).configValue.reports[0]-->
+	<mx:Binding source="XML(ModelLocator.getInstance().configManager.values.reports_reports).configValue.reports[0]" destination="this.config"/>
+
+	<mx:XML id="cfg">
+		<reports>
+			<report label="Wyszukiwanie kontrahentów" procedureName="contractor.p_GetContractors">
+				<columns>
+					<column field="@shortName" sortOrder="1" sortType="ASC" labelKey="common.shortName" label="Nazwa"/>
+					<column field="@code" sortOrder="1" sortType="ASC" labelKey="common.code" label="Kod"/>
+					<column field="@nip" sortOrder="1" sortType="ASC" label="Nip"/>
+					<column field="@city" sortOrder="1" sortType="ASC" label="Miasto"/>	
+				</columns>
+				<searchParams>
+					<columns>
+						<column field="shortName" labelKey="common.shortName" label="Nazwa"/>
+						<column field="code" sortOrder="1" sortType="DESC" labelKey="common.code" label="Kod"/>
+						<column field="nip" label="NIP"/>
+						<column field="city" label="Miasto"/>
+					</columns>
+				</searchParams>
+				<filters>
+					<!-- ten filtr doklada condition -->
+					<filter label="Filtr 1" type="sqlFilter">
+						<condition>nip LIKE @nip + '%'</condition>
+						<parameters>
+							<parameter label="NIP" name="nip" type="nip"/>
+						</parameters>
+					</filter>
+					<!-- a ten cos innego -->
+					<filter label="Filtr 2" type="sqlFilter">
+						<parameters>
+							<parameter label="Dateczka" name="parametr" type="date"/>
+						</parameters>
+					</filter>
+					<filter label="Wyszukiwanie po frazie" type="sqlFilter">
+						<parameters>
+							<parameter label="Fraza" name="query" type="string"/>
+						</parameters>
+					</filter>
+					<filter label="Opcje" type="sqlFilter">
+						<parameters>
+							<parameter labelKey="common.warehouse" label="Magazyn" name="warehouseId" type="dictionary" dictionaryName="warehouses"/>
+							<parameter label="Wybierz" name="cos" type="select">
+								<option value="1">Jeden</option>
+								<option value="2">Dwa</option>
+							</parameter>
+						</parameters>
+					</filter>
+
+				</filters>
+			</report>
+		</reports>
+	</mx:XML>
+</mx:TabNavigator>

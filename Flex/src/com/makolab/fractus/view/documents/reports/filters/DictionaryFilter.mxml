@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem implements="com.makolab.fractus.view.documents.reports.filters.IReportFilter" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:generic="com.makolab.fractus.view.generic.*">		
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.CatalogueFilterError;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			private var _parameters:XML
+			[Bindable]
+			public var allowEmptySelection:Boolean = false;
+			
+			public var nodeName:String;
+			[Bindable]
+			public var dictionaryName:String;
+			
+			[Bindable]
+			public function set parameters(value:XML):void
+			{
+				_parameters = value;
+			}
+			
+			public function get parameters():XML
+			{
+				return _parameters;
+			}
+			
+			private function setParameters(params:XML):void
+			{
+				if (selector.selectedId) params[nodeName] = selector.selectedId;
+				else if (params[nodeName].length() > 0) delete params[nodeName];
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			public function get validationError():String
+			{
+				return null;
+			}
+			
+			public function get stringValue():String
+			{
+				return selector.selectedItem[selector.labelField];
+			}
+		]]>
+	</mx:Script>
+		<generic:FractusDictionarySelector id="selector" dictionaryName="{dictionaryName}" showAll="true" change="setParameters(parameters)" creationComplete="setParameters(parameters)"/>
+</mx:FormItem>

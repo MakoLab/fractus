@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" >
+
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.inputComponents.SingleAttributeEditor;
+			import com.makolab.aspDictionary.CurrencyCalculationTypeEditor;
+			import com.makolab.components.catalogue.CatalogueItemWindow;
+			import com.makolab.components.inputComponents.HTMLTextEditor;
+			import mx.controls.TextInput;
+			import mx.controls.TextArea;
+			import mx.controls.Image;
+			import mx.controls.DateField;
+			import mx.controls.CheckBox;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.components.inputComponents.CurrencyRenderer;
+			import com.makolab.components.inputComponents.CurrencyInput;
+			import com.makolab.components.inputComponents.RegExpEditor;
+			import com.makolab.components.inputComponents.CheckBoxEditor;
+			import com.makolab.components.inputComponents.CurrencyEditor;
+			import com.makolab.components.inputComponents.AttributeEditor;
+			import com.makolab.components.inputComponents.GenericAttributeEditorComponent;
+			import mx.containers.Box;
+			import com.makolab.components.inputComponents.LabelListEditor;
+			import com.makolab.components.inputComponents.LabelValueEditor;
+			import mx.controls.ColorPicker;
+			import mx.controls.ComboBox;
+			import mx.controls.RichTextEditor;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.AbstractOperation;
+			import mx.rpc.events.FaultEvent;
+			import mx.events.ResizeEvent;
+			import mx.controls.Alert; 
+
+		 	
+		 	//deklaracje  komponętów używanych w liscie
+			private var editor1 : ComboBox ;
+			private var editor2 : LabelValueEditor ;
+			private var editor3 : RichTextEditor ;
+			private var editor4 : LabelListEditor ;
+			private var editor5 : ComboBox;
+			private var editor6 : ColorPicker;
+			private var editor7 : GenericAttributeEditorComponent;
+			private var editor8 : AttributeEditor;
+			private var editor9 : CurrencyEditor;
+			private var editor10: CheckBoxEditor ;
+			private var editor11: RegExpEditor;
+			private var editor14: CurrencyManager;
+			private var editor12: CurrencyInput; 
+			private var editor13: CurrencyRenderer;
+			private var editor15: CheckBox;
+			private var editor16: DateField;
+			private var editor17: Image;
+			private var editor18: TextArea;
+			private var editor19: TextInput;
+			private var editor20: HTMLTextEditor;
+	//		private var editor21: PasswordField;  
+			private var editor22: ASPDictionaryTest;
+			private var editor23: CurrencyCalculationTypeEditor;
+			private var editor24: CurrencyCalculationTypeEditor;
+			private var editor25: SingleAttributeEditor;
+
+		private var data1:XML; 
+		private var dct :XML;
+			private function initXML():void
+			{
+				data1= new XML('<item id="2000000000000045" identity="gid">'
+			 +' <gid>2000000000000045</gid>'
+			 +' <name>1_Elem_Szerokość</name>'
+			  +'<dataType>NUMBER(8,0)</dataType>'
+			  +'<dataFormat>cm</dataFormat>'
+			 +' <inputMethod>INPUT</inputMethod>'
+			 +' <validValues/>'
+			  +'<validRange/>'
+			  +'<valueStep/>'
+			  +'<type>PART SIZE</type>'
+			  +'<shortcut>Part01W</shortcut>'
+			  +'<price>0</price>'
+			  +'<FCodeMaskAdd/>'
+			  +'<FCodeMaskRemove/>'
+			  +'<PRD_DctAttributesPrice>'
+			    +'<attribute>'
+			      +'<gid>2000000000000212</gid>'
+			      +'<price>0</price>'
+			      +'<guidCMR_UpdateAccounts>\{8C82DE1D-443F-469B-8093-AD141F7F28CC}</guidCMR_UpdateAccounts>'
+			      +'<gidPRD_DctAttributes>2000000000000045</gidPRD_DctAttributes>'
+			      +'<calculationType/>'
+			    +'</attribute>'
+			    +'<attribute>'
+			      +'<gid>2000000000000273</gid>'
+			      +'<price>012</price>'
+			      +'<guidCMR_UpdateAccounts>\{5F41BADE-41A4-4CED-AFDA-D65B12DCC8FC}</guidCMR_UpdateAccounts>'
+			      +'<gidPRD_DctAttributes>2000000000000045</gidPRD_DctAttributes>'
+			      +'<calculationType/>'
+			    +'</attribute>'
+			    +'<attribute>'
+			      +'<gid>2000000000000334</gid>'
+			      +'<price>12</price>'
+			      +'<guidCMR_UpdateAccounts>\{FECFC056-453E-47F5-8FCD-5B95F93E081B}</guidCMR_UpdateAccounts>'
+			      +'<gidPRD_DctAttributes>2000000000000045</gidPRD_DctAttributes>'
+			      +'<calculationType/>'
+			    +'</attribute>'
+			  +'</PRD_DctAttributesPrice>'
+			  +'<Dictionary_CMR_UpdateAccounts>'
+			    +'<entry>'
+			      +'<id>\{7B95661E-0AED-4472-A79D-258F9EF79D34}</id>'
+			      +'<name>store-art-france[FR]</name>'
+			      +'<label>store-art-france[FR]</label>'
+			    +'</entry>'
+			    +'<entry>'
+			      +'<id>\{959794B5-FF65-4320-A1F6-2A1C5CF4CD51}</id>'
+			      +'<name>map![DE]</name>'
+			      +'<label>map![DE]</label>'
+			    +'</entry>'
+			    +'<entry>'
+			      +'<id>\{FECFC056-453E-47F5-8FCD-5B95F93E081B}</id>'
+			      +'<name>ArtGeist.com</name>'
+			      +'<label>ArtGeist.com</label>'
+			    +'</entry>'
+			    +'<entry>'
+			      +'<id>\{B90C9E06-1122-4C97-8708-84EB01D05EC8}</id>'
+			      +'<name>art-design-group[DE]</name>'
+			      +'<label>art-design-group[DE]</label>'
+			    +'</entry>'
+			    +'<entry>'
+			      +'<id>\{52C1CECC-1D80-48F1-8C0E-AD015982F7B5}</id>'
+			      +'<name>store-art-italia2[IT]</name>'
+			      +'<label>store-art-italia2[IT]</label>'
+			    +'</entry>'
+			    +'<entry>'
+			      +'<id>\{8C82DE1D-443F-469B-8093-AD141F7F28CC}</id>'
+			      +'<name>Stic.com</name>'
+			      +'<label>Stic.com</label>'
+			    +'</entry>'
+			    +'<entry>'
+			      +'<id>{590B33EF-872F-4DE5-A2E3-B36F64378BC3}</id>'
+			      +'<name>art-espana[ES]</name>'
+			      +'<label>art-espana[ES]</label>'
+			    +'</entry>'
+			    +'<entry>'
+			      +'<id>\{5F41BADE-41A4-4CED-AFDA-D65B12DCC8FC}</id>'
+			      +'<name>www_bilderdekoration_de</name>'
+			      +'<label>www_bilderdekoration_de</label>'
+			    +'</entry>'
+			    +'<entry>'
+			      +'<id>\{BDB86A77-E42A-454D-BF60-F46AECB1BEBB}</id>'
+			      +'<name>bilder_und_dekoration[DE]</name>'
+			      +'<label>bilder_und_dekoration[DE]</label>'
+			    +'</entry>'
+			  +'</Dictionary_CMR_UpdateAccounts>'
+			+'</item>');
+			this.dct= new XML('<form>'
+				  +'<tab label="lab">'
+				      +'<component className="com.makolab.components.inputComponents.LabelListEditor" dataField="dataObject" dataSource="data.type">'
+				      +'<label>label</label>'
+				      +'<dataProvider>'
+				        +'<item value="" label=""/>'
+				        +'<item value="A" label="Attribute1"/>'
+				        +'<item value="PART SIZE" label="PART SIZE"/>'
+				        +'<item value="OUTER SIZE" label="OUTER SIZE"/>'
+				        +'<item value="AA" label="Attribute2"/>'
+				        +'<item value="AE" label="Express service"/>'
+				      +'</dataProvider>'
+				      +'<itemEditor>mx.controls.ComboBox</itemEditor>'
+				      +'<valueField>@value</valueField>'
+				      +'<labelField>@label</labelField>'
+				    +'</component>'
+				    +'<component className="com.makolab.components.inputComponents.AttributeEditor" dataField="dataObject" dataSource="data.PRD_DctAttributesPrice">'
+				      +'<label>dd</label>'
+				      +'<buttonLabel>add</buttonLabel>'
+				      +'<itemEditor>com.makolab.aspDictionary.CurrencyCalculationTypeEditor</itemEditor>'
+				      +'<attributeIdField>guidCMR_UpdateAccounts</attributeIdField>'
+				      +'<valueField></valueField>'
+				      +'<editorDataField>dataObject</editorDataField>'
+					  +'<editorFields>'
+					  		+'<dictionaryListData><item value="" label=""/><item value="A" label="Attribute1"/></dictionaryListData>'
+					  		+'<comboFieldData>calculationType</comboFieldData>'
+					  		+'<inputFieldData>price</inputFieldData>'
+					  		+'<dictionaryIdNode>@value</dictionaryIdNode>'
+					  		+'<dictionaryNameNode>@label</dictionaryNameNode>'
+				      +'</editorFields>'
+				      +'<template>'
+				        +'<attribute>'
+				          +'<gid/>'
+				          +'<price>0</price>'
+				          +'<gidPRD_DctAttributes/>'
+				          +'<calculationType></calculationType>'
+				        +'</attribute>'
+				      +'</template>'
+				      +'<attributes>\{data.Dictionary_CMR_UpdateAccounts.*}</attributes>'
+				    +'</component>'
+				  +'</tab>'
+				+'</form>');
+			}
+			
+			private var editDataWindow:CatalogueItemWindow = new CatalogueItemWindow();  //okno edycji
+			public function init():void 
+			{ 		
+				initXML();
+					editDataWindow.addEventListener("accept", teste);
+					editDataWindow.addEventListener("cancel", handleCancel);
+					editDataWindow.title = "tytul"; 
+					editDataWindow.data = this.data1;
+					editDataWindow.formConfig = this.dct;
+
+					editDataWindow.show(this);
+
+					editDataWindow.width =600;
+				 	editDataWindow.height =  400;
+			}
+			
+			public function teste(event:Event):void
+			{
+				
+			}
+			private function handleCancel(event:Event):void
+			{
+				this.editDataWindow.hide()
+				this.editDataWindow.data=null;
+			}
+		]]>
+	</mx:Script>
+	<mx:Button click="init()"/>
+	<mx:Button click="teste(event)" />
+</mx:Application>

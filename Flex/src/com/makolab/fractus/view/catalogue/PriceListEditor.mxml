@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:catalogue="com.makolab.fractus.view.catalogue.*" xmlns:lineList="com.makolab.components.lineList.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			import mx.controls.Alert;
+			import mx.events.DataGridEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			// todo wszedzie uzyc LanguageManagera
+			
+			public static function showWindow(priceListId:String = ""):ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:PriceListEditor = new PriceListEditor();
+				component.priceListId = priceListId;
+				component.addEventListener("change",function ():void{window.dispatchEvent(new Event("change"))});
+				window.commitFunction = component.save;
+				window.innerComponent = component;
+				window.buttons = (ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL);
+				if(component.icon)window.titleIcon = component.icon;
+				window.show(null,new Rectangle(0,0,500,400),"Cennik");// todo LM
+				
+				return window;
+			}
+			
+			[Bindable] public var priceListXML:XML;
+			
+			public function set priceListId(value:String):void
+			{
+				if(value != "")callCommand(value);
+				else priceListXML = template;
+			}
+			
+			private function callCommand(priceListId:String):void
+			{
+				var request:XML = <root/>;
+				if(priceListId != "")request.* = priceListId;
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("item.p_getPriceListDataXML",request);
+				cmd.addEventListener(ResultEvent.RESULT,handleCommandResult);
+				priceListXML = template;
+				cmd.execute();
+			}
+			
+			private function handleCommandResult(event:ResultEvent):void
+			{
+				priceListXML = XML(event.result);
+				priceTypeChooser.selectedIndex = (priceListXML.priceListHeader.entry.priceType.toString() == "0") ? 0 : 1;
+			}
+			
+			private function handleChange():void
+			{
+			}
+			
+			public function save():void
+			{
+				for each(var entry:XML in priceListXML.priceListLine.entry){
+					if(entry.itemId.length() == 0 || entry.itemId == "")
+						delete priceListXML.priceListLine.entry[entry.childIndex()];
+				}
+				if(priceListXML.priceListHeader.entry.creationApplicationUserId.length() == 0)
+					priceListXML.priceListHeader.entry.creationApplicationUserId = ModelLocator.getInstance().sessionManager.userId;
+				priceListXML.priceListHeader.entry.modificationApplicationUserId = ModelLocator.getInstance().sessionManager.userId;
+				
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("item.p_setPriceListData",priceListXML);
+				cmd.addEventListener(ResultEvent.RESULT,saveResult);
+				var validationResult:String = validate();
+				if(validationResult == "")cmd.execute();
+				else Alert.show(validationResult);
+			}
+			
+			private function validate():String
+			{
+				var ret:String = "";
+				if(listName.text == "")ret = ret + "Podaj nazwę cennika\n"; // todo LM
+				return ret;
+			}
+			
+			private function saveResult(event:ResultEvent):void
+			{
+				var result:XML = XML(event.result);
+				if(result.toString().length > 0) Alert.show(result.toString());
+				else this.dispatchEvent(new Event("change"));
+			}
+			
+			private function addLine():void
+			{
+				priceListXML.priceListLine.entry = priceListXML.priceListLine.entry + <entry />;
+				grid.selectedIndex = priceListXML.priceListLine.entry.length() - 1;
+				//grid.editedItemPosition = {rowIndex : priceListXML.priceListLine.entry.length() - 1, colIndex : 0};
+			}
+			
+			private function handleItemEditEnd(event:DataGridEvent):void
+			{
+				if(event.columnIndex == 0){
+					var entries:XMLList = priceListXML.priceListLine.entry;
+					for (var i:int = 0; i < entries.length(); i++){
+						if ( i != event.rowIndex && event.target.itemEditorInstance && entries[i].itemId.toString() == String(event.target.itemEditorInstance.cs.itemId)){
+							entries[event.rowIndex] = <entry/>;
+							event.preventDefault();
+							grid.destroyItemEditor();
+							grid.dataProvider.notifyItemUpdate(grid.editedItemRenderer);
+							Alert.show("Wybrany towar już istnieje w cenniku."); // todo LM
+							break;
+						}
+					}
+				}
+			}
+			
+			public function setLineItem(item:Object, line:Object):void
+			{
+				line['itemId'] = item.@id;
+				if(priceListXML.priceListHeader.entry.priceListHeaderId.length() > 0 && priceListXML.priceListHeader.entry.priceListHeaderId.toString() != "")
+					line['priceListHeaderId'] = priceListXML.priceListHeader.entry.priceListHeaderId.toString();
+			}
+			
+			private function deleteLine():void
+			{
+				delete priceListXML.priceListLine.entry[grid.selectedIndex];
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:XML id="template" xmlns="">
+		<root>
+			<priceListHeader>
+				<entry>
+					<priceType>0</priceType>
+				</entry>
+			</priceListHeader>
+			<priceListLine>
+			</priceListLine>
+		</root>
+	</mx:XML>
+	
+	<mx:HBox width="100%">
+		<mx:VBox width="100%">
+			<mx:FormItem label="Nazwa cennika: " width="100%">
+				<mx:TextInput id="listName" text="{priceListXML.priceListHeader.entry.label}" width="100%" change="{priceListXML.priceListHeader.entry.label = listName.text}"/>
+			</mx:FormItem>
+			<mx:FormItem label="Typ ceny: " width="100%">
+				<mx:ComboBox id="priceTypeChooser" change="priceListXML.priceListHeader.entry.priceType = priceTypeChooser.selectedItem.value">
+					<mx:dataProvider>
+							{[{label : "netto", value : "1"},{label : "brutto", value: "0"}]}
+					</mx:dataProvider>
+				</mx:ComboBox>
+			</mx:FormItem>
+		</mx:VBox>
+		<mx:FormItem label="Opis: " width="100%">
+			<mx:TextArea id="descriptionText" width="100%" height="100%" text="{priceListXML.priceListHeader.entry.description}" change="{priceListXML.priceListHeader.entry.description = descriptionText.text}"/>
+		</mx:FormItem>
+	</mx:HBox>
+	<lineList:LineList id="grid" width="100%" height="100%" sortableColumns="false" editable="true" dataProvider="{priceListXML.priceListLine.entry}" itemEditEnd="handleItemEditEnd(event)">
+		<lineList:columns>
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.item')}" dataField="itemName">
+				<mx:itemEditor>
+					<mx:Component>
+						<catalogue:ItemSearchEditor setFunction="{outerDocument.setLineItem}"/>
+					</mx:Component>
+				</mx:itemEditor>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn headerText="Cena" dataField="price" editorDataField="dataObject" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" editable="true"/>
+		</lineList:columns>
+	</lineList:LineList>
+	<mx:HBox>
+		<mx:Button label="Dodaj pozycję" click="addLine()"/>
+		<mx:Button label="{LanguageManager.getLabel('common.Delete')}" enabled="{grid.selectedItem}" click="deleteLine()"/>
+	</mx:HBox>
+</mx:VBox>

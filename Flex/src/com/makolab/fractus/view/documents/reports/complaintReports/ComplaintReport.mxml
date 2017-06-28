@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<reports:ReportContainer xmlns:mx="http://www.adobe.com/2006/mxml" creationPolicy="all" configurationName="complaint" width="400" height="300" xmlns:reports="com.makolab.fractus.view.documents.reports.*" xmlns:salesReports="com.makolab.fractus.view.documents.reports.salesReports.*" xmlns:complaintReports="com.makolab.fractus.view.documents.reports.complaintReports.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.view.documents.reports.ReportGenerator;
+			import com.makolab.fractus.view.documents.reports.ReportBase;
+			import mx.events.CloseEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import com.makolab.fractus.commands.SearchCommand;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			private var _filtersInfo:Object = {};
+			[Bindable]
+			public function set filtersInfo(value:Object):void
+			{
+				_filtersInfo = value;
+			}
+			public function get filtersInfo():Object
+			{
+				return _filtersInfo;
+			}
+			
+			[Bindable]
+			private var showProgressBar:Boolean = false;
+			
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:ComplaintReport = new ComplaintReport();
+				window.innerComponent = component;
+				window.show(null,null,LanguageManager.getInstance().labels.complaint.complaintReports);
+				component.reportsName = LanguageManager.getInstance().labels.complaint.complaintReports;
+				return window;
+			}
+			
+			/* private function changeHandler():void
+			{
+				if(selectedChild is ReportBase){
+					if(filtersTab.errors.length > 0){
+						Alert.show(filtersTab.errors.join("\n"),LanguageManager.getLabel("alert.alert"),4,null,alertCloseHandler);
+						(selectedChild as ReportBase).dataProvider = new XMLList();
+					}else{
+						(selectedChild as ReportBase).generateReport(defaultSearchParams);
+					}
+				}
+			} 
+			
+			private function alertCloseHandler(event:CloseEvent):void{
+				this.selectedIndex = 0;
+			}
+			
+			private function init():void
+			{
+				ModelLocator.getInstance().configManager.requestList(["reports.definition"], addReports);
+			}
+			
+			private function addReports():void
+			{
+				var model:ModelLocator = ModelLocator.getInstance();
+				model.configManager.requestValue("reports.definition");
+				var configuration:XML = model.configManager.getXMLValue("reports.definition");
+				if (configuration) for each(var x:XML in configuration.complaint.*)
+				{
+					var rg:ReportGenerator = new ReportGenerator();
+					rg.procedure = x.@procedure;
+					rg.label = x.@label;
+					rg.reportXML = x;
+					this.addChild(rg);
+				}
+			}
+			*/
+			private function filtersInfoChangedHandler(event:Event):void
+			{
+				this.filtersInfo = filtersTab.filtersInfo;
+			}
+		]]>
+	</mx:Script>
+	<reports:defaultSearchParams>
+		<mx:XML xmlns="">
+			<searchParams type="CommercialDocument">
+				 <filters>
+				 </filters>
+			</searchParams>
+		</mx:XML>
+	</reports:defaultSearchParams>
+	
+	<reports:filtersComponent>
+		<complaintReports:ComplaintReportFilters id="filtersTab" documentCategories="0,5" label="Filtry" searchParams="{defaultSearchParams}" filterInfoChanged="filtersInfoChangedHandler(event)" filtersInfo="{filtersInfo}" width="100%" height="100%"/>
+	</reports:filtersComponent>
+	<complaintReports:ReportByRealization label="Zestawienie realizacji reklamacji" filtersInfo="{filtersInfo}" procedure="reports.p_getUnrealizedComplaints" width="100%" height="100%"/>
+	<complaintReports:ReportComplaintsByContractor label="Zestawienie wg kontrahentów" filtersInfo="{filtersInfo}" procedure="reports.p_getContractorComplaints" width="100%" height="100%"/>
+	<complaintReports:ReportComplaintsByItemStock label="Towary w trakcie rozpatrywania reklamacji" filtersInfo="{filtersInfo}" procedure="reports.p_getComplaintsVirtualStock" width="100%" height="100%"/>
+	<!--<reports:ReportByDocumentFeatures label="wg cech księgowych" filtersInfo="{filtersInfo}" procedure="reports.p_getSalesByDocumentFeature" width="100%" height="100%"/>-->
+	
+</reports:ReportContainer>

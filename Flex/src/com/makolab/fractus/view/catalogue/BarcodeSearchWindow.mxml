@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow 
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		layout="vertical"
+		width="350"
+		height="130"
+		title="{LanguageManager.getInstance().labels.items.searchByBarcode}"
+		showCloseButton="true"
+		close="hide()"
+		verticalGap="6"
+	>
+	<mx:Metadata>
+		[Event(name="itemSelected", type="mx.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.SearchCommand;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.managers.PopUpManager;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			public var selectedItem:Object;
+			
+			public var autoClose:Boolean;
+			
+			public static const ITEM_SELECTED:String = 'itemSelected';
+			
+			public static function show(autoClose:Boolean = true):BarcodeSearchWindow
+			{
+				var window:BarcodeSearchWindow = new BarcodeSearchWindow();
+				PopUpManager.addPopUp(window, ModelLocator.getInstance().applicationObject, true);
+				PopUpManager.centerPopUp(window);
+				window.visible = true;
+				window.autoClose = autoClose;
+				window.tiCode.setFocus();
+				return window;
+			}
+			
+			public function hide():void
+			{
+				this.visible = false;
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function search():void
+			{
+				var cmd:SearchCommand = new SearchCommand(SearchCommand.ITEMS);
+				var params:XML = searchParams.copy();
+				params.filters.column.(@field == 'barcode').* = tiCode.text;
+				cmd.searchParams = params;
+				cmd.addEventListener(ResultEvent.RESULT, handleSearchResult);
+				cmd.execute();
+			}
+			
+			private function handleSearchResult(event:ResultEvent):void
+			{
+				var results:XMLList = XML(event.result).*;
+				var msg:String;
+				var color:uint;
+				var lm:LanguageManager = LanguageManager.getInstance();
+				if (results.length() == 0)
+				{
+					msg = lm.getLabel("items.notFound");
+					color = 0xff0000;
+					selectedItem = null;
+				}
+				else 
+				{
+					selectedItem = results[0];
+					msg = selectedItem.@code + ": " + selectedItem.@name;
+					color = 0x666666;
+					dispatchEvent(new Event(ITEM_SELECTED));
+				}
+				lblMessage.text = msg;
+				lblMessage.setStyle('color', color);
+				tiCode.setSelection(0, tiCode.text.length);
+				if (this.autoClose && selectedItem) hide();
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox width="100%">
+		<mx:Text text="{LanguageManager.getInstance().labels.items.enterBarcode}" height="100%"/>
+		<mx:TextInput id="tiCode" width="100%" keyDown="if (event.keyCode == Keyboard.ENTER) search()" restrict="a-zA-Z0-9\-"/>
+	</mx:HBox>
+	<mx:Label id="lblMessage" fontWeight="bold" width="100%" textAlign="center"/>
+	<mx:ControlBar horizontalAlign="center">
+		<mx:Button label="{LanguageManager.getInstance().labels.common.ok}" click="search()"/>
+		<mx:Button label="{LanguageManager.getInstance().labels.common.cancel}" click="hide()"/>
+	</mx:ControlBar>
+	
+	<mx:XML id="searchParams" xmlns="">
+		<searchParams>
+			<pageSize>10</pageSize>
+			<page>1</page>
+			<columns>
+				<column field="name"/>
+				<column field="code"/>
+				<column field="version"/>
+			</columns>
+			<filters>
+				<column field="barcode"/>
+			</filters>
+		</searchParams>
+	</mx:XML>
+</mx:TitleWindow>

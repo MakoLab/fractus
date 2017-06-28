@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="100%" 
+	height="100%"
+	creationComplete="onCreationComplete(event)" 
+	>
+<mx:Script>
+	<![CDATA[
+		import mx.rpc.events.ResultEvent;
+		import com.makolab.fractus.commands.AbstractCommand;
+		import com.makolab.fractus.commands.GetWarehouseDocumentLinesTreeCommand;
+		import mx.controls.treeClasses.ITreeDataDescriptor2;
+		public var documentXML:XML;
+		
+		[Bindable]
+		private var linesTreeDataDescriptor:ITreeDataDescriptor2 = new LinesTreeDataDescriptor();
+		
+		private function onCreationComplete(event:Event):void
+		{
+			var cmd:GetWarehouseDocumentLinesTreeCommand = new GetWarehouseDocumentLinesTreeCommand(documentXML.id.*);
+			cmd.addEventListener(ResultEvent.RESULT, getWarehouseDocumentLinesTreeCommandEventHandler, false, 0, true);
+			cmd.execute();
+		}
+		
+		private function getWarehouseDocumentLinesTreeCommandEventHandler(event:ResultEvent):void
+		{
+			this.tree.dataProvider = XML(event.result).line;
+		}
+		
+		private function getLabel(node:Object):String
+		{
+			var quantity:Number = Number(node.quantity.*);
+			var itemName:String = node.itemName;
+			var unit:String = node.unitId.@symbol;
+			var documentType:String = node.documentTypeId.@symbol;
+			var documentNumber:String = node.fullNumber.*;
+			//var issueDate:String = String(node.issueDate).substr(0, 10);
+			var value:Number = Number(node.value.*);
+			var currency:String = node.documentCurrencyId.@symbol;
+			
+			return documentType + " " + documentNumber + " (" + itemName + "; " + quantity + " " + unit + "; " + value + " " + currency + ")";
+		}
+	]]>
+</mx:Script>
+	<mx:Tree id="tree" dataDescriptor="{this.linesTreeDataDescriptor}" labelFunction="getLabel" width="100%" height="100%" />
+</mx:HBox>

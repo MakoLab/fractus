@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		width="100%" >
+<mx:Label id="tyt">
+	
+</mx:Label>
+
+	<mx:Script>
+		<![CDATA[
+		override public function set data(value:Object):void
+		{
+			tyt.text=value.@label;
+		}
+			override public function validateDisplayList():void{
+				super.validateDisplayList();
+			}
+		]]>
+	</mx:Script>
+</mx:VBox>

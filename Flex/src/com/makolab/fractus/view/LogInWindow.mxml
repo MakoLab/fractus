@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	initialize="initializationHandler()"
+	layout="absolute" width="300" height="228"
+	title="{LanguageManager.getInstance().labels.login.logging}"
+	alpha="0"
+	creationComplete="cch()">
+	
+	<mx:Metadata>
+		[Event(name="logIn", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.greensock.TweenLite;
+			import mx.core.Application;
+			import com.makolab.components.barcode.BarcodeEvent;
+			import com.makolab.fractus.model.BarcodeManager;
+			import mx.utils.SHA256;
+			import com.makolab.fractus.commands.AbstractCommand;
+			import com.makolab.fractus.commands.LogInCommand;
+			import mx.core.UIComponent;
+			import mx.managers.PopUpManager;
+			import com.makolab.fractus.vo.SessionVO;
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.controls.Alert;
+			import mx.rpc.soap.WebService;
+			import mx.rpc.soap.Operation;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.AsyncToken;
+			import mx.rpc.AbstractOperation;
+			
+			public var loginOperation:AbstractOperation;
+			
+			private var loginEnabled:Boolean = true;
+			
+			[Bindable]
+			private var fieldsEnabled:Boolean = true;
+			
+			[Bindable]
+			private var message:String;
+			
+			private var barcodeManager:BarcodeManager = new BarcodeManager();
+			
+			private function cch():void {
+			/*	var bt:ByteArray=new ByteArray();
+				bt.writeUTFBytes('sutcarf0909');
+				bt.position=0;
+				var t:String=SHA256.computeDigest(bt);
+				callLater(login,['makoadmin',t])*/
+			}
+			
+			
+			private function initializationHandler():void
+			{
+				barcodeManager.component = this;
+				barcodeManager.addEventListener(BarcodeEvent.BARCODE_READ_START, barcodeReadStartHandler);
+				barcodeManager.addEventListener(BarcodeEvent.BARCODE_READ, barcodeReadHandler);
+			}
+			
+			private function barcodeReadStartHandler(event:BarcodeEvent):void
+			{
+				fieldsEnabled = false;
+			}
+			
+			private function barcodeReadHandler(event:BarcodeEvent):void
+			{
+				if (event.barcode && event.barcode.substr(0,5) == "login")
+				{
+					var loginData:Array = event.barcode.substr(5).split("&");
+					if (loginData.length == 2)
+					{
+						var bt:ByteArray = new ByteArray();
+						bt.writeUTFBytes(loginData[1]);
+						bt.position = 0;
+						
+						login(loginData[0],SHA256.computeDigest(bt));
+					}
+				}
+				
+				fieldsEnabled = true;
+			}
+			
+			private function handleKeyDown(event:KeyboardEvent):void
+			{
+				if (event.keyCode == Keyboard.ENTER) login(tiUserName.text, tiPassword.text);
+			}
+			
+			private function login(user:String, password:String):void
+			{
+				if (!btLogin.enabled) return;
+				btLogin.enabled = false;
+				dispatchEvent(new Event("logIn"));
+				var cmd:LogInCommand = new LogInCommand();
+				cmd.addEventListener(FaultEvent.FAULT, faultHandler);
+				cmd.addEventListener(ResultEvent.RESULT, resultHandler);
+				cmd.execute(new SessionVO(user, password, "pl"));
+				message = null;
+			}
+
+			private function faultHandler(event:FaultEvent):void
+			{
+				fieldsEnabled = true;
+				btLogin.enabled = true;
+			}
+			
+			private function resultHandler(event:ResultEvent):void
+			{
+				fieldsEnabled = true;
+				btLogin.enabled = true;
+			}	
+					
+			override protected function keyDownHandler(event:KeyboardEvent):void
+			{
+				super.keyDownHandler(event);
+				if (event.keyCode == Keyboard.ENTER && fieldsEnabled) login(userName, password);
+			}
+			
+			private static var logInWindow:LogInWindow;
+
+			public static function hide():void
+			{
+				logInWindow.visible = false;
+				PopUpManager.removePopUp(logInWindow);
+			}
+			
+			public static function show(parent:UIComponent,message:String = null):void
+			{
+				if (logInWindow && Application.application.systemManager.contains(logInWindow)) return; 
+				if (!logInWindow) logInWindow = new LogInWindow();PopUpManager.addPopUp(logInWindow, parent, true);
+				
+				PopUpManager.centerPopUp(logInWindow);
+				logInWindow.message = message; 
+				logInWindow.tiPassword.text = "";
+				logInWindow.visible = true;
+				logInWindow.tiUserName.setFocus();
+				logInWindow.btLogin.enabled = true;
+				
+				TweenLite.to(logInWindow, 0.7, {alpha:1});
+			}
+			
+			public function get userName():String
+			{
+				return tiUserName.text;
+			}
+			
+			public function get password():String
+			{
+				var bt:ByteArray = new ByteArray();
+				bt.writeUTFBytes(tiPassword.text);
+				bt.position = 0;
+				
+				return SHA256.computeDigest(bt);
+			}
+		]]>
+	</mx:Script>
+	<mx:Text text="{message}" visible="{Boolean(message)}" includeInLayout="{Boolean(message)}" fontWeight="bold" left="10" right="10" top="6" height="30"/>
+	<mx:Label text="{LanguageManager.getInstance().labels.login.username}" y="36" fontSize="14" left="10" right="10"/>
+	<mx:TextInput id="tiUserName" y="62" left="10" right="10" keyDown="keyDownHandler(event)" enabled="{fieldsEnabled}" width="100%"/>
+	<mx:Label text="{LanguageManager.getInstance().labels.login.password}" y="88" fontSize="14" left="10" right="10"/>
+	<mx:TextInput id="tiPassword" y="114" left="10" right="10" keyDown="keyDownHandler(event)" displayAsPassword="true" enabled="{fieldsEnabled}" width="100%"/>	
+	<mx:Button id="btLogin" label="{LanguageManager.getInstance().labels.login.btnLogin}" horizontalCenter="0" bottom="10" width="100" click="login(userName, password)"/>
+</mx:TitleWindow>

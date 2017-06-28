@@ -1,0 +1,546 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="500" 
+	xmlns:generic="com.makolab.fractus.view.generic.*"
+	xmlns:inputComponents="com.makolab.components.inputComponents.*"
+	>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.collections.ArrayCollection;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.components.util.Tools;
+			import flash.net.FileReference;
+			import com.makolab.components.util.ComponentExportManager;
+			import mx.formatters.DateFormatter;
+			
+			
+			 
+			[Bindable]
+			private var requestXML:XML = <root>
+					<od>{new Date() }</od>
+					<dod>{new Date() }</dod>
+					<KodUrzedu>0</KodUrzedu>
+					<CelZlozenia>1</CelZlozenia>
+					<WariantFormularza>1</WariantFormularza>
+					<KodFormularza>FKA</KodFormularza>
+				</root>;
+				
+		    [Bindable]
+	        public var dataCelZlozenia:ArrayCollection = new ArrayCollection(
+	         [   
+	            {value:"Złożenie deklaracji za dany okres", code:"1"},
+	            {value:"Korekta deklaracji za dany okres", code:"2"},
+	         ]                
+	        );
+	         [Bindable]
+	        public var dataKodUrzedu:ArrayCollection = new ArrayCollection(
+	         [   
+	            {value:"URZĄD SKARBOWY W BOLESŁAWCU", code:"0202"},
+				{value:"URZĄD SKARBOWY W BYSTRZYCY KŁODZKIEJ", code:"0203"},
+				{value:"URZĄD SKARBOWY W DZIERŻONIOWIE", code:"0204"},
+				{value:"URZĄD SKARBOWY W GŁOGOWIE", code:"0205"},
+				{value:"URZĄD SKARBOWY W JAWORZE", code:"0206"},
+				{value:"URZĄD SKARBOWY W JELENIEJ GÓRZE", code:"0207"},
+				{value:"URZĄD SKARBOWY W KAMIENNEJ GÓRZE", code:"0208"},
+				{value:"URZĄD SKARBOWY W KŁODZKU", code:"0209"},
+				{value:"URZĄD SKARBOWY W LEGNICY", code:"0210"},
+				{value:"URZĄD SKARBOWY W LUBANIU", code:"0211"},
+				{value:"URZĄD SKARBOWY W LUBINIE", code:"0212"},
+				{value:"URZĄD SKARBOWY W LWÓWKU ŚLĄSKIM", code:"0213"},
+				{value:"URZĄD SKARBOWY W MILICZU", code:"0214"},
+				{value:"URZĄD SKARBOWY W NOWEJ RUDZIE", code:"0215"},
+				{value:"URZĄD SKARBOWY W OLEŚNICY", code:"0216"},
+				{value:"URZĄD SKARBOWY W OŁAWIE", code:"0217"},
+				{value:"URZĄD SKARBOWY W STRZELINIE", code:"0218"},
+				{value:"URZĄD SKARBOWY W ŚRODZIE ŚLĄSKIEJ", code:"0219"},
+				{value:"URZĄD SKARBOWY W ŚWIDNICY", code:"0220"},
+				{value:"URZĄD SKARBOWY W TRZEBNICY", code:"0221"},
+				{value:"URZĄD SKARBOWY W WAŁBRZYCHU", code:"0222"},
+				{value:"URZĄD SKARBOWY W WOŁOWIE", code:"0223"},
+				{value:"URZĄD SKARBOWY WROCŁAW-FABRYCZNA", code:"0224"},
+				{value:"URZĄD SKARBOWY WROCŁAW-KRZYKI", code:"0225"},
+				{value:"URZĄD SKARBOWY WROCŁAW-PSIE POLE", code:"0226"},
+				{value:"URZĄD SKARBOWY WROCŁAW-STARE MIASTO", code:"0227"},
+				{value:"URZĄD SKARBOWY WROCŁAW-ŚRÓDMIEŚCIE", code:"0228"},
+				{value:"PIERWSZY URZĄD SKARBOWY WE WROCŁAWIU", code:"0229"},
+				{value:"URZĄD SKARBOWY W ZĄBKOWICACH ŚLĄSKICH", code:"0230"},
+				{value:"URZĄD SKARBOWY W ZGORZELCU", code:"0231"},
+				{value:"URZĄD SKARBOWY W ZŁOTORYI", code:"0232"},
+				{value:"URZĄD SKARBOWY W GÓRZE", code:"0233"},
+				{value:"URZĄD SKARBOWY W POLKOWICACH", code:"0234"},
+				{value:"DOLNOŚLĄSKI URZĄD SKARBOWY WE WROCŁAWIU", code:"0271"},
+				{value:"URZĄD SKARBOWY W ALEKSANDROWIE KUJAWSKIM", code:"0402"},
+				{value:"URZĄD SKARBOWY W BRODNICY", code:"0403"},
+				{value:"PIERWSZY URZĄD SKARBOWY W BYDGOSZCZY", code:"0404"},
+				{value:"DRUGI URZĄD SKARBOWY W BYDGOSZCZY", code:"0405"},
+				{value:"TRZECI URZĄD SKARBOWY W BYDGOSZCZY", code:"0406"},
+				{value:"URZĄD SKARBOWY W CHEŁMNIE", code:"0407"},
+				{value:"URZĄD SKARBOWY W GRUDZIĄDZU", code:"0408"},
+				{value:"URZĄD SKARBOWY W INOWROCŁAWIU", code:"0409"},
+				{value:"URZĄD SKARBOWY W LIPNIE", code:"0410"},
+				{value:"URZĄD SKARBOWY W MOGILNIE", code:"0411"},
+				{value:"URZĄD SKARBOWY W NAKLE NAD NOTECIĄ", code:"0412"},
+				{value:"URZĄD SKARBOWY W RADZIEJOWIE", code:"0413"},
+				{value:"URZĄD SKARBOWY W RYPINIE", code:"0414"},
+				{value:"URZĄD SKARBOWY W ŚWIECIU", code:"0415"},
+				{value:"PIERWSZY URZĄD SKARBOWY W TORUNIU", code:"0416"},
+				{value:"DRUGI URZĄD SKARBOWY W TORUNIU", code:"0417"},
+				{value:"URZĄD SKARBOWY W TUCHOLI", code:"0418"},
+				{value:"URZĄD SKARBOWY W WĄBRZEŹNIE", code:"0419"},
+				{value:"URZĄD SKARBOWY WE WŁOCŁAWKU", code:"0420"},
+				{value:"URZĄD SKARBOWY W ŻNINIE", code:"0421"},
+				{value:"URZĄD SKARBOWY W GOLUBIU-DOBRZYNIU", code:"0422"},
+				{value:"URZĄD SKARBOWY W SĘPÓLNIE KRAJEŃSKIM", code:"0423"},
+				{value:"KUJAWSKO-POMORSKI URZĄD SKARBOWY W BYDGOSZCZY", code:"0471"},
+				{value:"URZĄD SKARBOWY W BIAŁEJ PODLASKIEJ", code:"0602"},
+				{value:"URZĄD SKARBOWY W BIŁGORAJU", code:"0603"},
+				{value:"URZĄD SKARBOWY W CHEŁMIE", code:"0604"},
+				{value:"URZĄD SKARBOWY W HRUBIESZOWIE", code:"0605"},
+				{value:"URZĄD SKARBOWY W JANOWIE LUBELSKIM", code:"0606"},
+				{value:"URZĄD SKARBOWY W KRASNYMSTAWIE", code:"0607"},
+				{value:"URZĄD SKARBOWY W KRAŚNIKU", code:"0608"},
+				{value:"URZĄD SKARBOWY W LUBARTOWIE", code:"0609"},
+				{value:"PIERWSZY URZĄD SKARBOWY W LUBLINIE", code:"0610"},
+				{value:"DRUGI URZĄD SKARBOWY W LUBLINIE", code:"0611"},
+				{value:"TRZECI URZĄD SKARBOWY W LUBLINIE", code:"0612"},
+				{value:"URZĄD SKARBOWY W ŁUKOWIE", code:"0613"},
+				{value:"URZĄD SKARBOWY W OPOLU LUBELSKIM", code:"0614"},
+				{value:"URZĄD SKARBOWY W PARCZEWIE", code:"0615"},
+				{value:"URZĄD SKARBOWY W PUŁAWACH", code:"0616"},
+				{value:"URZĄD SKARBOWY W RADZYNIU PODLASKIM", code:"0617"},
+				{value:"URZĄD SKARBOWY W TOMASZOWIE LUBELSKIM", code:"0618"},
+				{value:"URZĄD SKARBOWY WE WŁODAWIE", code:"0619"},
+				{value:"URZĄD SKARBOWY W ZAMOŚCIU", code:"0620"},
+				{value:"URZĄD SKARBOWY W ŁĘCZNEJ", code:"0621"},
+				{value:"URZĄD SKARBOWY W RYKACH", code:"0622"},
+				{value:"LUBELSKI URZĄD SKARBOWY W LUBLINIE", code:"0671"},
+				{value:"URZĄD SKARBOWY W GORZOWIE WIELKOPOLSKIM", code:"0802"},
+				{value:"URZĄD SKARBOWY W KROŚNIE ODRZAŃSKIM", code:"0803"},
+				{value:"URZĄD SKARBOWY W MIĘDZYRZECZU", code:"0804"},
+				{value:"URZĄD SKARBOWY W NOWEJ SOLI", code:"0805"},
+				{value:"URZĄD SKARBOWY W SŁUBICACH", code:"0806"},
+				{value:"URZĄD SKARBOWY W ŚWIEBODZINIE", code:"0807"},
+				{value:"PIERWSZY URZĄD SKARBOWY W ZIELONEJ GÓRZE", code:"0808"},
+				{value:"DRUGI URZĄD SKARBOWY W ZIELONEJ GÓRZE", code:"0809"},
+				{value:"URZĄD SKARBOWY W ŻAGANIU", code:"0810"},
+				{value:"URZĄD SKARBOWY W ŻARACH", code:"0811"},
+				{value:"URZĄD SKARBOWY W DREZDENKU", code:"0812"},
+				{value:"URZĄD SKARBOWY W SULĘCINIE", code:"0813"},
+				{value:"URZĄD SKARBOWY WE WSCHOWIE", code:"0814"},
+				{value:"LUBUSKI URZĄD SKARBOWY W ZIELONEJ GÓRZE", code:"0871"},
+				{value:"URZĄD SKARBOWY W BEŁCHATOWIE", code:"1002"},
+				{value:"URZĄD SKARBOWY W BRZEZINACH", code:"1003"},
+				{value:"URZĄD SKARBOWY W GŁOWNIE", code:"1004"},
+				{value:"URZĄD SKARBOWY W KUTNIE", code:"1005"},
+				{value:"URZĄD SKARBOWY W ŁASKU", code:"1006"},
+				{value:"URZĄD SKARBOWY W ŁOWICZU", code:"1007"},
+				{value:"PIERWSZY URZĄD SKARBOWY ŁÓDŹ-BAŁUTY", code:"1008"},
+				{value:"DRUGI URZĄD SKARBOWY ŁÓDŹ-BAŁUTY", code:"1009"},
+				{value:"PIERWSZY URZĄD SKARBOWY ŁÓDŹ-GÓRNA", code:"1010"},
+				{value:"DRUGI URZĄD SKARBOWY ŁÓDŹ-GÓRNA", code:"1011"},
+				{value:"URZĄD SKARBOWY ŁÓDŹ-POLESIE", code:"1012"},
+				{value:"URZĄD SKARBOWY ŁÓDŹ-ŚRÓDMIEŚCIE", code:"1013"},
+				{value:"URZĄD SKARBOWY ŁÓDŹ-WIDZEW", code:"1014"},
+				{value:"URZĄD SKARBOWY W OPOCZNIE", code:"1015"},
+				{value:"URZĄD SKARBOWY W PABIANICACH", code:"1016"},
+				{value:"URZĄD SKARBOWY W PIOTRKOWIE TRYBUNALSKIM", code:"1017"},
+				{value:"URZĄD SKARBOWY W PODDĘBICACH", code:"1018"},
+				{value:"URZĄD SKARBOWY W RADOMSKU", code:"1019"},
+				{value:"URZĄD SKARBOWY W RAWIE MAZOWIECKIEJ", code:"1020"},
+				{value:"URZĄD SKARBOWY W SIERADZU", code:"1021"},
+				{value:"URZĄD SKARBOWY W SKIERNIEWICACH", code:"1022"},
+				{value:"URZĄD SKARBOWY W TOMASZOWIE MAZOWIECKIM", code:"1023"},
+				{value:"URZĄD SKARBOWY W WIELUNIU", code:"1024"},
+				{value:"URZĄD SKARBOWY W ZDUŃSKIEJ WOLI", code:"1025"},
+				{value:"URZĄD SKARBOWY W ZGIERZU", code:"1026"},
+				{value:"URZĄD SKARBOWY W WIERUSZOWIE", code:"1027"},
+				{value:"URZĄD SKARBOWY W ŁĘCZYCY", code:"1028"},
+				{value:"URZĄD SKARBOWY W PAJĘCZNIE", code:"1029"},
+				{value:"ŁÓDZKI URZĄD SKARBOWY W ŁODZI", code:"1071"},
+				{value:"URZĄD SKARBOWY W BOCHNI", code:"1202"},
+				{value:"URZĄD SKARBOWY W BRZESKU", code:"1203"},
+				{value:"URZĄD SKARBOWY W CHRZANOWIE", code:"1204"},
+				{value:"URZĄD SKARBOWY W DĄBROWIE TARNOWSKIEJ", code:"1205"},
+				{value:"URZĄD SKARBOWY W GORLICACH", code:"1206"},
+				{value:"PIERWSZY URZĄD SKARBOWY W KRAKOWIE", code:"1207"},
+				{value:"URZĄD SKARBOWY KRAKÓW-KROWODRZA", code:"1208"},
+				{value:"URZĄD SKARBOWY KRAKÓW-NOWA HUTA", code:"1209"},
+				{value:"URZĄD SKARBOWY KRAKÓW-PODGÓRZE", code:"1210"},
+				{value:"URZĄD SKARBOWY KRAKÓW-PRĄDNIK", code:"1211"},
+				{value:"URZĄD SKARBOWY KRAKÓW-STARE MIASTO", code:"1212"},
+				{value:"URZĄD SKARBOWY KRAKÓW-ŚRÓDMIEŚCIE", code:"1213"},
+				{value:"URZĄD SKARBOWY W LIMANOWEJ", code:"1214"},
+				{value:"URZĄD SKARBOWY W MIECHOWIE", code:"1215"},
+				{value:"URZĄD SKARBOWY W MYŚLENICACH", code:"1216"},
+				{value:"URZĄD SKARBOWY W NOWYM SĄCZU", code:"1217"},
+				{value:"URZĄD SKARBOWY W NOWYM TARGU", code:"1218"},
+				{value:"URZĄD SKARBOWY W OLKUSZU", code:"1219"},
+				{value:"URZĄD SKARBOWY W OŚWIĘCIMIU", code:"1220"},
+				{value:"URZĄD SKARBOWY W PROSZOWICACH", code:"1221"},
+				{value:"URZĄD SKARBOWY W SUCHEJ BESKIDZKIEJ", code:"1222"},
+				{value:"PIERWSZY URZĄD SKARBOWY W TARNOWIE", code:"1223"},
+				{value:"DRUGI URZĄD SKARBOWY W TARNOWIE", code:"1224"},
+				{value:"URZĄD SKARBOWY W WADOWICACH", code:"1225"},
+				{value:"URZĄD SKARBOWY W WIELICZCE", code:"1226"},
+				{value:"URZĄD SKARBOWY W ZAKOPANEM", code:"1227"},
+				{value:"DRUGI URZĄD SKARBOWY KRAKÓW", code:"1228"},
+				{value:"MAŁOPOLSKI URZĄD SKARBOWY W KRAKOWIE", code:"1271"},
+				{value:"URZĄD SKARBOWY W BIAŁOBRZEGACH", code:"1402"},
+				{value:"URZĄD SKARBOWY W CIECHANOWIE", code:"1403"},
+				{value:"URZĄD SKARBOWY W GARWOLINIE", code:"1404"},
+				{value:"URZĄD SKARBOWY W GOSTYNINIE", code:"1405"},
+				{value:"URZĄD SKARBOWY W GRODZISKU MAZOWIECKIM", code:"1406"},
+				{value:"URZĄD SKARBOWY W GRÓJCU", code:"1407"},
+				{value:"URZĄD SKARBOWY W KOZIENICACH", code:"1408"},
+				{value:"URZĄD SKARBOWY W LEGIONOWIE", code:"1409"},
+				{value:"URZĄD SKARBOWY W ŁOSICACH", code:"1410"},
+				{value:"URZĄD SKARBOWY W MAKOWIE MAZOWIECKIM", code:"1411"},
+				{value:"URZĄD SKARBOWY W MIŃSKU MAZOWIECKIM", code:"1412"},
+				{value:"URZĄD SKARBOWY W MŁAWIE", code:"1413"},
+				{value:"URZĄD SKARBOWY W NOWYM DWORZE MAZOWIECKIM", code:"1414"},
+				{value:"URZĄD SKARBOWY W OSTROŁĘCE", code:"1415"},
+				{value:"URZĄD SKARBOWY W OSTROWI MAZOWIECKIEJ", code:"1416"},
+				{value:"URZĄD SKARBOWY W OTWOCKU", code:"1417"},
+				{value:"URZĄD SKARBOWY W PIASECZNIE", code:"1418"},
+				{value:"URZĄD SKARBOWY W PŁOCKU", code:"1419"},
+				{value:"URZĄD SKARBOWY W PŁOŃSKU", code:"1420"},
+				{value:"URZĄD SKARBOWY W PRUSZKOWIE", code:"1421"},
+				{value:"URZĄD SKARBOWY W PRZASNYSZU", code:"1422"},
+				{value:"URZĄD SKARBOWY W PUŁTUSKU", code:"1423"},
+				{value:"PIERWSZY URZĄD SKARBOWY W RADOMIU", code:"1424"},
+				{value:"DRUGI URZĄD SKARBOWY W RADOMIU", code:"1425"},
+				{value:"URZĄD SKARBOWY W SIEDLCACH", code:"1426"},
+				{value:"URZĄD SKARBOWY W SIERPCU", code:"1427"},
+				{value:"URZĄD SKARBOWY W SOCHACZEWIE", code:"1428"},
+				{value:"URZĄD SKARBOWY W SOKOŁOWIE PODLASKIM", code:"1429"},
+				{value:"URZĄD SKARBOWY W SZYDŁOWCU", code:"1430"},
+				{value:"URZĄD SKARBOWY WARSZAWA-BEMOWO", code:"1431"},
+				{value:"URZĄD SKARBOWY WARSZAWA-BIELANY", code:"1432"},
+				{value:"URZĄD SKARBOWY WARSZAWA-MOKOTÓW", code:"1433"},
+				{value:"URZĄD SKARBOWY WARSZAWA-PRAGA", code:"1434"},
+				{value:"PIERWSZY URZĄD SKARBOWY WARSZAWA-ŚRÓDMIEŚCIE", code:"1435"},
+				{value:"DRUGI URZĄD SKARBOWY WARSZAWA-ŚRÓDMIEŚCIE", code:"1436"},
+				{value:"URZĄD SKARBOWY WARSZAWA-TARGÓWEK", code:"1437"},
+				{value:"URZĄD SKARBOWY WARSZAWA-URSYNÓW", code:"1438"},
+				{value:"URZĄD SKARBOWY WARSZAWA-WAWER", code:"1439"},
+				{value:"URZĄD SKARBOWY WARSZAWA-WOLA", code:"1440"},
+				{value:"URZĄD SKARBOWY W WĘGROWIE", code:"1441"},
+				{value:"URZĄD SKARBOWY W WOŁOMINIE", code:"1442"},
+				{value:"URZĄD SKARBOWY W WYSZKOWIE", code:"1443"},
+				{value:"URZĄD SKARBOWY W ZWOLENIU", code:"1444"},
+				{value:"URZĄD SKARBOWY W ŻUROMINIE", code:"1445"},
+				{value:"URZĄD SKARBOWY W ŻYRARDOWIE", code:"1446"},
+				{value:"URZĄD SKARBOWY W LIPSKU", code:"1447"},
+				{value:"URZĄD SKARBOWY W PRZYSUSZE", code:"1448"},
+				{value:"TRZECI URZĄD SKARBOWY WARSZAWA-ŚRÓDMIEŚCIE", code:"1449"},
+				{value:"PIERWSZY MAZOWIECKI URZĄD SKARBOWY W WARSZAWIE", code:"1471"},
+				{value:"DRUGI MAZOWIECKI URZĄD SKARBOWY W WARSZAWIE", code:"1472"},
+				{value:"TRZECI MAZOWIECKI URZĄD SKARBOWY W RADOMIU", code:"1473"},
+				{value:"URZĄD SKARBOWY W BRZEGU", code:"1602"},
+				{value:"URZĄD SKARBOWY W GŁUBCZYCACH", code:"1603"},
+				{value:"URZĄD SKARBOWY W KĘDZIERZYNIE-KOŹLU", code:"1604"},
+				{value:"URZĄD SKARBOWY W KLUCZBORKU", code:"1605"},
+				{value:"URZĄD SKARBOWY W NAMYSŁOWIE", code:"1606"},
+				{value:"URZĄD SKARBOWY W NYSIE", code:"1607"},
+				{value:"URZĄD SKARBOWY W OLEŚNIE", code:"1608"},
+				{value:"PIERWSZY URZĄD SKARBOWY W OPOLU", code:"1609"},
+				{value:"DRUGI URZĄD SKARBOWY W OPOLU", code:"1610"},
+				{value:"URZĄD SKARBOWY W PRUDNIKU", code:"1611"},
+				{value:"URZĄD SKARBOWY W STRZELCACH OPOLSKICH", code:"1612"},
+				{value:"URZĄD SKARBOWY W KRAPKOWICACH", code:"1613"},
+				{value:"OPOLSKI URZĄD SKARBOWY W OPOLU", code:"1671"},
+				{value:"URZĄD SKARBOWY W BRZOZOWIE", code:"1802"},
+				{value:"URZĄD SKARBOWY W DĘBICY", code:"1803"},
+				{value:"URZĄD SKARBOWY W JAROSŁAWIU", code:"1804"},
+				{value:"URZĄD SKARBOWY W JAŚLE", code:"1805"},
+				{value:"URZĄD SKARBOWY W KOLBUSZOWEJ", code:"1806"},
+				{value:"URZĄD SKARBOWY W KROŚNIE", code:"1807"},
+				{value:"URZĄD SKARBOWY W LESKU", code:"1808"},
+				{value:"URZĄD SKARBOWY W LEŻAJSKU", code:"1809"},
+				{value:"URZĄD SKARBOWY W LUBACZOWIE", code:"1810"},
+				{value:"URZĄD SKARBOWY W ŁAŃCUCIE", code:"1811"},
+				{value:"URZĄD SKARBOWY W MIELCU", code:"1812"},
+				{value:"URZĄD SKARBOWY W PRZEMYŚLU", code:"1813"},
+				{value:"URZĄD SKARBOWY W PRZEWORSKU", code:"1814"},
+				{value:"URZĄD SKARBOWY W ROPCZYCACH", code:"1815"},
+				{value:"PIERWSZY URZĄD SKARBOWY W RZESZOWIE", code:"1816"},
+				{value:"URZĄD SKARBOWY W SANOKU", code:"1817"},
+				{value:"URZĄD SKARBOWY W STALOWEJ WOLI", code:"1818"},
+				{value:"URZĄD SKARBOWY W STRZYŻOWIE", code:"1819"},
+				{value:"URZĄD SKARBOWY W TARNOBRZEGU", code:"1820"},
+				{value:"URZĄD SKARBOWY W USTRZYKACH DOLNYCH", code:"1821"},
+				{value:"DRUGI URZĄD SKARBOWY W RZESZOWIE", code:"1822"},
+				{value:"URZĄD SKARBOWY W NISKU", code:"1823"},
+				{value:"PODKARPACKI URZĄD SKARBOWY W RZESZOWIE", code:"1871"},
+				{value:"URZĄD SKARBOWY W AUGUSTOWIE", code:"2002"},
+				{value:"PIERWSZY URZĄD SKARBOWY W BIAŁYMSTOKU", code:"2003"},
+				{value:"DRUGI URZĄD SKARBOWY W BIAŁYMSTOKU", code:"2004"},
+				{value:"URZĄD SKARBOWY W BIELSKU PODLASKIM", code:"2005"},
+				{value:"URZĄD SKARBOWY W GRAJEWIE", code:"2006"},
+				{value:"URZĄD SKARBOWY W KOLNIE", code:"2007"},
+				{value:"URZĄD SKARBOWY W ŁOMŻY", code:"2008"},
+				{value:"URZĄD SKARBOWY W MOŃKACH", code:"2009"},
+				{value:"URZĄD SKARBOWY W SIEMIATYCZACH", code:"2010"},
+				{value:"URZĄD SKARBOWY W SOKÓŁCE", code:"2011"},
+				{value:"URZĄD SKARBOWY W SUWAŁKACH", code:"2012"},
+				{value:"URZĄD SKARBOWY W WYSOKIEM MAZOWIECKIEM", code:"2013"},
+				{value:"URZĄD SKARBOWY W ZAMBROWIE", code:"2014"},
+				{value:"URZĄD SKARBOWY W HAJNÓWCE", code:"2015"},
+				{value:"PODLASKI URZĄD SKARBOWY W BIAŁYMSTOKU", code:"2071"},
+				{value:"URZĄD SKARBOWY W BYTOWIE", code:"2202"},
+				{value:"URZĄD SKARBOWY W CHOJNICACH", code:"2203"},
+				{value:"URZĄD SKARBOWY W CZŁUCHOWIE", code:"2204"},
+				{value:"PIERWSZY URZĄD SKARBOWY W GDAŃSKU", code:"2205"},
+				{value:"DRUGI URZĄD SKARBOWY W GDAŃSKU", code:"2206"},
+				{value:"TRZECI URZĄD SKARBOWY W GDAŃSKU", code:"2207"},
+				{value:"PIERWSZY URZĄD SKARBOWY W GDYNI", code:"2208"},
+				{value:"DRUGI URZĄD SKARBOWY W GDYNI", code:"2209"},
+				{value:"URZĄD SKARBOWY W KARTUZACH", code:"2210"},
+				{value:"URZĄD SKARBOWY W KOŚCIERZYNIE", code:"2211"},
+				{value:"URZĄD SKARBOWY W KWIDZYNIE", code:"2212"},
+				{value:"URZĄD SKARBOWY W LĘBORKU", code:"2213"},
+				{value:"URZĄD SKARBOWY W MALBORKU", code:"2214"},
+				{value:"URZĄD SKARBOWY W PUCKU", code:"2215"},
+				{value:"URZĄD SKARBOWY W SŁUPSKU", code:"2216"},
+				{value:"URZĄD SKARBOWY W SOPOCIE", code:"2217"},
+				{value:"URZĄD SKARBOWY W STAROGARDZIE GDAŃSKIM", code:"2218"},
+				{value:"URZĄD SKARBOWY W TCZEWIE", code:"2219"},
+				{value:"URZĄD SKARBOWY W WEJHEROWIE", code:"2220"},
+				{value:"URZĄD SKARBOWY W PRUSZCZU GDAŃSKIM", code:"2221"},
+				{value:"POMORSKI URZĄD SKARBOWY W GDAŃSKU", code:"2271"},
+				{value:"URZĄD SKARBOWY W BĘDZINIE", code:"2402"},
+				{value:"PIERWSZY URZĄD SKARBOWY W BIELSKU-BIAŁEJ", code:"2403"},
+				{value:"DRUGI URZĄD SKARBOWY W BIELSKU-BIAŁEJ", code:"2404"},
+				{value:"URZĄD SKARBOWY W BYTOMIU", code:"2405"},
+				{value:"URZĄD SKARBOWY W CHORZOWIE", code:"2406"},
+				{value:"URZĄD SKARBOWY W CIESZYNIE", code:"2407"},
+				{value:"URZĄD SKARBOWY W CZECHOWICACH-DZIEDZICACH", code:"2408"},
+				{value:"PIERWSZY URZĄD SKARBOWY W CZĘSTOCHOWIE", code:"2409"},
+				{value:"DRUGI URZĄD SKARBOWY W CZĘSTOCHOWIE", code:"2410"},
+				{value:"URZĄD SKARBOWY W DĄBROWIE GÓRNICZEJ", code:"2411"},
+				{value:"PIERWSZY URZĄD SKARBOWY W GLIWICACH", code:"2412"},
+				{value:"DRUGI URZĄD SKARBOWY W GLIWICACH", code:"2413"},
+				{value:"URZĄD SKARBOWY W JASTRZĘBIU-ZDROJU", code:"2414"},
+				{value:"URZĄD SKARBOWY W JAWORZNIE", code:"2415"},
+				{value:"PIERWSZY URZĄD SKARBOWY W KATOWICACH", code:"2416"},
+				{value:"DRUGI URZĄD SKARBOWY W KATOWICACH", code:"2417"},
+				{value:"URZĄD SKARBOWY W KŁOBUCKU", code:"2418"},
+				{value:"URZĄD SKARBOWY W LUBLIŃCU", code:"2419"},
+				{value:"URZĄD SKARBOWY W MIKOŁOWIE", code:"2420"},
+				{value:"URZĄD SKARBOWY W MYSŁOWICACH", code:"2421"},
+				{value:"URZĄD SKARBOWY W MYSZKOWIE", code:"2422"},
+				{value:"URZĄD SKARBOWY W PIEKARACH ŚLĄSKICH", code:"2423"},
+				{value:"URZĄD SKARBOWY W PSZCZYNIE", code:"2424"},
+				{value:"URZĄD SKARBOWY W RACIBORZU", code:"2425"},
+				{value:"URZĄD SKARBOWY W RUDZIE ŚLĄSKIEJ", code:"2426"},
+				{value:"URZĄD SKARBOWY W RYBNIKU", code:"2427"},
+				{value:"URZĄD SKARBOWY W SIEMIANOWICACH ŚLĄSKICH", code:"2428"},
+				{value:"URZĄD SKARBOWY W SOSNOWCU", code:"2429"},
+				{value:"URZĄD SKARBOWY W TARNOWSKICH GÓRACH", code:"2430"},
+				{value:"URZĄD SKARBOWY W TYCHACH", code:"2431"},
+				{value:"URZĄD SKARBOWY W WODZISŁAWIU ŚLĄSKIM", code:"2432"},
+				{value:"URZĄD SKARBOWY W ZABRZU", code:"2433"},
+				{value:"URZĄD SKARBOWY W ZAWIERCIU", code:"2434"},
+				{value:"URZĄD SKARBOWY W ŻORACH", code:"2435"},
+				{value:"URZĄD SKARBOWY W ŻYWCU", code:"2436"},
+				{value:"PIERWSZY ŚLĄSKI URZĄD SKARBOWY W SOSNOWCU", code:"2471"},
+				{value:"DRUGI ŚLĄSKI URZĄD SKARBOWY W BIELSKU-BIAŁEJ", code:"2472"},
+				{value:"URZĄD SKARBOWY W BUSKU-ZDROJU", code:"2602"},
+				{value:"URZĄD SKARBOWY W JĘDRZEJOWIE", code:"2603"},
+				{value:"PIERWSZY URZĄD SKARBOWY W KIELCACH", code:"2604"},
+				{value:"DRUGI URZĄD SKARBOWY W KIELCACH", code:"2605"},
+				{value:"URZĄD SKARBOWY W KOŃSKICH", code:"2606"},
+				{value:"URZĄD SKARBOWY W OPATOWIE", code:"2607"},
+				{value:"URZĄD SKARBOWY W OSTROWCU ŚWIĘTOKRZYSKIM", code:"2608"},
+				{value:"URZĄD SKARBOWY W PIŃCZOWIE", code:"2609"},
+				{value:"URZĄD SKARBOWY W SANDOMIERZU", code:"2610"},
+				{value:"URZĄD SKARBOWY W SKARŻYSKU-KAMIENNEJ", code:"2611"},
+				{value:"URZĄD SKARBOWY W STARACHOWICACH", code:"2612"},
+				{value:"URZĄD SKARBOWY W STASZOWIE", code:"2613"},
+				{value:"URZĄD SKARBOWY W KAZIMIERZY WIELKIEJ", code:"2614"},
+				{value:"URZĄD SKARBOWY WE WŁOSZCZOWIE", code:"2615"},
+				{value:"ŚWIĘTOKRZYSKI URZĄD SKARBOWY W KIELCACH", code:"2671"},
+				{value:"URZĄD SKARBOWY W BARTOSZYCACH", code:"2802"},
+				{value:"URZĄD SKARBOWY W BRANIEWIE", code:"2803"},
+				{value:"URZĄD SKARBOWY W DZIAŁDOWIE", code:"2804"},
+				{value:"URZĄD SKARBOWY W ELBLĄGU", code:"2805"},
+				{value:"URZĄD SKARBOWY W EŁKU", code:"2806"},
+				{value:"URZĄD SKARBOWY W GIŻYCKU", code:"2807"},
+				{value:"URZĄD SKARBOWY W IŁAWIE", code:"2808"},
+				{value:"URZĄD SKARBOWY W KĘTRZYNIE", code:"2809"},
+				{value:"URZĄD SKARBOWY W NIDZICY", code:"2810"},
+				{value:"URZĄD SKARBOWY W NOWYM MIEŚCIE LUBAWSKIM", code:"2811"},
+				{value:"URZĄD SKARBOWY W OLECKU", code:"2812"},
+				{value:"URZĄD SKARBOWY W OLSZTYNIE", code:"2813"},
+				{value:"URZĄD SKARBOWY W OSTRÓDZIE", code:"2814"},
+				{value:"URZĄD SKARBOWY W PISZU", code:"2815"},
+				{value:"URZĄD SKARBOWY W SZCZYTNIE", code:"2816"},
+				{value:"WARMIŃSKO-MAZURSKI URZĄD SKARBOWY W OLSZTYNIE", code:"2871"},
+				{value:"URZĄD SKARBOWY W CZARNKOWIE", code:"3002"},
+				{value:"URZĄD SKARBOWY W GNIEŹNIE", code:"3003"},
+				{value:"URZĄD SKARBOWY W GOSTYNIU", code:"3004"},
+				{value:"URZĄD SKARBOWY W GRODZISKU WIELKOPOLSKIM", code:"3005"},
+				{value:"URZĄD SKARBOWY W JAROCINIE", code:"3006"},
+				{value:"PIERWSZY URZĄD SKARBOWY W KALISZU", code:"3007"},
+				{value:"DRUGI URZĄD SKARBOWY W KALISZU", code:"3008"},
+				{value:"URZĄD SKARBOWY W KĘPNIE", code:"3009"},
+				{value:"URZĄD SKARBOWY W KOLE", code:"3010"},
+				{value:"URZĄD SKARBOWY W KONINIE", code:"3011"},
+				{value:"URZĄD SKARBOWY W KOŚCIANIE", code:"3012"},
+				{value:"URZĄD SKARBOWY W KROTOSZYNIE", code:"3013"},
+				{value:"URZĄD SKARBOWY W LESZNIE", code:"3014"},
+				{value:"URZĄD SKARBOWY W MIĘDZYCHODZIE", code:"3015"},
+				{value:"URZĄD SKARBOWY W NOWYM TOMYŚLU", code:"3016"},
+				{value:"URZĄD SKARBOWY W OSTROWIE WIELKOPOLSKIM", code:"3017"},
+				{value:"URZĄD SKARBOWY W OSTRZESZOWIE", code:"3018"},
+				{value:"URZĄD SKARBOWY W PILE", code:"3019"},
+				{value:"URZĄD SKARBOWY POZNAŃ-GRUNWALD", code:"3020"},
+				{value:"URZĄD SKARBOWY POZNAŃ-JEŻYCE", code:"3021"},
+				{value:"URZĄD SKARBOWY POZNAŃ-NOWE MIASTO", code:"3022"},
+				{value:"PIERWSZY URZĄD SKARBOWY W POZNANIU", code:"3023"},
+				{value:"URZĄD SKARBOWY POZNAŃ-WINOGRADY", code:"3025"},
+				{value:"URZĄD SKARBOWY POZNAŃ-WILDA", code:"3026"},
+				{value:"URZĄD SKARBOWY W RAWICZU", code:"3027"},
+				{value:"URZĄD SKARBOWY W SŁUPCY", code:"3028"},
+				{value:"URZĄD SKARBOWY W SZAMOTUŁACH", code:"3029"},
+				{value:"URZĄD SKARBOWY W ŚREMIE", code:"3030"},
+				{value:"URZĄD SKARBOWY W ŚRODZIE WIELKOPOLSKIEJ", code:"3031"},
+				{value:"URZĄD SKARBOWY W TURKU", code:"3032"},
+				{value:"URZĄD SKARBOWY W WĄGROWCU", code:"3033"},
+				{value:"URZĄD SKARBOWY W WOLSZTYNIE", code:"3034"},
+				{value:"URZĄD SKARBOWY WE WRZEŚNI", code:"3035"},
+				{value:"URZĄD SKARBOWY W ZŁOTOWIE", code:"3036"},
+				{value:"URZĄD SKARBOWY W CHODZIEŻY", code:"3037"},
+				{value:"URZĄD SKARBOWY W OBORNIKACH", code:"3038"},
+				{value:"URZĄD SKARBOWY W PLESZEWIE", code:"3039"},
+				{value:"PIERWSZY WIELKOPOLSKI URZĄD SKARBOWY W POZNANIU", code:"3071"},
+				{value:"DRUGI WIELKOPOLSKI URZĄD SKARBOWY W KALISZU", code:"3072"},
+				{value:"URZĄD SKARBOWY W BIAŁOGARDZIE", code:"3202"},
+				{value:"URZĄD SKARBOWY W CHOSZCZNIE", code:"3203"},
+				{value:"URZĄD SKARBOWY W DRAWSKU POMORSKIM", code:"3204"},
+				{value:"URZĄD SKARBOWY W GOLENIOWIE", code:"3205"},
+				{value:"URZĄD SKARBOWY W GRYFICACH", code:"3206"},
+				{value:"URZĄD SKARBOWY W GRYFINIE", code:"3207"},
+				{value:"URZĄD SKARBOWY W KAMIENIU POMORSKIM", code:"3208"},
+				{value:"URZĄD SKARBOWY W KOŁOBRZEGU", code:"3209"},
+				{value:"PIERWSZY URZĄD SKARBOWY W KOSZALINIE", code:"3210"},
+				{value:"DRUGI URZĄD SKARBOWY W KOSZALINIE", code:"3211"},
+				{value:"URZĄD SKARBOWY W MYŚLIBORZU", code:"3212"},
+				{value:"URZĄD SKARBOWY W PYRZYCACH", code:"3213"},
+				{value:"URZĄD SKARBOWY W STARGARDZIE SZCZECIŃSKIM", code:"3214"},
+				{value:"PIERWSZY URZĄD SKARBOWY W SZCZECINIE", code:"3215"},
+				{value:"DRUGI URZĄD SKARBOWY W SZCZECINIE", code:"3216"},
+				{value:"TRZECI URZĄD SKARBOWY W SZCZECINIE", code:"3217"},
+				{value:"URZĄD SKARBOWY W SZCZECINKU", code:"3218"},
+				{value:"URZĄD SKARBOWY W ŚWINOUJŚCIU", code:"3219"},
+				{value:"URZĄD SKARBOWY W WAŁCZU", code:"3220"},
+				{value:"ZACHODNIOPOMORSKI URZĄD SKARBOWY W SZCZECINIE", code:"3271"}
+	         ]                
+	        );
+	        [Bindable]
+			private var today:Date = new Date();
+			 
+		 
+			
+	        private function mappingFunction(input:String):Object
+         	{
+            switch (input){
+               case "Złożenie deklaracji za dany okres":
+                  return {value:input, code:"1"};		
+               case "Korekta deklaracji za dany okres":
+                  return {value:input, code:"2"};		
+              	
+            }			
+            return null;
+         	}
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:JPKExport = new JPKExport();
+				window.innerComponent = component;
+				window.buttons = (ComponentWindow.BUTTON_COMMIT);
+				window.show(null,new Rectangle(-1,-1,500,300),"Eksport JPK");
+				window.commitButton.label = "Pobierz xml";
+				window.commitFunction = component.commitFunction;
+				
+				return window;
+			}
+			
+
+			
+			public function commitFunction():void
+			{
+				var format:DateFormatter = new DateFormatter();
+			    format.formatString = "YYYY-MM-DD";
+			    
+				requestXML.od = format.format(dateFilter.dateFrom);
+				requestXML.dod = format.format(dateFilter.dateTo);
+				requestXML.KodUrzedu = kodUrzedu.selectedItem.code;
+				requestXML.CelZlozenia = celZlozenia.selectedItem.code;
+				requestXML.WariantFormularza = wariantFormularza.text;
+				requestXML.KodFormularza = kodFormularza.text;
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("dbo.JPK_na_100p",requestXML);
+				cmd.addEventListener(ResultEvent.RESULT,commandResultHandler);
+				cmd.execute();
+	 
+			}		
+ 			 
+ 			private function commandResultHandler(event:ResultEvent):void
+			{
+				var taskParameters:XML = XML(event.result);
+				var xmlNew:XML = new XML("<root>" + taskParameters.toString() + "</root>");
+			 	ComponentExportManager.getInstance().exportData(xmlNew,"defaultTableXml","file");//   exportObject('defaultTableXls',taskParameters,'content'  );
+			 		 
+			}
+			
+			private function taskResultHandler(event:ResultEvent):void
+			{
+				var result:XML = XML(event.result);
+				if (result.result.length() > 0 && result.result.toString().length > 0)
+				{
+					Alert.show(result.result.toString(),"Błąd");
+				}
+				else
+					Alert.show("Dane wysłano do programu księgowego","Fractus2");
+			}
+			
+			private function taskFaultHandler(event:FaultEvent):void
+			{
+				Alert.show("Wystąpił błąd ","Fractus2");
+			}
+			
+ 
+			//private function kodUrzeduChangeHandler(event:Event):void {requestXML.KodUrzedu = kodUrzedu.text;}
+			//private function celZlozeniaChangeHandler(event:Event):void {requestXML.CelZlozenia = CelZlozenia.text;}
+			private function wariantFormularzaChangeHandler(event:Event):void {requestXML.WariantFormularza = wariantFormularza.text;}
+			private function kodFormularzaChangeHandler(event:Event):void {requestXML.KodFormularza = kodFormularza.text;}
+		]]>
+	</mx:Script>
+	<mx:VBox id="Box" width="100%">
+	<mx:FormItem label="Zakres generacji" toolTip="Zakres dat" >
+			<inputComponents:DateFilter id = "dateFilter" dateFieldsDirection="vertical"  />
+	</mx:FormItem>
+	
+	<mx:HBox width="100%">
+			<mx:FormItem label="Kod Urzędu" toolTip="Numer urzędu" width="100%" horizontalAlign="left"/>
+			<mx:ComboBox id="kodUrzedu" dataProvider="{dataKodUrzedu}"  selectedIndex="0" width="300" labelField="value" horizontalCenter="right"/>
+	</mx:HBox>
+	<mx:HBox width="100%">
+			<mx:FormItem label="Cel Złożenia" toolTip="Określa, czy to jest złożenie, czy korekta dokumentu" width="100%" horizontalAlign="center" />
+			<mx:ComboBox id="celZlozenia" dataProvider="{dataCelZlozenia}"  selectedIndex="0" width="300" labelField="value" horizontalCenter="right"/> 
+	</mx:HBox>
+   <mx:HBox width="100%">
+			<mx:FormItem label="Wariant Formularza" toolTip="Numer" width="100%" horizontalAlign="left"/>
+			<mx:TextInput id="wariantFormularza" text="1" change="wariantFormularzaChangeHandler(event)" width="300" horizontalCenter="right" />
+	</mx:HBox>
+	<mx:HBox width="100%">
+			<mx:FormItem label="Kod Formularza" toolTip="Kod Formularza" width="100%" horizontalAlign="left"/>
+			<mx:TextInput id="kodFormularza" change="wariantFormularzaChangeHandler(event)" text="JPK_VAT"  width="300" horizontalCenter="right"/>
+	</mx:HBox>
+ 	</mx:VBox>
+ 	 
+	</mx:Canvas>

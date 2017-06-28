@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="creationComplete()" width="100%" height="100%">
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.DictionaryManager;
+		
+			[Bindable] private var _documentXML:XML;
+			
+			[Bindable] 
+			public function set documentXML(value:XML):void
+			{
+				this._documentXML = value;
+				
+				if(value && value.serviceDocumentServicedObjects.serviceDocumentServicedObject.length() > 0 && 
+					value.serviceDocumentServicedObjects.serviceDocumentServicedObject[0].servicedObjectId.length() > 0)
+				{
+					var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand(LoadBusinessObjectCommand.TYPE_SERVICED_OBJECT, 
+					value.serviceDocumentServicedObjects.serviceDocumentServicedObject[0].servicedObjectId);
+					cmd.addEventListener(ResultEvent.RESULT, this.loadServicedObjectHandler, false, 0, true);
+					cmd.execute();
+				}
+			}
+			
+			public function get documentXML():XML
+			{
+				return this._documentXML;
+			}
+			
+			private function loadServicedObjectHandler(event:ResultEvent):void
+			{
+				var xml:XML = XML(event.result).*[0];
+				var upperText:String = "<u>Przedmiot i opis usterki:</u>\n";
+				
+				upperText += "<b>" + xml.identifier + "</b>\n";
+				upperText += "<i>" + this.documentXML.serviceDocumentServicedObjects.serviceDocumentServicedObject[0].description + "</i>";
+				
+				this.upperText.htmlText = upperText;
+				this.upperText.invalidateSize();
+			}
+		
+			private function creationComplete():void
+			{
+				// mechanicy
+				var leftStr:String = "<u>Mechanicy:</u>\n";
+				
+				for each(var employee:XML in documentXML.serviceDocumentEmployees.*)
+				{
+					var fraction:Number = parseFloat(employee.timeFraction);
+					leftStr += "<b> - ";
+					leftStr += DictionaryManager.getInstance().getById(employee.employeeId).label.*;
+					leftStr += isNaN(fraction) ? "" : " (" + Tools.round(fraction).toString() + "%)";
+					leftStr += "</b>\n";
+					
+					if(employee.description.length() > 0 && String(employee.description) != "")
+						leftStr += "<i>"+ String(employee.description) +"</i>\n";
+				}
+				
+				this.leftText.htmlText = leftStr;
+				this.leftText.invalidateSize();
+				
+				//stanowiska
+				var rightStr:String = "<u>Stanowiska:</u>\n";
+				
+				for each(var servicePlace:XML in documentXML.serviceDocumentServicePlaces.*)
+				{
+					rightStr += "<b> - ";
+					rightStr += DictionaryManager.getInstance().getById(servicePlace.servicePlaceId).label.*;
+					rightStr += " (" + (isNaN(parseFloat(servicePlace.workTime)) ? " - " : Tools.round(parseFloat(servicePlace.workTime)).toString()) + " h)";
+					rightStr += "</b>\n";
+					
+					if(servicePlace.description.length() > 0 && String(servicePlace.description) != "")
+						rightStr += "<i>"+ String(servicePlace.description) +"</i>\n";
+				}
+				
+				this.rightText.htmlText = rightStr;
+				this.rightText.invalidateSize();
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:Text id="upperText" width="400" />
+	<mx:HBox width="100%" height="100%">
+		<mx:Text id="leftText" paddingRight="10" height="100%" width="350" />
+		<mx:Text id="rightText" height="100%" width="350" />
+	</mx:HBox>
+</mx:VBox>

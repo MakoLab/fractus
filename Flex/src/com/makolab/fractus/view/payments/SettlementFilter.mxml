@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			[Bindable]
+			public var parameters:XML;
+			
+			[Bindable]
+			public var selectedIndex:Number = 0;
+			
+			public function paymentChange():void
+			{
+				if(parameters.requireSettlement.length() > 0) delete parameters.requireSettlement;
+				parameters.requireSettlement = paymentCB.selectedItem.value.text();
+			}
+		]]>
+	</mx:Script>
+	<mx:ComboBox id="paymentCB" change="paymentChange()" selectedIndex="{selectedIndex}" width="100%" dataProvider="{[
+				 {label : LanguageManager.getInstance().labels.settlement.filter.all, value : -1},
+				 {label : LanguageManager.getInstance().labels.settlement.filter.subject, value : 1},
+				 {label : LanguageManager.getInstance().labels.settlement.filter.notsubject, value :0}
+				 ]}"/>
+		<!--<mx:dataProvider>
+			<mx:XMLList xmlns="">
+				<item>
+					<label>wszystkie</label>
+					<value></value>
+				</item>
+				<item>
+					<label>podlega</label>
+					<value>1</value>
+				</item>
+				<item>
+					<label>nie podlega</label>
+					<value>0</value>
+				</item>
+			</mx:XMLList>
+		</mx:dataProvider>
+	</mx:ComboBox>-->
+</mx:VBox>

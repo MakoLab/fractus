@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<document>
+  <sheet name="Arkuszek 1">
+    <header fontWeight="extraBold" horizontalAlignment="centered" fontName="Courier New" fontSize="15">Tytuł zestawienia</header>
+    <table>
+      <configuration>
+        <no type="autonumbering" backgroundColor="Default16" horizontalAlignment="centered" fontWeight="bold" border="1" item-border="1">Lp.</no>
+        <name type="text" backgroundColor="Default16" horizontalAlignment="centered" fontWeight="bold" border="1" item-border="1">Nazwa</name>
+        <amount type="decimal" backgroundColor="Default16" horizontalAlignment="centered" fontWeight="bold" border="1" item-border="1">Ilość</amount>
+        <value type="money" item-color="green" backgroundColor="Default16" horizontalAlignment="centered" fontWeight="bold" border="1" item-border="1">Wartość</value>
+      </configuration>
+      <items>
+        <item>
+          <name>Browarek</name>
+          <amount>2</amount>
+          <value>123</value>
+        </item>
+        <item backgroundColor="red">
+          <name>Towarek</name>
+          <amount backgroundColor="yellow">22</amount>
+          <value>1233</value>
+        </item>
+        <item>
+          <name>Kiełbaska</name>
+          <amount>6</amount>
+          <value>666.12</value>
+        </item>
+        <item>
+          <name>Oponka</name>
+          <amount>2</amount>
+          <value>314.12</value>
+        </item>
+        <item>
+          <name>Klamka</name>
+          <amount>5</amount>
+          <value>3214.12</value>
+        </item>
+      </items>
+    </table>
+  </sheet>
+</document>

@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"  
+	xmlns:layoutComponents="com.makolab.components.layoutComponents.*"
+	xmlns:list="com.makolab.components.list.*" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	xmlns:catalogue="com.makolab.fractus.view.catalogue.*"
+	xmlns:documents="com.makolab.fractus.view.documents.*"
+	width="100%" height="100%" xmlns:documentLists="com.makolab.fractus.view.documents.documentLists.*" xmlns:payments="com.makolab.fractus.view.payments.*"
+	creationComplete="onComplete()"
+	
+	>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.CatalogueItemWindow;
+			import com.makolab.components.catalogue.CatalogueItemWindowEvent;
+			import com.makolab.components.inputComponents.IFormBuilderComponent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.commands.GetDocumentsForContractorCommand;
+			import com.makolab.fractus.commands.GetMessageForContractorCommand;
+			import com.makolab.fractus.commands.IDocumentSearchCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			import mx.controls.Alert;
+			import mx.controls.Label;
+			import mx.controls.TextArea;
+			import mx.core.IFlexDisplayObject;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.validators.ValidationResult;
+
+			[Bindable]
+			public var objectId:String;
+			
+			[Bindable]
+			public var navIndex:Number;
+			
+			public static const CONTRACTOR_DETAILS:Number = 0;
+			public static const CONTRACTOR_DOCUMENTS:Number = 1;
+			public static const CONTRACTOR_PAYMENTS:Number = 2;			
+	
+			
+			
+			private function onComplete():void
+			{
+				//permission hard coded
+				if(ModelLocator.getInstance().permissionManager.isHidden('catalogue.contractors.details')) {
+					tabNavigator.getTabAt(0).visible = false;
+					tabNavigator.getTabAt(0).enabled = false;
+					tabNavigator.getTabAt(0).includeInLayout = false;
+				}
+				if(ModelLocator.getInstance().permissionManager.isHidden('catalogue.contractors.relatedDocuments')) {
+					tabNavigator.getTabAt(1).visible = false;
+					tabNavigator.getTabAt(1).enabled = false;
+					tabNavigator.getTabAt(1).includeInLayout = false;
+					tabNavigator.getTabAt(2).visible = false;
+					tabNavigator.getTabAt(2).enabled = false;
+					tabNavigator.getTabAt(2).includeInLayout = false;
+					tabNavigator.getTabAt(3).visible = false;
+					tabNavigator.getTabAt(3).enabled = false;
+					tabNavigator.getTabAt(3).includeInLayout = false;
+				}
+				
+				if(ModelLocator.getInstance().permissionManager.getPermissionLevel('presta.contractors.showPresta')!=2) {
+					tabNavigator.getTabAt(4).visible = false;
+					tabNavigator.getTabAt(4).enabled = false;
+					tabNavigator.getTabAt(4).includeInLayout = false;
+				}
+				switch(navIndex) {
+					case CatalogueContractorInfo.CONTRACTOR_DETAILS:
+							tabNavigator.selectedChild = contractorDetailsTab;
+						break;
+					case CatalogueContractorInfo.CONTRACTOR_DOCUMENTS:
+							tabNavigator.selectedChild = documentListTab;
+						break;
+					case CatalogueContractorInfo.CONTRACTOR_PAYMENTS:
+							tabNavigator.selectedChild = contractorPaymentsTab;
+						break;
+				}
+				
+				if(objectId && documentRelated) {
+					documentRelated.invokeSearchDocumentOperation();
+				}
+			}
+
+
+			public function importConfigurationLoaded():void
+			{
+				if(ModelLocator.getInstance().configManager.isAvailable("catalogueContractorInfoMaximized"))
+				{
+					if(ModelLocator.getInstance().configManager.getBoolean("catalogueContractorInfoMaximized"))
+					{
+						((this as CatalogueContractorInfo).parentDocument as ComponentWindow).maximize();
+					}
+				}				
+			}
+			
+			public static function showWindow(id:String, navIndex:Number = 0, name:String = ""):ComponentWindow
+			{				
+				var editor:CatalogueContractorInfo = new CatalogueContractorInfo();
+				editor.objectId = id;
+				editor.navIndex = navIndex;
+				var window:ComponentWindow = ComponentWindow.showWindow(editor,  ComponentWindow.BUTTON_CLOSE, new Rectangle(-1, -1, 1024, 600));
+				
+				window.title = LanguageManager.getInstance().labels.documents.contractorTransactions + (name != "" ? (" - " + name) : "");
+				window.closeFunction = window.hide;
+				
+				if(ModelLocator.getInstance().configManager.isAvailable("catalogueContractorInfoMaximized"))
+				{
+					if(ModelLocator.getInstance().configManager.getBoolean("catalogueContractorInfoMaximized"))
+					{
+						window.maximize();
+					}
+				}
+				else
+				{
+					ModelLocator.getInstance().configManager.requestList(["catalogueContractorInfoMaximized"], editor.importConfigurationLoaded);
+				}
+				
+				return window;
+			}
+			
+			
+			
+		
+		]]>
+	</mx:Script>
+	
+
+	 <mx:TabNavigator id="tabNavigator" width="100%" height="100%">
+	 	<inputComponents:ContractorRenderer
+	 		 id="contractorDetailsTab"
+	 		 label="{LanguageManager.getInstance().labels.common.detailsTab}"
+	 		 contractorId="{objectId}"
+	 		 
+	 		/>
+	 	<mx:VBox id="documentListTab" label="{LanguageManager.getInstance().labels.documents.relatedDocuments}">
+			<documentLists:SimpleDocumentList id="documentRelated" 
+					objectId="{objectId}" 
+					dateRangeIndex="0"
+					commandClassFactory="{GetDocumentsForContractorCommand}" 
+					typeConfig="{String('contractor')}"
+					width="100%" height="100%"
+					creationComplete="documentRelated.invokeSearchDocumentOperation()"
+					/>
+	 	</mx:VBox>
+	 	<mx:Form id="contractorPaymentsTab" label="{LanguageManager.getInstance().labels.contractors.forms.contractor.payments}" height="100%" width="100%">
+	 		<payments:PaymentList selectedDateFilter="0" contractorId="{objectId}"  paddingTop="0" paddingLeft="0" paddingBottom="0" paddingRight="0" width="100%" height="100%"/>
+	 	</mx:Form>
+	 	<mx:Form id="contractorPurchasedGoodsTab" label="{LanguageManager.getInstance().labels.contractors.forms.contractor.purchasedGoods.goodsAndServices}" height="100%" width="100%">
+	 		<payments:PaymentPurchasedGoods contractorId="{objectId}" paddingTop="0" paddingLeft="0" paddingBottom="0" paddingRight="0" width="100%" height="100%"/>
+	 	</mx:Form>
+		 <mx:VBox id="messageTab" label="{LanguageManager.getInstance().labels.documents.message}">
+			 <documentLists:MessageList id="messages" 
+											   objectId="{objectId}" 
+											   dateRangeIndex="0"
+											   commandClassFactory="{GetMessageForContractorCommand}" 
+											   typeConfig="{String('messages')}"
+											   width="100%" height="100%"
+											   creationComplete="messages.invokeSearchMessageOperation()"
+											   />
+		 </mx:VBox>
+	 </mx:TabNavigator>
+</mx:Canvas>

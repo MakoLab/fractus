@@ -1,0 +1,1 @@
+C:\Projekty\trunk\dotNet\SalesOrdersTracker\SalesOrdersTracker\bin\Debug\SalesOrdersTrackerService.exe.config

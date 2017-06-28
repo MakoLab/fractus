@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="315" height="450" xmlns:layoutComponents="com.makolab.components.layoutComponents.*"
+		showCloseButton="true" title="{LanguageManager.getInstance().labels.contractors.forms.contractor.groupDetails}" visible="false" close="hide()" 
+		creationComplete="init()"
+		horizontalScrollPolicy="off"
+		xmlns:generic="com.makolab.fractus.view.generic.*">
+		
+		<mx:Metadata>
+		/**
+		 * Dispatched when a user clicks OK button.
+		 */
+		[Event(name="change", type="flash.events.Event")]
+		</mx:Metadata>
+		
+		<mx:Script>
+			<![CDATA[
+				import mx.validators.NumberValidator;
+				import mx.events.ValidationResultEvent;
+				import mx.validators.StringValidator;
+				import com.makolab.fractus.model.ModelLocator;
+				import com.makolab.fractus.view.generic.FractusDictionarySelector;
+				import flight.binding.Bind;
+				import mx.utils.ObjectProxy;
+				import com.makolab.fractus.model.DictionaryManager;
+				import mx.controls.Label;
+				import mx.controls.TextInput;
+				import mx.containers.HBox;
+				import com.makolab.fractus.model.LanguageManager;
+				import mx.managers.PopUpManager;
+				
+				private var _dataObject:Object;
+				
+				[Bindable]
+				private var config:Object;
+				private var textInputs:Array = [];
+				private var attributes:Array = [];
+				private var model:ModelLocator = ModelLocator.getInstance();
+				[Bindable]
+				private var isLeaf:Boolean = false;
+				
+				[Bindable] private var containerTypeId:String = null;
+				
+				private var arrNumeric:Array = new Array('x', 'y', 'width', 'height');
+				
+				/**
+				 * Shows the window as a popup in relation to a given parent DisplayObject.
+				 */
+				public function show(parent:DisplayObject):void
+				{
+					if (visible) return;
+					PopUpManager.addPopUp(this, parent, true);
+					PopUpManager.centerPopUp(this);
+					visible = true;
+					setFocus();
+				}
+				/**
+				 * Lets you pass values to the control.
+				 * @param value The group node you want to modify.
+				 */
+				public function set dataObject(value:Object):void
+				{
+					_dataObject = value;
+					config = _dataObject.copy();
+					if(value.subgroups == undefined) isLeaf = true; 
+				}
+				
+				private function init():void
+				{
+					for each(var p:Object in DictionaryManager.getInstance().dictionaries.languages)
+					{
+						var hb:HBox = new HBox();
+						var langLabel:Label = new Label();
+						langLabel.width = 120;
+						langLabel.text = p.label + ": ";
+						var inputText:TextInput = new TextInput();
+						var nodeRef:Object = config.labels.label.(@lang == p.name);
+						inputText.text = nodeRef.toString();
+						textInputs.push({component : inputText, language : p.name});
+						hb.addChild(langLabel);
+						hb.addChild(inputText);
+						labelsVB.addChild(hb);
+					}
+					for each(var x:XML in _dataObject.attributes.*)	{	
+						if(x.name() != "containerTypeId") {
+							hb = new HBox();
+							var lb:Label = new Label();
+							lb.width = 120;
+							lb.text = x.name() + ": ";
+							hb.addChild(lb);
+							var ti:TextInput = new TextInput();
+							ti.text = x.valueOf();
+							if(arrNumeric.indexOf(String(x.name())) != -1 ) {
+								if(ti.text == 'NaN') {
+									ti.text = '';
+								}
+								ti.restrict = '0-9,.';
+							}
+							hb.addChild(ti);
+							if(x.name() == "id") {
+								lb.visible = false;
+								ti.visible = false;	
+							}
+							attributes.push({component : ti , name : x.name()});
+							attributesVB.addChild(hb);
+							//trace(x.name() + ' 1')
+						} else {
+							containerTypeId = x.valueOf();
+							attributes.push({component : fdContainerTypes , name : x.name()});
+							//trace(x.name() + ' 2')
+						}						
+					}
+				}
+				/**
+				 * Removes window.
+				 */
+				public function hide(save:Boolean = false):void
+				{
+					var errorFlag:Boolean = true;
+					
+					if(save) {
+						var strVal:StringValidator = new StringValidator();
+						strVal.required = true;
+						strVal.property = 'text';
+						strVal.requiredFieldError = LanguageManager.getInstance().labels.login.error.required;
+						
+						var numVal:NumberValidator = new NumberValidator();
+						numVal.required = true;
+						numVal.property = 'text';
+						numVal.domain = 'real';
+						numVal.thousandsSeparator = ' ';
+						numVal.decimalSeparator = ",";
+						numVal.invalidCharError = LanguageManager.getInstance().labels.error.wrongNumberFormat;
+						numVal.invalidFormatCharsError = LanguageManager.getInstance().labels.error.wrongNumberFormat;
+						
+						numVal.requiredFieldError = LanguageManager.getInstance().labels.login.error.required;
+						
+						var validatorErrorArray:Array = new Array();
+						
+						for(var i:int = 0; i < textInputs.length; i++) {
+							if(textInputs[i].component.visible) {
+								strVal.source = textInputs[i].component;
+								var event:ValidationResultEvent = strVal.validate();
+								if(event.type == 'invalid') {
+									validatorErrorArray.push(event);
+								}
+							}
+						}
+						for(i = 0; i < attributes.length; i++) {
+							if(attributes[i].component.visible) {
+								
+								if(arrNumeric.indexOf(String(attributes[i].name)) != -1) {
+									numVal.source = attributes[i].component;
+									event = numVal.validate();
+								} else {
+									strVal.source = attributes[i].component;
+									event = strVal.validate();
+								}
+								
+								if(event.type == 'invalid') {
+									validatorErrorArray.push(event);
+								}
+							}
+						}
+						
+						errorFlag = validatorErrorArray.length == 0;
+						
+						if(errorFlag) {
+							for(i = 0; i < textInputs.length; i++) {
+								config.labels.label.(@lang == textInputs[i].language).* = textInputs[i].component.text;
+							}
+							
+							for(i = 0; i < attributes.length; i++) {
+								if (attributes[i].value != "" && attributes[i].name != "containerTypeId") {
+									if(arrNumeric.indexOf(String(attributes[i].name)) != -1) {
+										config.attributes[attributes[i].name] = Number(String(attributes[i].component.text).replace(',','.'));
+									} else {
+										config.attributes[attributes[i].name] = attributes[i].component.text;
+									}
+								} else if (attributes[i].value != "") {
+									config.attributes[attributes[i].name] = attributes[i].component.selectedId;
+								}
+							}
+							
+							updateData();
+							this.dispatchEvent(new Event("change"));
+						}
+					}
+					
+					if(errorFlag) {
+						PopUpManager.removePopUp(this);
+						this.visible = false;
+					}
+				}
+				
+				private function updateData():void
+				{
+					_dataObject.labels = config.labels;
+					if(_dataObject.attributes){
+						if(config.attributes.toXMLString() != "") {
+							_dataObject.attributes = config.attributes;
+						} else {
+							delete(_dataObject.attributes);
+						}
+					} else {
+						if(config.hasOwnProperty("attributes")) {
+							var attributesNode:XML = <attributes/>;
+							_dataObject.appendChild(attributesNode);
+							_dataObject.attributes = config.attributes;
+						}
+					}
+				}
+				
+			]]>
+		</mx:Script>
+	<mx:VBox paddingTop="10" paddingLeft="10" height="100%" width="100%">
+		<mx:VBox id="labelsVB" width="100%">
+			<mx:Label text="{LanguageManager.getInstance().labels.common.labels}:" fontWeight="bold" width="100%"/>	
+		</mx:VBox>
+		<mx:VBox id="attributesVB" width="100%">
+			<mx:Label text="{LanguageManager.getInstance().labels.common.attributes}:" 
+				fontWeight="bold" width="100%"
+				visible="{isLeaf}" includeInLayout="{isLeaf}"
+				/>
+			<mx:HBox width="100%">
+				<mx:Label width="120" 
+					text="{LanguageManager.getInstance().labels.common.container}:" 
+					visible="{isLeaf}" includeInLayout="{isLeaf}"/>
+				<generic:FractusDictionarySelector
+					id="fdContainerTypes"
+				 	dictionaryName="containerTypes"
+				 	selectedId="{containerTypeId}"
+				 	visible="{isLeaf}"
+				 	includeInLayout="{isLeaf}"
+				 	width="160"
+				 />
+			</mx:HBox>		
+		</mx:VBox>
+	</mx:VBox>
+	
+	<mx:ControlBar width="100%" horizontalAlign="center" paddingTop="5" paddingBottom="5">
+		<mx:Button label="{LanguageManager.getInstance().labels.common.ok}" click="hide(true)"/>
+		<mx:Button label="{LanguageManager.getInstance().labels.common.cancel}" click="hide()"/>
+	</mx:ControlBar>
+</mx:TitleWindow>
+

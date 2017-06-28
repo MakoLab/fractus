@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CatalogueOperation xmlns="com.makolab.components.catalogue.*" xmlns:mx="http://www.adobe.com/2006/mxml"
+		image="{IconManager.getIcon('toDocument_small')}"
+		label="{LanguageManager.getInstance().labels.documents.correct}"
+		operationInvoke="handleInvoke(event)"
+	>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import com.makolab.components.catalogue.CatalogueEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import assets.IconManager;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			
+			private var templateName:String;
+			
+			public var documentTypeDescriptor:DocumentTypeDescriptor;
+			
+			/**
+			 * Open document editor.
+			 */
+			protected function handleInvoke(event:CatalogueEvent):void
+			{
+				if(ModelLocator.getInstance().permissionManager.isEnabled(permissionKey)) {
+					if (!templateName) return;
+					event.deselectItem = true;
+					var id:String = event.itemData.*[0].id;
+					var cmd:ShowDocumentEditorCommand = new ShowDocumentEditorCommand(documentTypeDescriptor.categoryNumber);
+					cmd.correctedDocumentId = id;
+					cmd.template = templateName;
+					cmd.execute();
+				}
+			}
+			
+			/**
+			 * Check if document can be modified. If not, disable the operation and set a tooltip with explanation.
+			 */
+			public override function set itemData(val:Object):void
+			{
+				if(ModelLocator.getInstance().permissionManager.isEnabled(permissionKey)) {
+					super.itemData = val;
+					this.toolTip = null;
+					if (!(val is XML))
+					{
+						this.visible = true;
+						this.enabled = false;
+						this.includeInLayout = true;
+						return;
+					}
+					else
+					{
+						var l:XMLList = documentTypeDescriptor.xmlOptions.correctiveDocuments.*.@template;
+						if (l.length() > 0) templateName = l[0];
+						else templateName = null;
+					}
+					var docStatus:String = "";
+					if(val)docStatus = val.*.status.*.toString();
+					//this.visible = this.includeInLayout = !documentTypeDescriptor.isCorrectiveDocument && Boolean(templateName) && docStatus != CANCELLED;
+					if(this.enabled) {
+						this.enabled = (!documentTypeDescriptor.isCorrectiveDocument && Boolean(templateName) && docStatus != CANCELLED);
+					}
+					if(val.*.relations.relation.(String(relationType) == "1").length() > 0 
+						&& documentTypeDescriptor.xmlOptions.@invoiceAppendable.length() > 0 
+						&& documentTypeDescriptor.xmlOptions.@invoiceAppendable != "")
+					{
+						this.enabled = false;
+						this.toolTip = LanguageManager.getInstance().labels.documents.correctBillError;
+					}
+				}
+			}
+			
+		]]>
+	</mx:Script>
+</CatalogueOperation>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" height="100%" paddingRight="5" paddingLeft="5">
+
+<mx:Script>
+	<![CDATA[
+		import com.makolab.fractus.model.SessionManager;
+		import com.makolab.fractus.model.ModelLocator;
+		import com.makolab.fractus.model.LanguageManager;
+		
+		public var logoutFunction:Function;
+		
+		private function clickHandler(event:Event):void
+		{
+			if (logoutFunction != null) logoutFunction();
+		}
+	]]>
+</mx:Script>	
+	<mx:Label text="{ModelLocator.getInstance().sessionManager.login}" fontWeight="bold" toolTip="{LanguageManager.getInstance().labels.common.currentlyLoggedUser}"/>
+	<mx:Button label="{LanguageManager.getInstance().labels.login.btnLogout}" click="clickHandler(event)" height="20"/>
+</mx:HBox>

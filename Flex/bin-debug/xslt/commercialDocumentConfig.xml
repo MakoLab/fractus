@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<profile>
+		<configuration>
+			<footer>
+				<block xmlns="http://www.w3.org/1999/XSL/Format">Wydruk z programu Fractus 2.0</block>
+			</footer>
+			<decimalSeparator>,</decimalSeparator>
+			<groupingSeparator>.</groupingSeparator>
+			<globalSettings line-height="11pt" font-family="Arial, sans-serif" font-size="8.0pt" color="black" font-weight="normal"/>
+			<headerSettings line-height="16pt" font-size="5.0pt" color="#aaa" font-weight="bold" font-style="italic"/>
+			<footerSettings line-height="16pt" font-size="5.0pt" color="#aaa" font-weight="bold" font-style="italic"/>
+			<labelsSettings line-height="16pt" font-size="8.0pt" color="#7F7F7F" font-weight="bold" font-style="normal"/>
+			<informationSettings line-height="16pt" font-size="10.0pt" color="black" font-weight="bold" font-style="normal"/>
+			<topLabelsSettings line-height="9pt" font-size="8.0pt" color="black" font-weight="normal" font-style="normal"/>
+			<topInformationSettings line-height="9pt" font-size="8.0pt" color="black" font-weight="bold" font-style="normal"/>
+			<fullNumberSettings line-height="23pt" font-size="20.0pt" color="black" font-weight="normal" font-style="normal"/>
+			<grossValueLabelSettings line-height="16pt" font-size="14.0pt" color="black" font-weight="normal" font-style="normal"/>
+			<grossValueInformationSettings line-height="16pt" font-size="14.0pt" color="black" font-weight="bold" font-style="normal"/>
+			<signaturesSettings line-height="16pt" font-size="6.0pt" color="#aaa" font-weight="normal" font-style="italic"/>
+			<dataFormat decimal="0.##" money="0.00" percent="0.##%"/>
+			<linesTableColumns border="0.5pt solid black" line-height-header="10pt" line-height="10pt">
+				<column node="ordinalNumber" header="Lp" dataFormat="decimal" width="20pt" text-align-header="center" font-weight-header="bold" text-align="center" font-weight="normal" font-style="normal" font-style-header="normal" color="black" color-header="black"/>
+				<column node="itemName" header="Nazwa" width="160pt" text-align-header="center" font-weight-header="bold" text-align="center" font-weight="normal" font-style="normal" font-style-header="normal" color="black" color-header="black"/>
+				<column node="quantity" header="Ilość" dataFormat="decimal" width="30pt" text-align-header="center" font-weight-header="bold" text-align="center" font-weight="normal" font-style="normal" font-style-header="normal" color="black" color-header="black"/>
+				<column node="unitId" attribute="symbol" header="J.m." width="30pt" text-align-header="center" font-weight-header="bold" text-align="center" font-weight="normal" font-style="normal" font-style-header="normal" color="black" color-header="black"/>
+				<column node="initialNetPrice" header="Cena netto bez rabatu" dataFormat="money" width="50pt" text-align-header="center" font-weight-header="bold" text-align="center" font-weight="normal" font-style="normal" font-style-header="normal" color="black" color-header="black"/>
+				<column node="discountRate" header="Rabat" dataFormat="percent" width="30pt" text-align-header="center" font-weight-header="bold" text-align="center" font-weight="normal" font-style="normal" font-style-header="normal" color="black" color-header="black"/>
+				<column node="netPrice" header="Cena jedn. netto" dataFormat="money" width="40pt" text-align-header="center" font-weight-header="bold" text-align="center" font-weight="normal" font-style="normal" font-style-header="normal" color="black" color-header="black"/>
+				<column node="netValue" header="Wartość netto" dataFormat="money" width="40pt" text-align-header="center" font-weight-header="bold" text-align="center" font-weight="normal" font-style="normal" font-style-header="normal" color="black" color-header="black"/>
+				<column node="vatRateId" attribute="symbol" header="VAT [%]" width="50pt" text-align-header="center" font-weight-header="bold" text-align="center" font-weight="normal" font-style="normal" font-style-header="normal" color="black" color-header="black"/>
+				<column node="vatValue" header="Podatek" dataFormat="money" width="40pt" text-align-header="center" font-weight-header="bold" text-align="center" font-weight="normal" font-style="normal" font-style-header="normal" color="black" color-header="black"/>
+				<column node="grossValue" header="Wartość brutto" dataFormat="money" width="40pt" text-align-header="center" font-weight-header="bold" text-align="center" font-weight="normal" font-style="normal" font-style-header="normal" color="black" color-header="black"/>
+			</linesTableColumns>
+			<vatTableColumns border="0.5pt solid black" line-height-header="20pt" line-height="10pt">
+				<column node="netValue" header="Netto" dataFormat="money" width="40pt" text-align-header="center" font-weight-header="bold" text-align="center" font-weight="normal" font-style="normal" font-style-header="normal" color="black" color-header="black"/>
+				<column node="vatRateId" attribute="symbol" header="VAT [%]" width="50pt" text-align-header="center" font-weight-header="bold" text-align="center" font-weight="normal" font-style="normal" font-style-header="normal" color="black" color-header="black"/>
+				<column node="vatValue" header="Podatek" dataFormat="money" width="40pt" text-align-header="center" font-weight-header="bold" text-align="center" font-weight="normal" font-style="normal" font-style-header="normal" color="black" color-header="black"/>
+				<column node="grossValue" header="Brutto" dataFormat="money" width="40pt" text-align-header="center" font-weight-header="bold" text-align="center" font-weight="normal" font-style="normal" font-style-header="normal" color="black" color-header="black"/>
+			</vatTableColumns>
+			<labels>
+				<issuingPersonSignature>Podpis osoby upoważnionej do wystawienia faktury VAT:</issuingPersonSignature>
+				<received>Odebrał:</received>
+				<recipientSignature>Podpis osoby upoważnionej do odbioru faktury VAT:</recipientSignature>
+				<issuePlace>Miejsce wystawienia:</issuePlace>
+				<issueDate>Data wystawienia:</issueDate>
+				<eventDate>Data sprzedaży:</eventDate>
+				<issueContractor>Sprzedawca:</issueContractor>
+				<nip>NIP:</nip>
+				<contractor>Nabywca:</contractor>
+				<quantity>Razem ilość:</quantity>
+				<grossValue>Razem do zapłaty:</grossValue>
+				<wordValue>Słownie:</wordValue>
+				<paymentMethod>Forma płatności:</paymentMethod>
+				<paid>Zapłacono:</paid>
+				<dueDate>Termin płatności:</dueDate>
+				<toPay>Do zapłaty:</toPay>
+				<issuingPerson>Osoba wystawiająca:</issuingPerson>
+			</labels>
+		</configuration>
+	</profile>
+</root>

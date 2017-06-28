@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<reports:ReportContainer
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	creationPolicy="all"
+	configurationName="warehouse"
+	width="400" height="300"
+	xmlns:salesReports="com.makolab.fractus.view.documents.salesReports.*"
+	xmlns:reports="com.makolab.fractus.view.documents.reports.*"
+	xmlns:warehouseReports="com.makolab.fractus.view.documents.reports.warehouseReports.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.view.documents.reports.ReportGenerator;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.view.documents.reports.ReportBase;
+			import mx.events.CloseEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import com.makolab.fractus.commands.SearchCommand;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			private var _filtersInfo:Object = {};
+			[Bindable]
+			public function set filtersInfo(value:Object):void
+			{
+				_filtersInfo = value;
+			}
+			public function get filtersInfo():Object
+			{
+				return _filtersInfo;
+			}
+			
+			[Bindable]
+			private var showProgressBar:Boolean = false;	
+			
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:WarehouseReport = new WarehouseReport();
+				window.innerComponent = component;
+				window.show(null,null,LanguageManager.getInstance().labels.reports.warehouseReports);
+				component.reportsName = LanguageManager.getInstance().labels.reports.warehouseReports;
+				return window;
+			}
+			
+			override protected function init():void
+			{
+				if (!ModelLocator.getInstance().isWmsEnabled)
+				{
+					//this.getTabAt(getChildIndex(stockStructure)).visible = false;
+					this.getTabAt(getChildIndex(stockAvailability)).visible = false;
+					this.getTabAt(getChildIndex(shiftAttribute)).visible = false;
+					//this.getTabAt(getChildIndex(stockStructure)).includeInLayout = false;
+					this.getTabAt(getChildIndex(stockAvailability)).includeInLayout = false;
+					this.getTabAt(getChildIndex(shiftAttribute)).includeInLayout = false;
+				}
+				super.init();
+			}
+			
+			private function filtersInfoChangedHandler(event:Event):void
+			{
+				this.filtersInfo = filtersTab.filtersInfo;
+			}
+		]]>
+	</mx:Script>
+	<reports:defaultSearchParams>
+		<mx:XML xmlns="">
+			<searchParams type="CommercialDocument">
+				 <filters>
+				 </filters>
+			</searchParams>
+		</mx:XML>
+	</reports:defaultSearchParams>
+	
+	<reports:filtersComponent>
+		<reports:WarehouseReportFilters id="filtersTab" documentCategories="2,6" label="{LanguageManager.getInstance().labels.catalogue.filters}" searchParams="{defaultSearchParams}" filterInfoChanged="filtersInfoChangedHandler(event)" filtersInfo="{filtersInfo}" width="100%" height="100%"/>
+	</reports:filtersComponent>
+	
+	<warehouseReports:ReportByWarehouseStock label="{LanguageManager.getInstance().labels.reports.headers.byWarehouseStock}" filtersInfo="{filtersInfo}" reportsName="{reportsName}" procedure="reports.p_getWarehouseStock" showProgressBar="{showProgressBar}" width="100%" height="100%"/>
+	<warehouseReports:ReportByWarehouseStockStructure id="stockStructure" label="{LanguageManager.getInstance().labels.reports.headers.stockStructure}" filtersInfo="{filtersInfo}" reportsName="{reportsName}" procedure="reports.p_getWarehouseStockStructure" showProgressBar="{showProgressBar}" width="100%" height="100%"/>
+	<warehouseReports:ReportByWarehouseAvailability id="stockAvailability" label="{LanguageManager.getInstance().labels.reports.headers.stockAvailability}" filtersInfo="{filtersInfo}" reportsName="{reportsName}" procedure="reports.p_getWarehouseStockAvailability" showProgressBar="{showProgressBar}" width="100%" height="100%"/>
+	<warehouseReports:ReportByWarehouseShiftAttribute id="shiftAttribute" label="{LanguageManager.getInstance().labels.reports.headers.shiftAttribute}" filtersInfo="{filtersInfo}" reportsName="{reportsName}" procedure="reports.p_getShiftAttrStructure" showProgressBar="{showProgressBar}" width="100%" height="100%"/>
+	<warehouseReports:ReportByItemsMinimalStock label="{LanguageManager.getInstance().labels.reports.headers.minimalStock}" reportsName="{reportsName}" filtersInfo="{filtersInfo}" procedure="reports.p_getItemsByMinimalStock" width="100%" height="100%" />
+</reports:ReportContainer>

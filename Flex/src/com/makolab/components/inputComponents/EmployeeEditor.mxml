@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	 implements="com.makolab.components.inputComponents.IFormBuilderComponent">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.validators.ValidationResult;
+			import com.makolab.components.catalogue.CatalogueItemWindowEvent;
+			import com.makolab.fractus.view.catalogue.ContractorsCatalogue;
+			import com.makolab.fractus.view.documents.documentControls.ContractorComponent;
+			import mx.events.FlexEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			[Bindable]
+			/**
+			 * First name and last name labels- {firstName : <i>[String]</i>, lastName : <i>[String]</i>}.
+			 */
+			public var labels:Object =
+				{
+					firstName : LanguageManager.getInstance().labels.common.name,
+					lastName : LanguageManager.getInstance().labels.common.surname,
+					edit : LanguageManager.getInstance().labels.common.edit
+				};
+			[Bindable(event="change")]
+			/**
+			 * Use this property to pass/read values to/from the editor.
+			 */
+			public var dataObject:Object;
+			/**
+			 * Use this property to pass values to the editor.
+			 * Template:<br/>
+			 * &lt;relation&gt;<br/>
+			 *	  &nbsp;&nbsp;&lt;relatedContractor&gt;<br/>
+			 *	    &nbsp;&nbsp;&nbsp;&nbsp;&lt;contractor/&gt;<br/>
+			 *	  &nbsp;&nbsp;&lt;/relatedContractor&gt;<br/>
+			 *	  &nbsp;&nbsp;&lt;contractorRelationTypeId&gt;9197E1CF-C601-483A-A367-B26D5E378ED4&lt;/contractorRelationTypeId&gt;<br/>
+			 *	&lt;/relation&gt;
+			 */
+			public override function set data(value:Object):void
+			{
+				super.data = value;
+				dataObject = value;
+				currentState = String(value.relatedContractor.contractor.id) ? 'existing' : 'new';
+			}
+
+			private function handleChange(event:Event):void{
+				if (dataObject)
+				{
+					dataObject.relatedContractor.contractor.fullName = firstNameIt.text.replace(/ /g, '\xa0') + " " + lastNameIt.text.replace(/ /g, '\xa0');;
+					dataObject.relatedContractor.contractor.shortName = dataObject.relatedContractor.contractor.fullName.substring(0, 40);
+				}
+				
+				validate();
+				
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			public function validate():Object
+			{
+				var result:Object;
+				var errorMessage:String = LanguageManager.getLabel("contractors.forms.contractor.alert.employee"); // TODO: pobieranie z zewnatrz
+				
+				if (!String(dataObject.relatedContractor.contractor.fullName).replace(/\s/g, ''))
+				{
+					result = new ValidationResult(true, "shortName", "emptyName", errorMessage);
+					if(firstNameIt) firstNameIt.errorString = errorMessage;
+					if(lastNameIt) lastNameIt.errorString = errorMessage;
+				}
+				return result;
+			}
+			
+			private function getName(d:Object, n:int):String
+			{
+				if (!d) return "";
+				var m:Array = String(d.relatedContractor.contractor.fullName).match(/(.*) (.*)/);
+				if (m && m[n])
+					return String(m[n]).replace(/\xa0/g, ' ');
+				else if (m == null && n == 2 && String(d.relatedContractor.contractor.fullName) != "")
+					return String(d.relatedContractor.contractor.fullName);
+				else return "";
+			}
+			
+			private function editPerson():void
+			{
+				ContractorsCatalogue.showContractorWindow(this.data.relatedContractor.contractor.id).addEventListener(CatalogueItemWindowEvent.DATA_SAVE_COMPLETE, updateData);
+			}
+			
+			private function updateData(event:CatalogueItemWindowEvent):void
+			{
+				if (dataObject && event.itemData)
+				{
+					dataObject.relatedContractor.contractor.shortName = event.itemData.contractor.shortName;
+					dataObject.relatedContractor.contractor.fullName = event.itemData.contractor.fullName;
+				}
+				validate();
+				
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			public function commitChanges():void {}
+			public function reset():void {}
+			
+		]]>
+	</mx:Script>
+	<mx:states>
+		<mx:State name="new">
+			<mx:AddChild>
+				<mx:HBox width="100%">
+					<mx:Label id="firstNameLbl" width="{Math.max(firstNameLbl.width, lastNameLbl.width)}" text="{labels.firstName}"/>
+					<mx:TextInput id="firstNameIt" text="{getName(dataObject, 1)}" change="handleChange(event)" width="100%"/>
+				</mx:HBox>
+			</mx:AddChild>
+			<mx:AddChild>
+				<mx:HBox width="100%">
+					<mx:Label id="lastNameLbl" width="{Math.max(firstNameLbl.width, lastNameLbl.width)}" text="{labels.lastName}"/>
+					<mx:TextInput id="lastNameIt" text="{getName(dataObject, 2)}" change="handleChange(event)" width="100%"/>
+				</mx:HBox>			
+			</mx:AddChild>
+		</mx:State>
+		<mx:State name="existing">
+			<mx:AddChild>
+				<mx:HBox>
+					<mx:LinkButton label="{getName(dataObject, 1) + ' ' + getName(dataObject, 2)}" click="editPerson()"/>
+				</mx:HBox>
+			</mx:AddChild>
+		</mx:State>
+	</mx:states>
+</mx:VBox>

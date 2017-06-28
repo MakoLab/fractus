@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Object xmlns="*" xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+		]]>
+	</mx:Script>
+	
+	<mx:XML id="labels_pl" source="/xml/labels.xml"/>
+	<mx:XML id="labels_en" source="/xml/labelsEN.xml"/>
+
+	<mx:XML id="contractors_catalogue" source="/xml/contractors.catalogue.xml"/>
+	<mx:XML id="contractors_lists_contractors" source="/xml/contractors.lists.contractors.xml"/>
+	<mx:XML id="contractors_forms_contractor" source="/xml/contractors.forms.contractor.xml"/>
+	<mx:XML id="contractors_forms_user" source="/xml/contractors.forms.user.xml"/>
+	<mx:XML id="contractors_panel_contractor" source="/xml/contractors.panel.contractor.xml"/>
+	<mx:XML id="contractors_lists_ownEmployees" source="/xml/contractors.lists.ownEmployees.xml"/>
+	<mx:XML id="contractors_lists_contractorSearchEditor" source="/xml/contractors.lists.contractorSearchEditor.xml"/>
+	
+	<mx:XML id="banks_catalogue" source="/xml/banks.catalogue.xml"/>
+	<mx:XML id="banks_lists_banks" source="/xml/banks.lists.banks.xml"/>
+	<mx:XML id="banks_panel_bank" source="/xml/banks.panel.bank.xml"/>
+	<mx:XML id="banks_forms_bank" source="/xml/banks.forms.bank.xml"/>
+
+	<mx:XML id="items_catalogue" source="/xml/items.catalogue.xml"/>	
+	<mx:XML id="items_lists_items" source="/xml/items.lists.items.xml"/>
+	<mx:XML id="items_panel_item" source="/xml/items.panel.item.xml"/>
+	<mx:XML id="items_panel_detailsConfig" source="/xml/items.panel.detailsConfig.xml"/>
+	<mx:XML id="items_forms_item" source="/xml/items.forms.item.xml"/>
+	<mx:XML id="items_forms_clipboarditem" source="/xml/items.forms.clipboarditem.xml"/>
+	<mx:XML id="templates_documentRemarks" source="/xml/templates.documentRemarks.xml"/>
+	<mx:XML id="items_lists_itemSearchEditor" source="/xml/items.lists.itemSearchEditor.xml"/>
+	
+	<mx:XML id="dictionaries_forms_dictionary" source="/xml/dictionaries.forms.dictionary.xml"/>
+	
+		
+	<mx:XML id="menu" source="/xml/menu.xml"/>
+
+	<mx:XML id="documents_renderer_sales" source="/xml/documents.renderer.sales.xml"/>
+	<mx:XML id="documents_renderer_purchase" source="/xml/documents.renderer.purchase.xml"/>
+	<mx:XML id="documents_renderer_order" source="/xml/documents.renderer.order.xml"/>
+	<mx:XML id="documents_renderer_warehouse" source="/xml/documents.renderer.warehouse.xml"/>
+	<mx:XML id="documents_renderer_commercialCorrection" source="/xml/documents.renderer.commercialCorrection.xml"/>
+	<mx:XML id="documents_renderer_financial" source="/xml/documents.renderer.financial.xml"/>
+	<mx:XML id="documents_renderer_service" source="/xml/documents.renderer.service.xml"/>
+	<mx:XML id="documents_renderer_productionOrder" source="/xml/documents.renderer.productionOrder.xml"/>
+
+	<mx:XML id="documents_lists_sales" source="/xml/documents.lists.sales.xml"/>
+	<mx:XML id="documents_lists_salesDraft" source="/xml/documents.lists.salesDraft.xml"/>
+	<mx:XML id="documents_lists_financial" source="/xml/documents.lists.financial.xml"/>
+	<mx:XML id="documents_lists_financialReport" source="/xml/documents.lists.financialReport.xml"/>
+	<mx:XML id="documents_lists_inventory" source="/xml/documents.lists.inventory.xml"/>
+	<mx:XML id="documents_lists_order" source="/xml/documents.lists.order.xml"/>
+	<mx:XML id="documents_lists_protocolComplaint" source="/xml/documents.lists.protocolComplaint.xml"/>
+	<mx:XML id="documents_lists_purchase" source="/xml/documents.lists.purchase.xml"/>
+	<mx:XML id="documents_lists_purchaseDraft" source="/xml/documents.lists.purchaseDraft.xml"/>
+	<mx:XML id="documents_lists_warehouse" source="/xml/documents.lists.warehouse.xml"/>
+	<mx:XML id="documents_lists_warehouseDraft" source="/xml/documents.lists.warehouseDraft.xml"/>
+	<mx:XML id="documents_lists_salesOrder" source="/xml/documents.lists.salesOrder.xml"/>
+	<mx:XML id="documents_lists_productionOrder" source="/xml/documents.lists.productionOrder.xml"/>
+	<mx:XML id="documents_lists_technology" source="/xml/documents.lists.technology.xml"/>
+	<mx:XML id="documents_lists_salesOrderSearchEditor" source="/xml/documents.lists.salesOrderSearchEditor.xml"/>
+	
+	<mx:XML id="service_lists_servicedObjects" source="/xml/service.lists.servicedObjects.xml"/>
+	<mx:XML id="service_lists_servicedObjectSearchEditor" source="/xml/service.lists.servicedObjectSearchEditor.xml"/>
+	
+	<mx:XML id="service_lists_serviceDocuments" source="/xml/service.lists.serviceDocuments.xml"/>
+
+	<mx:XML id="dashboard" source="/xml/dashboard.xml"/>
+	<mx:XML id="dictionaries_configuration" source="/xml/dictionaries.configuration.xml"/>
+<!--
+	<mx:XML id="employeeFormConfig" source="/xml/contractors.forms.contractor.xml"/>
+	<mx:XML id="contractorPanelConfig" source="/xml/contractors.panels.contractor.xml"/>
+
+-->
+</Object>

@@ -1,0 +1,134 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommunicationModule", "CommunicationProjects\CommunicationModule\CommunicationModule.csproj", "{BAEF8A1B-BDCA-404A-8AE8-ED53A9B5C885}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Commons", "Commons\Commons.csproj", "{3B6F1CD9-0C49-4713-9FE9-A457B048FF5C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommunicationDataLayer", "CommunicationProjects\CommunicationDataLayer\CommunicationDataLayer.csproj", "{63B762C4-6D2F-4FA8-A1EA-73F2C72485C3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommunicationCommons", "CommunicationProjects\CommunicationCommons\CommunicationCommons.csproj", "{E13E4356-80FF-4E97-A5BE-05CD7F1EDD1A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FractusCommunication", "CommunicationProjects\FractusCommunication\FractusCommunication.csproj", "{7E3F7758-FF5F-41FA-952F-0D12AA13B1CB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kernel", "KernelProjects\Kernel\Kernel.csproj", "{EAADBF1D-FD8A-4258-A43A-83ED9F65E80B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TransmittingModule", "CommunicationProjects\TransmittingModule\TransmittingModule.csproj", "{286C4207-8CE3-4A2E-919C-AA477424C783}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HostingService", "CommunicationProjects\HostingService\HostingService.csproj", "{10494AB7-AA08-48A5-930D-9EA705FD32AE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ThirdPartyLibraries", "ThirdPartyLibraries", "{ECD85264-2AF8-4095-955E-1BC2422389AC}"
+	ProjectSection(SolutionItems) = preProject
+		ThirdPartyLibraries\elzabdr.dll = ThirdPartyLibraries\elzabdr.dll
+		ThirdPartyLibraries\ibex35.dll = ThirdPartyLibraries\ibex35.dll
+		ThirdPartyLibraries\ICSharpCode.SharpZipLib.dll = ThirdPartyLibraries\ICSharpCode.SharpZipLib.dll
+		ThirdPartyLibraries\LinFu.Common.dll = ThirdPartyLibraries\LinFu.Common.dll
+		ThirdPartyLibraries\LinFu.Delegates.dll = ThirdPartyLibraries\LinFu.Delegates.dll
+		ThirdPartyLibraries\LinFu.DynamicProxy.dll = ThirdPartyLibraries\LinFu.DynamicProxy.dll
+		ThirdPartyLibraries\LinFu.Reflection.dll = ThirdPartyLibraries\LinFu.Reflection.dll
+		ThirdPartyLibraries\log4net.dll = ThirdPartyLibraries\log4net.dll
+		ThirdPartyLibraries\LumenWorks.Framework.IO.dll = ThirdPartyLibraries\LumenWorks.Framework.IO.dll
+		ThirdPartyLibraries\MakoPrint.dll = ThirdPartyLibraries\MakoPrint.dll
+		ThirdPartyLibraries\MakoPrintActiveX.dll = ThirdPartyLibraries\MakoPrintActiveX.dll
+		ThirdPartyLibraries\MakoPrintCSV.dll = ThirdPartyLibraries\MakoPrintCSV.dll
+		ThirdPartyLibraries\MakoPrintFiscal.dll = ThirdPartyLibraries\MakoPrintFiscal.dll
+		ThirdPartyLibraries\MakoPrintText.dll = ThirdPartyLibraries\MakoPrintText.dll
+		ThirdPartyLibraries\MakoPrintVCard.dll = ThirdPartyLibraries\MakoPrintVCard.dll
+		ThirdPartyLibraries\MakoPrintXLS.dll = ThirdPartyLibraries\MakoPrintXLS.dll
+		ThirdPartyLibraries\Microsoft.Web.Administration.dll = ThirdPartyLibraries\Microsoft.Web.Administration.dll
+		ThirdPartyLibraries\Moq.dll = ThirdPartyLibraries\Moq.dll
+		ThirdPartyLibraries\Moq.xml = ThirdPartyLibraries\Moq.xml
+		ThirdPartyLibraries\Ninject.Core.dll = ThirdPartyLibraries\Ninject.Core.dll
+		ThirdPartyLibraries\Ninject.Core.xml = ThirdPartyLibraries\Ninject.Core.xml
+		ThirdPartyLibraries\nunit.framework.dll = ThirdPartyLibraries\nunit.framework.dll
+		ThirdPartyLibraries\org.in2bits.MyXls.dll = ThirdPartyLibraries\org.in2bits.MyXls.dll
+		ThirdPartyLibraries\PostSharp.Laos.dll = ThirdPartyLibraries\PostSharp.Laos.dll
+		ThirdPartyLibraries\PostSharp.Public.dll = ThirdPartyLibraries\PostSharp.Public.dll
+		ThirdPartyLibraries\RandomLogHelper.dll = ThirdPartyLibraries\RandomLogHelper.dll
+		ThirdPartyLibraries\Rhino.Mocks.dll = ThirdPartyLibraries\Rhino.Mocks.dll
+		ThirdPartyLibraries\SyntaxHighlightingTextBox.dll = ThirdPartyLibraries\SyntaxHighlightingTextBox.dll
+		ThirdPartyLibraries\xmldiffpatch.dll = ThirdPartyLibraries\xmldiffpatch.dll
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FractusDependencyConfiguration", "CommunicationProjects\FractusDependencyConfiguration\FractusDependencyConfiguration.csproj", "{84DC42A9-AE29-4DE2-82BF-47BBF1717A0A}"
+EndProject
+Global
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 10
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = http://localhost:8080/tfs/fractus
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = Commons\\Commons.csproj
+		SccProjectName1 = Commons
+		SccLocalPath1 = Commons
+		SccProjectUniqueName2 = KernelProjects\\Kernel\\Kernel.csproj
+		SccProjectName2 = KernelProjects/Kernel
+		SccLocalPath2 = KernelProjects\\Kernel
+		SccProjectUniqueName3 = CommunicationProjects\\CommunicationModule\\CommunicationModule.csproj
+		SccProjectName3 = CommunicationProjects/CommunicationModule
+		SccLocalPath3 = CommunicationProjects\\CommunicationModule
+		SccProjectUniqueName4 = CommunicationProjects\\CommunicationDataLayer\\CommunicationDataLayer.csproj
+		SccProjectName4 = CommunicationProjects/CommunicationDataLayer
+		SccLocalPath4 = CommunicationProjects\\CommunicationDataLayer
+		SccProjectUniqueName5 = CommunicationProjects\\CommunicationCommons\\CommunicationCommons.csproj
+		SccProjectName5 = CommunicationProjects/CommunicationCommons
+		SccLocalPath5 = CommunicationProjects\\CommunicationCommons
+		SccProjectUniqueName6 = CommunicationProjects\\FractusCommunication\\FractusCommunication.csproj
+		SccProjectName6 = CommunicationProjects/FractusCommunication
+		SccLocalPath6 = CommunicationProjects\\FractusCommunication
+		SccProjectUniqueName7 = CommunicationProjects\\TransmittingModule\\TransmittingModule.csproj
+		SccProjectName7 = CommunicationProjects/TransmittingModule
+		SccLocalPath7 = CommunicationProjects\\TransmittingModule
+		SccProjectUniqueName8 = CommunicationProjects\\HostingService\\HostingService.csproj
+		SccProjectName8 = CommunicationProjects/HostingService
+		SccLocalPath8 = CommunicationProjects\\HostingService
+		SccProjectUniqueName9 = CommunicationProjects\\FractusDependencyConfiguration\\FractusDependencyConfiguration.csproj
+		SccProjectName9 = CommunicationProjects/FractusDependencyConfiguration
+		SccLocalPath9 = CommunicationProjects\\FractusDependencyConfiguration
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BAEF8A1B-BDCA-404A-8AE8-ED53A9B5C885}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAEF8A1B-BDCA-404A-8AE8-ED53A9B5C885}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAEF8A1B-BDCA-404A-8AE8-ED53A9B5C885}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAEF8A1B-BDCA-404A-8AE8-ED53A9B5C885}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B6F1CD9-0C49-4713-9FE9-A457B048FF5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B6F1CD9-0C49-4713-9FE9-A457B048FF5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B6F1CD9-0C49-4713-9FE9-A457B048FF5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B6F1CD9-0C49-4713-9FE9-A457B048FF5C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63B762C4-6D2F-4FA8-A1EA-73F2C72485C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63B762C4-6D2F-4FA8-A1EA-73F2C72485C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63B762C4-6D2F-4FA8-A1EA-73F2C72485C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63B762C4-6D2F-4FA8-A1EA-73F2C72485C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E13E4356-80FF-4E97-A5BE-05CD7F1EDD1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E13E4356-80FF-4E97-A5BE-05CD7F1EDD1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E13E4356-80FF-4E97-A5BE-05CD7F1EDD1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E13E4356-80FF-4E97-A5BE-05CD7F1EDD1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E3F7758-FF5F-41FA-952F-0D12AA13B1CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E3F7758-FF5F-41FA-952F-0D12AA13B1CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E3F7758-FF5F-41FA-952F-0D12AA13B1CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E3F7758-FF5F-41FA-952F-0D12AA13B1CB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EAADBF1D-FD8A-4258-A43A-83ED9F65E80B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EAADBF1D-FD8A-4258-A43A-83ED9F65E80B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EAADBF1D-FD8A-4258-A43A-83ED9F65E80B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EAADBF1D-FD8A-4258-A43A-83ED9F65E80B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{286C4207-8CE3-4A2E-919C-AA477424C783}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{286C4207-8CE3-4A2E-919C-AA477424C783}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{286C4207-8CE3-4A2E-919C-AA477424C783}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{286C4207-8CE3-4A2E-919C-AA477424C783}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10494AB7-AA08-48A5-930D-9EA705FD32AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10494AB7-AA08-48A5-930D-9EA705FD32AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10494AB7-AA08-48A5-930D-9EA705FD32AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10494AB7-AA08-48A5-930D-9EA705FD32AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{84DC42A9-AE29-4DE2-82BF-47BBF1717A0A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84DC42A9-AE29-4DE2-82BF-47BBF1717A0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84DC42A9-AE29-4DE2-82BF-47BBF1717A0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84DC42A9-AE29-4DE2-82BF-47BBF1717A0A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

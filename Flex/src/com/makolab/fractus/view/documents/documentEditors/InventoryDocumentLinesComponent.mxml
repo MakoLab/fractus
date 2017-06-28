@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		xmlns:lineList="com.makolab.components.lineList.*" xmlns:catalogue1="com.makolab.fractus.view.catalogue.*" xmlns:catalogue="com.makolab.components.catalogue.*" xmlns:inputComponents="com.makolab.components.inputComponents.*"
+		creationComplete="init()"
+		>
+	<mx:Script>
+		<![CDATA[
+			import assets.IconManager;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import com.makolab.fractus.view.documents.documentLists.DocumentStatusChangeOperation;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			[Bindable]
+			public var languageManager:LanguageManager = LanguageManager.getInstance();
+			
+			public function getIcon(name:String):Class
+			{
+				return IconManager.getIcon(name);
+			}		
+		]]>
+	</mx:Script>
+
+	<lineList:LineList 
+		id="documentLines"
+		draggableColumns="false"
+		width="100%"
+		height="100%"
+		editable="true"
+		selectable="true" 
+		dataProvider="{dataProvider}"
+		>
+	<lineList:columns>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.lp}" minWidth="20" width="30" editable="false" itemRenderer="com.makolab.components.inputComponents.OrdinalNumberRenderer"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.documents.status}" dataField="status" itemRenderer="com.makolab.fractus.view.generic.DocumentStatusRenderer" width="50" editable="false"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.documentRenderer.warehouse}" width="60" dataField="warehouseId" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" editable="false"/>	
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.inventory.sheet}" editable="false">
+			<mx:itemRenderer>
+				<mx:Component>
+					<mx:Label text="{data.inventoryDocumentFullNumber}/{data.ordinalNumber}"/>
+				</mx:Component>
+			</mx:itemRenderer>
+		</mx:DataGridColumn>
+		<mx:DataGridColumn headerText="" minWidth="20" width="20" editable="false">
+			<mx:itemRenderer>
+				<mx:Component>
+					<lineList:LineMenu>
+						<lineList:operations>
+							<lineList:LineOperation label="{outerDocument.languageManager.labels.documents.open}" operationInvoke="outerDocument.lineListEdit(event)" icon="{outerDocument.getIcon('edit_small')}" textAlign="left"/>
+							<lineList:LineOperation id="cancelOperation" label="{outerDocument.languageManager.labels.documents.cancel}" initialize="outerDocument.initLineListOperation(event)" operationInvoke="outerDocument.lineListCancelLine(event)" icon="{outerDocument.getIcon('status_canceled')}" paddingLeft="15" textAlign="left"/>
+							<!--
+							<lineList:LineOperation id="commitOperation" label="{outerDocument.languageManager.labels.documents.commit}" initialize="outerDocument.initLineListOperation(event)" operationInvoke="outerDocument.lineListCommitLine(event)" icon="{outerDocument.getIcon('status_commited')}" paddingLeft="15" textAlign="left"/>
+							-->
+							<lineList:LineOperation label="{outerDocument.languageManager.labels.inventory.printSheet}" operationInvoke="outerDocument.lineListPrint(event)" icon="{outerDocument.getIcon('print_small')}" textAlign="left"/>
+							<lineList:LineOperation label="{outerDocument.languageManager.labels.inventory.printSheetText}" operationInvoke="outerDocument.lineListPrintText(event)" icon="{outerDocument.getIcon('print_small')}" textAlign="left"/>
+						</lineList:operations>
+					</lineList:LineMenu>
+				</mx:Component>
+			</mx:itemRenderer>
+		</mx:DataGridColumn>
+	</lineList:columns>
+</lineList:LineList>
+
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.view.documents.TextPrintPreviewWindow;
+			import com.makolab.components.util.ComponentExportManager;
+			import mx.core.EventPriority;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.components.lineList.LineOperationEvent;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.view.documents.documentEditors.DocumentEditor;
+			import com.makolab.components.inputComponents.FloatRenderer;
+			import com.makolab.components.inputComponents.CurrencyEditor;
+			import com.makolab.components.inputComponents.CurrencyRenderer;
+			import com.makolab.fractus.commands.GetItemsDetailsCommand;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.model.document.BusinessObject;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.model.document.InventoryDocumentLine;
+			import com.makolab.fractus.model.document.InventoryDocumentObject;
+			import mx.collections.ArrayCollection;
+			
+			
+			[Bindable]
+			private var _dataProvider:ArrayCollection;
+			
+			[Bindable]
+			public function set dataProvider(value:ArrayCollection):void
+			{	
+				_dataProvider = value;
+				_dataProvider.addEventListener(DocumentEvent.DOCUMENT_LINE_SET_ITEM, handleSetItem, false, EventPriority.DEFAULT_HANDLER, true);
+				_dataProvider.addEventListener(DocumentEvent.DOCUMENT_LINE_ATTRIBUTE_CHANGE, handleAttributeChange, false, EventPriority.DEFAULT, true);	
+			}
+			public function get dataProvider():ArrayCollection { return _dataProvider; }
+			
+			[Bindable]
+			public var dictionaryManager:DictionaryManager = DictionaryManager.getInstance();
+
+			
+			private var _selectedItem:Object;
+			public function get selectedItem():Object 
+			{ 
+				_selectedItem = documentLines.selectedItem;
+				return _selectedItem; 
+			}
+			
+			/**
+			 * Assign an item to the specified line
+			 * 
+			 * @item XML node describing the selected item.
+			 * @line Line the item is being assigned to
+			 */
+			public function setLineItem(item:Object, line:BusinessObject):void
+			{
+				line['itemId'] = item.@id;
+				dataProvider.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_SET_ITEM, 'itemId', line, true));
+			}
+			
+			public function handleAttributeChange(event:DocumentEvent):void
+			{
+				this.dataProvider.itemUpdated(event.line);
+			}
+			
+			/**
+			 * Load and update data of the selected item.
+			 */
+			public function handleSetItem(event:DocumentEvent):void
+			{
+				if (event.preventDefault()) return;
+				var line:Object = event.line;
+	
+			}
+		
+			protected function init():void
+			{
+				
+			}
+			
+			/**
+			 * Event handler for delete line operation in <code>lineList</code>.
+			 * 
+			 * @param event Event object containing event data.
+			 */
+			 /*
+			public function lineListDeleteLine(event:MouseEvent):void
+			{
+				var line:InwentaryzacjaLine = InwentaryzacjaLine(event.target.data);
+				this.dataProvider.removeItemAt(this.dataProvider.getItemIndex(line));
+				this.dataProvider.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_DELETE, null, line));
+			}
+			*/
+			
+			public function lineListCancelLine(event:LineOperationEvent):void
+			{
+				InventoryDocumentLine(event.target.line).status = DocumentStatusChangeOperation.CANCELLED;
+			}
+			
+			public function lineListCommitLine(event:LineOperationEvent):void
+			{
+				InventoryDocumentLine(event.target.line).status = DocumentStatusChangeOperation.COMMITED;
+				//this.dataProvider.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_CHANGE, null, line));
+			}
+			
+			public function lineListPrint(event:LineOperationEvent):void
+			{
+				ComponentExportManager.getInstance().exportObject("defaultInventorySheetPdf", InventoryDocumentLine(event.target.line).id, 'content');
+			}
+			
+			public function lineListPrintText(event:LineOperationEvent):void
+			{
+				TextPrintPreviewWindow.showWindow(InventoryDocumentLine(event.target.line).id, "defaultInventorySheetText");
+			}
+			
+			public function lineListEdit(event:LineOperationEvent):void
+			{
+				var id:String = InventoryDocumentLine(event.target.line).id;
+				if (!id) return;
+				//dispatchEvent(new Event('closeWindow'));
+				InventorySheetEditor(
+					InventorySheetEditor.showWindow(id).innerComponent
+				).addEventListener('dataCommited', handleCommitResult);
+			}
+			
+			private function handleCommitResult(event:Event):void
+			{
+				dispatchEvent(new Event('dataCommited'));
+			}
+			
+			public function initLineListOperation(event:Event):void
+			{
+				if((event.target.id =="cancelOperation" || event.target.id =="commitOperation") && event.target.line.status != DocumentStatusChangeOperation.SAVED)
+				{ 
+					event.target.visible = false;
+					event.target.includeInLayout = false;
+				}
+			}
+			
+		]]>
+	</mx:Script>
+	
+</mx:VBox>

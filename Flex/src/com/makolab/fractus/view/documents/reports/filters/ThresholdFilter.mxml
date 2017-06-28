@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="100%" height="100%" 
+	horizontalGap="0" 
+	paddingBottom="0" paddingTop="0" paddingLeft="5"
+	implements="com.makolab.fractus.view.documents.reports.ICustomReportFilter" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.utils.ObjectUtil;
+			import mx.collections.ArrayCollection;
+			
+			[Bindable] public var thresholds:Array = [90,60,45,15];
+		
+			public function getSearchParams():XML
+			{
+				var xml:XML = <searchParams/>;
+				/* if(multiControlPlugin.dataProvider){
+					var collection:ArrayCollection = new ArrayCollection(multiControlPlugin.dataProvider.source as Array);
+					collection.sort;
+					for (var i:int = 0; i < collection.length; i++){
+						var stringNode:String = "<period" + (i + 1) + "/>";
+						var xmlNode:XML = XML(stringNode);
+						xmlNode.* = collection[i];
+						xml.appendChild(xmlNode);
+					}
+				} */
+				for (var i:int = 0; i < thresholds.length; i++){
+					var stringNode:String = "<period" + (i + 1) + "/>";
+					var xmlNode:XML = XML(stringNode);
+					xmlNode.* = thresholds[3-i];
+					xml.appendChild(xmlNode);
+				}
+				return xml;
+			}
+		]]>
+	</mx:Script>
+	
+	<inputComponents:MultiControlPlugin id="multiControlPlugin" container="{form}" dataProvider="{thresholds}" maxElementQuantity="4" minElementQuantity="2" defaultElementValue="0" allowElementQuantityChange="false">
+		<inputComponents:editor>
+			<mx:Component>
+				<mx:NumericStepper maximum="NaN" width="70"/>
+			</mx:Component>
+		</inputComponents:editor>
+	</inputComponents:MultiControlPlugin>
+	
+	<mx:FormItem id="form" label="Przedziały: " direction="horizontal"/>
+	
+</mx:VBox>

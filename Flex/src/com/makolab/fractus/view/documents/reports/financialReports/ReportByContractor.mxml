@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReportBase doubleClickEnabled="true" doubleClick="showPayments()" xmlns="com.makolab.fractus.view.documents.reports.*" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:layoutComponents="com.makolab.components.layoutComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.view.payments.PaymentList;
+			import com.makolab.fractus.view.finance.PaymentSettlementEditor;
+			import com.makolab.components.util.Tools;
+			import mx.formatters.CurrencyFormatter;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			[Bindable] 
+			public var languageManager:LanguageManager = LanguageManager.getInstance();
+			
+			
+			private function showPayments():void
+			{
+				PaymentList.showWindow(grid.selectedItem.@id[0]);
+			}
+		]]>
+	</mx:Script>
+	<table>
+		<mx:AdvancedDataGrid id="grid" width="100%" height="100%">
+			<mx:columns>
+				<mx:AdvancedDataGridColumn id="nameColumn" headerText="{LanguageManager.getInstance().labels.documentRenderer.contractor2}" dataField="@fullName" sortCompareFunction="{ReportBase.stringCompareFunction('@fullName')}"/>
+				<mx:AdvancedDataGridColumn headerText="{LanguageManager.getInstance().labels.common.balance}" dataField="@balance" width="100" labelFunction="quantityLabelFunction" textAlign="right"/>
+				<mx:AdvancedDataGridColumn id="settledIncome" sortCompareFunction="{Tools.getSortFunction('@settledIncome')}" headerText="{LanguageManager.getInstance().labels.documents.settled + ' - ' + LanguageManager.getInstance().labels.documentRenderer.income}" dataField="@settledIncome" labelFunction="quantityLabelFunction" textAlign="right" width="100"/>
+				<mx:AdvancedDataGridColumn id="settledOutcome" sortCompareFunction="{Tools.getSortFunction('@settledOutcome')}" headerText="{LanguageManager.getInstance().labels.documents.settled + ' - ' + LanguageManager.getInstance().labels.documentRenderer.outcome}" dataField="@settledOutcome" labelFunction="quantityLabelFunction" textAlign="right" width="130"/>
+				<!--
+				<mx:AdvancedDataGridColumn id="unsettledIncome" sortCompareFunction="{Tools.getSortFunction('@unsettledIncome')}" headerText="unsettledIncome" dataField="@unsettledIncome" labelFunction="quantityLabelFunction" textAlign="right" width="120"/>
+				<mx:AdvancedDataGridColumn id="unsettledOutcome" sortCompareFunction="{Tools.getSortFunction('@unsettledOutcome')}" headerText="unsettledOutcome" dataField="@unsettledOutcome" labelFunction="quantityLabelFunction" textAlign="right" width="120"/>
+				-->
+				<mx:AdvancedDataGridColumn id="dueUnsettledIncome" sortCompareFunction="{Tools.getSortFunction('@dueUnsettledIncome')}" headerText="{LanguageManager.getInstance().labels.documents.unsettled + ' - ' + LanguageManager.getInstance().labels.common.due + ' - ' + LanguageManager.getInstance().labels.documentRenderer.income}" dataField="@dueUnsettledIncome" labelFunction="quantityLabelFunction" textAlign="right" width="130"/>
+				<mx:AdvancedDataGridColumn id="dueUnsettledOutcome" sortCompareFunction="{Tools.getSortFunction('@dueUnsettledOutcome')}" headerText="{LanguageManager.getInstance().labels.documents.unsettled + ' - ' + LanguageManager.getInstance().labels.common.due + ' - ' + LanguageManager.getInstance().labels.documentRenderer.outcome}" dataField="@dueUnsettledOutcome" labelFunction="quantityLabelFunction" textAlign="right" width="130"/>
+				<mx:AdvancedDataGridColumn id="overdueUnsettledIncome" sortCompareFunction="{Tools.getSortFunction('@overdueUnsettledIncome')}" headerText="{LanguageManager.getInstance().labels.documents.unsettled + ' - ' + LanguageManager.getInstance().labels.common.overdue + ' - ' + LanguageManager.getInstance().labels.documentRenderer.income}" dataField="@overdueUnsettledIncome" labelFunction="quantityLabelFunction" textAlign="right" width="140"/>
+				<mx:AdvancedDataGridColumn id="overdueUnsettledOutcome" sortCompareFunction="{Tools.getSortFunction('@overdueUnsettledOutcome')}" headerText="{LanguageManager.getInstance().labels.documents.unsettled + ' - ' + LanguageManager.getInstance().labels.common.overdue + ' - ' + LanguageManager.getInstance().labels.documentRenderer.outcome}" dataField="@overdueUnsettledOutcome" labelFunction="quantityLabelFunction" textAlign="right" width="140"/>
+			</mx:columns>
+		</mx:AdvancedDataGrid>
+	</table>
+	<summary>
+		<layoutComponents:AdvancedDataGridSummary2 source="{grid}">
+			<layoutComponents:summaryColumns>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.ROW_COUNT]}" sourceColumn="{nameColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{settledIncome}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{settledOutcome}"/>
+				<!--
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{unsettledIncome}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{unsettledOutcome}"/>
+				-->
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{dueUnsettledIncome}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{dueUnsettledOutcome}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{overdueUnsettledIncome}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{overdueUnsettledOutcome}"/>
+			</layoutComponents:summaryColumns>
+		</layoutComponents:AdvancedDataGridSummary2>
+	</summary>
+</ReportBase>

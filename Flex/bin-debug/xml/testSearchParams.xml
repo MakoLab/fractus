@@ -1,0 +1,57 @@
+<root>
+	<contractors>
+		<searchParams>
+		 <query>mako</query>
+		 <pageSize>200</pageSize>
+		 <page>1</page>
+		 <columns>
+			<column field="shortName"/>
+			<column field="code"/>
+			<column field="nip"/>
+			<column field="city"/>
+		 </columns>
+		 <sqlConditions>
+			<condition>nip LIKE '7' + '%'</condition>
+		 </sqlConditions> 
+		</searchParams>
+		<searchParams> 
+			<query>kulik</query> 
+			<pageSize>200</pageSize> 
+			<page>1</page> 
+			<columns> 
+				<column field="shortName"/>
+				<column field="code"/>
+				<column field="nip"/>
+				<column field="city"/>
+			</columns> 
+		</searchParams>
+	</contractors>
+	<items>
+		<searchParams> 
+			<query>klamka</query> 
+			<pageSize>200</pageSize> 
+			<page>1</page> 
+			<columns> 
+				<column field="code"/> 
+				<column field="name"/> 
+				<column field="quantity"/> 
+				<column field="reservedQuantity"/> 
+				<column field="orderedQuantity"/> 
+			</columns> 
+			<currentWarehouse>A4CCB6BE-ED7F-4B39-8F6F-7A492D71CD45</currentWarehouse> 
+		</searchParams>
+		<searchParams> 
+			<query>klamkaqwerqwef</query> 
+			<pageSize>200</pageSize> 
+			<page>1</page> 
+			<columns> 
+				<column field="code"/> 
+				<column field="name"/> 
+				<column field="quantity"/> 
+				<column field="reservedQuantity"/> 
+				<column field="orderedQuantity"/> 
+			</columns> 
+			<currentWarehouse>A4CCB6BE-ED7F-4B39-8F6F-7A492D71CD45</currentWarehouse> 
+		</searchParams>
+	</items>
+</root>

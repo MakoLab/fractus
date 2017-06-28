@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" verticalGap="0" xmlns:lineList="com.makolab.components.lineList.*">
+	<lineList:LineList id="grid" width="100%" height="100%" dataProvider="{dataProvider}" editable="true" columns="{columns.concat([getDeleteColumn()])}" click="handleGridClick(event)"/>
+	<mx:LinkButton width="100%" label="{addButtonLabel}" click="addEntry()" textAlign="center" color="#888888" textDecoration="underline"/>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ListEvent;
+			import mx.utils.ObjectUtil;
+			import mx.collections.ListCollectionView;
+			import mx.controls.LinkButton;
+			import mx.controls.LinkBar;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.collections.ICollectionView;
+			[Bindable]
+			public var addButtonLabel:String = "Dodaj";
+			
+			[Bindable]
+			public var columns:Array;
+			
+			public var newEntryFunction:Function;
+			
+			public var newEntryTemplate:Object;
+			
+			private var _dataProvider:Object;
+			[Bindable]
+			public function set dataProvider(value:Object):void
+			{
+				_dataProvider = value;
+			}
+			public function get dataProvider():Object
+			{
+				return _dataProvider;
+			}
+			
+			private var deleteColumn:DataGridColumn;
+			private function getDeleteColumn():DataGridColumn
+			{
+				if (!deleteColumn)
+				{
+					deleteColumn = new DataGridColumn();
+					deleteColumn.width = 22;
+					deleteColumn.editable = false;
+					//deleteColumn.itemRenderer = new ClassFactory(LineDeleteButton);
+					//ClassFactory(deleteColumn.itemRenderer).properties = { deleteFunction : deleteEntry };
+					deleteColumn.itemRenderer = new ClassFactory(LineImageButton);
+					ClassFactory(deleteColumn.itemRenderer).properties = { clickFunction : deleteEntry, iconsName : 'delete_small' };
+				
+				}
+				return deleteColumn; 
+			}
+			
+			private function addEntry():void
+			{
+				var lcv:ListCollectionView = dataProvider as ListCollectionView;
+				if (newEntryFunction != null) lcv.addItem(newEntryFunction());
+				else
+				{
+					lcv.addItem(ObjectUtil.copy(newEntryTemplate));
+				}
+			}
+			
+			private function deleteEntry(entry:Object):void
+			{
+				var lcv:ListCollectionView = ListCollectionView(dataProvider);
+				lcv.removeItemAt(lcv.getItemIndex(entry));
+			}
+			
+			protected function handleGridClick(event:MouseEvent):void
+			{
+				if (event.localY > grid.dataProvider.length * grid.rowHeight  && !(event.target is LineImageButton)) this.addEntry();
+			}
+		]]>
+	</mx:Script>
+</mx:VBox>

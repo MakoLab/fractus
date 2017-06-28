@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" horizontalGap="0" 
+		 xmlns:inputComponents="com.makolab.components.inputComponents.*"
+		 xmlns:catalogue="com.makolab.fractus.view.catalogue.*"
+		 width="100%"
+		 >
+	
+	<mx:Metadata>
+        [Event(name="change", type="flash.events.Event")]
+    </mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.document.BusinessObject;
+			import com.makolab.fractus.model.document.BusinessObjectAttribute;
+			import com.makolab.fractus.model.document.CommercialDocumentLine;
+			import com.makolab.fractus.model.document.WarehouseDocumentLine;
+			
+			import mx.controls.List;
+			import mx.events.ListEvent;
+            
+            [Bindable]
+			private var _dataObject:Object = null;
+
+			
+			[Bindable]
+			private var unitDictionary:XMLList;
+			
+			[Bindable]
+			private var list:List = new List();   
+			
+		
+			
+			public function set dataObject(value:Object):void
+			{
+				_dataObject = value.copy();
+			}
+			
+			public function get dataObject():Object
+			{
+				return _dataObject;
+			}
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				dataObject = value;
+				ise.text=data.root.item.@name;
+			}
+			
+			private function valueChangeHandler(event:Event):void
+			{
+			/*	if(ti.text == ""){
+					_dataObject = "";
+				}else{
+					_dataObject = <value><root><value/><unitId/></root></value>
+					_dataObject.root.value.* = ti.text;
+					_dataObject.root.unitId.* = list.selectedItem.id.*;
+				}
+				dispatchEvent(new Event("change"));*/
+			}
+			
+			/**
+			 * Assign an item to the specified line
+			 * 
+			 * @item XML node describing the selected item.
+			 * @line Line the item is being assigned to
+			 */
+			public function setLineItem(item:Object, line:BusinessObject):void
+			{
+				//<item id="6EF1C0C7-233D-4B9B-AFEF-CF4AEB19B8B4" ordinalNumber="1" prestaId="41951" name="Akumulator 4MAX  12V 100Ah 760A P+ (wymiary: 353 x 175 x 190) (0608-03-0008E)" code="0608-03-0008E" version="371060C4-1FF0-431E-8279-5252C49088D9"/>
+				
+				if(!item) return;
+				_dataObject=<value><root><value/></root></value>;
+				_dataObject.root.value=item;
+				//documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_SET_ITEM, 'itemId', line, true));
+				
+				//itemReload="outerDocument.documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_SET_ITEM, 'itemId', data, true))"
+			}
+		]]>
+	</mx:Script>
+
+		<catalogue:ItemSearchEditor
+			id="ise"
+			sortByItemQuantity="true"
+			setFunction="{setLineItem}"
+			itemId="{data.root.item.@id}"
+			
+			
+			width="100%"/>
+</mx:HBox>

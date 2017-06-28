@@ -1,0 +1,124 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{56F08D01-6E14-4157-B8D2-1846A021A093}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Makolab.Fractus.Messenger</RootNamespace>
+    <AssemblyName>Messenger</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="CommonServiceLocator.NinjectAdapter">
+      <HintPath>..\..\ThirdPartyLibraries\Ninject2\CommonServiceLocator.NinjectAdapter.dll</HintPath>
+    </Reference>
+    <Reference Include="log4net">
+      <HintPath>..\..\ThirdPartyLibraries\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Practices.ServiceLocation">
+      <HintPath>..\..\ThirdPartyLibraries\Ninject2\Microsoft.Practices.ServiceLocation.dll</HintPath>
+    </Reference>
+    <Reference Include="Ninject">
+      <HintPath>..\..\ThirdPartyLibraries\Ninject2\Ninject.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.configuration" />
+    <Reference Include="System.Configuration.Install" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="DatabaseHelper.cs" />
+    <Compile Include="Extensions.cs" />
+    <Compile Include="HttpWebRequestWrapper.cs" />
+    <Compile Include="HttpWebResponseWrapper.cs" />
+    <Compile Include="IHttpWebRequestWrapper.cs" />
+    <Compile Include="IHttpWebResponseWrapper.cs" />
+    <Compile Include="IMessageMapper.cs" />
+    <Compile Include="MessageAttachment.cs" />
+    <Compile Include="MessengerState.cs" />
+    <Compile Include="Providers\EmailProvider.cs" />
+    <Compile Include="EmailSend.cs" />
+    <Compile Include="Providers\EsemeserProvider.cs" />
+    <Compile Include="Providers\GsmServiceProvider.cs" />
+    <Compile Include="Providers\IMessageProvider.cs" />
+    <Compile Include="MailServerConfiguration.cs" />
+    <Compile Include="Message.cs" />
+    <Compile Include="MessageMapper.cs" />
+    <Compile Include="Providers\IMessageProviderFactory.cs" />
+    <Compile Include="Providers\MessageProviderFactory.cs" />
+    <Compile Include="MessageService.cs" />
+    <Compile Include="MessageState.cs" />
+    <Compile Include="MessageType.cs" />
+    <Compile Include="MessengerConfiguration.cs" />
+    <Compile Include="MessengerSectionHandler.cs" />
+    <Compile Include="MessengerInstaller.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="MessengerWindowsService.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Providers\NullMessageProvider.cs" />
+    <Compile Include="Providers\SmsApiProvider.cs" />
+    <Compile Include="Providers\SmsProvider.cs" />
+    <Compile Include="SmsSend.cs" />
+    <Compile Include="Providers\SmsserwerProvider.cs" />
+    <Compile Include="TransactionManager.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="register.bat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

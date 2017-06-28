@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AbstractLinesComponent
+	xmlns="com.makolab.fractus.view.documents.documentControls.*"
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:lineList="com.makolab.components.lineList.*" width="100%" height="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.document.BusinessObject;
+			import com.makolab.fractus.model.document.CommercialDocumentLine;
+			override protected function init():void
+			{
+				super.init();
+				documentLines.selectable = true;
+				documentLines.percentHeight = 100;
+				documentLines.rowHeight = 50;
+				
+				hideRecalculationButton = true;
+			}
+			
+			public function deleteLine(line:Object):void
+			{
+				this.documentObject[linesObjectName].removeItemAt(this.documentObject[linesObjectName].getItemIndex(line as CommercialDocumentLine));
+				this.documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_DELETE, null, line as CommercialDocumentLine));
+			}
+		]]>
+	</mx:Script>
+	<columns>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.lp')}" width="30" resizable="false" editable="false" itemRenderer="com.makolab.components.inputComponents.OrdinalNumberRenderer"/>
+		<!--
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.code')}" dataField="itemCode" width="100" headerWordWrap="true" editable="false"/>
+		-->
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.item')}" dataField="itemName" headerWordWrap="true" editable="false"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.quantity')}" dataField="quantity" width="60" resizable="false" headerWordWrap="true" editable="false" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+		<!--
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('dictionaries.unitIdShort')}" dataField="unitId" editable="false" width="40" minWidth="20" headerWordWrap="true" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" headerStyleName="headerRight" />
+		-->
+		<!--mx:DataGridColumn headerText=""{LanguageManager.getLabel('common.priceNetto')}"" dataField="initialNetPrice" width="60" headerWordWrap="true" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight" editable="false"/-->
+		<!--
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.priceBrutto')}" dataField="initialGrossPrice" width="60" headerWordWrap="true" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight" editable="false"/>
+		-->
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.discount')}" dataField="discountRate" width="60" resizable="false" headerWordWrap="true" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight" editable="false"/>
+		<!--mx:DataGridColumn id="netPriceColumn" headerText="C. netto po rab." dataField="netPrice" width="60" headerWordWrap="true" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight" editable="false"/-->
+		<mx:DataGridColumn headerText="C. brutto po rabacie" id="bruttoPoRabacie" dataField="grossPrice" width="70" resizable="false" headerWordWrap="true" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight" editable="false"/>
+		<!--mx:DataGridColumn headerText="{LanguageManager.getLabel('documents.netValue')}"dataField="netValue" width="70" headerWordWrap="true" editorDataField="dataObject" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight" editable="false"/-->
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('documents.grossValue')}" id="bruttoWartosc" dataField="grossValue" width="70" resizable="false" headerWordWrap="true" editorDataField="dataObject" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight" editable="false"/>
+		<!--mx:DataGridColumn headerText="" minWidth="20" width="50" editable="false">
+			<mx:itemRenderer>
+				<mx:Component>
+					<lineList:LineMenu>
+						<lineList:operations>
+							<lineList:LineOperation label="{LanguageManager.getLabel('common.Delete')}" operationInvoke="outerDocument.lineListDeleteLine(event)" icon="{outerDocument.getIcon('delete_small')}" textAlign="left" enabled="{!outerDocument.disableLinesChangeMessage}"/>
+						</lineList:operations>
+					</lineList:LineMenu>
+				</mx:Component>
+			</mx:itemRenderer>
+		</mx:DataGridColumn-->
+		<mx:DataGridColumn headerText="" width="45" resizable="false" editable="false">
+			<mx:itemRenderer>
+				<mx:Component>
+					<lineList:LineImageButton iconsName="status_canceled" click="outerDocument.deleteLine(data)" toolTip="{null}"/>
+				</mx:Component>
+			</mx:itemRenderer>
+		</mx:DataGridColumn>
+	</columns>
+</AbstractLinesComponent>

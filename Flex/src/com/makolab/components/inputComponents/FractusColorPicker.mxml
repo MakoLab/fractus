@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			private var _selectedColor:Number;
+			
+			override public function get data():Object
+			{
+				if (checkBox.selected) return selectedColor;
+				else return null;
+			}
+			
+			override public function set data(value:Object):void
+			{
+				if (value != null && value.toString() != "") checkBox.selected = true;
+				else checkBox.selected = false;
+				super.data = value;
+				if (value != null && value.toString() != "") selectedColor = Number(value);
+			}
+			
+			[Bindable]
+			public function set selectedColor(value:Number):void
+			{
+				_selectedColor = value;
+			}
+			public function get selectedColor():Number
+			{
+				return _selectedColor;
+			}
+			
+			private function checkBoxChangeHandler():void
+			{
+				if (checkBox.selected) data = colorPicker.selectedColor;
+				else data = null;
+			}
+			
+			private function colorPickerChangeHandler():void
+			{
+				selectedColor = colorPicker.selectedColor;
+			}
+		]]>
+	</mx:Script>
+	<mx:CheckBox label="" id="checkBox" change="checkBoxChangeHandler()"/>
+	<mx:ColorPicker id="colorPicker" selectedColor="{selectedColor}" enabled="{checkBox.selected}" change="colorPickerChangeHandler()"/>
+</mx:HBox>

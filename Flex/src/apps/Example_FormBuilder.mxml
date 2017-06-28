@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" xmlns:layoutComponents="layoutComponents.*" creationComplete="main()" xmlns:layoutComponents1="com.makolab.components.layoutComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.components.inputComponents.EmployeeEditor;
+			import com.makolab.components.inputComponents.NameEditor;
+			import mx.controls.ComboBox;
+			import com.makolab.components.inputComponents.AddressEditor;
+			import com.makolab.components.inputComponents.AddressRenderer;
+			import com.makolab.components.inputComponents.AttributeEditor;
+			import com.makolab.components.inputComponents.RadioButtonEditor;
+			import com.makolab.components.inputComponents.CheckBoxEditor;
+			import com.makolab.components.inputComponents.LabelListEditor;
+			import mx.controls.List;
+			//import inputComponents.LabelValueEditor;
+			
+			//public var lve:LabelValueEditor;
+			public var lle:LabelListEditor;
+			public var cbe:CheckBoxEditor;
+			public var rbe:RadioButtonEditor;
+			public var ate:AttributeEditor;
+			public var adr:AddressRenderer;
+			public var ade:AddressEditor;
+			private var cb:ComboBox;
+			private var l:List;
+			private var ne:NameEditor;
+			private var ee:EmployeeEditor;
+			//private var nipe:NIPEditor;
+			
+			private function main():void
+			{
+				DictionaryManager.getInstance().setDictionariesXML(dictionariesXML);
+				formBuilder.config = configXML;
+				formBuilder.data = dataXML;
+			}
+
+		]]>
+	</mx:Script>
+	
+	
+	<mx:Panel width="600" height="600" title="Edycja kontrahenta" x="10" y="10">
+		<layoutComponents1:FormBuilder
+				id="formBuilder"
+				config="{configXML}"
+				data="{dataXML}"
+				labelWidth="150"
+				editorWidth="250"
+				width="100%"
+				height="100%"
+			/>
+	</mx:Panel>
+<!--	
+	<mx:TextArea id="ta" text="{dataXML.*}" right="10" bottom="10" click="ta.text = dataXML" width="40%" top="10"/>
+
+-->	<mx:XML id="configXML" source="xml/contractors.forms.contractor.xml"/>
+	<mx:XML id="dataXML" source="xml/contractor.xml"/>
+	<mx:XML id="dictionariesXML" source="xml/dictionaries.xml"/>
+</mx:Application>

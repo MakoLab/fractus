@@ -1,0 +1,285 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<exceptions>
+  <exception id="Nr1_RTCClockInit">
+    <errorCode>1</errorCode>
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Nie zainicjalizowany zegar RTC.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr2_CRCError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd bajtu kontrolnego.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr3_ParamQuantity">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Zła ilość parametrów.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr4_DataError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd danych.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr5_RTCClockError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd wykonania (zapisu) do zegara RTC lub błąd odczytu zegara RTC.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr6_TotalizerError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd odczytu totalizerów, błąd operacji z pamięcią fiskalną.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr7_DateError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Data wcześniejsza od daty ostatniego zapisu w pamięci fiskalnej (wykonanie raportu dobowego lub programowanie stawek PTU niemożliwe !).</extendedCustomMessage>
+  </exception>
+  <exception id="Nr8_NotNullTotalizer">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd operacji - niezerowe totalizery !</extendedCustomMessage>
+  </exception>
+  <exception id="Nr9_IOError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd operacji I/O.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr11_PTUError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd programowania stawek PTU (zła liczba stawek, lub niepoprawne wartości stawek).</extendedCustomMessage>
+  </exception>
+  <exception id="Nr12_HeaderError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błędny nagłówek, zbyt długi lub pusty (zawiera np. same spacje) lub brak nagłówka przy programowaniu stawek PTU </extendedCustomMessage>
+  </exception>
+  <exception id="Nr13_FiscalError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Próba fiskalizacji urządzenia w trybie fiskalnym.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr16_NameError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błędna nazwa (pusta lub za długa).</extendedCustomMessage>
+  </exception>
+  <exception id="Nr17_QuantityError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błędne oznaczenie ilości (puste lub za długie).</extendedCustomMessage>
+  </exception>
+  <exception id="Nr18_PTUError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błędne oznaczenie stawki PTU (lub brak), próba sprzedaży w stawce nieaktywnej lub próba sprzedaży towaru zablokowanego.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr19_ValueError_CENA">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd wartości CENA.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr20_ValueError_BRUTTO_RABAT">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd wartości BRUTTO lub RABAT.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr21_TransactionError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Sekwencja odebrana przez drukarkę przy wyłączonym trybie transakcji.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr22_StornoError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd operacji STORNO.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr23_TransactionError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Zakończenie transakcji bez sprzedaży.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr25_ErrorCode_cashier_cash">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błędny kod terminala/ kasjera.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr26_ValueError_WPLATA">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd kwoty 'WPŁATA'.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr27_ValueError_TOTAL_RABAT">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błędna suma całkowita TOTAL lub błędna kwota RABAT.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr28_TotalizerError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Przepełnienie totalizera.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr29_TransactionError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Żądanie zakończenia trybu transakcji, w momencie kiedy nie został on jeszcze włączony.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr30_ValueError_WPLATA">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd kwoty WPŁATA.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr31_SumError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Nadmiar dodawania.</extendedCustomMessage>
+  </exception>  
+  <exception id="Nr32_SubstractionError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Wartość po odjęciu staje się ujemna.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr33_NameString_nazwa_kasjer_numer_kaucja">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd napisu "zmiana" lub "kasjer" lub "numer" lub "kaucja".</extendedCustomMessage>
+  </exception>
+  <exception id="Nr34_NameOrSumError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd jednej z kwot lub pozostałych napisów.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr35_ZeroTotalizerError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Zerowy stan totalizerów.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr36_DateError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Już istnieje zapis o tej dacie.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr37_OperationError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Operacja przerwana z klawiatury (przed rozpoczęciem drukowania).</extendedCustomMessage>
+  </exception>
+  <exception id="Nr38_NameError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd nazwy.</extendedCustomMessage>
+  </exception>  
+  <exception id="Nr39_PTUError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd oznaczenia PTU.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr40_RAMHeaderError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Brak nagłówka w pamięci RAM.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr41_CashNumberError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd napisu "numer_kasy".</extendedCustomMessage>
+  </exception>
+  <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+  <exception id="Nr42_CashierNumberError">
+    <extendedCustomMessage lang="pl">Błąd napisu "numer_kasjera".</extendedCustomMessage>
+  </exception>
+  <exception id="Nr43_PairNumberError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd napisu "numer_par".</extendedCustomMessage>
+  </exception>
+  <exception id="Nr44_ContractorError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd napisu "kontrahent".</extendedCustomMessage>
+  </exception>
+  <exception id="Nr45_TeminalError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd napisu "terminal".</extendedCustomMessage>
+  </exception>
+  <exception id="Nr46_CardNameError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd napisu "nazwa_karty".</extendedCustomMessage>
+  </exception>
+  <exception id="Nr47_CardNumberError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd napisu "numer_karty".</extendedCustomMessage>
+  </exception>
+  <exception id="Nr48_DateError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd napisu "data_m".</extendedCustomMessage>
+  </exception>
+  <exception id="Nr49_DateError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd napisu "data_r".</extendedCustomMessage>
+  </exception>
+  <exception id="Nr50_AuthorizationCodeError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd napisu "kod_autoryz".</extendedCustomMessage>
+  </exception>
+  <exception id="Nr51_ValueError_KWOTA">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd wartości "kwota".</extendedCustomMessage>
+  </exception>
+  <exception id="Nr82_CodeProgrammingNumberExceededError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Przekroczona liczba programowania kodów autoryzacyjnych przez RS.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr83_DepositError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Zła wartość kaucji przesłanej w $z.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr84_DisplayError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Przekroczona liczba wysłanych napisów na wyświetlacz.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr90_OperationError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Operacja tylko z kaucjami - nie można wysłać towarów.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr91_TransactionError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Była wysłana forma płatności - nie można wysłać towarów lub Błąd w zakończeniu transakcji związany z formami płatności.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr92_ArticlesDataBaseOverfilledError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Przepełnienie bazy towarowej.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr93_CancelPaymentError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd anulowania formy płatności.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr94_MaxSaleValueError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Przekroczenie maksymalnej kwoty sprzedaży.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr95_TransactionError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Próba ponownego rozpoczęcia transakcji (drukarka w trybie transakcji).</extendedCustomMessage>
+  </exception>
+  <exception id="Nr96_TimeoutError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Przekroczony limit czasu na wydruk paragonu (20 minut).</extendedCustomMessage>
+  </exception>
+  <exception id="Nr97_BatteryLowError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Blokada sprzedaży z powodu słabego akumulatora.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr98_ServiceError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Blokada sprzedaży z powodu założonej zwory serwisowej.</extendedCustomMessage>
+  </exception>
+  <exception id="Nr255_UnKnownCommandError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Nierozpoznana komenda.</extendedCustomMessage>
+  </exception>
+  <exception id="UnableToConnectToPrinterError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Nie udało się połączyc z drukarką.</extendedCustomMessage>
+  </exception>
+  <exception id="DriverIsNotConfiguredError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Sterownik drukarki nie jest skonfigurowany.</extendedCustomMessage>
+  </exception>
+  <exception id="TimeoutException">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Upłynął limit czasu.</extendedCustomMessage>
+  </exception>
+  <exception id="PrinterDLEError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd stanu drukarki.</extendedCustomMessage>
+  </exception>
+  <exception id="MissingCashierError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Brak numeru kasjera.</extendedCustomMessage>
+  </exception>
+  <exception id="MissingBillNumberError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Brak numeru paragonu.</extendedCustomMessage>
+  </exception>
+  <exception id="MissingGrossValueError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Brak sumarycznej wartości paragonu.</extendedCustomMessage>
+  </exception>
+  <exception id="PrinterPrecisionError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Dokładność ilości towaru przekracza dokładność drukarki.</extendedCustomMessage>
+  </exception>
+  <exception id="NotImplementedFeature">
+    <customMessage lang="pl">Wystąpił błąd drukarki fiskalnej</customMessage>
+    <extendedCustomMessage lang="pl">Obsługa nie jest zaimplementowana.</extendedCustomMessage>
+  </exception>
+  <exception id="ConnectionError">
+    <customMessage lang="pl">Wystąpił błąd wydruku fiskalnego</customMessage>
+    <extendedCustomMessage lang="pl">Błąd w komunikacji z drukarką.</extendedCustomMessage>
+  </exception>
+  
+</exceptions>

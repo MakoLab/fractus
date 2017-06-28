@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox creationComplete="init()" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:layoutComponents="com.makolab.components.layoutComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.SearchCommand;
+			import com.makolab.fractus.model.ConfigManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			import mx.controls.Alert;
+			import mx.controls.Button;
+			import mx.events.DataGridEvent;
+			import mx.events.ListEvent;
+			import mx.formatters.SwitchSymbolFormatter;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+
+			[Bindable]
+			public var contractorsCatalogueParams:XMLList;
+			[Bindable]
+			public var itemsCatalogueParams:XMLList;
+			[Bindable]
+			public var commercialListParams:XMLList;
+			[Bindable]
+			public var warehouseListParams:XMLList;
+			
+			private var commandList:Array = [];
+			private var currentCommandIndex:int = 0;
+			[Bindable]
+			private var gridDP:XMLList = new XMLList();
+			
+			public static function showWindow():ComponentWindow
+			{
+				var control:SearchTest = new SearchTest();
+				var title:String = LanguageManager.getInstance().labels.diagnostics.searchUnitTest;
+				return ComponentWindow.showWindow(control, 0, new Rectangle(-1, 1, 600, 400), title);
+			}
+			public function set paramsXML(value:XML):void
+			{
+				if(value){
+					contractorsCatalogueParams = value.contractors.searchParams;
+					itemsCatalogueParams = value.items.searchParams;
+					commercialListParams = value.commercial.searchParams;
+					warehouseListParams = value.warehouse.searchParams;
+				}
+			}
+			
+			private function init():void
+			{
+				
+			}
+			
+			private function startTest():void
+			{
+				if(ModelLocator.getInstance().configManager.values["diagnostics_searchTestParams"])paramsXML = ModelLocator.getInstance().configManager.values["diagnostics_searchTestParams"].configValue.root[0];
+				commandList = [];
+				gridDP = new XMLList();
+				currentCommandIndex = 0;
+				if(commercialList.selected)searchLoop(commercialListParams,SearchCommand.DOCUMENTS);
+				if(warehouseList.selected)searchLoop(warehouseListParams,SearchCommand.DOCUMENTS);
+				if(contractorsCatalogue.selected)searchLoop(contractorsCatalogueParams,SearchCommand.CONTRACTORS);
+				if(itemsCatalogue.selected)searchLoop(itemsCatalogueParams,SearchCommand.ITEMS);
+				executeCommand(0);
+			}
+			
+			private function searchLoop(searchParams:XMLList,type:String):void
+			{
+				if(searchParams){
+					for(var i:int=0;i<searchParams.length();i++){
+						commandList.push({command : createCommand(type,searchParams[i]), parameters : searchParams[i], type : type});
+					}
+				}else{
+					Alert.show("Nie podano parametrów!","Błąd");
+				}
+			}
+			
+			private function createCommand(type:String,params:XML):SearchCommand
+			{
+				var cmd:SearchCommand = new SearchCommand(type);
+				cmd.searchParams = params;
+				cmd.addEventListener(ResultEvent.RESULT,resultHandler);
+				cmd.addEventListener(FaultEvent.FAULT,faultHandler);
+				return cmd;
+			}
+			
+			private function executeCommand(index:int):void
+			{
+				if(index < commandList.length){
+					(commandList[index].command as SearchCommand).execute();
+				}
+			}
+			
+			private function resultHandler(event:ResultEvent):void
+			{
+				var result:XML = <result/>;
+				result.module = commandList[currentCommandIndex].type;
+				result.resultCount = XML(event.result).*.length();
+				result.searchParams = commandList[currentCommandIndex].parameters.toString();
+				gridDP += result;
+				currentCommandIndex++;
+				executeCommand(currentCommandIndex);
+			}
+			
+			private function faultHandler(event:FaultEvent):void
+			{
+				var result:XML = <result/>;
+				result.module = commandList[currentCommandIndex].type;
+				result.resultCount = "-1";
+				result.searchParams = commandList[currentCommandIndex].parameters.toString();
+				gridDP += result;
+				currentCommandIndex++;
+				executeCommand(currentCommandIndex);
+			}
+			
+			public function dblClickHandler(event:ListEvent):void
+			{
+				Alert.show(grid.selectedItem.searchParams,"XML z parametrami");
+			}
+			
+			private function showParamsList():void
+			{
+				Alert.show(ModelLocator.getInstance().configManager.values["diagnostics_searchTestParams"],"Lista parametrów wyszukiwania");
+			}
+			
+			private var colorFunction:Function = function (data:Object):Object{
+				if(data.resultCount.* == "")return "0xFF0000";
+				if(Number(data.resultCount.*) == 0)return "0xFFFF00";
+				return NaN;
+			};
+		]]>
+	</mx:Script>
+	<mx:Label text="uwzględnij: "/>
+	<mx:VBox verticalGap="0">		
+	<mx:CheckBox id="commercialList" selected="true" label="sprzedaż"/>
+	<mx:CheckBox id="warehouseList" selected="true" label="{LanguageManager.getLabel('common.warehouse')}"/>
+	<mx:CheckBox id="contractorsCatalogue" selected="true" label="kontahenci"/>
+	<mx:CheckBox id="itemsCatalogue" selected="true" label="towary"/>
+	</mx:VBox>
+	<mx:Button label="Start" color="red" click="startTest()"/>
+	<layoutComponents:ExtendedDataGrid id="grid" rowColorFunction="colorFunction" dataProvider="{gridDP}" width="100%" height="100%" doubleClickEnabled="true" itemDoubleClick="dblClickHandler(event)">
+		<layoutComponents:columns>
+			<mx:DataGridColumn headerText="moduł" dataField="module"/>
+			<mx:DataGridColumn headerText="ilość wyników" dataField="resultCount" width="100"/>
+		</layoutComponents:columns>
+	</layoutComponents:ExtendedDataGrid>
+	<mx:Text text="Dwu-klik na pozycji otwiera XML z parametrami wyszukiwania."/>
+	<mx:Button label="Lista wszystkich parametrów jest tu" click="showParamsList()"/>
+	<!--<mx:XML id="testSearchParams" source="/xml/testSearchParams.xml"/>-->
+</mx:VBox>

@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="absolute"
+	width="350" 
+	height="160"
+	showCloseButton="true"
+	close="close()"
+	creationComplete="creationComplete()">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.CreateBusinessObjectCommand;
+			import com.makolab.fractus.commands.FractusCommand;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			
+			import mx.collections.XMLListCollection;
+			import mx.controls.Alert;
+			import mx.controls.CheckBox;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			private var clipboardXML:XMLListCollection;
+			private var model:ModelLocator = ModelLocator.getInstance();
+			[Bindable]
+			private var documentTypes:XML;
+			
+			private var isIncomeWarehouseDocument:Boolean = false;
+			private var isOutcomeWarehouseDocument:Boolean = false;
+			private var isServiceDocument:Boolean = false;
+			private var isSalesOrder:Boolean = false;
+			private var isSales:Boolean = false;
+			private var isReservation:Boolean = false;
+			private var sourceType:String;
+			private var clipboardPanel:DocumentClipboardPanel;
+			private var typeDescriptor:DocumentTypeDescriptor;
+			
+			
+			private var clipboardExtraData:XMLList=null;
+			private var clipboardExtraList:Array;
+			private var clipboardExtraCheckBox:Array;
+			
+			
+			public function setClipboardXml(value:XMLListCollection):Boolean
+			{
+				this.clipboardXML = new XMLListCollection();
+				
+				if(value)
+				{
+					//sprawdzamy jaki typ dokumentu jest zrodlem
+					var docId:String = value.getItemAt(0).@documentTypeId;
+					this.typeDescriptor = new DocumentTypeDescriptor(docId);
+					var entry:XML = DictionaryManager.getInstance().getById(docId);
+					var warehouseDirection:String = entry.xmlOptions.root.*.@warehouseDirection;
+					
+					if(warehouseDirection == "outcome" && entry.documentCategory.* == "1")
+					{
+						this.isOutcomeWarehouseDocument = true;
+						this.sourceType = "warehouseDocument";
+					}
+					else if(warehouseDirection == "income" && entry.documentCategory.* == "1")
+					{
+						this.isIncomeWarehouseDocument = true;
+						this.sourceType = "warehouseDocument";
+					}
+					else if(entry.documentCategory.* == "10")
+					{
+						this.isServiceDocument = true;
+						this.sourceType = "serviceDocument";
+					}
+					else if(entry.documentCategory.* == "0")
+					{
+						this.isSales = true;
+						this.sourceType = "salesDocument";
+					}
+					else if(entry.documentCategory.* == "13")
+					{
+						this.isSalesOrder = true;
+						this.sourceType = "multipleSalesOrders";
+					}
+					else if(entry.documentCategory.* == "3")
+					{
+						this.isReservation = true;
+						this.sourceType = "multipleReservations";
+					}
+					else
+					{
+						Alert.show(LanguageManager.getInstance().labels.documents.cantCreateFromThisDocumentType);
+						return false;
+					}
+					
+					for each(var position:XML in value)
+					{
+						if(this.isIncomeWarehouseDocument || this.isOutcomeWarehouseDocument)
+							this.clipboardXML.addItem(<warehouseDocumentId>{position.@id}</warehouseDocumentId>);
+						else if (this.isServiceDocument)
+							this.clipboardXML.addItem(<serviceDocumentId>{position.@id}</serviceDocumentId>);
+						else if (this.isSalesOrder)
+							this.clipboardXML.addItem(<salesOrderId>{position.@id}</salesOrderId>);
+						else if (this.isSales)
+							this.clipboardXML.addItem(<salesDocumentId>{position.@id}</salesDocumentId>);
+						else if (this.isReservation)
+							this.clipboardXML.addItem(<reservationId>{position.@id}</reservationId>);
+					}
+				}
+				
+				return true;		
+			}
+					
+			public static function show(parent:DisplayObject, clipboardXML:XMLListCollection, clipboardPanel:DocumentClipboardPanel):DocumentClipboardCreateNewDocumentWindow
+			{
+				var instance:DocumentClipboardCreateNewDocumentWindow = new DocumentClipboardCreateNewDocumentWindow();
+			
+				if(clipboardPanel.clipboardExtraData)
+				{
+					instance.clipboardExtraData=clipboardPanel.clipboardExtraData;
+				}
+				if(instance.setClipboardXml(clipboardXML))
+				{
+					PopUpManager.addPopUp(instance, parent, true);
+					PopUpManager.centerPopUp(instance);
+					instance.clipboardPanel = clipboardPanel;
+					instance.visible = true;
+									
+					return instance;
+				}
+				else return null;
+			}
+			public function addExtra():void
+			{/*
+				<clipboardExtra>
+				<item type="checkBox" labelKey="common.name" varname="costam1" />
+				<item type="list" labelKey="common.name" varname="costam">
+				<elem labelKey="common.name" value="0" />
+				<elem labelKey="common.name" value="1" />
+				<elem labelKey="common.name" value="2" />
+				</item>
+				<item type="checkBox" labelKey="common.name" varname="costam2" />
+				</clipboardExtra>
+				*/
+				if(clipboardExtraData)
+				{
+					clipboardExtraCheckBox=new Array();
+					clipboardExtraList=new Array();
+					for(var i:int=0;i<clipboardExtraData.item.length();i++)
+					{
+						var type=clipboardExtraData.item[i].@type.toString();
+						switch(type)
+						{
+							case "checkBox":
+								var cb:CheckBox=new CheckBox();
+								cb.name=clipboardExtraData.item[i].@varname.toString();
+								cb.label=LanguageManager.getLabel(clipboardExtraData.item[i].@labelKey);
+								cb.width=cboxDocumentTypes.width;
+								extraData.addChild(cb);
+								
+								clipboardExtraCheckBox.push(cb);
+								height+=30;
+								break;
+							case "list":
+								var cbx:ComboBox=new ComboBox();
+								cbx.name=clipboardExtraData.item[i].@varname.toString();
+								cbx.dataProvider=clipboardExtraData.item[i].elem;
+								cbx.labelFunction=lFunction;
+								cbx.width=cboxDocumentTypes.width;
+								extraData.addChild(cbx);
+								clipboardExtraList.push(cbx);
+								height+=30;
+								
+								break;
+						}
+					}
+				}
+			}
+			private function lFunction(_item:Object):String
+			{
+				return LanguageManager.getLabel(_item.@labelKey);
+			}
+			public function close():void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			
+			public function btnOkClickHandler(event:MouseEvent):void
+			{
+				this.model.currentScreen = ModelLocator.SALES_DOCUMENT_EDITOR;
+				
+				var cmd:ShowDocumentEditorCommand;
+				var selectedItem:XML = XML(this.cboxDocumentTypes.selectedItem);
+				
+				cmd = new ShowDocumentEditorCommand(this.getDocumentCategory(selectedItem));
+				cmd.template = this.cboxDocumentTypes.selectedItem.@id;
+				cmd.source = <source type={this.sourceType}>{this.clipboardXML.source}</source>;
+				
+				if(this.isServiceDocument)
+				{
+					cmd.source.appendChild(<closeOrder>true</closeOrder>);
+					cmd.source.appendChild(<processObject>closingInvoice</processObject>);
+				}
+				if(clipboardExtraData)
+				{
+					var i:int;
+					var str:XML=<extraParams></extraParams>;
+					for(i=0;i<clipboardExtraCheckBox.length;i++)
+					{
+							str.appendChild(<item value={clipboardExtraCheckBox[i].selected} name={clipboardExtraCheckBox[i].name} ></item>);
+					}
+					for(i=0;i<clipboardExtraList.length;i++)
+					{
+						str.appendChild(<item value={clipboardExtraList[i].selectedItem.@value} name={clipboardExtraList[i].name} ></item>);
+					}
+					
+					cmd.source.appendChild(str);
+				}
+				cmd.addEventListener(ResultEvent.RESULT, loadDocumentResult);
+				cmd.execute();
+				
+				if(!this.isSalesOrder)
+					model.shouldUsePriceList=true;
+				if(clipboardPanel)
+					clipboardPanel.clear();
+			}
+			
+			private function xmlDeleteNode(xmlToDelete:XML):Boolean
+			{
+			    var cn:XMLList = XMLList(xmlToDelete.parent()).children();
+			     
+			    for ( var i:Number = 0 ; i < cn.length() ; i++ )
+			    {
+					if ( cn[i] == xmlToDelete ) 
+					{
+						delete cn[i];       
+						return true;
+					}
+			    }    
+			    
+			    return false;
+			}
+			
+			private function filterTemplates():void
+			{
+				var nodesToDelete:Array = []
+				for each(var t:XML in this.documentTypes.*.*)
+				{
+					if(this.typeDescriptor.availableDerivedDocuments.(@name == t.@id).length() == 0)
+						nodesToDelete.push(t);
+				}	
+				
+				for each(var x:XML in nodesToDelete)
+					this.xmlDeleteNode(x);
+			}
+			
+			private function creationComplete():void
+			{
+				//tutaj sprawdzenie jakiego typu sa dokum,enty zrodlowe
+				documentTypes = new XML(<documentTypes/>);
+				
+				for each(var x:XML in ModelLocator.getInstance().documentTemplates.*)	{
+					documentTypes.appendChild(x);		
+				}
+				var xml:XML=<purchaseDocument>{this.typeDescriptor.availableDefaultDocuments}</purchaseDocument>;
+		
+				documentTypes.appendChild(xml);
+				//if(this.isReservation)
+				this.filterTemplates();
+			}
+			
+			private function getDocumentCategory(selectedItem:XML):uint
+			{
+				var group:String = String(XML(selectedItem.parent()).localName());
+				
+				switch(group)
+				{
+					case "salesDocument":
+						return DocumentTypeDescriptor.CATEGORY_SALES;
+					case "purchaseDocument":
+						return DocumentTypeDescriptor.CATEGORY_PURCHASE;
+					case "warehouseDocument":
+						return DocumentTypeDescriptor.CATEGORY_WAREHOUSE;	
+					case "orderDocument":
+						return DocumentTypeDescriptor.CATEGORY_WAREHOUSE_ORDER;
+					default:
+						return null;				
+				}
+			}
+			
+			private function loadDocumentResult(event:ResultEvent):void
+			{
+				this.close();
+			}
+
+			private function comboBoxChangeHandler(event:Event):void
+			{
+				var documentTypeId:String = cboxDocumentTypes.selectedItem.@documentTypeId;
+				
+				if(documentTypeId && documentTypeId != "")
+				{
+					var provider:XMLListCollection = new XMLListCollection();
+					
+					var type:XML = DictionaryManager.getInstance().getById(documentTypeId);
+					
+					for each (var pm:XML in type.xmlOptions.*.*.paymentMethods.*)
+					{
+						provider.addItem(DictionaryManager.getInstance().getById(pm.*));
+					}
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox horizontalCenter="0" verticalCenter="0" horizontalAlign="left" width="250" creationComplete="addExtra();">
+		<mx:Label text="{LanguageManager.getInstance().labels.documents.documentChooseType}" width="100%"/>
+		<mx:ComboBox id="cboxDocumentTypes" 
+			dataProvider="{documentTypes.*.template}" 
+			labelField="@label" 
+			change="comboBoxChangeHandler(event)" 
+			width="100%"
+			/>
+		<mx:VBox id="extraData"></mx:VBox>
+		<mx:HBox width="100%" horizontalAlign="right" horizontalGap="20" paddingTop="5">
+			<mx:Button label="{LanguageManager.getInstance().labels.common.ok}" click="btnOkClickHandler(event)" />
+			<mx:Button label="{LanguageManager.getInstance().labels.common.cancel}" click="close()" />
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>

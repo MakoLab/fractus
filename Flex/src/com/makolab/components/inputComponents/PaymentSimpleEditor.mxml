@@ -1,0 +1,541 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:lineList="com.makolab.components.lineList.*" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	width="100%"
+	visible="{componentVisible}"
+	>
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+		[Event(name="paymentChange", type="com.makolab.components.document.DocumentEvent")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import mx.events.ListEvent;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.controls.Alert;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import com.makolab.fractus.model.LanguageManager;		
+			import com.makolab.components.document.DocumentEvent;	
+			import com.makolab.components.util.Tools;	
+			
+			[Bindable] 
+			public var dictionaryManager:DictionaryManager = DictionaryManager.getInstance();			
+			[Bindable] private var currencySymbol:String;
+			[Bindable] 
+			public var dataObject: XML;
+			[Bindable]
+			public var documentTypeId:String;
+			[Bindable] private var totalAmount:Number;
+			[Bindable] private var paymentXML:XMLList;
+			[Bindable] public var editMode:Number = 0;
+			private var dueDate:Date;
+			private var _paymentCurrencyId:String;
+			private var _data:Object;
+			private var _issueDate:String;
+			private var _grossValue:Number;
+			[Bindable] private var enable:Boolean = true;
+			[Bindable] private var dueDays:Number;
+			private var _contractor: XMLList;
+			[Bindable] private var componentVisible:Boolean = true;
+			[Bindable] public var paymentEdit:Boolean = true;
+			[Bindable] public var paymentMethods:XML;
+			[Bindable] public var paymentIndex:Number;
+			public var isChangeable:Boolean = true;
+			
+			private var _documentObject:DocumentObject;
+			
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				if(this.documentObject)
+					this.documentObject.removeEventListener(DocumentEvent.DOCUMENT_ATTRIBUTE_CHANGE, supplierDocumentDateChange);
+					
+				_documentObject = value;
+				
+				if(this.documentObject)
+					this.documentObject.addEventListener(DocumentEvent.DOCUMENT_ATTRIBUTE_CHANGE, supplierDocumentDateChange, false, 0, true);
+			}
+			
+			private function supplierDocumentDateChange(event:DocumentEvent):void
+			{
+				if(event.fieldName == "Attribute_SupplierDocumentDate" && dataObject.payment.length() == 1)
+				{
+					var attr:XML = DictionaryManager.getInstance().getByName("Attribute_SupplierDocumentDate", "documentAttributes");
+					
+					var strDate:String = null;
+					
+					if(documentObject.attributes.source.(documentFieldId.* == attr.id.*).length() > 0 &&
+						String(documentObject.attributes.source.(documentFieldId.* == attr.id.*)[0].value).length > 0)
+					{
+						var attributeNode:XML = documentObject.attributes.source.(documentFieldId.* == attr.id.*)[0];
+						strDate = attributeNode.value.*;
+					}
+					else
+						strDate = documentObject.xml.issueDate.*;
+					
+					var date:Date = Tools.isoToDate(strDate);
+					var dueDays:Number = parseInt(dataObject.payment[0].dueDays); 
+					var dueDate:Date = new Date(date.getFullYear(), date.getMonth(), date.getDate() + dueDays);
+					dataObject.payment[0].date = String(strDate).substr(0, 10);
+					dataObject.payment[0].dueDate = Tools.dateToIso(dueDate).substr(0, 10);
+				}
+			}
+			
+			public function get documentObject():DocumentObject
+			{
+				return this._documentObject;
+			}
+			
+			[Bindable]		
+			public function set grossValue(value:Number):void	
+			{
+				var d:DocumentTypeDescriptor = new DocumentTypeDescriptor(documentTypeId);
+				_grossValue = value;
+				crDocumentValue.value = value; 
+				var pa:Number = 0;
+				for(var i:int=0; i<dataObject.payment.length(); i++)	{
+					if(i>0) pa += Number(dataObject.payment[i].amount);
+				}
+				if(componentVisible)	{
+					dataObject.payment[0].amount = Tools.round(grossValue - pa,2);
+					var event:DocumentEvent = new DocumentEvent(DocumentEvent.DOCUMENT_PAYMENT_CHANGE);
+					this.dispatchEvent(event);
+				}
+				recalculate();
+			}
+			
+			public function get grossValue():Number
+			{
+				return _grossValue;
+			}
+						
+			public function set paymentCurrencyId(value:String):void	{
+				_paymentCurrencyId = value;
+				for each(var x:XML in dictionaryManager.dictionaries.currency)	{
+					if(x.id.text() == value)	{
+						currencySymbol = x.symbol.text();
+						break;
+					}						
+				}
+			}
+			
+			public function get paymentCurrencyId():String	{
+				return _paymentCurrencyId;
+			}
+			
+			private function convDate(aDate:Date):String {
+				if(aDate)	{
+					var SEPARATOR:String = "-";
+					var mm:String = (aDate.month + 1).toString();
+					if (mm.length < 2) mm = "0" + mm;
+					var dd:String = aDate.date.toString();
+					if (dd.length < 2) dd = "0" + dd;
+					var yyyy:String = aDate.fullYear.toString();
+					return yyyy + SEPARATOR + mm + SEPARATOR + dd;
+				}
+				else return "";
+			}
+     		
+			public function set issueDate(value:String):void	{
+				_issueDate = value;
+				if(!dataObject)	{
+					dueDays = Number(DictionaryManager.getInstance().dictionariesXML.paymentMethod.*.(id==paymentTemplate.payment.paymentMethodId.text()).dueDays.text());
+					dueDate = new Date(Number(value.substr(0,4)), Number(value.substr(5,2))-1, Number(value.substr(8,2))+dueDays);
+					paymentTemplate.payment.date = value;
+					paymentTemplate.payment.dueDate = convDate(dueDate);
+					paymentTemplate.payment.exchangeDate = value;
+					if(dataObject.payment.dueDate.toString().length == 0) {
+						dataObject.payment.date = value;
+						dataObject.payment.dueDate = convDate(dueDate);
+						dataObject.payment.dueDays = dueDays.toString();
+						dataObject.payment.exchangeDate = value;
+					} 
+				}
+			}
+			
+			public function get issueDate():String	{
+				return _issueDate;
+			}
+			
+			[Bindable]
+			public function set contractor(value:XMLList):void	{
+				_contractor = value;
+				updateContractor();
+			}
+			
+			public function get contractor():XMLList	{
+				return _contractor;
+			}
+			
+			override public function set data(value:Object):void	{
+				
+				//if(dataObject/*  && !isChangeable */)return;
+				//if(paymentMethods.length() > 1)enable
+				
+				var d:DocumentTypeDescriptor = new DocumentTypeDescriptor(documentTypeId);
+				getPaymentMethods(); 
+				paymentTemplate.payment.paymentCurrencyId = paymentCurrencyId;
+				paymentTemplate.payment.systemCurrencyId = paymentCurrencyId;
+				paymentTemplate.payment.paymentMethodId = paymentMethods.*[0].id.text();
+				paymentTemplate.payment.dueDays = paymentMethods.*[0].dueDays.text();
+				
+				if(d.isOrderDocument) {
+					if(value.*.length() == 0)
+						componentVisible = false;
+					else	{
+						componentVisible = true; super.data = value;
+					}
+				}		
+				else super.data = value;
+				if(value.*.length()>1)	{
+					enable = false;
+					paymentEdit = false;
+					info.text = LanguageManager.getInstance().labels.documents.paymentsNote;
+				}
+				else {
+					enable = true;
+					paymentEdit = true; 
+					info.text="";
+				}
+				if(value && value.toString()!="") {
+					//dataObject = XML(value).copy();
+					dataObject = value as XML;
+					//dataObject.payment.amount = grossValue.toString();
+					for(var i:int=0; i<dataObject.payment.length(); i++)	{
+						var ddate:Date = new Date(Number(dataObject.payment[i].dueDate.toString().substr(0,4)), Number(dataObject.payment[i].dueDate.toString().substr(5,2))-1, Number(dataObject.payment[i].dueDate.toString().substr(8,2))+dueDays);
+						var date:Date = new Date(Number(dataObject.payment[i].date.toString().substr(0,4)), Number(dataObject.payment[i].date.toString().substr(5,2))-1, Number(dataObject.payment[i].date.toString().substr(8,2))+dueDays);
+						dataObject.payment[i].dueDate = dataObject.payment[i].dueDate.toString().substr(0,10);
+						//dueDays = getDaysDifference(date, ddate);
+						dataObject.payment[i].dueDays = getDaysDifference(date, ddate).toString();	
+					}						
+				}
+				else if(!d.isOrderDocument)	{
+					dataObject = paymentTemplate.copy();
+					dataObject.payment.paymentCurrencyId = paymentCurrencyId;
+					dataObject.payment.systemCurrencyId = paymentCurrencyId;
+					dataObject.payment.amount = Tools.round(grossValue,2).toString();
+					dataObject.payment.dueDays = paymentTemplate.payment.dueDays;
+					dueDate = new Date(Number(issueDate.substr(0,4)), Number(issueDate.substr(5,2))-1, Number(issueDate.substr(8,2))+Number(dataObject.payment.dueDays));
+					dataObject.payment.dueDate = convDate(dueDate);		
+				}
+				recalculate();
+				
+			}
+	
+			override public function get data():Object	{
+				return _data;
+			}
+			
+			private function getPaymentMethods():void
+			{
+				paymentMethods = <payments/>;
+				var payments:XMLList = dictionaryManager.dictionaries.paymentMethod;
+				var documentTypes:XMLList = dictionaryManager.dictionaries.documentTypes.(valueOf().id == String(documentTypeId));
+				paymentIndex = 0;
+				for each(var x:XML in documentTypes.xmlOptions.root.commercialDocument.paymentMethods.id)	{
+					paymentMethods.appendChild(payments.(valueOf().id == String(x))); 
+				}	
+
+				paymentTemplate.payment.paymentMethodId = paymentMethods.*[0].id.text();
+				paymentTemplate.payment.dueDays = paymentMethods.*[0].dueDays.text();
+				paymentTemplate.payment.dueDate = convDate(new Date(Number(issueDate.substr(0,4)), Number(issueDate.substr(5,2))-1, Number(issueDate.substr(8,2))+Number(paymentTemplate.payment.dueDays)));						
+						
+				for each(var y:XML in paymentMethods.*)	{
+					if(dataObject && String(dataObject.*[0].paymentMethodId) == String(y.id)) break;
+					paymentIndex++;
+				}
+			}	
+			
+			public function recalculate():String	{
+					totalAmount = 0;
+					for each(var x:XML in dataObject.*)	{
+						if(x.dueDate.text().substr(0,10) == x.date.text().substr(0,10))	{
+							totalAmount += Number(x.amount.text());						
+						}
+					}
+				updateContractor();
+				return Tools.round(totalAmount,2).toString();
+			}
+			
+			private function updateContractor():void
+			{
+				if (!dataObject) return;
+				 
+				for(var i:int=0; i<dataObject.payment.length(); i++)	{
+					if (_contractor && _contractor.length() > 0) dataObject.payment[i].contractor.* = _contractor;
+					else if (dataObject.payment[i].contractor.length() > 0) delete dataObject.payment[i].contractor;
+				}
+			}
+			
+			public static const millisecondsPerDay:int = 1000 * 60 * 60 * 24; 
+			
+			private function getDaysDifference(minDate:Date, maxDate:Date):uint 
+			{ 
+				if((maxDate.getTime() - minDate.getTime()) > 0)
+				return Math.round(( maxDate.getTime() - minDate.getTime()) / millisecondsPerDay); 
+				else return 0;
+			} 
+			
+			public function paymentChange(component:Object):void	
+			{
+				checkDate(component); recalculate();
+				var event:DocumentEvent = new DocumentEvent(DocumentEvent.DOCUMENT_PAYMENT_CHANGE);
+				this.dispatchEvent(event);
+			}
+							
+			public function checkDate(element:Object):void	
+			{
+				var date:String = issueDate;
+				
+				if(dataObject.payment.length() == 1 && String(dataObject.payment[0].date) && String(dataObject.payment[0].date) != "")
+					date = String(dataObject.payment[0].date).substr(0, 10);
+				
+				if(date)	{		
+					if(element.id=='paymentMethodComponent0' || element.id=='paymentMethodComponent1')	{
+						dueDays = Number(DictionaryManager.getInstance().dictionariesXML.paymentMethod.*.(id==String(element.dataObject)).dueDays.text());
+						dataObject.payment[0].paymentMethodId = DictionaryManager.getInstance().dictionariesXML.paymentMethod.*.(id==String(element.dataObject))[0].id.text();
+						//trace("paymentMethod dueDays: " + dueDays);					
+					}
+					else if(element.id=='dueDaysComponent0')	{
+						dueDays = Number(element.dataObject);				
+					}
+					else if(element.id=='dueDaysComponent1')	{
+						dueDays = Number(element.text);		
+					}
+					else if(element.id=='dueDateComponent0' || element.id=='dueDateComponent1')	{
+						var ndate:Date = new Date(Number(String(element.dataObject).substr(0,4)),Number(String(element.dataObject).substr(5,2))-1,Number(String(element.dataObject).substr(8,2)));
+						dueDays = getDaysDifference(new Date(Number(date.substr(0,4)),Number(date.substr(5,2))-1,Number(date.substr(8,2))),ndate);				
+					}
+					dueDate = new Date(Number(date.substr(0,4)), Number(date.substr(5,2))-1, Number(date.substr(8,2))+dueDays);
+					dataObject.payment[0].dueDate = convDate(dueDate);
+					dataObject.payment[0].dueDays = dueDays.toString();
+				}
+			}
+			
+			[Bindable]
+			public var gridStyleName:Object;
+			
+			private function setDataObject(obj:Object):void
+			{
+				if(dataObject)	{
+					obj.dataObject = dataObject.*[0].paymentMethodId;
+					//paymentChange(obj);
+				}				
+			}
+			
+			//
+			private function getPaymentMethod(contractor:XMLList):String
+			{
+				var ret:String;
+				if(isChangeable){
+					var paymentAttributeId:String = dictionaryManager.dictionaries.contractorAttributes.(name.toString() == "Attribute_DefaultPaymentMethod").id.toString();
+					if(contractor && dataObject.payment.length() == 1){
+						var attributes:XMLList = contractor[0].attributes.attribute.(contractorFieldId.toString() == paymentAttributeId); 
+						if(attributes.length() > 0 && paymentMethods.entry.(valueOf().id.toString() == attributes[0].value.toString()).length() > 0 )
+							dataObject.*[0].paymentMethodId = attributes[0].value.toString();
+					}
+				}
+				ret = paymentMethods.*.(valueOf().id == String(dataObject.*[0].paymentMethodId));
+				this.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_PAYMENT_CHANGE));
+				return ret;
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:XML id="paymentTemplate">
+		<payments>
+		      <payment>
+			        <date></date>
+			        <dueDate></dueDate>
+			        <dueDays></dueDays>
+			        <paymentMethodId></paymentMethodId>
+			        <amount>0</amount>
+			        <paymentCurrencyId></paymentCurrencyId>
+			        <systemCurrencyId></systemCurrencyId>
+			        <exchangeDate></exchangeDate>
+			        <exchangeScale>1</exchangeScale>
+			        <exchangeRate>1</exchangeRate>
+			        <isSettled>0</isSettled>
+		      </payment>
+		</payments>		
+	</mx:XML>
+	
+	
+		<mx:VBox verticalGap="0">
+		<mx:HBox height="27">
+			<mx:Label text="{LanguageManager.getInstance().labels.documents.paymentMethod}: " width="130" />
+			<mx:ViewStack id="viewPayment" selectedIndex="{editMode}">
+				<inputComponents:BindingContainer
+						id="paymentMethodComponent0"
+						dataProvider="{dataObject.*[0]}" 
+						dataField="paymentMethodId" 
+						width="150" 
+						editorUsesEnterKey="true" 
+						editorDataField="dataObject"
+					 	change="paymentChange(paymentMethodComponent0)"
+					 	creationComplete="setDataObject(paymentMethodComponent0)"
+					 	enabled="{enable}"
+				 	>
+					<inputComponents:itemEditor>
+						<mx:Component>
+							<inputComponents:DictionarySelector 
+								dataProvider="{outerDocument.paymentMethods.*}" 
+								valueMapping="{{ id : '*' }}" 
+								labelField="label" 
+								listLabelField="label"
+								fillAlphas="[1,1]"
+								enabled="{outerDocument.paymentEdit}"
+								/>
+						</mx:Component>
+					</inputComponents:itemEditor>
+					<inputComponents:itemRenderer>	
+						<mx:Component>
+							<inputComponents:DictionaryRenderer 
+								dataProvider="{outerDocument.dictionaryManager.dictionaries.paymentMethod}" 
+								labelField="label" 
+								valueMapping="{{ id : '*' }}"
+								/>
+						</mx:Component>						
+					</inputComponents:itemRenderer>
+				</inputComponents:BindingContainer>
+				
+				<mx:VBox>	
+					<inputComponents:DictionarySelector 
+						id="paymentMethodComponent1"
+						dataProvider="{paymentMethods.*}"
+						dataObject="{dataObject.*[0].paymentMethodId}"
+						valueMapping="{{ id : '*' }}" 
+						labelField="label" 
+						listLabelField="label"
+						width="200"
+						height="25"
+						change="paymentChange(paymentMethodComponent1)"
+						creationComplete="setDataObject(paymentMethodComponent1)"
+						enabled="{paymentEdit}"
+						selectedItem="{getPaymentMethod(contractor)}"
+						/>
+				</mx:VBox>			
+			</mx:ViewStack>
+		</mx:HBox>
+		<mx:HBox height="25">
+			<mx:Label text="{LanguageManager.getInstance().labels.documents.dueDate}: " width="130" />
+			<mx:ViewStack id="viewDueDate" selectedIndex="{editMode}">
+				<inputComponents:BindingContainer
+						id="dueDateComponent0"
+						dataProvider="{dataObject.*[0]}"
+						dataField="dueDate" 
+						width="150" 
+						editorDataField="dataObject"
+						change="paymentChange(dueDateComponent0)"
+						enabled="{enable}"
+					>
+					<inputComponents:itemEditor>
+						<mx:Component>
+							<inputComponents:DateEditor dataObject="dueDate"/>
+						</mx:Component>
+					</inputComponents:itemEditor>
+					<inputComponents:itemRenderer>
+						<mx:Component>
+							<inputComponents:DateRenderer data="dueDate"/>
+						</mx:Component>
+					</inputComponents:itemRenderer>
+				</inputComponents:BindingContainer>
+				<mx:VBox>
+					<inputComponents:DateEditor
+						id="dueDateComponent1"
+						dataProvider="{dataObject.*[0].dueDate}"
+						text="{dataObject.*[0].dueDate}"
+						change="paymentChange(dueDateComponent1)"
+						enabled="{enable}"
+					/>
+				</mx:VBox>
+				
+			</mx:ViewStack>
+		</mx:HBox>	
+		<mx:HBox height="25">
+			<mx:Label text="{LanguageManager.getInstance().labels.documents.dueDays}: " width="130" />
+			<mx:ViewStack id="viewDueDays" selectedIndex="{editMode}">
+				<inputComponents:BindingContainer
+						id="dueDaysComponent0"
+						dataProvider="{dataObject.*[0]}"
+						dataField="dueDays" 
+						width="150" 
+						editorDataField="text"
+						change="paymentChange(dueDaysComponent0)"
+						data="{dataObject.*[0].dueDays}"
+						enabled="{enable}"
+					>
+					<inputComponents:itemEditor>
+						<mx:Component>
+							<mx:TextInput/>
+						</mx:Component>
+					</inputComponents:itemEditor>
+					<inputComponents:itemRenderer>
+						<mx:Component>
+							<inputComponents:LabelRenderer/>
+						</mx:Component>
+					</inputComponents:itemRenderer>
+				</inputComponents:BindingContainer>
+
+				<mx:VBox>
+					<mx:TextInput
+					id="dueDaysComponent1"
+					width="150" 
+					change="paymentChange(dueDaysComponent1)"
+					data="{dataObject.*[0].dueDays}"
+					text="{dataObject.*[0].dueDays}"
+					enabled="{enable}"
+					restrict="0-9"			
+					/>
+				</mx:VBox>
+			</mx:ViewStack>
+		</mx:HBox>	
+		<mx:Label id="info" color="red"/>
+	</mx:VBox>	
+	
+	<mx:HBox verticalGap="0">
+		<mx:VBox width="100%">
+			<mx:Label text="{LanguageManager.getInstance().labels.documents.documentValue}: " width="150" fontWeight="bold"/>
+			<mx:Label text="{LanguageManager.getInstance().labels.documents.received}: " width="150"/>
+			<mx:Label text="{LanguageManager.getInstance().labels.documents.dueAmount}: " width="150"/>
+			
+		</mx:VBox>
+		<mx:VBox width="100%">
+			<inputComponents:CurrencyRenderer id="crDocumentValue" value="{grossValue}" nanText="0,00" fontWeight="bold" fontSize="15" width="100%"/>
+			<inputComponents:CurrencyRenderer value="{totalAmount}" nanText="0,00" width="100%"/>
+			<inputComponents:CurrencyRenderer value="{Number(Number(grossValue).toFixed(2))-Number(Number(totalAmount).toFixed(2))}" nanText="0,00" width="100%"/>
+			
+		</mx:VBox>
+		<mx:VBox width="100%">
+			<mx:Label text="{currencySymbol}" fontWeight="bold" fontSize="15"/>
+			<mx:Label text="{currencySymbol}"/>
+			<mx:Label text="{currencySymbol}"/>
+		</mx:VBox>	
+	</mx:HBox>
+	
+	
+	
+	
+	<!--<mx:VBox verticalGap="0">
+		<mx:HBox height="27">
+			<mx:Label text="{LanguageManager.getInstance().labels.documents.documentValue}: " width="150" fontWeight="bold"/>
+			<inputComponents:CurrencyRenderer id="crDocumentValue" value="{grossValue}" nanText="0,00" fontWeight="bold" fontSize="15"/>
+			<mx:Label text="{currencySymbol}" fontWeight="bold" fontSize="15"/>
+		</mx:HBox>
+		<mx:HBox height="25">
+			<mx:Label text="{LanguageManager.getInstance().labels.documents.received}: " width="150"/>
+			<inputComponents:CurrencyRenderer value="{totalAmount}" nanText="0,00"/>
+			<mx:Label text="{currencySymbol}"/>
+		</mx:HBox>
+		<mx:HBox height="25">
+			<mx:Label text="{LanguageManager.getInstance().labels.documents.dueAmount}: " width="150"/>
+			<inputComponents:CurrencyRenderer value="{Number(Number(grossValue).toFixed(2))-Number(Number(totalAmount).toFixed(2))}" nanText="0,00"/>
+			<mx:Label text="{currencySymbol}"/>
+		</mx:HBox>		
+	</mx:VBox>	-->
+	<!--<mx:Button label="XML" click="Alert.show(dataObject.toString())"/>-->
+	
+</mx:HBox>

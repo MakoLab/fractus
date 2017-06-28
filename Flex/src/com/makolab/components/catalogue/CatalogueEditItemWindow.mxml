@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+		xmlns:layoutComponents="com.makolab.components.layoutComponents.*"
+		layout="vertical" width="600" 
+		showCloseButton="true"
+		close="cancel()"
+		visible="false"
+		creationComplete="cch()"
+	>
+	<mx:Metadata>
+		/**
+		 * Dispatched when a user clicks the OK button and the formular is correctly filled out.
+		 */
+		[Event(name="accept", type="com.makolab.components.catalogue.CatalogueItemWindowEvent")]
+		/**
+		 * Dispatched when a user clicks the CANCEL button.
+		 */
+		[Event(name="cancel", type="com.makolab.components.catalogue.CatalogueItemWindowEvent")]
+		/**
+		 * Dispatched when the edited catalogue item finishes saving to the database. The event object contains &lt;code&gt;itemId&lt;/code&gt;.
+		 */
+		 [Event(name="dataSaveComplete", type="com.makolab.components.catalogue.CatalogueItemWindowEvent")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.inputComponents.IFormBuilderComponent;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			import mx.controls.Alert;
+			import mx.controls.TextArea;
+			import mx.core.IFlexDisplayObject;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.validators.ValidationResult;
+			
+			
+			public var itemsXML:XMLList;
+			
+			/**
+			 * An XML with formular configuration.
+			 */
+			[Bindable]
+			public var formConfig:XML;
+			/**
+			 * Lets you pass values to the formular's editors.
+			 */
+			[Bindable]
+			public function set dataObject(value:Object):void { data = value; }
+			/**
+			 * @private
+			 */
+			public function get dataObject():Object { return data; }
+			
+			
+			
+			override public function set data(value:Object):void{
+				super.data = value;
+				if(duplicateItem && value && value.item){
+					// usuwanie id i version
+					if(value.item.id){
+						delete value.item.id;
+						delete value.item.version;
+					}
+					//usuwanie id i wersji z atrybutow
+					if(value.item.attributes){
+						for each(var a:XML in value.item.attributes.attribute){
+							if(a.id)delete a.id;
+							if(a.version)delete a.version;
+						}
+					}
+					//usuwanie id i wersji z przynależności do grup
+					if(value.item.groupMemberships){
+						for each(var g:XML in value.item.groupMemberships.groupMembership){
+							if(g.id)delete g.id;
+							if(g.version)delete g.version;
+						}
+					}
+					//usuwanie id i wersji relacji
+					if(value.item.relations){
+						//var relationTypeId:String = DictionaryManager.getInstance().dictionaries.itemRelationTypes.(name.toString() == "Item_EquivalentGroup").id.toString();
+						for each(var r:XML in value.item.relations.relation){
+							if(r.id)delete r.id;
+							if(r.version)delete r.version;
+						}
+					}
+					//usuwanie id i wersji relacji
+					if(value.item.unitRelations){
+						for each(var u:XML in value.item.unitRelations.unitRelation){
+							if(u.id)delete u.id;
+							if(u.version)delete u.version;
+						}
+					}
+				}
+			}
+			
+			private var duplicateItem:Boolean = false;
+						
+			private function cancel():void
+			{
+				var event:CatalogueItemWindowEvent = new CatalogueItemWindowEvent(CatalogueItemWindowEvent.CANCEL);
+				event.itemData = this.dataObject;
+				dispatchEvent(event);
+			}
+
+			private function showData(s:String):void
+			{
+				var tw:TitleWindow = new TitleWindow();
+				tw.width = 700;
+				tw.height = 600;
+				var ta:TextArea = new TextArea();
+				tw.addChild(ta);
+				ta.percentHeight = 100;
+				ta.percentWidth = 100;
+				ta.text = s;
+				tw.showCloseButton = true;
+				tw.addEventListener(CloseEvent.CLOSE, closeXMLWindow);
+				PopUpManager.addPopUp(tw, this);
+				PopUpManager.centerPopUp(tw);
+				tw.visible = true;
+			}
+			
+			private function closeXMLWindow(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(event.target as IFlexDisplayObject);
+				event.target.visible = false;
+			}
+			
+			private function accept():void
+			{
+				var errors:Array = formBuilder.validate() as Array;
+				var msg:String = "";
+				for (var i:String in errors) if (ValidationResult(errors[i]).isError)
+				{
+					msg += ValidationResult(errors[i]).errorMessage + "\n";
+				}
+				if (msg) {
+					Alert.show(msg, LanguageManager.getInstance().labels.alert.correctEntries);	
+				}
+				else
+				{
+					formBuilder.commitChanges();
+					var event:CatalogueItemWindowEvent = new CatalogueItemWindowEvent(CatalogueItemWindowEvent.ACCEPT);
+					event.itemData = this.dataObject;
+					dispatchEvent(event);
+				}
+			}
+			/**
+			 * Adds a CatalogueItemWindow instance to a given component.
+			 * @param parent Reference to parent object.
+			 */
+			public function show(parent:DisplayObject,duplicateItem:Boolean = false):void
+			{
+				if (visible) return;
+				PopUpManager.addPopUp(this, parent);
+				PopUpManager.centerPopUp(this);
+				if(this.y<0) this.y = 80;
+				if(this.x<0) this.x = 0;
+				visible = true;
+				setFocus();
+				this.duplicateItem = duplicateItem;
+			}
+			
+			/**
+			 * Removes the CatalogueItemWindow instance.
+			 */
+			public function hide():void
+			{
+				PopUpManager.removePopUp(this);
+				this.visible = false;
+			}
+			
+			private function cch():void {
+				addEventListener(MouseEvent.CLICK, mClick);
+			}
+			
+			private function mClick(event:MouseEvent):void {
+				trace(event.target);
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%">
+		<layoutComponents:ClipboardFormBuilder id="formBuilder" width="100%" height="100%" config="{formConfig}" data="{data}" labelWidth="150" editorWidth="300"/>
+
+		<mx:Canvas width="100%" textAlign="center" height="30">
+			<mx:Button label="{LanguageManager.getInstance().labels.common.ok}" width="150" horizontalCenter="-80" click="accept()" top="4" bottom="4"/>
+			<mx:Button label="{LanguageManager.getInstance().labels.common.cancel}" width="150" horizontalCenter="80" click="cancel()" top="4" bottom="4"/>
+		</mx:Canvas>
+	</mx:VBox>
+</mx:TitleWindow>

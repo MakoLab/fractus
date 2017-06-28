@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem direction="horizontal" implements="com.makolab.fractus.view.documents.reports.filters.IReportFilter" xmlns:mx="http://www.adobe.com/2006/mxml" verticalGap="0" creationComplete="init()" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:catalogue="com.makolab.components.catalogue.*" xmlns:groupTree="com.makolab.components.catalogue.groupTree.*">
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.components.catalogue.CatalogueFilterError;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			private var _parameters:XML
+			
+			[Bindable]
+			public var allowEmptySelection:Boolean = false;
+			
+			protected function get value():Object
+			{
+				var ret:Array = [];
+				ret = tree.getSelectedGroups();
+				return ret.join(",");
+			}
+			[Bindable]
+			public function set parameters(value:XML):void
+			{
+				_parameters = value;
+			}
+			
+			public function get parameters():XML
+			{
+				return _parameters;
+			}
+			
+			private function setParameters(params:XML):void
+			{
+				if(!params)return;
+				if(useFilter.selected){
+					var unassigned:int = unassignedCheckBox ? int(Number(unassignedCheckBox.selected)) : 1;
+					params.contractorGroups = <contractorGroups>{value}</contractorGroups>; 
+					if (unassignedCheckBox.selected)
+					{ 
+						params.contractorGroups.@includeUnassigned = unassigned;
+					}else{
+						if (params.contractorGroups.@includeUnassigned.length() > 0) delete params.contractorGroups.@includeUnassigned; 
+					}
+					
+				}else{
+					if(params.contractorGroups.length() > 0)delete params.contractorGroups[0];
+				}
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			private function init():void
+			{
+				ModelLocator.getInstance().configManager.requestValue("contractors.group");
+			}
+			
+			public function selectAll():void
+			{
+				var nodes:XMLList = tree.dataProvider.source..group.(valueOf().subgroups == undefined);
+				for each(var o:XML in nodes){
+					o.@selected = 1;
+				}
+			}
+			
+			public function deselectAll():void
+			{
+				var nodes:XMLList = tree.dataProvider.source..group.(valueOf().subgroups == undefined);
+				for each(var o:XML in nodes){
+					o.@selected = 0;
+				}
+			}
+			
+			private function getDataProvider(value:Object):Object
+			{
+				if(value){
+					
+					if(value.hasOwnProperty("@expandTreeToLevel")) {
+						tree.expandChildren =value.@expandTreeToLevel;
+						trace("expand treedp: ",tree.expandChildren);
+					}
+					
+				}else
+					{
+						trace("expand brak value");
+					}
+				var nodes:XMLList = value..group.(valueOf().subgroups == undefined);
+				value.@selected = 1;
+				for each(var o:XML in nodes){
+					o.@selected = 1;
+				}
+				return value;
+			}
+			
+			public function get validationError():String
+			{
+				if(!this.allowEmptySelection && tree.getSelectedGroups().length == 0 && unassignedCheckBox.selected == false && useFilter.selected){
+					this.setStyle("backgroundColor",0xff0000);
+					this.setStyle("backgroundAlpha",0.2);
+					this.errorString = LanguageManager.getInstance().labels.reports.filters.noContractorGroupSelected;
+					return LanguageManager.getInstance().labels.reports.filters.noContractorGroupSelected;
+				}
+				this.setStyle("backgroundColor",0xffffff);
+				this.setStyle("backgroundAlpha",0.0);
+				errorString = "";
+				return null;
+			}
+			
+			public function get stringValue():String
+			{
+				if (!useFilter.selected) return null;
+				var value:Array = [];
+				if (unassignedCheckBox.selected) value.push("bez przypisania"); // todo use LM
+				value = value.concat(tree.getSelectedGroupsLabels());
+				return value.join(",");
+			}
+			
+			[Bindable]
+			private var selectedGroups:Array = [];
+			public function set selectedGroupsString(value:String):void
+			{
+				selectedGroups = value.split(",");
+				setParameters(parameters);
+			}
+			public function get selectedGroupsString():String
+			{
+				return selectedGroups.join(",");
+			}
+			
+			[Bindable]
+			public var filterEnabled:Boolean = false;
+			[Bindable]
+			public var selectUnassigned:Boolean = true;
+		]]>
+	</mx:Script>
+	<mx:CheckBox id="useFilter" toolTip="{LanguageManager.getInstance().labels.reports.filters.turnOnOffFilter}" change="setParameters(parameters)" selected="{filterEnabled}"/>
+	<mx:VBox enabled="{useFilter.selected}">
+		<mx:CheckBox paddingLeft="43" id="unassignedCheckBox" change="setParameters(parameters)" width="100%" label="{LanguageManager.getInstance().labels.reports.filters.unassignedToGroups}" selected="{selectUnassigned}"/><!--todo use LanguageManager-->
+		<groupTree:GroupTree 
+			id="tree"
+			allowMultipleSelection="false"
+			dataProvider="{getDataProvider(ModelLocator.getInstance().configManager.values.contractors_group.configValue.*.copy())}" 
+			change="setParameters(parameters)" 
+			multipleSelection="true" 
+			showRoot="false"
+			width="100%"
+			height="100%"
+			selectedGroups="{selectedGroups}"
+			expandChildren="-1"
+		/>
+		<mx:HBox width="100%" horizontalGap="0"><mx:Button width="100%" label="{LanguageManager.getInstance().labels.common.selectAll}" click="selectAll();setParameters(parameters)"/><mx:Button width="100%" label="{LanguageManager.getInstance().labels.common.unselectAll}" click="deselectAll();setParameters(parameters)"/></mx:HBox>
+	</mx:VBox>
+</mx:FormItem>

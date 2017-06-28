@@ -1,0 +1,72 @@
+<config>
+	<columns>
+		<column field="@ordinalNumber" label="Lp" labelKey="common.lp" width="35"/>
+		<column field="@shortName" labelKey="common.shortName" filter="1"/>
+		<column field="@code" labelKey="common.code" filter="1"/>
+		<column field="@nip" labelKey="common.nip" filter="1"/>
+		<column field="@city" labelKey="common.city" filter="1"/>	
+	</columns>
+	
+	<searchParams>
+		<query/>
+	    <pageSize>200</pageSize>
+	    <page>1</page>
+		<columns>
+			<column field="shortName" sortOrder="1" sortType="ASC"/>
+			<column field="code"/>
+			<column field="nip"/>
+			<column field="city"/>
+		</columns>
+		<!--condition>isSupplier = 1 OR isReceiver = 1</condition-->
+	</searchParams>
+	
+	<getItemDataParams>
+		<type>Contractor</type>
+		<id/>
+	</getItemDataParams>
+	<filterField>@shortName</filterField>
+	<columns_>
+		<column field="@shortName" table="Contractor" column="shortName" label="Nazwa"/>
+		<column field="passportNumber" table="ContractorAttrValue" column="xmlValue" contractorFieldId="123132-132-123-132-13-123" label="Paszport"/>
+		<column field="regon" table="ContractorAttrValue" column="textValue" contractorFieldId="DUPA-1234-5678-2324" label="Regon"/>
+	</columns_>
+  <clipboard>
+    <quantities>1</quantities>
+    <columns>
+      <column field="@shortName" labelKey="common.shortName" label="Nazwa"/><!--TODO: label="\{LanguageManager.labels.common.shortName\}"-->
+      <column field="@quantity" labelKey="common.quantity" label="Ilość" editor="integer"/><!--TODO: label="\{LanguageManager.labels.common.amount\}"-->
+    </columns>
+  </clipboard>
+  <filters>
+  	<filter label="NIP"   type="sqlFilter">
+  			<labels>
+				<label lang="pl">NIP</label>
+				<label lang="en">NIP</label>
+			</labels>
+	  		<condition>strippedNip LIKE replace(@nip, '-', '') + '%'</condition>
+	  		<parameters>
+	  			<parameter label="NIP" name="nip" type="nip">
+	  			<labels>
+					<label lang="pl">NIP</label>
+					<label lang="en">NIP</label>
+				</labels>
+	  			</parameter>
+	  		</parameters>
+	</filter>
+	<filter label="Typ kontrahenta" type="contractorTypeFilter"/>
+  </filters>
+  <filtersTemplates label="Na podstawie szablonu">
+		<template label="Odbiorca lub Przedsiębiorstwo">
+			<labels>
+				<label lang="pl">Odbiorca lub przedsiębiorstwo</label>
+				<label lang="en">Reciver or business</label>
+			</labels>
+			<filter type="contractorTypeFilter" value="isReceiver,isBusinessEntity"/>
+		</template>
+  </filtersTemplates>
+  <operations>
+    <link1 labelKey="common.name" url="http://daydreamers.pl?costam=id" toRep="contractor.id" rep="id" />
+    <link2 labelKey="common.name" url="http://google.com" />
+    <link3 labelKey="common.name" url="http://google.com" />
+  </operations>
+</config>

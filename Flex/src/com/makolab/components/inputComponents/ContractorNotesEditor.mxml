@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="160" horizontalGap="0" paddingBottom="6"
+	xmlns:inputComponents="com.makolab.components.inputComponents.*"
+	implements="com.makolab.components.inputComponents.IFormBuilderComponent"
+	xmlns:generic="com.makolab.fractus.view.generic.*">
+	<mx:XML id="xmlTemplate" xmlns="">
+		<value>
+			<note>		
+				<user/>
+				<userId/>
+				<userLogin/>
+				<creationDate/>
+				<date/>
+				<data/>
+			</note>
+		</value>
+	</mx:XML>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.controls.Alert;
+			import mx.validators.ValidationResult;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			
+			public var editorDataField:String = "dataObject";
+			private var _dataObject:XML;
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+			
+			/**
+			 * Passes a value to the component.
+			 * The value of <code>data</code> is copied to <code>dataObject</code>. To read modified values use <code>dataObject</code> property.
+			 * @see #dataObject
+			 */
+			override public function set data(value:Object):void
+			{
+				if(!value) {					
+					 dataObject = xmlTemplate;
+				}
+				else dataObject = XML(value);
+			}
+			
+			/**
+			 * Passes a value to the component or sets initial data if no value is specified.
+			 */
+			[Bindable] 
+			public function set dataObject(value:XML):void
+			{
+				//todo: Pobranie nazwy zalogowanego użytkownika
+				_dataObject = value;
+				if(!isEmpty(value.note.user)) _dataObject.note.user = value.note.user;
+				else _dataObject.note.user = DictionaryManager.getInstance().dictionaries.users.(valueOf().id == String(model.sessionManager.userId)).shortName.text();
+				if(!isEmpty(value.note.userId)) _dataObject.note.userId = value.note.userId;
+				else _dataObject.note.userId = model.sessionManager.userId;
+				
+				if(!isEmpty(value.note.userLogin)) _dataObject.note.userLogin = value.note.userLogin;
+				else _dataObject.note.userLogin = model.sessionManager.login;
+				
+				
+				if(!isEmpty(value.note.creationDate)) _dataObject.note.creationDate = value.note.creationDate;
+				else _dataObject.note.creationDate = Tools.dateToIso(new Date());
+				
+				if(!isEmpty(value.note.date)) _dataObject.note.date = value.note.date;
+				else _dataObject.note.date = convDate(new Date());
+				_dataObject.note.data = value.note.data;
+			}
+			
+			public function get dataObject():XML
+			{
+				return _dataObject;
+			}
+			
+			/**
+			 * Converts <code>Date</code> format to a <code>String</code>
+			 */
+			private function convDate(aDate:Date):String {
+				if(aDate)	{
+					var SEPARATOR:String = "-";		    
+					var mm:String = (aDate.month + 1).toString();
+					if (mm.length < 2) mm = "0" + mm;		    
+					var dd:String = aDate.date.toString();
+					if (dd.length < 2) dd = "0" + dd;		    
+					var yyyy:String = aDate.fullYear.toString();
+					return yyyy + SEPARATOR + mm + SEPARATOR + dd;
+				}
+				else return "";
+			}
+			
+			private function convDateTime(aDate:Date):String {
+				if(aDate)	{
+					var SEPARATOR:String = "-";		    
+					var mm:String = (aDate.month + 1).toString();
+					if (mm.length < 2) mm = "0" + mm;		    
+					var dd:String = aDate.date.toString();
+					if (dd.length < 2) dd = "0" + dd;		    
+					var yyyy:String = aDate.fullYear.toString();
+					aDate.toTimeString()
+					var time:String = aDate.toTimeString().substr(0,8);
+					return yyyy + SEPARATOR + mm + SEPARATOR + dd + " " + time;
+				}
+				else return "";
+			}
+			
+			/**
+			 * Assigns appropriete values for <code>dataObject</code>
+			 * while changing component data.
+			 */
+			public function changeHandler(field:String):void
+			{
+				switch(field)	{
+					case "date": dataObject.note.date = bcDate.dataObject; break;
+					case "data": dataObject.note.data = taData.text; break;
+				}				
+				dispatchEvent(new Event(Event.CHANGE));			
+			}
+			
+			/**
+			 * A method of IFormBuilderComponent interface.
+			 * @see com.makolab.components.inputComponents.IFormBuilderComponent
+			 */			 
+			public function validate():Object
+			{
+				var errorMessage:String = "Puste pola";
+				if ((isEmpty(_dataObject.note.date) && isEmpty(_dataObject.note.data) && isEmpty(_dataObject.note.user)) || isEmpty(_dataObject.note.data))
+				{
+					errorString = errorMessage;
+					taData.errorString = errorMessage;
+					return new ValidationResult(true, null, "emptyRemarks", errorMessage);
+				}
+				else
+				{
+					errorString = null;
+					taData.errorString = null;
+					return null;
+				}
+			}
+			
+			private function changeUser():void
+			{
+				//_dataObject.note.userId = users.selectedItem.id.text();
+				//_dataObject.note.user = users.selectedItem.shortName.text();
+			}
+			
+			/**
+			 * Checks if the given <code>String</code> is empty or not.
+			 */	
+			private function isEmpty(s:String):Boolean
+			{
+				return Boolean(s.match(/^\s*$/));
+			}
+		
+			/**
+			 * A method of IFormBuilderComponent interface.
+			 * @see com.makolab.components.inputComponents.IFormBuilderComponent
+			 */
+			public function commitChanges():void {}
+			
+			/**
+			 * A method of IFormBuilderComponent interface.
+			 * @see com.makolab.components.inputComponents.IFormBuilderComponent
+			 */
+			public function reset():void {}
+		
+		]]>
+	</mx:Script>
+	<mx:HBox width="100%">
+		<mx:Label text="{LanguageManager.getInstance().labels.common.user}: "/>
+		<generic:FractusDictionaryRenderer labelField="shortName" dataObject="{(!isEmpty(dataObject.note.userId)) ? dataObject.note.userId : model.sessionManager.userId}" />
+		
+		
+		<!--<generic:FractusDictionarySelector
+			id="users"
+			dictionaryName="users"
+			comboLabelField="shortName"
+			labelField="shortName"			 
+			selectedId="{(!isEmpty(dataObject.note.userId)) ? dataObject.note.userId : model.sessionManager.userId}"
+			change="changeUser()"
+			/>-->
+	</mx:HBox>	
+	<mx:HBox width="100%">
+		<mx:Label text="{LanguageManager.getInstance().labels.common.login}: " />
+		<mx:Label text="{(!isEmpty(dataObject.note.userLogin)) ? dataObject.note.userLogin :model.sessionManager.login}" />
+	</mx:HBox>
+
+	<mx:HBox width="100%">
+		<mx:Label text="{LanguageManager.getInstance().labels.common.creationDate}: " />
+		<inputComponents:DateRenderer displayTime="true"  dataObject="{this.dataObject.note.creationDate[0]}">
+			
+		</inputComponents:DateRenderer>
+		<!--<mx:Label text="{this.dataObject.note.creationDate}" />-->
+		
+	</mx:HBox>
+
+
+
+
+	<mx:HBox width="100%">
+		<mx:Label text="{LanguageManager.getInstance().labels.common.date}: "/>
+		<inputComponents:BindingContainer
+			editorDataField="dataObject"
+			dataProvider="{dataObject.note}"
+		 	dataField="date"
+		 	id="bcDate"
+		 	change="changeHandler('date')"
+			>
+			<inputComponents:itemRenderer>
+				<mx:Component>
+					<inputComponents:DateRenderer data="date"/>
+				</mx:Component>
+			</inputComponents:itemRenderer>
+			<inputComponents:itemEditor>
+				<mx:Component>
+					<inputComponents:DateEditor dataObject="date"/>
+				</mx:Component>
+			</inputComponents:itemEditor>
+		</inputComponents:BindingContainer>
+	</mx:HBox>	
+	<mx:TextArea id="taData" width="100%" height="100%" text="{dataObject.note.data}" change="changeHandler('data')"/>	
+</mx:VBox>
+	
+

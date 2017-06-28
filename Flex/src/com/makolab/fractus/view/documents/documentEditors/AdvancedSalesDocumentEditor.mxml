@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DocumentEditor
+		xmlns="com.makolab.fractus.view.documents.documentEditors.*"
+		xmlns:lineList="com.makolab.components.lineList.*"
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		xmlns:util="com.makolab.components.util.*"
+		xmlns:inputComponents="com.makolab.components.inputComponents.*"
+		xmlns:model="com.makolab.fractus.model.*" xmlns:catalogue="com.makolab.components.catalogue.*"
+		xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*" xmlns:plugins="com.makolab.fractus.view.documents.plugins.*"
+		xmlns:layoutComponents="com.makolab.components.layoutComponents.*"
+		printProfileName="defaultCommercialDocumentPdf"
+		editorWidth="300"
+		creationComplete="creationComplete()"
+		defaultErrorHandling="false"
+	>
+  <mx:Script>
+    <![CDATA[
+			import com.makolab.components.layoutComponents.SimplePrepaidRenderer;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.view.documents.documentControls.DefaultAttributeComponent;
+			import com.makolab.fractus.view.documents.documentControls.DocumentBarcodeVerificationComponent;
+			
+			import mx.events.DataGridEvent;
+			import mx.events.FlexEvent;
+			import mx.events.FocusRequestDirection;
+			import mx.managers.FocusManager;
+			import mx.managers.IFocusManagerComponent;
+			
+			[Bindable]
+			public var recipientVis:Boolean=false;
+			private function getSummaryText(pattern:String,totalLines:Number,totalQuantity:Number,totalValue:Number,totalCost:Number,totalProfitMargin:Number,valuatedLinesProfitMargin:Number):String
+			{
+				var summaryText:String = pattern;
+				summaryText = summaryText.replace("%lineCount%",totalLines);
+				summaryText = summaryText.replace("%quantity%",totalQuantity);
+				summaryText = summaryText.replace("%documentValue%",CurrencyManager.formatCurrency(totalValue));
+				summaryText = summaryText.replace("%documentCost%",CurrencyManager.formatCurrency(totalCost));
+				summaryText = summaryText.replace("%documentProfitMargin%",isFinite(totalProfitMargin) ? CurrencyManager.formatCurrency(totalProfitMargin) : "-");
+				summaryText = summaryText.replace("%valuatedLinesProfitMargin%",isFinite(valuatedLinesProfitMargin) ? CurrencyManager.formatCurrency(valuatedLinesProfitMargin) : "-");
+				return summaryText;
+			}
+			
+			private function creationComplete():void
+			{
+				if(documentObject.typeDescriptor.xmlOptions.@recipientActive=="true")
+					recipientVis=true;
+				else
+					recipientVis=false;
+				if(documentObject.typeDescriptor.xmlOptions.additionalAttributes.*.length() == 0)
+				{
+					this.tabNavigator.getTabAt(2).visible = false;
+					this.tabNavigator.getTabAt(2).includeInLayout = false;
+				}
+				
+				if(documentObject.typeDescriptor.xmlOptions.issueOptions.*.length() == 0)
+				{
+					this.tabNavigator.getTabAt(3).visible = false;
+					this.tabNavigator.getTabAt(3).includeInLayout = false;
+				}
+				if(documentObject.xml.settlements.*.length() != 0) 
+				{
+					this.simplePrepaidRenderer.documentObject = documentObject;
+				}
+				ModelLocator.getInstance().configManager.requestList(["system.barcodeVerification"],configurationLoaded);
+				
+				basicTab.setFocus();
+		
+			}
+			
+			private function configurationLoaded():void
+			{
+				barcodeVerification = ModelLocator.getInstance().configManager.getBoolean("system.barcodeVerification");
+			}
+			
+			[Bindable] private var barcodeVerification:Boolean;
+			
+			private function verifyByCode():void
+			{
+				DocumentBarcodeVerificationComponent.showWindow(documentObject).addEventListener(FlexEvent.HIDE,verificationComponentHide);
+			}
+			
+			private function verificationComponentHide(event:FlexEvent):void
+			{
+				this.window.setFocus();
+				/* if ((event.target as ComponentWindow).hasEventListener(FlexEvent.HIDE))
+				{
+					(event.target as ComponentWindow).removeEventListener(FlexEvent.HIDE,verificationComponentHide);
+				} */
+			}
+			
+			override protected function handleKeyDown(event:KeyboardEvent):void
+			{
+				// Przejscie do konkretnej zakadki
+				if (event.ctrlKey && !event.altKey && !event.shiftKey && event.keyCode >= 49 && event.keyCode <= 57)
+				{
+					if (event.keyCode - 49 < tabNavigator.numChildren && tabNavigator.getTabAt(event.keyCode - 49).visible)
+					{
+						tabNavigator.selectedIndex = event.keyCode - 49;
+						tabNavigator.setFocus();
+					}
+				}
+				// Przechodzenie do sasiednich zakladek
+				/* else if (event.ctrlKey && !event.altKey && event.keyCode == Keyboard.TAB)
+				{
+					if (event.shiftKey && tabNavigator.selectedIndex > 0) tabNavigator.selectedIndex--;
+					else if (tabNavigator.selectedIndex < tabNavigator.numChildren - 1) tabNavigator.selectedIndex++;
+					event.stopImmediatePropagation();
+					event.stopPropagation();
+					tabNavigator.setFocus();
+				}
+				else
+				{ */
+					super.handleKeyDown(event);
+				//}
+			}
+		
+		]]>
+  </mx:Script>
+
+  <!-- plugins -->
+  <plugins:DocumentValidationPlugin id="validationPlugin" documentObject="{documentObject}"/>
+  <plugins:CommercialDocumentCalculationPlugin id="calcPlugin" documentObject="{documentObject}"/>
+  <plugins:ContractorPlugin documentObject="{documentObject}"/>
+  <plugins:DocumentNumberPlugin documentObject="{documentObject}"/>
+  <plugins:CostCalculationPlugin id="costCalcPlugin" documentObject="{documentObject}"/>
+  <plugins:WarehouseDocumentAlocationsPlugin documentObject="{documentObject}"/>
+  <plugins:ReservationPlugin documentObject="{documentObject}" />
+  <plugins:PaymentCalculationPlugin documentObject="{documentObject}"/>
+
+  <mx:TabNavigator id="tabNavigator" width="98%" height="100%" historyManagementEnabled="false" backgroundAlpha="0.7" backgroundColor="white" resizeToContent="true">
+
+    <mx:Form
+				label="{LanguageManager.getInstance().labels.common.basicTab}"
+				paddingLeft="15"
+				paddingRight="15"
+				width="100%"
+				height="100%"
+				paddingTop="0"
+				paddingBottom="20"
+				id="basicTab"
+			>
+
+      <!-- numer -->
+      <mx:HBox horizontalGap="14">
+        <mx:Label text="{getDocumentType(documentObject.xml).label.@lang.length()?getDocumentType(documentObject.xml).label.(@lang==LanguageManager.getInstance().currentLanguage)[0]:getDocumentType(documentObject.xml).label}" fontSize="18"/>
+        <documentControls:DocumentNumberComponent id="documentNumberComponent" documentObject="{documentObject}"/>
+      </mx:HBox>
+
+
+      <!-- nabywca -->
+      <mx:FormItem label="{LanguageManager.getInstance().labels.documents.contractorData}" width="100%">
+        <mx:HBox width="100%">
+          <mx:VBox>
+            <documentControls:ContractorComponent
+							id="contractorComponent"
+							currentState="editor"
+							width="40%"
+							documentObject="{documentObject}"
+							contractorId="{documentObject.xml.contractor.contractor.id}"
+							enableAddressSelection="{documentObject.enableAddressSelection}"
+						/>
+            <documentControls:SalesLockComponent documentObject="{documentObject}" bottom="0" />
+          </mx:VBox>
+
+          <!-- dane nabywcy -->
+          <documentControls:ContractorDataComponent
+							width="60%"
+							documentObject="{documentObject}"
+						/>
+        </mx:HBox>
+      </mx:FormItem>
+		
+		<!-- odbiorca -->
+		<mx:FormItem label="{ModelLocator.getInstance().dictionaryManager.dictionaries.documentAttributes.(name == 'Attribute_RecipientId').label.(@lang==LanguageManager.getInstance().currentLanguage).toString()}" width="100%" enabled="{recipientVis}" includeInLayout="{recipientVis}" visible="{recipientVis}">
+			<mx:HBox width="100%">
+				<mx:VBox>
+					<documentControls:RecipientComponent
+						id="recipientComponent"
+						currentState="editor"
+						width="40%"
+						documentObject="{recipientVis?documentObject:null}"
+						enableAddressSelection="{true}"
+						/>
+				</mx:VBox>
+				
+				<!-- dane odbiorcy -->
+				<documentControls:RecipientDataComponent
+					width="60%"
+					documentObject="{documentObject}"
+					/>
+			</mx:HBox>
+		</mx:FormItem>
+
+
+      <!-- lista pozycji dokumentu -->
+      <documentControls:AdvancedSalesLinesComponent
+					id="lines"
+					width="100%"
+					documentObject="{documentObject}"
+					rowCount="9"
+					tabEnabled="false"
+				
+				/>
+      <mx:Label visible="{!isNaN(calcPlugin.totalLines)}"
+				text="{getSummaryText(LanguageManager.getInstance().labels.documents.salesDocumentSummary,calcPlugin.totalLines,calcPlugin.totalQuantity,calcPlugin.totalValue,calcPlugin.totalCost,calcPlugin.totalProfitMargin,calcPlugin.valuatedLinesProfitMargin)}"/>
+
+
+      <!-- platnosci -->
+      <mx:HBox>
+        <mx:Label width="460"/>
+        <layoutComponents:SimplePrepaidRenderer id="simplePrepaidRenderer" verticalGap="0" width="100%"/>
+      </mx:HBox>
+
+      <mx:FormItem>
+        <mx:HBox width="100%" horizontalGap="20">
+          <!--<documentControls:SimplePaymentControl id="spc" documentObject="{documentObject}" width="70%" editMode="1"/>-->
+          <inputComponents:PaymentSimpleEditor2 id="simplePaymentEditor" documentObject="{documentObject}" width="100%" editMode="1"/>
+          <documentControls:ChangeCalc documentObject="{documentObject}" width="30%"/>
+          <documentControls:CardsTerminal documentObject="{documentObject}" />
+        </mx:HBox>
+      </mx:FormItem>
+
+      <!-- weryfikacja faktury czytnikiem kodów-->
+      <mx:FormItem visible="{barcodeVerification}" includeInLayout="{barcodeVerification}">
+		  <mx:HBox width="100%">
+			  <mx:Label width="460" text="{LanguageManager.getInstance().labels.documents.verifyPurchaseDocument}"/>
+		  	  <mx:Button label="{LanguageManager.getInstance().labels.documents.verify}" toolTip="{LanguageManager.getInstance().labels.documents.verifyDocumentTooltip}" click="{verifyByCode();}" />
+      	</mx:HBox>
+	  </mx:FormItem>
+
+    </mx:Form>
+
+
+    <!-- ZAKLADKA SZCZEGOLOW -->
+    <mx:HBox
+				label="{LanguageManager.getInstance().labels.common.detailsTab}"
+				paddingLeft="15"
+				paddingRight="15"
+				paddingTop="15"
+				width="100%"
+				height="100%"
+			>
+
+      <!-- lewa kolumna szczegolow -->
+      <mx:Form
+					width="35%"
+					height="100%"
+					paddingTop="4"
+				>
+        <!-- waluta dokumentu -->
+        <documentControls:DocumentCurrencySelector documentObject="{documentObject}" width="100%" visible="{documentObject.typeDescriptor.allowOtherCurrencies}" includeInLayout="{documentObject.typeDescriptor.allowOtherCurrencies}"/>
+        <!-- miejsce wystawienia -->
+        <documentControls:IssuePlaceComponent documentObject="{documentObject}"/>
+
+        <!-- daty -->
+        <documentControls:DateControl documentObject="{documentObject}" fieldName="issueDate" currentState="editor"/>
+        <documentControls:DateControl documentObject="{documentObject}" fieldName="eventDate" currentState="editor"/>
+
+        <!-- sprzedawca -->
+        <!--
+				<documentControls:IssuerComponent documentObject="{documentObject}" width="100%"/>
+				-->
+
+        <!-- cechy dokumentu -->
+        <documentControls:DocumentFeatureComponent documentObject="{this.documentObject}" currentState="editor" />
+
+        <!-- netto/brutto -->
+        <documentControls:CalculationTypeComponent documentObject="{documentObject}"/>
+
+        <!-- osoba odbierajaca -->
+        <documentControls:ReceivingPersonComponent documentObject="{documentObject}" currentState="editor" />
+
+        <!-- atrybuty podstawowe -->
+        <mx:Repeater id="basicAttributeRepeater" dataProvider="{documentObject.typeDescriptor.xmlOptions.basicAttributes.attribute}">
+          <documentControls:DocumentGenericSingleAttributeComponent documentObject="{documentObject}" attributeName="{basicAttributeRepeater.currentItem.@name}" enabled="{basicAttributeRepeater.currentItem.@readOnly != 1}"/>
+        </mx:Repeater>
+      </mx:Form>
+
+      <!-- prawa (szersza) kolumna -->
+      <mx:Form
+					width="65%"
+					height="100%"
+					paddingTop="4"
+				>
+        <!-- uwagi -->
+        <!--
+				<mx:FormItem label="{LanguageManager.getInstance().labels.common.remarks}" width="100%">
+					<documentControls:RemarksComponent documentObject="{documentObject}" width="100%" height="150"/>
+				</mx:FormItem>
+				-->
+        <documentControls:RemarksComponent documentObject="{documentObject}" width="100%" height="100"/>
+
+        <!-- tabela VAT -->
+        <mx:FormItem label="{LanguageManager.getInstance().labels.common.tableVat}" width="100%" direction="vertical">
+          <documentControls:VatTableComponent id="vatTable" documentObject="{documentObject}" width="100%"/>
+        </mx:FormItem>
+
+        <!-- płatności -->
+        <!--<documentControls:AdvancedPaymentControl documentObject="{documentObject}" width="100%"/>-->
+        <inputComponents:PaymentEditor2 documentObject="{documentObject}" width="100%"/>
+      </mx:Form>
+    </mx:HBox>
+
+    <documentControls:AdditionalAttributesTab documentObject="{documentObject}"/>
+
+    <mx:VBox label="Opcje"
+				paddingLeft="15"
+				paddingRight="15"
+				paddingTop="15"
+				width="100%"
+				height="100%"
+			>
+      <!-- opcje -->
+      <documentControls:DocumentOptionsControl documentObject="{documentObject}" width="100%"/>
+    </mx:VBox>
+  </mx:TabNavigator>
+</DocumentEditor>

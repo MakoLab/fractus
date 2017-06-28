@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReportBase xmlns="com.makolab.fractus.view.documents.reports.*" xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:layoutComponents="com.makolab.components.layoutComponents.*"
+	creationComplete="init()">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.greensock.loading.BinaryDataLoader;
+			import com.makolab.components.layoutComponents.SummaryColumn;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.view.catalogue.CatalogueItemInfo;
+			import com.makolab.fractus.view.warehouse.LotSelector;
+			import com.makolab.fractus.view.warehouse.ShiftTransactionEditor;
+			
+			import flash.utils.getQualifiedClassName;
+			
+			import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.events.ListEvent;
+			import mx.formatters.CurrencyFormatter;
+
+			
+			public var reportXML:XML;
+			[Bindable]
+			public var doubleClick:Boolean=true;
+			private function init():void
+			{
+				var columns:Array = new Array();
+				var summary:Array = new Array();				
+				
+				for each(var x:XML in reportXML.columns.*)	{
+					var dgc:AdvancedDataGridColumn = new AdvancedDataGridColumn();
+					if(x.@headerKey.length())
+					{
+						dgc.headerText=LanguageManager.getInstance().getLabel(x.@headerKey);
+					}
+					else
+					dgc.headerText = x.@headerText;
+					dgc.dataField = x.@dataField;
+					dgc.width = x.@width;
+					dgc.setStyle("textAlign",x.@textAlign);
+					if(String(x.@color)!="")
+						dgc.setStyle("color",x.@color);
+				
+	/*				dgc.setStyle("backgroundColor",0xFF0000);
+    dgc.setStyle("color",0x0000FF);
+   dgc.setStyle(" disabledColor",0x00FF00);
+    dgc.setStyle("fontAntiAliasType","advanced");
+    dgc.setStyle("fontStyle","normal");
+    dgc.setStyle("fontWeight","normal");
+    dgc.setStyle("letterSpacing",4);
+    dgc.setStyle("paddingLeft",11);
+   dgc.setStyle(" paddingRight",22);
+   dgc.setStyle(" textAlign","left");
+   dgc.setStyle(" textDecoration","underline");*/
+   
+					
+					var sc:SummaryColumn = new SummaryColumn();
+					sc.sourceColumn = dgc;
+					
+					if(String(x.@labelFunction) != "")	{
+						dgc.labelFunction = this[x.@labelFunction];
+						sc.labelFunction = this[x.@labelFunction];
+					}
+								
+					if(x.@summable == "1"){
+						sc.operations = [SummaryColumn.SUM];
+						dgc.sortCompareFunction = numberCompareFunction(dgc.dataField);
+					}
+					if(x.@summable == "2"){
+						sc.operations = [SummaryColumn.PER];
+						sc.childDataFields = String(x.@childDataField).replace(" ","").split(",");
+						dgc.sortCompareFunction = numberCompareFunction(dgc.dataField);
+					}
+					if(x.@summaryFunctions.length() > 0 &&x.@summable!=1&&x.@summable!=2 ){
+						var functions:Array = String(x.@summaryFunctions).replace(" ","").split(",");
+						sc.operations = [];
+						if(x.@childDataField.length() > 0)
+							if(x.@childDataField.length() > 1)
+							sc.childDataField = x.@childDataField;
+						for (var i:int = 0; i < functions.length; i++)
+						{
+							if(SummaryColumn[functions[i]]) sc.operations.push(SummaryColumn[functions[i]]);
+						}
+					}
+					columns.push(dgc);	
+					summary.push(sc);			
+				} 
+				grid.columns = columns;
+				sgrid.summaryColumns = summary;	
+			}
+			private function itemDoubleClickHandler(event:ListEvent):void
+			{
+				if (dataProvider)
+					Report.showWindow(event.itemRenderer.data.@id,reportXML,searchParamsXML);
+			}
+		]]>
+	</mx:Script>
+	<table>
+		<mx:AdvancedDataGrid  id="grid" width="100%" height="100%" doubleClickEnabled="{doubleClick}" itemDoubleClick="itemDoubleClickHandler(event)"/>
+	</table>
+	<summary>				
+		<layoutComponents:AdvancedDataGridSummary2  id="sgrid" source="{grid}" width="100%"/>
+	</summary>
+</ReportBase>

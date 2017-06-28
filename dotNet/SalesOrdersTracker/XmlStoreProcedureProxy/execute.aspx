@@ -1,0 +1,1 @@
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="execute.aspx.cs" Inherits="XmlStoreProcedureProxy._execute" %>

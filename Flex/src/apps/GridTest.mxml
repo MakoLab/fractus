@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:lineList="com.makolab.components.lineList.*" xmlns:generic="com.makolab.fractus.view.generic.*">
+	<lineList:LineList editable="true" dataProvider="{xml.line}">
+		<lineList:columns>
+			<mx:DataGridColumn dataField="@a"/>
+			<mx:DataGridColumn dataField="@b"/>
+			<mx:DataGridColumn dataField="@c"/>
+			<mx:DataGridColumn dataField="@d" itemRenderer="{FilteredSelector.getFactory(listProvider.item, '@label', '@id')}" editorDataField="selectedId" rendererIsEditor="true"/>
+			<mx:DataGridColumn rendererIsEditor="true" editorDataField="label">
+				<mx:itemRenderer>
+					<mx:Component>
+						<mx:LinkButton click="outerDocument.lineClick()" label="{DataObjectManager.getDataObject(this.data, this.listData)}">
+							<mx:Script>
+								<![CDATA[
+									import com.makolab.components.inputComponents.DataObjectManager;
+								]]>
+							</mx:Script>
+						</mx:LinkButton>
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+		</lineList:columns>
+	</lineList:LineList>
+	<generic:FilteredSelector id="selector" dataProvider="{new XMLListCollection(listProvider.item)}" labelField="@label" idField="@id"/>
+	<mx:Label text="{selector.selectedId}"/>
+	<mx:XML xmlns="" id="xml">
+		<root>
+			<line a="adasds" b="asdadas" c="zczcz" d="1"/>
+			<line a="oiniounu" b="regregrtg" c="pasdo" d="5"/>
+			<line a="lkjoi" b="lasdkmsl" c="asdn"/>
+		</root>
+	</mx:XML>
+	<mx:XML id="listProvider" xmlns="">
+		<root>
+			<item id="1" label="Pozycja 1"/>
+			<item id="2" label="Pozycja 2"/>
+			<item id="3" label="Pozycja 3"/>
+			<item id="4" label="Pozycja 4"/>
+			<item id="5" label="Pozycja 5"/>
+			<item id="6" label="Pozycja 6"/>
+			<item id="7" label="Pozycja 7"/>
+		</root>
+	</mx:XML>
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.XMLListCollection;
+			
+			import mx.core.TextFieldAsset;
+			import mx.controls.TextInput;
+			import mx.controls.Button;
+			import mx.managers.PopUpManager;
+			import mx.events.CloseEvent;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.controls.LinkButton;
+			
+			private var window:TitleWindow;
+			
+			public function lineClick():void
+			{
+				window = new TitleWindow();
+				window.width = 200;
+				window.height = 100;
+				window.addEventListener(CloseEvent.CLOSE, closeWindow);
+				window.showCloseButton = true;
+				var inp:TextInput = new TextInput();
+				window.addChild(inp);
+				PopUpManager.addPopUp(window, this, true);
+				PopUpManager.centerPopUp(window);
+				//inp.setFocus();
+				window.setFocus();
+			}
+			
+			public function closeWindow(event:CloseEvent):void
+			{
+				window.visible = false;
+				PopUpManager.removePopUp(window);
+				window = null;
+			}
+		]]>
+	</mx:Script>
+</mx:VBox>

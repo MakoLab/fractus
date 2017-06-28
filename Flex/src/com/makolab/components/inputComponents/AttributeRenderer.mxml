@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem xmlns:mx="http://www.adobe.com/2006/mxml" label="{getLabel(data)}" width="100%" styleName="attributeLabel">
+	<!--<mx:Text styleName="attributeLabel" htmlText="{getLabel(data)}" /> -->
+	<mx:Text htmlText="{getValue(data)}" selectable="true" link="handleLinkClick(event)" width="100%" fontWeight="normal"/>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.DictionaryManager;
+		
+			protected var cachedType:Object;
+			protected var cachedTypeData:Object;
+			
+			public var idField:String;
+			
+			/**
+			 * Returns the type of an attribute.
+			 */
+			protected function get attributeType():Object
+			{
+				if (cachedType && data == cachedTypeData) return cachedType;
+				cachedTypeData = data;
+				cachedType = data ? DictionaryManager.getInstance().dictionaries.getById(data[idField]) : null;
+				return cachedType;
+			}
+			
+			/**
+			 * Returns text of a control's label.
+			 */
+			protected function getLabel(data:Object):String
+			{
+			//	if(
+				return attributeType.label.(@lang==LanguageManager.getinstance().currentLanguage)[0];
+				//return attributeType.label;
+			}
+			
+			/**
+			 * Returns string value of a given object. Converts web and e-mail adresses to html &lt;a/&gt; tags.
+			 */
+			protected function getValue(data:Object):String
+			{
+				var protocol:String = attributeType.metadata.linkProtocol;
+				var linkRegExp:String = attributeType.metadata.linkRegExp;
+				var linkTemplate:String = attributeType.metadata.linkTemplate;
+				if (protocol)
+				{
+					var s:String = data.value;
+					var href:String = linkRegExp ? s.replace(new RegExp(linkRegExp, 'ig'), '') : s;
+					if (linkTemplate) href = linkTemplate.replace('{value}', href);
+					if (!href.match(new RegExp("^" + protocol + ":"))) href = protocol + ":" + href;
+					var target:String = protocol == "http" ? " target='_blank' " : " ";
+					if (protocol == "callto") href = href.replace(/\s/g, "");
+					toolTip = href;
+					var ret:String = "<a" + target + "href='" + href + "'><font color='#0000ff'>" + s + "</font></a>";
+					return ret;
+				}
+				else if(data.value.note.length() > 0) //adnotacja, uwaga
+					return "<i>"+data.value.note.user.*+" ("+data.value.note.date.*+")</i><br/>"+data.value.note.data.*;
+				else if(data.value.passport.length() > 0)
+					return data.value.passport.passportNumber+"<br/>"+data.value.passport.issuer;
+				else if (attributeType.metadata.dictionaryName.length() > 0)
+				{
+					return DictionaryManager.getInstance().dictionaries[attributeType.metadata.dictionaryName].(id.* == data.value.toString()).label.toString();
+				}
+				else if (attributeType.metadata.dataType.* == "boolean")
+				{
+					if(data.value.* == "1") return LanguageManager.getLabel("alert.yes");
+					else return LanguageManager.getLabel("alert.no"); 
+				}
+				else return data.value;
+			}
+			
+			/**
+			 * Navigates to a given url.
+			 */
+			protected function handleLinkClick(event:TextEvent):void
+			{
+            	var url:URLRequest = new URLRequest(event.text);
+            	//navigateToURL(url);
+			}
+		]]>
+	</mx:Script>	
+</mx:FormItem>

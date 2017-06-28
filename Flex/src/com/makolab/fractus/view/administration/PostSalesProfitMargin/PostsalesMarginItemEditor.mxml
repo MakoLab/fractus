@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CurrencyEditor xmlns="com.makolab.components.inputComponents.*" xmlns:mx="http://www.adobe.com/2006/mxml">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.dataGridClasses.DataGridListData;
+			
+			private var _dataObject:Object;
+			
+			override public function set dataObject(value:Object):void
+			{
+				var nodes:XMLList;
+				var editorValue:String = value.toString();
+				if (data && data is XML) nodes = (data as XML).value.(valueOf().@dataField == (listData as DataGridListData).dataField)
+				if (nodes && nodes.length() > 0)
+				{
+					if (nodes.length() > 1){ throw new Error("More than 1 node found for dataField '" + (listData as DataGridListData).dataField + "'")};
+					editorValue = String(Number(nodes[0]) * 100);
+				}else if (nodes && nodes.length() == 0){
+					var newValue:XML = <value/>;
+					newValue.@dataField = (listData as DataGridListData).dataField;
+					(data as XML).appendChild(newValue);
+				}
+				super.dataObject = editorValue;
+			}
+			
+			override public function get dataObject():Object
+			{
+				return isNaN(Number(super.dataObject)) || text == "" ? null : String(Number(super.dataObject) / 100);
+			}
+			
+		]]>
+	</mx:Script>
+</CurrencyEditor>

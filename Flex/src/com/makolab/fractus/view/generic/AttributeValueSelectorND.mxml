@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:ComboBox xmlns:mx="http://www.adobe.com/2006/mxml" initialize="init();">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+//			import com.adobe.utils.ArrayUtil;
+//			import com.makolab.fractus.model.DictionaryManager;
+			
+			[Bindable]
+			public var _names:Object=null;// vartości przekazywane i otrzymywane do/od back-endu
+			
+//			private var _attributeName:String;
+//			public function set attributeName(value:String):void
+//			{
+//				_attributeName = value;
+//				var newValues:Array = [];
+//				newValues.push("");
+//				var d:DictionaryManager = DictionaryManager.getInstance();
+//				if (DictionaryManager.getInstance().attributeValues[_attributeName])
+//				{
+//					for (var i:int = 0; i < DictionaryManager.getInstance().attributeValues[_attributeName].length; i++){
+//						newValues.push(DictionaryManager.getInstance().attributeValues[_attributeName][i]);
+//					}
+//				}
+//				values = newValues;
+//			} 
+//			public function get attributeName():String
+//			{
+//				return _attributeName;
+//			}
+			
+			override public function set selectedItem(value:Object):void
+			{
+				super.selectedItem = String(value);
+			}
+			public function init():void
+			{
+//				this.labelFunction=function(obj:Object){
+//					if(obj.labels.length)
+//						return obj.labels.label.(@lang==LanguageManager.getInstance().currentLanguage)[0];
+//					return obj.name;
+//				}
+			}
+			public function set selectedItemByName(str:String):void
+			{
+				var item:Object = null;
+				if(_names)
+				{
+					for (var i:int = 0; i < _names.length(); i++)
+					{
+						
+							
+							if (str==_names[i].toString())
+							{
+								item=dataProvider[i];
+							}
+						
+					}
+				}
+				else
+				{
+					for (var i:int = 0; i < dataProvider.length; i++)
+					{
+							if (str==dataProvider[i].toString())
+							{
+								item=dataProvider[i];
+							}
+					}
+				}
+				selectedItem = item;
+			}
+			public function selectionNameToString():String
+			{
+				if(selectedItem)
+					if(_names)
+					{
+						
+						for(var j:int=0;j<dataProvider.length;j++)
+							if(selectedItem.toString()==dataProvider[j].toString())
+								return _names[j].toString();
+						
+					}
+					else
+						return selectedItem.toString();
+					
+				return "";
+			}
+			
+		]]>
+	</mx:Script>
+</mx:ComboBox>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="onCreationComplete()" verticalAlign="middle" horizontalAlign="center">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ConfigManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.core.Application;
+			import flash.net.navigateToURL;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			[Bindable]
+			private var dataProvider:Array;
+			
+			private var profilesXml:XML = null;
+			
+			public function saveFunction():void
+			{
+				this.profile = this.comboBox.selectedItem.name;
+				ExternalInterface.call("location.reload", true);
+			}
+			
+			private function get profile():String
+			{
+				var so:SharedObject = SharedObject.getLocal("fractusData","/");
+				
+				if(so.data.profile && so.data.profile != "")
+					return so.data.profile;
+				else
+					return null;
+			}
+			
+			private function set profile(value:String):void
+			{
+				var so:SharedObject = SharedObject.getLocal("fractusData","/"); 
+				so.data.profile = value;
+			}
+			
+			private var window:ComponentWindow;
+			
+			private function onCreationComplete():void
+			{
+				this.dataProvider = [
+				{name : null, label : "Brak profilu" }];
+				
+				if (this.profilesXml != null) for each(var p:XML in this.profilesXml.profile)
+				{
+					if(p.@name.length() > 0)
+						this.dataProvider.push({ name : String(p.@name), label : String(p.@name) });
+				}
+				
+				var i:int = 0;
+				
+				for each(var obj:Object in this.dataProvider)
+				{
+					if(obj.name == this.profile)
+					{
+						this.comboBox.selectedIndex = i;
+						break;
+					}
+					
+					i++;	
+				}
+			}
+			
+			private static function showWindowLater():void
+			{
+				var component:ProfileChangeWindow = new ProfileChangeWindow();
+				var configManager:ConfigManager = ModelLocator.getInstance().configManager;
+				if (configManager.isAvailable("system.profiles")) component.profilesXml = XML(configManager.getXML("system.profiles").configValue.root);
+				var window:ComponentWindow = ComponentWindow.showWindow(component,
+						ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL,
+						new Rectangle(-1,-1,340,150),
+						LanguageManager.getInstance().labels.title.profileChange);
+				window.commitFunction = component.saveFunction;
+				component.window = window;	
+			}
+			
+			public static function showWindow():void
+			{
+				ModelLocator.getInstance().configManager.requestList(["system.profiles"], showWindowLater);
+			}
+		]]>
+	</mx:Script>
+	<mx:Form>
+		<mx:FormItem label="Wybierz profil stanowiska">
+			<mx:ComboBox id="comboBox" dataProvider="{this.dataProvider}" labelField="label" />
+		</mx:FormItem>
+	</mx:Form>
+</mx:VBox>
+

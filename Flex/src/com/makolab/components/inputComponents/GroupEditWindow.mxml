@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="400" height="400" 
+	xmlns:layoutComponents="com.makolab.components.layoutComponents.*"
+		showCloseButton="true" 
+		title="{LanguageManager.getInstance().labels.contractors.forms.contractor.groupDetails}" 
+		visible="false" close="hide()" creationComplete="init()"
+		xmlns:inputComponents="com.makolab.components.inputComponents.*">
+		
+		<mx:Metadata>
+		/**
+		 * Dispatched when a user clicks OK button.
+		 */
+		[Event(name="change", type="flash.events.Event")]
+		</mx:Metadata>
+		
+		<mx:Script>
+			<![CDATA[
+				import com.makolab.components.util.Tools;
+				import com.makolab.fractus.view.generic.GenericEditor;
+				import com.makolab.fractus.model.ModelLocator;
+				import com.makolab.fractus.model.ConfigManager;
+				import mx.containers.FormHeading;
+				import mx.containers.FormItem;
+				import flight.binding.Bind;
+				import mx.utils.ObjectProxy;
+				import com.makolab.fractus.model.DictionaryManager;
+				import mx.controls.Label;
+				import mx.controls.TextInput;
+				import mx.containers.HBox;
+				import com.makolab.fractus.model.LanguageManager;
+				import mx.managers.PopUpManager;
+				
+				private var _dataObject:Object;
+				
+				[Bindable]
+				private var groupConfig:Object;
+				private var languageControls:Array = [];
+				private var attributeControls:Array = [];
+				private var colorNode:XML;
+				private var configuration:XML;
+				public var configurationKey:String;
+				
+				[Bindable] public var showItemInputs:Boolean;
+				/**
+				 * Shows the window as a popup in relation to a given parent DisplayObject.
+				 */
+				public function show(parent:DisplayObject):void
+				{
+					if (visible) return;
+					PopUpManager.addPopUp(this, parent, true);
+					PopUpManager.centerPopUp(this);
+					visible = true;
+					setFocus();
+				}
+				/**
+				 * Lets you pass values to the control.
+				 * @param value The group node you want to modify.
+				 */
+				public function set dataObject(value:Object):void
+				{
+					_dataObject = value;
+					groupConfig = _dataObject.copy();
+				}
+				
+				private function configurationLoaded():void
+				{
+					try {
+						configuration = ModelLocator.getInstance().configManager.getXML(configurationKey)
+						if (configuration)
+						{
+							form.removeAllChildren();
+							addControls(configuration);
+						}
+					}
+					catch (e:Error)
+					{
+						//trace(e.message);
+					}
+					finally
+					{
+						form.visible = true;
+						progressBar.visible = false;
+					}
+				}
+				
+				private function addControls(configuration:XML):void
+				{
+					if (!configuration) return;
+					for each (var attribute:XML in configuration.attribute){
+						
+						// Nie wstawiamy kontrolki jesli nie dotyczy ona galezi drzewa lub lisci.
+						if (attribute.@concernsBranches.length() > 0 && !Tools.parseBoolean(attribute.@concernsBranches) && groupConfig.subgroups.length() > 0) return;
+						if (attribute.@concernsLeafs.length() > 0 && !Tools.parseBoolean(attribute.@concernsLeafs) && groupConfig.subgroups.length() == 0) return;
+						
+						// sprawdzamy, czy atrybut jest typu color. Taki przypadek traktujemy specjalnie bo GenericEditor nie obsluguje stringow ColorPickerem. 
+						var editor:GenericEditor = new GenericEditor();
+						if (attribute.type.toString() == "color")
+						{
+							editor.editorDataField = "data";
+							editor.editorFactory = new ClassFactory(FractusColorPicker);
+							editor.dataType = GenericEditor.STRING;
+						}else{
+							editor.dataType = attribute.type.toString();
+						}
+						
+						var xmlList:XMLList = new XMLList();
+						var attributeXML:XML;
+						if (attribute.nodeName.length() == 0) 	// mogloby tego bezsensownego if'a nie byc, gdybym jakies 2 lata temu pomyslal i wrzucil wszystko do <attributes>, 
+																// ale pewnie tak bylo latwiej i szybciej i nie przewidywalismy ze bedzie tych atrybutow wiecej.
+																// W kazdym badz razie jesli to czytasz przyjmyj moje przeprosiny i powodzenia. Coolik.
+						{
+							if(groupConfig)
+							{
+								if ( groupConfig.attributes.length() == 0 ) groupConfig.appendChild(<attributes/>);
+								
+								xmlList = groupConfig.attributes.attribute.(valueOf().@name == attribute.name.toString());
+								if (xmlList.length() > 0)
+								{
+									attributeXML = xmlList[0];
+								}else{
+									var newAttribute:XML = <attribute/>;
+									newAttribute.@type = attribute.type.toString();
+									newAttribute.@name = attribute.name.toString();
+									groupConfig.attributes.appendChild(newAttribute);
+									attributeXML = newAttribute;
+								}
+								editor.dataObject = attributeXML.toString();
+							}
+						}else{
+							xmlList = groupConfig[attribute.nodeName.toString()];
+							if (xmlList.length() > 0)
+							{
+								attributeXML = xmlList[0];
+								editor.dataObject = groupConfig[attribute.nodeName.toString()][0];
+							}else{
+								groupConfig[attribute.nodeName.toString()] = "";
+								attributeXML = groupConfig[attribute.nodeName.toString()][0];
+							}
+						}
+						
+						editor.enabled = ModelLocator.getInstance().permissionManager.isEnabled(attribute.@permissionKey);
+						
+						if (attributeXML) attributeControls.push({component : editor, xml : attributeXML, field : "dataObject", type : (attributeXML["@type"].length() > 0 ? attributeXML["@type"] : null), nodeName : (attribute.nodeName.length() > 0 ? attribute.nodeName.toString() : null)});
+						var formItem:FormItem = new FormItem();
+						formItem.addChild(editor);
+						formItem.label = attribute.labels.label.(valueOf().@lang == LanguageManager.getInstance().currentLanguage).toString();
+						form.addChild(formItem);
+					}
+				}
+				
+				private function addLanguages():void
+				{
+					var languageHeader:FormHeading = new FormHeading();
+					languageHeader.label = "Języki";
+					form.addChild(languageHeader);
+					for each(var p:Object in DictionaryManager.getInstance().dictionaries.languages)
+					{
+						var formItem:FormItem = new FormItem();
+						formItem.label = p.label;
+						
+						var inputText:TextInput = new TextInput();
+						var nodeRef:Object = groupConfig.labels.label.(@lang == p.name);
+						inputText.text = nodeRef.toString();
+						languageControls.push({component : inputText, language : p.name});
+						formItem.addChild(inputText);
+						form.addChild(formItem);
+					}
+				}
+				
+				private function init():void
+				{
+					// pobranie konfiguracji, jesli jest.
+					ModelLocator.getInstance().configManager.requestList([configurationKey],configurationLoaded);
+					addLanguages();
+					if(groupConfig.attributes.attribute.(valueOf().@type == 'color').toString() == ""){
+						colorEnabled.selected = false;
+						groupColorPicker.enabled = false;
+					}else{
+						colorEnabled.selected = true;
+						groupColorPicker.enabled = true;
+					}
+					if(groupConfig.minimalMargin)minimalMargin.dataObject = groupConfig.minimalMargin.toString();
+					if(groupConfig.maximalDiscount)maximalDiscount.dataObject = groupConfig.maximalDiscount.toString();
+					if(groupConfig.specialMaximalDiscount)specialMaximalDiscount.dataObject = groupConfig.specialMaximalDiscount.toString();
+					colorNode = groupConfig.attributes.attribute.(valueOf().@type == 'color')[0];
+					groupColorPicker.selectedColor = groupConfig.attributes.attribute.(valueOf().@type == 'color');
+				}
+				/**
+				 * Removes window.
+				 */
+				public function hide(save:Boolean = false):void
+				{
+					if(save){
+						var i:int = 0;
+						var xmlList:XMLList = new XMLList();
+						for(i = 0; i < languageControls.length; i++){
+							Tools.setXMLValue((groupConfig as XML),"labels.label.@lang",languageControls[i].component.text,languageControls[i].language);
+							/* xmlList = groupConfig.labels.label.(@lang == languageControls[i].language);
+							if (xmlList.length() > 0)
+							{
+								groupConfig.labels.label.(@lang == languageControls[i].language).* = languageControls[i].component.text;
+							}else{
+								var label:XML = <label/>;
+								label.@lang = languageControls[i].language;
+								label.* = languageControls[i].component.text;
+								groupConfig.labels.appendChild(label);
+							} */
+						}
+						for(i = 0; i < attributeControls.length; i++){
+							var template:XML;
+							if (attributeControls[i].type)
+							{
+								template = <attribute/>;
+								template.@type = attributeControls[i].type;
+							}
+							if (attributeControls[i].nodeName)
+							{
+								Tools.setXMLValue((groupConfig as XML),attributeControls[i].nodeName,attributeControls[i].component[attributeControls[i].field],null,[null,NaN]);
+							}else{
+//								trace("1:",i);
+//								trace("2:",attributeControls[i]);
+//								trace("3:",attributeControls[i].component[attributeControls[i].field]);
+//								trace("4:",attributeControls[i].xml.@name.toString())
+//								trace("5:",attributeControls[i].xml.@type.toString())
+//								
+								if(attributeControls[i].xml.@type.toString()=="string")
+									Tools.setXMLValue((groupConfig as XML),"attributes.attribute.@name",attributeControls[i].component[attributeControls[i].field],attributeControls[i].xml.@name.toString(),[null,""],template);
+								else
+									Tools.setXMLValue((groupConfig as XML),"attributes.attribute.@name",attributeControls[i].component[attributeControls[i].field],attributeControls[i].xml.@name.toString(),[null,NaN],template);
+								
+							}
+							//attributeControls[i].xml.* = attributeControls[i].component[attributeControls[i].field].toString();
+						}
+						if (!configuration)
+						{
+							if(minimalMargin.text && minimalMargin.text != ""){
+								groupConfig.minimalMargin = minimalMargin.dataObject;
+							}else{
+								if(groupConfig.minimalMargin)delete groupConfig.minimalMargin;
+							}
+							if(maximalDiscount.text && maximalDiscount.text != ""){
+								groupConfig.maximalDiscount = maximalDiscount.dataObject;
+							}else{
+								if(groupConfig.maximalDiscount)delete groupConfig.maximalDiscount;
+							}
+							if(specialMaximalDiscount.text && specialMaximalDiscount.text != ""){
+								groupConfig.specialMaximalDiscount = specialMaximalDiscount.dataObject;
+							}else{
+								if(groupConfig.specialMaximalDiscount)delete groupConfig.specialMaximalDiscount;
+							}
+						}
+						updateData();
+						this.dispatchEvent(new Event("change"));
+					}
+					PopUpManager.removePopUp(this);
+					this.visible = false;
+				}
+				
+				private function updateData():void
+				{
+					_dataObject.labels = groupConfig.labels;
+					if(groupConfig.minimalMargin)_dataObject.minimalMargin = groupConfig.minimalMargin;
+					if(groupConfig.maximalDiscount)_dataObject.maximalDiscount = groupConfig.maximalDiscount;
+					if(groupConfig.specialMaximalDiscount)_dataObject.specialMaximalDiscount = groupConfig.specialMaximalDiscount;
+					if(_dataObject.attributes){
+						if(groupConfig.attributes.toXMLString() != ""){
+							_dataObject.attributes = groupConfig.attributes;
+						}else{
+							delete(_dataObject.attributes);
+						}
+					}else{
+						if(groupConfig.hasOwnProperty("attributes")){
+							var attributesNode:XML = <attributes/>;
+							_dataObject.appendChild(attributesNode);
+							_dataObject.attributes = groupConfig.attributes;
+						}
+					}
+				}
+				
+				private function validateNames():Boolean
+				{
+					// na razie bez walidacji
+					return false;
+				}
+				
+				private function colorChangeHandler():void
+				{
+					colorNode = groupConfig.attributes.attribute.(@type == 'color')[0];
+					colorNode.* = XML(groupColorPicker.selectedColor);
+				}
+				
+				private function colorEnabledChange():void
+				{
+					groupColorPicker.enabled = colorEnabled.selected;
+					var attributesNode:Object;
+					if(!colorEnabled.selected){
+						colorNode = groupConfig.attributes.attribute.(@type == 'color')[0];
+						delete(colorNode.parent().children()[colorNode.childIndex()]);
+						if(groupConfig.attributes.children().length() == 0){
+							attributesNode = groupConfig.attributes;
+							delete(attributesNode.parent().children()[attributesNode.childIndex()]);
+						}
+					}else{
+						if(groupConfig.attributes.length() == 0){
+							attributesNode = <attributes/>;
+							groupConfig.appendChild(attributesNode);
+						}
+						colorNode = <attribute type="color"></attribute>;
+						colorNode.* = XML(groupColorPicker.selectedColor);
+						groupConfig.attributes.appendChild(colorNode);
+					}
+				}
+			
+			]]>
+		</mx:Script>
+	<mx:Form id="form" width="100%" visible="false">
+		<mx:FormItem label="Kolor grupy" direction="horizontal">
+			<mx:CheckBox id="colorEnabled" change="colorEnabledChange()"/><mx:ColorPicker id="groupColorPicker" change="colorChangeHandler()" width="100%"/>
+		</mx:FormItem>
+		<mx:FormItem label="Minimalna marża (%)" visible="{showItemInputs}" includeInLayout="{showItemInputs}">
+			<inputComponents:CurrencyEditor id="minimalMargin" nanVal="" width="100%" restrict="0-9,."/>
+		</mx:FormItem>
+		<mx:FormItem label="Maksymalny rabat (%)" visible="{showItemInputs}" includeInLayout="{showItemInputs}">
+			<inputComponents:CurrencyEditor id="maximalDiscount" nanVal="" width="100%" restrict="0-9,."/>
+		</mx:FormItem>
+		<mx:FormItem label="Maksymalny rabat specjalny (%)" visible="{showItemInputs}" includeInLayout="{showItemInputs}">
+			<inputComponents:CurrencyEditor id="specialMaximalDiscount" nanVal="" width="100%" restrict="0-9,."/>
+		</mx:FormItem>
+	</mx:Form>
+	<mx:Canvas id="progressBar" x="0" y="0" width="100%" height="100%" backgroundColor="0x000000" backgroundAlpha="0.2" includeInLayout="{progressBar.visible}">
+		<mx:ProgressBar label="Pobieranie konfiguracji." indeterminate="true" verticalCenter="0" horizontalCenter="0"/>
+	</mx:Canvas>
+	<mx:ControlBar height="40" width="100%">
+		<mx:Button label="{LanguageManager.getInstance().labels.common.ok}" click="hide(true)"/>
+		<mx:Button label="{LanguageManager.getInstance().labels.common.cancel}" click="hide()"/>
+	</mx:ControlBar>
+</mx:TitleWindow>

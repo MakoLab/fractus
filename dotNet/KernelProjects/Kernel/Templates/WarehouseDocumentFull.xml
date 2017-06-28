@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<root>
+  <warehouseDocument>
+    <documentTypeId/>
+    <warehouseId/>
+    <documentCurrencyId/>
+    <systemCurrencyId/>
+    <number>
+      <number/>
+      <fullNumber/>
+      <numberSettingId/>
+    </number>
+    <issueDate/>
+    <value/>
+    <status/>
+
+    <lines>
+      <line>
+        <ordinalNumber/>
+        <itemId/>
+        <direction/>
+        <warehouseId/>
+        <unitId/>
+        <quantity/>
+        <value/>
+        <price/>
+        <isDistributed/>
+
+        <incomeOutcomeRelations>
+          <incomeOutcomeRelation>
+            <relatedLine>
+              <line>
+                <ordinalNumber/>
+                <itemId/>
+                <direction/>
+                <warehouseId/>
+                <unitId/>
+                <quantity/>
+                <value/>
+                <price/>
+              </line>
+            </relatedLine>
+            <quantity/>
+          </incomeOutcomeRelation>
+          <!--Multiple-->
+        </incomeOutcomeRelations>
+
+        <commercialWarehouseValuations>
+          <commercialWarehouseValuation>
+            <relatedLine>
+              <line>
+                <id/>
+              </line>
+            </relatedLine>
+            <quantity/>
+            <value/>
+            <price/>
+          </commercialWarehouseValuation>
+          <!--Multiple-->
+        </commercialWarehouseValuations>
+
+        <commercialWarehouseRelations>
+          <commercialWarehouseRelation>
+            <relatedLine>
+              <line>
+                <id/>
+              </line>
+            </relatedLine>
+            <quantity/>
+            <value/>
+            <isValuated/>
+            <isOrderRelation/>
+            <isCommercialRelation/>
+          </commercialWarehouseRelation>
+          <!--Multiple-->
+        </commercialWarehouseRelations>
+      </line>
+      <!--Multiple-->
+    </lines>
+    
+    <attributes>
+      <attribute>
+        <documentFieldId/>
+        <value/>
+      </attribute>
+      <!--Multiple-->
+    </attributes>
+  </warehouseDocument>
+</root>

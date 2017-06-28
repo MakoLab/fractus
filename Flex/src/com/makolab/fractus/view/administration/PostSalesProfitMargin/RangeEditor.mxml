@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300" xmlns:rules="com.makolab.fractus.view.administration.rules.*">
+	<mx:Metadata>
+		[Event(name="commit", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			public static function showWindow(rangeXML:XML):ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:RangeEditor = new RangeEditor();
+				component.rangeXML = rangeXML;
+				component.window = window;
+				window.innerComponent = component;
+				window.commitFunction = component.commitFunction;
+				window.buttons = ComponentWindow.BUTTON_COMMIT;
+				window.show(null,new Rectangle(-1,-1,400,120));
+				return window;
+			}
+			
+			public var window:ComponentWindow;
+			
+			[Bindable]
+			public var dateFrom:Date;
+			
+			[Bindable]
+			public var dateTo:Date;
+			
+			public function commitFunction():void
+			{
+				dispatchEvent(new Event("commit"));
+				if (window)window.hide();
+			}
+			
+			private var _rangeXML:XML;
+			[Bindable]
+			public function set rangeXML(value:XML):void
+			{
+				_rangeXML = value;
+				if (_rangeXML && _rangeXML.@dateFrom.length() > 0) dateFrom = Tools.isoToDate(_rangeXML.@dateFrom);
+				if (_rangeXML && _rangeXML.@dateTo.length() > 0) dateTo = Tools.isoToDate(_rangeXML.@dateTo); 
+				
+				var currentDate:Date = new Date();
+				var previousMonthDate:Date = new Date();
+				previousMonthDate.month -= 1;
+				
+				if (!dateFrom) 	dateFrom = new Date(previousMonthDate.fullYear,previousMonthDate.month,1);
+				if (!dateTo) 	dateTo = new Date(currentDate.fullYear,currentDate.month,0,23,59,59,997);
+				
+				updateXML();
+			} 
+			public function get rangeXML():XML
+			{
+				updateXML();
+				return _rangeXML;
+			}
+			
+			private function updateXML():void
+			{
+				if(!_rangeXML)_rangeXML = <column dateFrom="" dateTo=""/>;
+				_rangeXML.@dateFrom = Tools.dateToIso(dateFrom);
+				_rangeXML.@dateTo = Tools.dateToIso(dateTo);
+			}
+			
+			private function rangeChangeHandler(event:Event):void
+			{
+				dateFrom = rangeChooser.dateFrom;
+				dateTo = rangeChooser.dateTo;
+				dateTo.hours = 23;
+				dateTo.minutes = 59;
+				dateTo.seconds = 59;
+				dateTo.milliseconds = 997;
+			}
+		]]>
+	</mx:Script>
+	<rules:DateRangeChooser id="rangeChooser" change="rangeChangeHandler(event)" dateFrom="{dateFrom}" dateTo="{dateTo}"/>
+</mx:Form>

@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem width="100%" implements="com.makolab.components.catalogue.ICatalogueFilter" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:menu="com.makolab.fractus.view.menu.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.CatalogueFilterError;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			
+			import mx.binding.utils.BindingUtils;
+			
+			import flight.utils.config;
+			private var _config:XML
+			[Bindable]
+			public var columnName:String = "documentTypeId";
+			
+			public function get value():Object
+			{
+				//if(type.length == type.selectedItems.length)return "";
+				var ret:Array = [];
+				for(var i:int=0;i<type.selectedItems.length;i++){
+					ret.push("'" + type.selectedItems[i].id.* + "'");
+				}
+				return ret.join(",");
+			}
+			
+			public function set config(value:XML):void
+			{
+				_config = value;
+				if(_config.@labelKey.length())
+				{
+					var ka:Array=(_config.@labelKey).split('.');
+					if(ka.length)
+						BindingUtils.bindProperty(this,'label',LanguageManager.getInstance().labels,ka);
+					else
+						BindingUtils.bindProperty(this,'label',LanguageManager.getInstance().labels,_config.@labelKey);
+				}
+				else
+				label = _config.@label;
+			}
+			
+			public function get config():XML
+			{
+				return _config;
+			}
+			
+			public function setParameters(parameters:Object):void
+			{
+				if(type.selectedItems.length == 0)throw new CatalogueFilterError("Nie zaznaczono żadnego typu dokumentu w filtrze typów dokumentów");//todo use LanguageManager
+					
+				if(value.toString() != ""){
+					if(!parameters.filters)parameters.filters = "";
+					var filterNodes:XMLList = parameters.filters.column.(@field == columnName);
+					if(type.selectedItems.length != type.length)
+					{
+						if(filterNodes.length() == 0){
+							var newCondition:XML = <column/>;
+							newCondition.@field = columnName;
+							newCondition.* = value;
+							parameters.filters.columns += newCondition;
+						}else{
+							filterNodes[0].* = value;
+						}
+					}else{
+						if (parameters && parameters.filters.length() > 0)
+						{
+							var catFilter:XMLList = parameters.filters.column.(@field.toString() == 'documentCategory');
+							if (catFilter.length() > 0) delete catFilter[0];
+						}
+						var categoryNode:XML = <column/>;
+						categoryNode.@field = "documentCategory";
+						
+						var types:Array = new Array();
+						if(config.itemsType.length() > 0) {
+							for each(var x:XML in config.itemsType) {
+								if(ModelLocator.getInstance().permissionManager.isEnabled(x.@permissionKey)){
+									types.push(x.@value);
+								}
+							}
+							categoryNode.* = types.toString();
+						} else if(config.@itemsType != null && config.@itemsType.length() > 0) {
+							categoryNode.* = config.@itemsType.toString();
+							types = config.@itemsType.toString().split(",");
+						}
+						
+						var isCommercial:Boolean = false;
+						for(var i:int=0;i < types.length;i++){
+							if(
+								Number(types[i]) == DocumentTypeDescriptor.CATEGORY_PURCHASE
+								|| Number(types[i]) == DocumentTypeDescriptor.CATEGORY_PURCHASE_CORRECTION
+								|| Number(types[i]) == DocumentTypeDescriptor.CATEGORY_SALES
+								|| Number(types[i]) == DocumentTypeDescriptor.CATEGORY_SALES_CORRECTION
+								|| Number(types[i]) == DocumentTypeDescriptor.CATEGORY_WAREHOUSE_ORDER
+								|| Number(types[i]) == DocumentTypeDescriptor.CATEGORY_WAREHOUSE_RESERVATION
+								|| Number(types[i]) == DocumentTypeDescriptor.CATEGORY_SERVICE_DOCUMENT
+								|| Number(types[i]) == DocumentTypeDescriptor.CATEGORY_SALES_ORDER_DOCUMENT
+								|| Number(types[i]) == DocumentTypeDescriptor.CATEGORY_PRODUCTION_ORDER_DOCUMENT
+								|| Number(types[i]) == DocumentTypeDescriptor.CATEGORY_TECHNOLOGY_DOCUMENT
+							){
+								isCommercial = true;
+								break;
+							}
+						}
+						if(isCommercial)parameters.filters.columns += categoryNode;
+						if(filterNodes.length() > 0){
+							delete filterNodes[0];
+						}
+						
+					}
+				}
+			}
+			
+			private function comboLabelFunction(item:Object):String
+			{
+				var ret:String = item.label.(@lang == LanguageManager.getInstance().currentLanguage).*; 
+				return ret;
+			}
+			
+			private function getSelectedItems(data:Object):Array
+			{
+				var items:Array = [];
+				var objects:Object = typeDataProvider();
+				for each(var o:Object in objects){
+					items.push(o);
+				}
+				return items;
+			}
+			
+			private function setSelection():void
+			{
+				type.selectedItems = getSelectedItems(null);
+			}
+			
+			private function typeDataProvider():Object
+			{
+				var dp:XMLList = new XMLList();
+				if( config && ((config.@itemsType != null && config.@itemsType.length() > 0) || config.itemsType.length() > 0 ) )
+				{
+					var types:Array = new Array();
+					if(config.itemsType.length() > 0) {
+						for each(var x:XML in config.itemsType) {
+							if(ModelLocator.getInstance().permissionManager.isEnabled(x.@permissionKey)){
+								types.push(x.@value);
+							}
+						}
+					} else if(config.@itemsType != null && config.@itemsType.length() > 0) {
+						types = config.@itemsType.toString().split(",");
+					}
+					
+					for(var i:int=0;i<types.length;i++){
+						dp += DictionaryManager.getInstance().dictionaries.documentTypes.(documentCategory.* == types[i]);
+					}
+				}
+				else
+				{
+					dp = DictionaryManager.getInstance().dictionaries.documentTypes
+				}
+				return dp;
+			}
+			
+			public function set template(valueList:XMLList):void{
+				for each (var value:XML in valueList){
+				//todo: jesli filtr ma rozpoznawac, ktory elem. z listy jest dla niego, trzeba to tu dodać
+				
+				/*
+				<filter type="docTypeFilter" value="PA,FW"/>
+				*/
+				var items:Array = [];
+				var values:Array = String(value.@value).split(",");
+				for each (var v:String in values){
+					var objects:Object = type.dataProvider;
+					for each(var o:Object in objects){
+						if(o.symbol.* == v)
+							items.push(o);
+					}
+				}
+				type.selectedItems = items;
+				}
+			}
+			
+			public function clear():void{
+				if(type.enabled)type.selectAll();
+			}
+			public function restore():void{
+				//todo
+				//trzeba dopisac cialo funkcji, jesli inny filtr ma miec mozliwosc przywracania stanu tego filtra sprzed wyczyszczenia go
+				//filtry mogą mieć wpływ na inne filtry poprzez wypelnienie w konfiguracji parametru 'disableFilterType', przyklad w DocNumberFilter
+			}
+		]]>
+	</mx:Script>
+	<inputComponents:CheckBoxCombo id="type" width="100%" minWidth="250" creationComplete="setSelection()" dataProvider="{typeDataProvider()}" labelFunction="comboLabelFunction"/>
+</mx:FormItem>

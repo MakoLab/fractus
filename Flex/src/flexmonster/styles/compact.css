@@ -1,0 +1,502 @@
+/* CSS file */
+
+default {
+	fontFamily: "Verdana";
+	fontSize: 10;
+	color: #000000;	
+}
+
+grid {
+	defaultCellWidth: 70;
+	defaultCellHeight: 18;
+	topHeaderHeight: 18;
+	leftHeaderWidth: 28;
+	titleStyleName: gridTitle;
+}
+
+	gridTitle {
+		fontFamily: "Verdana";
+		fontSize: 12;
+		fontWeight: bold;
+		color: #000000; 
+	}
+
+.dataCell {
+	fontFamily: "Verdana";
+	fontSize: 10;
+	color: #000000; 
+	backgroundColor: #FFFFFF;
+	overColor: #91AA9D;
+}
+
+.totalCell {
+	fontSize: 10;
+	fontWeight: bold;
+}
+
+.headerCell {
+	fontFamily: "Verdana";
+	fontSize: 10;
+	color: #FFFFFF; 
+	textIndent:4;
+	backgroundColor: #336600;
+	overColor: #91AA9D;
+	paddingLeft: 2;
+}
+
+.expandedHeaderCell {
+	textIndent: 4;
+	leftIcon: url:styles/icons/minusIcon.png;
+	useHandCursor: true;
+}
+
+.collapsedHeaderCell {
+	textIndent: 4;
+	leftIcon: url:styles/icons/plusIcon.png;
+	useHandCursor: true;
+}
+
+.hierarchyDrilledDownCell {
+	useHandCursor: false;
+	linkStyleName: hierarchyLink;
+}
+
+.hierarchyDrilledUpCell {
+	useHandCursor: false;
+	linkStyleName: hierarchyLink;
+}
+
+.hierarchyLink {
+	fontFamily: "Verdana";
+	fontSize: 10;
+	color: #ADBF9B;
+	underline: true;
+}
+
+.filterCell {
+	textIndent: 4;
+	paddingLeft: 2;
+	leftIcon: url:styles/icons/filterIcon.png;
+	useHandCursor: true;
+}
+
+.filteredCell {
+	rightIcon: url:styles/icons/filter.png;
+}
+
+.vSortCell {
+	overIcon: url:styles/icons/vSortIcon.png;
+}
+.vSortAscCell {
+	rightIcon: url:styles/icons/vSortAscIcon.png;
+}
+.vSortDescCell {
+	rightIcon: url:styles/icons/vSortDescIcon.png;
+}
+.hSortCell {
+	overIcon: url:styles/icons/hSortIcon.png;
+}
+.hSortAscCell {
+	rightIcon: url:styles/icons/hSortAscIcon.png;
+}
+.hSortDescCell {
+	rightIcon: url:styles/icons/hSortDescIcon.png;
+}
+.level0 {
+	paddingLeft: 2;
+}
+.level1 {
+	paddingLeft: 17;
+}
+.level2 {
+	paddingLeft: 32;
+}
+.level3 {
+	paddingLeft: 47;
+}
+.level4 {
+	paddingLeft: 62;
+}
+.level5 {
+	paddingLeft: 77;
+}
+.level6 {
+	paddingLeft: 92;
+}
+.level7 {
+	paddingLeft: 107;
+}
+.level8 {
+	paddingLeft: 122;
+}
+
+sheetHeader {
+	lineColor: #CCCCCC;
+	fillColor: #F9F3D6;
+	textColor: #3d3d39;
+	fontSize: 10;
+}
+
+chartsView {
+	minBarSize: 2;
+	legendStyleName: chartLegend;
+	chartXLabelStyleName: chartXLabel;
+	chartYLabelStyleName: chartYLabel;
+	chartPieLabelStyleName: chartPieLabel;
+	chartViewTitleStyleName: chartTitle;
+	chartViewPieCbxStyleName: chartPieCbx;
+	chartViewMeasureCbxStyleName: chartMeasureCbx;
+	colors: [#A50F15, #DE2D26 , #FB6A4A, #FC9272, #FCBBA1, #FEE5D9], [#08519C, #3182BD, #6BAED6, #9ECAE1, #C6DBEF, #EFF3FF], [#006D2C, #2CA25F, #66C2A4, #99D8C9, #CCECE6, #EDF8FB], [#980043, #DD1C77, #DF65B0, #C994C7, #D4B9DA, #F1EEF6], [#993404, #D95F0E, #FE9929, #FEC44F, #FEE391, #FFFFD4], [#999900, #CCCC00, #DDDD33, #D0D066, #CCCC99, #FFFFCC]; 
+	singleColors: #E41A1C, #377EB8, #4DAF4A, #984EA3, #FF7F00, #EDC200, #90BF46, #F2FF00, #FF5E00, #59BBAB, #D5D5D5, #2491DE, #2A2A2A, #333333, #191726, #3D2F59, #453873, #DDB692, #EE9B52, #9E5E31; 
+}
+
+	chartLegend {
+		hideButtonStyleName: hideButton;
+		legendSeparatorStyleName: legendSeparator;
+		backgroundImage: url:styles/images/legendBg.png;
+	}
+	
+		hideButton {
+			upSkin: url:styles/images/legendButtonSkin.png;	
+			overSkin: url:styles/images/legendButtonSkin.png;
+			downSkin: url:styles/images/legendButtonSkin.png;
+			fontSize: 10;
+			color: #006699;
+			textDecoration: underline;
+		}
+		
+		legendSeparator {
+			backgroundImage: url:styles/images/legendSeparator.png;
+		}
+
+	chartTitle {
+		fontFamily: "Verdana";
+		fontSize: 12;
+		fontWeight: bold;
+		color: #000000; 
+	}
+
+	chartXLabel {
+		fontFamily: "Verdana";
+		fontSize: 10;
+		color: #000000; 
+	}
+	
+	chartYLabel {
+		fontFamily: "Verdana";
+		fontSize: 10;
+		color: #000000; 
+	}
+	
+	chartPieLabel {
+		fontFamily: "Verdana";
+		fontSize: 10;
+		color: #000000; 
+	}
+
+	chartPieCbx {
+		upSkin: url:styles/images/chartCbxSkin.png;
+		overSkin: url:styles/images/chartCbxSkin.png;
+		downSkin: url:styles/images/chartCbxSkin.png;
+		fontSize: 12;
+		textAlign: left;
+		leftMargin: 10;
+	}
+	
+	chartMeasureCbx {
+		upSkin: url:styles/images/chartCbxSkin.png;
+		overSkin: url:styles/images/chartCbxSkin.png;
+		downSkin: url:styles/images/chartCbxSkin.png;
+		fontSize: 12;
+		textAlign: left;
+		leftMargin: 10;
+	}
+	
+	chartToolTip {
+		shadow: 1;
+		rounded: 6;
+		stroke: 1;
+		borderColor: #C8C8C8;
+		backgroundColor: #ffffff;
+		titleColor: #000000;
+		titleWeight: bold;
+		titleSize: 10;
+		bodyColor: #000000;
+		bodyWeight: normal;
+		bodySize: 10;
+	}
+
+configuratorCellCheckbox {
+	fontSize: 11;
+	background: url:styles/images/cellBg.png;
+	icon: url:styles/icons/emptyCheckbox.png; 
+	backgroundAlpha: 0.5;
+	paddingLeft: 5;
+}
+configuratorCellCheckbox:over {
+	backgroundAlpha: 1;
+}
+configuratorCellCheckbox:checked {
+	fontWeight: bold;
+	icon: url:styles/icons/checkbox.png; 
+	
+}
+
+hierarchyCell {
+	paddingLeft: 4;
+	backgroundImage: url:styles/images/cellBg.png, scaleGridTop=1, scaleGridLeft=1, scaleGridBottom=1, scaleGridRight=1;
+	iconOpen: url:styles/icons/iconPlus.png;
+	iconClose: url:styles/icons/iconMinus.png;
+	iconEmptyCheckbox: url:styles/icons/emptyCheckbox.png;
+	iconHalfCheckbox: url:styles/icons/halfCheckbox.png;
+	iconCheckbox: url:styles/icons/checkbox.png;
+}
+
+measureCellAggregation {
+	icon: url:styles/images/measureCellAggregation.png
+	iconOver: url:styles/images/measureCellAggregationOver.png
+	backgroundImage: url:styles/images/levelCellBg.png, scaleGridTop=1, scaleGridLeft=1, scaleGridBottom=1, scaleGridRight=1;
+	paddingLeft: 2;
+	iconEmptyCheckbox: url:styles/icons/emptyCheckbox.png;
+	iconCheckbox: url:styles/icons/checkbox.png;
+}
+
+checkBoxHierarchyCell {
+	backgroundImage: url:styles/images/levelCellBg.png;
+}
+
+levelCell {
+	icon: url:styles/images/levelCellDragIconBig.png;
+	iconValues: url:styles/images/valuesIcon.png;
+	backgroundImage: url:styles/images/levelCellBg.png;
+}
+
+dimensionCell {
+	iconClose: url:styles/images/dimensionCellClose.png
+	iconOpen: url:styles/images/dimensionCellOpen.png
+	backgroundImage: url:styles/images/levelCellBg.png;
+}
+
+folderCell {
+	iconClose: url:styles/images/folderIconClose.png
+	iconOpen: url:styles/images/folderIconClose.png
+	backgroundImage: url:styles/images/levelCellBg.png;
+}
+
+checkBoxTreeList {
+	backgroundImage: url:styles/images/fieldsListBg.png, scaleGridTop=5, scaleGridLeft=5, scaleGridBottom=5, scaleGridRight=5;
+	fontSize: 12;
+	color: #51841E;
+	fontWeight: bold;
+}
+
+aggregationView {
+	backgroundImage: url:styles/images/aggregationBg.png;
+}
+
+filterCheckBoxTreeList {
+	backgroundImage: url:styles/images/whiteBg.png;
+}
+
+fieldsList {
+	backgroundImage: url:styles/images/fieldsListBg.png, scaleGridTop=5, scaleGridLeft=5, scaleGridBottom=5, scaleGridRight=5;
+	backgroundSelectedImage: url:styles/images/checkBoxTreeBg.png, scaleGridTop=5, scaleGridLeft=5, scaleGridBottom=5, scaleGridRight=5;
+	fontSize: 12;
+	color: #51841E;
+	fontWeight: bold;
+}
+
+treeFieldsList {
+	backgroundImage: url:styles/images/fieldsListBg.png, scaleGridTop=5, scaleGridLeft=5, scaleGridBottom=5, scaleGridRight=5;
+	backgroundSelectedImage: url:styles/images/checkBoxTreeBg.png, scaleGridTop=5, scaleGridLeft=5, scaleGridBottom=5, scaleGridRight=5;
+	fontSize: 12;
+	color: #51841E;
+	fontWeight: bold;
+}
+
+fieldsView {
+	backgroundImage: url:styles/images/fieldsViewBgH.png, scaleGridTop=5, scaleGridLeft=5, scaleGridBottom=5, scaleGridRight=5;
+	top: 1;
+	right: 1;
+	openConfiguratorButton: openConfiguratorButton;
+/*	paddingLeft: 12;
+	paddingRight: 12;*/
+}
+
+	openConfiguratorButton {
+		upSkin: url:styles/images/btnOpenFieldListUp.png;
+		overSkin: url:styles/images/btnOpenFieldListOver.png;
+		downSkin: url:styles/images/btnOpenFieldListDown.png;
+	}
+
+configuratorView {
+	updateBtnStyleName: configuratorUpdateBtn;	
+	cancelBtnStyleName: configuratorCancelBtn;
+}
+
+	configuratorUpdateBtn {
+		upSkin: url:styles/images/btnUpSkin.png, scaleGridTop=16, scaleGridLeft=25, scaleGridBottom=16, scaleGridRight=25;
+		overSkin: url:styles/images/btnOverSkin.png, scaleGridTop=16, scaleGridLeft=25, scaleGridBottom=16, scaleGridRight=25;
+		downSkin: url:styles/images/btnDownSkin.png, scaleGridTop=16, scaleGridLeft=25, scaleGridBottom=16, scaleGridRight=25;
+		disabledSkin: url:styles/images/btnDisabeledSkin.png, scaleGridTop=16, scaleGridLeft=25, scaleGridBottom=16, scaleGridRight=25;
+		icon: url:styles/images/btnCheckIcon.png;
+		fontSize: 12;
+		color: #000000;
+		fontWeight: bold;
+	}
+	
+	configuratorCancelBtn {
+		upSkin: url:styles/images/btnUpSkin.png, scaleGridTop=16, scaleGridLeft=25, scaleGridBottom=16, scaleGridRight=25;
+		overSkin: url:styles/images/btnOverSkin.png, scaleGridTop=16, scaleGridLeft=25, scaleGridBottom=16, scaleGridRight=25;
+		downSkin: url:styles/images/btnDownSkin.png, scaleGridTop=16, scaleGridLeft=25, scaleGridBottom=16, scaleGridRight=25;
+
+		fontSize: 12;
+		color: #000000;
+	}
+
+filterSortView {
+	backgroundImage: url:styles/images/filterBg.png, scaleGridTop=15, scaleGridLeft=15, scaleGridBottom=15, scaleGridRight=15;
+	labelStyleName: filterLabel;
+	checkBoxTreeListStyleName: filterCheckBoxTreeList;
+	filterOkButtonStyleName: filterOkButton;
+	filterCancelButtonStyleName: filterCancelButton;
+	accordionStyleName: accordion;
+	paddingLeft: 12;
+	paddingRight: 12;	
+	width: 300;
+}
+
+	filterLabel {
+		fontFamily: "Verdana";
+		fontSize: 11;
+		color: #51841E; 
+		textIndent:2;
+		backgroundColor: #5B7876;
+		overColor: #91AA9D;
+		paddingLeft: 2;
+		fontWeight: bold;
+	}
+
+	accordion {
+		contentStyleName: accordionContent;
+		tabStyleName: accordionTab;
+		tabSelectedStyleName: accordionSelectedTab;
+		backgroundImage: url:styles/images/accordionContentBg.png, scaleGridTop=5, scaleGridLeft=5, scaleGridBottom=5, scaleGridRight=5;
+	}
+
+		accordionContent {
+			buttonsStyleName: filterButtons;
+			separator: url:styles/images/separator.png;
+		}
+			
+			filterButtons {
+				iconAsc: url:styles/icons/sortingAz.png;
+				iconDesc: url:styles/icons/sortingZa.png;
+				iconUnsorted: url:styles/icons/sortingNo.png;
+				iconTop10: url:styles/icons/sortingTop10.png;
+				upSkin: url:styles/images/btnFilterSorting_upSkin.png;
+				overSkin: url:styles/images/btnFilterSorting_overSkin.png;
+				downSkin: url:styles/images/btnFilterSorting_downSkin.png;
+				selectedUpSkin: url:styles/images/btnFilterSorting_selectedUpSkin.png;
+				selectedOverSkin: url:styles/images/btnFilterSorting_selectedOverSkin.png;
+				selectedDownSkin: url:styles/images/btnFilterSorting_selectedDownSkin.png;
+			}
+
+		accordionTab {
+			upSkin: url:styles/images/filterTabSkin.png, scaleGridTop=3, scaleGridLeft=3, scaleGridBottom=3, scaleGridRight=3;
+			overSkin: url:styles/images/filterTabSkin.png, scaleGridTop=3, scaleGridLeft=3, scaleGridBottom=3, scaleGridRight=3;
+			fontSize: 12;
+			color: #000000;
+			textAlign: left;
+		}
+		
+		accordionSelectedTab {
+			upSkin: url:styles/images/filterTabSelected.png, scaleGridTop=3, scaleGridLeft=3, scaleGridBottom=3, scaleGridRight=3;
+			overSkin: url:styles/images/filterTabSelected.png, scaleGridTop=3, scaleGridLeft=3, scaleGridBottom=3, scaleGridRight=3;
+			fontSize: 12;
+			color: #FFFFFF;
+			fontWeight: bold;
+			textAlign: left;
+		}
+	filterOkButton {
+		upSkin: url:styles/images/btnUpSkin.png, scaleGridTop=16, scaleGridLeft=25, scaleGridBottom=16, scaleGridRight=25;
+		overSkin: url:styles/images/btnOverSkin.png, scaleGridTop=16, scaleGridLeft=25, scaleGridBottom=16, scaleGridRight=25;
+		downSkin: url:styles/images/btnDownSkin.png, scaleGridTop=16, scaleGridLeft=25, scaleGridBottom=16, scaleGridRight=25;
+		disabledSkin: url:styles/images/btnDisabeledSkin.png, scaleGridTop=16, scaleGridLeft=25, scaleGridBottom=16, scaleGridRight=25;
+		icon: url:styles/images/btnCheckIcon.png;
+		fontSize: 12;
+		color: #000000;
+		fontWeight: bold;
+	}
+	
+	filterCancelButton {
+		upSkin: url:styles/images/btnUpSkin.png, scaleGridTop=16, scaleGridLeft=25, scaleGridBottom=16, scaleGridRight=25;
+		overSkin: url:styles/images/btnOverSkin.png, scaleGridTop=16, scaleGridLeft=25, scaleGridBottom=16, scaleGridRight=25;
+		downSkin: url:styles/images/btnDownSkin.png, scaleGridTop=16, scaleGridLeft=25, scaleGridBottom=16, scaleGridRight=25;
+
+		fontSize: 12;
+		color: #000000;
+	}
+	
+alert {
+	width: 420;
+	height: 190;
+	backfillColor: 0x000000;
+	backfillAlpha: 0.4;
+	backgroundColor: 0xFFFFFF;
+	backgroundAlpha: 1;
+	borderColor: 0x999999;
+	borderWidth: 5;
+	borderAlpha: 1;
+	borderRound: 8;
+	icon: url:styles/icons/errorSign.png;
+	
+	messageStyleName: alertMessage;
+	titleStyleName: alertTitle;
+	buttonsStyleName: alertButtons;
+	btnOKStyleName: alertBtnOK;
+}
+	alertMessage {
+		fontFamily: "Verdana";
+		fontSize: 11;
+		color: 0x000000;
+		bold: false;
+		paddingLeft: 15;
+		paddingRight: 15;
+		paddingTop: 30;
+		align: "left";
+	}
+	
+	alertTitle {
+		fontFamily: "Verdana";
+		fontSize: 13;
+		color: 0x000000;
+		bold: true;
+		paddingTop: 5;
+		align: "center";
+	}
+	
+	alertButtons {
+		size: 12;
+		color: #000000;
+		width: 80;
+		height: 33;
+		spacing: 5;
+	
+		upSkin: url:styles/images/btnUpSkin.png, scaleGridTop=16, scaleGridLeft=25, scaleGridBottom=16, scaleGridRight=25;
+		overSkin: url:styles/images/btnOverSkin.png, scaleGridTop=16, scaleGridLeft=25, scaleGridBottom=16, scaleGridRight=25;
+		downSkin: url:styles/images/btnDownSkin.png, scaleGridTop=16, scaleGridLeft=25, scaleGridBottom=16, scaleGridRight=25;
+	}
+	
+	alertBtnOK {
+		bold: true;
+		icon: url:styles/images/btnCheckIcon.png;
+	}
+
+	selectionBox {
+		borderColor: #5B7876;
+		borderWidth: 1;
+		backgroundColor: #EEDD8A;
+		backgroundAlpha: 0.25;
+		cornerRadius: 1;
+	}

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:DataGrid xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.GetItemStockCommand;
+			import com.makolab.fractus.commands.GetItemStockHistoryCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			import mx.collections.ListCollectionView;
+			import mx.controls.PopUpButton;
+			import mx.rpc.events.ResultEvent;
+			
+			private const INCOME_COLOR:uint = 0xccffcc;
+			private const OUTCOME_COLOR:uint = 0xffcccc;
+			
+			private var _selectedDocuments:Array;
+			[Bindable]
+			public function set selectedDocuments(value:Array):void
+			{
+				_selectedDocuments = value;
+				updateList();
+			}
+			public function get selectedDocuments():Array
+			{
+				return _selectedDocuments;
+			}
+			
+			public function showHistory(warehouseId:String, itemId:String):void
+			{
+				new GetItemStockHistoryCommand(warehouseId, itemId).execute(setResult);
+			}
+			
+			private function setResult(result:XML):void
+			{
+				this.dataProvider = result.*;
+				PopUpButton
+			}
+			
+			protected function rowColorFunction(item:Object):Number
+			{
+				if (item.@direction * item.@quantity > 0) return INCOME_COLOR;
+				else if (item.@direction * item.@quantity < 0) return OUTCOME_COLOR;
+				else return NaN;
+			}
+			
+			override protected function drawRowBackground(s:Sprite, rowIndex:int, y:Number, height:Number, color:uint, dataIndex:int):void
+			{
+				var dp:ListCollectionView = dataProvider as ListCollectionView;
+				if (dp && rowColorFunction != null)
+				{
+					var item:Object;
+					if (dataIndex < dp.length) item = dp.getItemAt(dataIndex);
+					var c:Number = NaN;
+					if (item != null) c = rowColorFunction(item);
+					if (!isNaN(c)) color = c;
+					super.drawRowBackground(s, rowIndex, y, height, color, dataIndex);
+				}
+				super.drawRowBackground(s, rowIndex, y, height, color, dataIndex);
+			}
+			
+			public function isBold(item:Object):Boolean
+			{
+				if (selectedDocuments) for (var i:String in selectedDocuments)
+				{
+					if (item.@id == selectedDocuments[i]) return true;
+				}
+				return false;
+			}
+		]]>
+	</mx:Script>
+	<mx:columns>
+		<mx:DataGridColumn headerText="" dataField="@status" width="20" itemRenderer="com.makolab.fractus.view.generic.DocumentStatusRenderer"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.type')}" dataField="@documentTypeId" itemRenderer="com.makolab.fractus.view.generic.DocumentTypeRenderer"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.date')}" dataField="@date" itemRenderer="com.makolab.components.inputComponents.DateRenderer"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('documentRenderer.incomeDate')}" dataField="@incomeDate" itemRenderer="com.makolab.components.inputComponents.DateRenderer"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.number')}" dataField="@fullNumber">
+			<mx:itemRenderer>
+				<mx:Component>
+					<mx:Label fontWeight="{outerDocument.isBold(data) ? 'bold' : 'normal'}"/>
+				</mx:Component>
+			</mx:itemRenderer>
+		</mx:DataGridColumn>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.contractor')}" dataField="@contractor" width="150"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.quantity')}" dataField="@quantity" itemRenderer="com.makolab.components.inputComponents.FloatRenderer"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.price')}" dataField="@price" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('documents.value')}" dataField="@value" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('items.stock')}" dataField="@currentStock" itemRenderer="com.makolab.components.inputComponents.FloatRenderer"/>
+	</mx:columns>
+</mx:DataGrid>

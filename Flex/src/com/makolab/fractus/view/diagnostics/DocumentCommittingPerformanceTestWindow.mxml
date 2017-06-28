@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	paddingLeft="15"
+	paddingRight="15"
+	paddingBottom="15"
+	width="100%"
+	left="20"
+	right="20"
+	top="20"
+	bottom="20"
+	verticalGap="0"
+	creationComplete="handleCreationComplete(event)">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.GetRandomWarehouseDocumentLinesCommand;
+			import com.makolab.fractus.commands.FractusCommand;
+			import com.makolab.components.util.ComponentExportManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.rpc.events.FaultEvent;
+			import flash.utils.setTimeout;
+			import com.makolab.fractus.commands.SaveBusinessObjectCommand;
+			import mx.controls.Alert;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.CreateBusinessObjectCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.commands.GetRandomCommercialDocumentLinesCommand;
+			import com.makolab.fractus.commands.GetRandomContractorsCommand;
+			import com.makolab.fractus.view.ComponentWindow;
+		
+			protected var window:ComponentWindow;
+			public static function showWindow():void
+			{
+				var wnd:DocumentCommittingPerformanceTestWindow = new DocumentCommittingPerformanceTestWindow();
+				var title:String = LanguageManager.getInstance().labels.title.diagnostics.documentCommitingTest;
+				wnd.window = ComponentWindow.showWindow(wnd,0,null,title);
+				wnd.window.closeFunction = wnd.closeFunction;
+			}
+			
+			/**
+			 * Event handler for the <code>creationComplete</code> event.
+			 * 
+			 * @param event Event data.
+			 */
+			public function handleCreationComplete(event:Event):void
+			{
+				var numberSetting:XMLList = DictionaryManager.getInstance().dictionariesXML.numberSetting;
+				
+				var list:XML = new XML(<root/>);
+				
+				for each(var entry:Object in numberSetting.*)
+				{
+					list.appendChild(<item label={entry.label.*}>{entry.id.*}</item>);
+				}
+								
+				this.lstNumberSetting.dataProvider = list.*;
+				this.lstNumberSetting.rowCount = list.*.length();
+				this.lstNumberSetting.selectedIndex = 0;			
+			}
+			
+			/**
+			 * Table containing result of each test.
+			 */
+			private var elementalTestResults:Array;
+			
+			/**
+			 * Number of contractors to get from server before starting test.
+			 */
+			private var contractorsNumber:int;
+			
+			/**
+			 * Number of document lines to get from server before starting test.
+			 */
+			private var linesNumber:int;
+			
+			/**
+			 * Number of documents to commit.
+			 */
+			private var numberOfDocuments:int;
+			
+			/**
+			 * Delay between each test measured in miliseconds.
+			 */
+			private var delayBetweenTests:int;
+			
+			/**
+			 * Minimal number of document lines in each document.
+			 */
+			private var minDocumentLines:int;
+			
+			/**
+			 * Maximal number of document lines in each document.
+			 */
+			private var maxDocumentLines:int;
+			
+			
+			/**
+			 * Collection of all contractors got from server before test starts.
+			 */
+			private var contractors:XMLList;
+			
+			/**
+			 * Collection of all document lines got from server before test starts.
+			 */
+			private var lines:XMLList;
+			
+			
+			/**
+			 * Number of tests passed so far during whole test.
+			 */
+			private var testsPassed:int;
+			
+			/**
+			 * Timestamp when each test has started. The value is reseted before every document commit.
+			 */
+			private var testStartTime:Date;
+			
+			/**
+			 * Timestamp when each test has stopped. The value is reseted after every document committing.
+			 */
+			private var testStopTime:Date;
+			
+			/**
+			 * Summarized time of all individuals test timings. The formula is: totalTestTime = sum(testStopTime-testStartTime).
+			 */
+			private var totalTestTime:Date;
+			
+			/**
+			 * Shortest document committing time.
+			 */
+			private var shortestTestTime:int;
+			
+			/**
+			 * Longest document committing time.
+			 */
+			private var longestTestTime:int;
+			
+			/**
+			 * Flag that indicates that currently running test should stop.
+			 */
+			private var forceToStop:Boolean;
+			
+			/**
+			 * Number setting id for documents.
+			 */
+			private var numberSettingId:String;
+			
+			/**
+			 * Type of business objects (documents) to create.
+			 */
+			private var boTemplateName:String;
+			
+			/**
+			 * Reads all values from panel that the client entered and sets other values in this object instance
+			 * to its default values.
+			 */
+			private function readValuesFromPanel():void
+			{
+				this.contractorsNumber = int(this.txtInputContractorsAmount.text);
+				this.linesNumber = int(this.txtInputLinesAmount.text);
+				this.numberOfDocuments = int(this.txtInputNumberOfDocuments.text);
+				this.delayBetweenTests = int(this.txtInputDelayBetweenTests.text);		
+				this.minDocumentLines = int(this.txtInputMinDocumentLines.text);
+				this.maxDocumentLines = int(this.txtInputMaxDocumentLines.text);
+				this.numberSettingId = String(this.lstNumberSetting.selectedItem.*);
+				this.testsPassed = 0;
+				this.forceToStop = false;
+				this.totalTestTime = new Date();
+				this.totalTestTime.setTime(0);
+				this.shortestTestTime = 0;
+				this.longestTestTime = 0;
+				
+				if(this.rbtnSales.selected)
+					this.boTemplateName = "invoice";
+				else if(this.rbtnPurchase.selected)
+					this.boTemplateName = "purchaseInvoice";
+			}
+			
+			/**
+			 * Function invoked before the window closes.
+			 * 
+			 * @return Returns always <code>true</code>.
+			 */
+			public function closeFunction():Boolean
+			{
+				this.forceToStop = true;
+				return true;
+			}
+			
+			/**
+			 * Event handler for btnStart click event.
+			 * 
+			 * @param event Event info object.
+			 */
+			private function handleBtnStartClick(event:Event):void
+			{
+				this.btnStart.enabled = false;
+				this.btnExportToXls.enabled = false;
+				this.readValuesFromPanel();
+				
+				var getRandomContractorsCmd:GetRandomContractorsCommand = new GetRandomContractorsCommand(int(this.contractorsNumber));
+				getRandomContractorsCmd.addEventListener(ResultEvent.RESULT, handleGetRandomContractorsResult);
+				getRandomContractorsCmd.execute();
+			}
+			
+			/**
+			 * Event handler for btnStop click event.
+			 * 
+			 * @param event Event info object.
+			 */
+			private function handleBtnStopClick(event:Event):void
+			{
+				this.btnStop.enabled = false;
+				this.forceToStop = true;
+			}
+			
+			/**
+			 * Starts the document creating process. It invokes CreateNewBusinessObjectCommand.
+			 */
+			private function generateCommercialDocument():void
+			{
+				var cmd:CreateBusinessObjectCommand = new CreateBusinessObjectCommand();
+				cmd.addEventListener(ResultEvent.RESULT, handleCreateNewBusinessObjectResult);
+				
+				cmd.execute({ type : 'CommercialDocument', template : this.boTemplateName });
+			}
+			
+			/**
+			 * Event handler for GetRandomContractorsCommand.
+			 * 
+			 * @param result ResultEvent object containing collection of random contractors.
+			 */
+			private function handleGetRandomContractorsResult(result:ResultEvent):void
+			{
+				this.contractors = XML(result.result).contractor;
+				this.showMessage(LanguageManager.getInstance().labels.diagnostics.performanceTest.contractorsLoaded);
+				
+				var getRandomDocumentLinesCmd:FractusCommand;
+				
+				getRandomDocumentLinesCmd = new GetRandomCommercialDocumentLinesCommand(int(this.linesNumber));
+				
+				getRandomDocumentLinesCmd.addEventListener(ResultEvent.RESULT, handleGetRandomDocumentLinesResult);
+				getRandomDocumentLinesCmd.execute();
+			}
+			
+			/**
+			 * Event handler for GetRandom*DocumentLinesCommand.
+			 * 
+			 * @param result ResultEvent object containing collection of random document lines.
+			 */
+			private function handleGetRandomDocumentLinesResult(result:ResultEvent):void
+			{
+				this.lines = XML(result.result).line;
+				this.showMessage(LanguageManager.getInstance().labels.diagnostics.performanceTest.documentLinesLoaded);
+				
+				this.btnStop.enabled = true;
+				this.elementalTestResults = new Array(this.numberOfDocuments);
+				this.generateCommercialDocument();
+			}
+			
+			/**
+			 * Event handler for CreateNewBusinessObjectCommand.
+			 * 
+			 * @param result ResultEvent object containing empty document template.
+			 */
+			private function handleCreateNewBusinessObjectResult(result:ResultEvent):void
+			{
+				var document:XML = XML(result.result);
+
+				this.generateCommercialDocumentXmlContent(document.commercialDocument[0]);
+				
+				//Alert.show(document.toXMLString());
+				var cmd:SaveBusinessObjectCommand = new SaveBusinessObjectCommand();
+				cmd.addEventListener(ResultEvent.RESULT, handleSaveBusinessObjectResult);
+				cmd.addEventListener(FaultEvent.FAULT, handleSaveBusinessObjectFault);
+				
+				delete document.options;
+				document.appendChild(<options/>);
+				
+				if(this.chkBoxGenerateWarehouse.selected)
+				{
+					if(this.rbtnSales.selected)
+						document.options.appendChild(<generateDocument method="outcomeFromSales" />);
+					else
+						document.options.appendChild(<generateDocument method="incomeFromPurchase" />);
+				}
+				
+				if(this.chkBoxGenerateFinancial.selected)
+					document.options.appendChild(<generateDocument method="financialFromCommercial" />);
+				
+				
+				this.testStartTime = new Date();
+				cmd.execute(document);
+			}
+			
+			/**
+			 * Generates xml content (lines, attributes, etc.) to the warehouse document.
+			 * 
+			 * @param warehouseDocument The document for which to create content.
+			 */
+			private function generateWarehouseDocumentXmlContent(warehouseDocument:XML):void
+			{
+				this.generateRemarks(warehouseDocument);
+				this.addRandomLines(warehouseDocument);
+				this.addRandomContractor(warehouseDocument, false);
+				
+				warehouseDocument.value = "666";
+			}
+			
+			/**
+			 * Generates xml content (lines, vattable, etc.) to the commercial document.
+			 * 
+			 * @param commercialDocument The document for which to create content.
+			 */
+			private function generateCommercialDocumentXmlContent(commercialDocument:XML):void
+			{
+				this.generatePayment(commercialDocument);
+				this.generateVatTable(commercialDocument);
+				this.generateRemarks(commercialDocument);
+				this.addRandomLines(commercialDocument);
+				this.addRandomContractor(commercialDocument, true);
+				
+				commercialDocument.netValue = "10";
+				commercialDocument.grossValue = "12";
+				commercialDocument.vatValue = "2";
+				commercialDocument.number.numberSettingId.* = this.numberSettingId;
+			}
+			
+			/**
+			 * Event handler for SaveBusinessObjectCommand failures.
+			 * 
+			 * @param result FaultEvent object containing info about command failure.
+			 */
+			private function handleSaveBusinessObjectFault(fault:FaultEvent):void
+			{
+				this.btnStart.enabled = true;
+				this.btnExportToXls.enabled = true;
+				this.btnStop.enabled = false;
+			}
+			
+			/**
+			 * Updates the shortes and the longest time if the specified value is the shortest or the longest value.
+			 * 
+			 * @param value A value that has to be checked whether it's the shortest or the longest.
+			 */
+			private function updateShortestAndLongestTime(value:int):void
+			{
+				if (value < this.shortestTestTime || this.shortestTestTime == 0)
+					this.shortestTestTime = value;
+					
+				if (value > this.longestTestTime)
+					this.longestTestTime = value;
+			}
+			
+			/**
+			 * Event handles for SaveBusinessObjectCommand.
+			 * 
+			 * @param result ResultEvent containing response from server after document committing.
+			 */
+			private function handleSaveBusinessObjectResult(result:ResultEvent):void
+			{
+				this.testStopTime = new Date();
+				var testTotalMilliseconds:int = int(this.testStopTime.getTime() - this.testStartTime.getTime());
+				
+				this.updateShortestAndLongestTime(testTotalMilliseconds);
+				
+				//add to total
+				this.totalTestTime.setTime(this.totalTestTime.getTime() + testTotalMilliseconds);
+					
+				this.elementalTestResults[this.testsPassed] = testTotalMilliseconds;
+				
+				this.testsPassed++;
+				
+				if(this.testsPassed % 20 == 0)
+					this.txtAreaLog.text = "";
+				
+				this.showMessage(String(LanguageManager.getInstance().labels.diagnostics.performanceTest.documentsCommitted) + ": " + this.testsPassed.toString() + " (" + this.formatMillisecondsToTimeSpan(testTotalMilliseconds) + ")");
+				
+				if(this.testsPassed < this.numberOfDocuments && !this.forceToStop)
+					setTimeout(this.generateCommercialDocument, this.delayBetweenTests);
+				else //show statistics
+				{
+					this.btnStart.enabled = true;
+					this.btnExportToXls.enabled = true;
+					this.btnStop.enabled = false;
+					
+					this.showMessage("-----------------------------------");
+					this.showMessage(String(LanguageManager.getInstance().labels.diagnostics.performanceTest.timeElapsed) + ": " + this.formatMillisecondsToTimeSpan(this.totalTestTime.getTime()));
+					
+					this.showMessage(String(LanguageManager.getInstance().labels.diagnostics.performanceTest.shortestTime) + ": " + this.formatMillisecondsToTimeSpan(this.shortestTestTime));
+					this.showMessage(String(LanguageManager.getInstance().labels.diagnostics.performanceTest.longestTime) + ": " + this.formatMillisecondsToTimeSpan(this.longestTestTime));
+					this.showMessage(String(LanguageManager.getInstance().labels.diagnostics.performanceTest.averageTime) + ": " + this.formatMillisecondsToTimeSpan(this.totalTestTime.getTime() / this.testsPassed));
+					
+					this.showMessage(String(LanguageManager.getInstance().labels.diagnostics.performanceTest.documentsPerMinute) + ": " + Number(this.testsPassed*60*1000/this.totalTestTime.getTime()).toFixed(2));
+					this.showMessage(String(LanguageManager.getInstance().labels.diagnostics.performanceTest.documentsPerSecond) + ": " + Number(this.testsPassed*1000/this.totalTestTime.getTime()).toFixed(2));
+					this.showMessage("-----------------------------------");
+				}
+			}
+			
+			/**
+			 * Formats miliseconds as an int data type to string in the following format 00h 00m 00s 00ms.
+			 * 
+			 * @param value A value to be converted to string representation.
+			 * 
+			 * @return Converted int value.
+			 */
+			private function formatMillisecondsToTimeSpan(value:int):String
+			{
+				var timeSpan:Date = new Date();
+				timeSpan.setTime(Number(value));
+				
+				return timeSpan.hoursUTC + "h " + timeSpan.minutesUTC + "m " + timeSpan.secondsUTC + "s " + timeSpan.millisecondsUTC + "ms"; 
+			}
+			
+			/**
+			 * Adds a random contractor from the previously got from server list to the document.
+			 * It sets also first contractor address as the billing address.
+			 * 
+			 * @param document A document to which to add the random contractor.
+			 * @param addToPayment If set to <c>true</c> the contractor will be added to document payment too.
+			 */
+			private function addRandomContractor(document:XML,addToPayment:Boolean):void
+			{
+				var contractor:XML = this.contractors[this.getRandomInt(0, this.contractorsNumber - 1)];
+				
+				document.appendChild(<contractor>{contractor}</contractor>);
+				
+				if(addToPayment)
+					XML(document.payments.payment[0]).appendChild(<contractor>{contractor}</contractor>);
+				
+				if(contractor.addresses.address.length() > 0)
+				{
+					XML(document.contractor).appendChild(<addressId>{String(contractor.addresses.address[0].id)}</addressId>);
+					
+					if(addToPayment)
+						XML(document.payments.payment[0].contractor).appendChild(<addressId>{String(contractor.addresses.address[0].id)}</addressId>);
+				}
+			}
+			
+			/**
+			 * Adds random lines to the commercial document.
+			 * 
+			 * @param commercialDocument A document to add the lines to.
+			 */
+			private function addRandomLines(commercialDocument:XML):void
+			{
+				var linesNumber:int = this.getRandomInt(this.minDocumentLines, this.maxDocumentLines);
+				
+				for(var i:int=0; i<linesNumber; i++)
+				{
+					XML(commercialDocument.lines).appendChild(this.lines[this.getRandomInt(0, this.linesNumber - 1)]);
+				}
+			}
+			
+			/**
+			 * Generates one random payment to the document.
+			 * 
+			 * @param commercialDocument A document to generate the payment.
+			 */
+			private function generatePayment(commercialDocument:XML):void
+			{
+				//TODO: wczytywac skads guidy
+				XML(commercialDocument.payments).appendChild(<payment>
+									<date>{String(commercialDocument.eventDate.*)}</date>
+									<dueDate>{String(commercialDocument.eventDate.*)}</dueDate>
+							        <paymentMethodId>66B4A96A-511D-49F8-ABAB-6DEE34AC3D0D</paymentMethodId>
+							        <amount>12</amount>
+							        <paymentCurrencyId>F01007BF-1ADA-4218-AE77-52C106DA4105</paymentCurrencyId>
+							        <systemCurrencyId>F01007BF-1ADA-4218-AE77-52C106DA4105</systemCurrencyId>
+							        <exchangeDate>{String(commercialDocument.eventDate.*)}</exchangeDate>
+							        <exchangeScale>1</exchangeScale>
+							        <exchangeRate>1</exchangeRate>
+							        <isSettled>1</isSettled>
+								</payment>);
+			}
+			
+			/**
+			 * Generates one random vat table entry to the document.
+			 * 
+			 * @param commercialDocument A document to generate the vat table entry.
+			 */
+			private function generateVatTable(commercialDocument:XML):void
+			{
+				//TODO: wczytywac skads guidy
+				XML(commercialDocument.vatTable).appendChild(<vtEntry>
+									        <vatRateId>F8D50E4D-066E-4F0A-BD58-C2BC708BEB0F</vatRateId>
+									        <netValue>100</netValue>
+									        <grossValue>122</grossValue>
+									        <vatValue>22</vatValue>
+										</vtEntry>);
+			}
+			
+			/**
+			 * Generates one remark to the document.
+			 * 
+			 * @param commercialDocument A document to generate the remark.
+			 */
+			private function generateRemarks(commercialDocument:XML):void
+			{
+				//TODO: wczytywac skads guidy
+				XML(commercialDocument.attributes).appendChild(<attribute>
+							        		<documentFieldId>B2830F4C-636C-4347-98F0-D95D2CCB8FEE</documentFieldId>
+        									<value>Dokument wygenerowany automatycznie</value>
+										</attribute>);	
+			}
+			
+			/**
+			 * Gets random integer from the specified span.
+			 * 
+			 * @param min Minimal value.
+			 * @param max Maximal value.
+			 * 
+			 * @return Random integer greater or equal to min and less or equal to max.
+			 */
+			private function getRandomInt(min:int, max:int):int
+			{
+				var n:Number = Math.random();
+				
+				return int(Math.round(min + n*(max-min)));
+			}
+			
+			/**
+			 * Shows a message to the log text area.
+			 * 
+			 * @param message A message to show.
+			 */
+			private function showMessage(message:String):void
+			{
+				this.txtAreaLog.text += (message + "\n");
+			}
+			
+			/**
+			 * Prints results of previously passed test to excel format using print service.
+			 */
+			private function printResultsToExcel():void
+			{
+				if(this.elementalTestResults)
+				{
+					var xml:XML = <list><columns><column label={LanguageManager.getInstance().labels.common.result} field="@time" /></columns><elements/></list>;
+					
+					var i:int = 0;
+					
+					while(i<this.testsPassed && this.elementalTestResults[i])
+					{
+						XML(xml.elements).appendChild(<result time={this.formatMillisecondsToTimeSpan(this.elementalTestResults[i])} />);
+						i++;
+						ComponentExportManager.getInstance().exportData(xml, 'defaultTableXls', 'Export');
+					}
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:Form paddingBottom="15">
+		<mx:FormItem direction="horizontal" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.numberOfContractors}">
+			<mx:TextInput id="txtInputContractorsAmount" text="100" />	
+		</mx:FormItem>
+		<mx:FormItem direction="horizontal" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.numberOfLines}">
+			<mx:TextInput id="txtInputLinesAmount" text="600" />	
+		</mx:FormItem>
+		<mx:FormItem direction="horizontal" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.numberOfDocuments}">
+			<mx:TextInput id="txtInputNumberOfDocuments" text="10" />	
+		</mx:FormItem>
+		<mx:FormItem direction="horizontal" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.delayBetweenTests}">
+			<mx:TextInput id="txtInputDelayBetweenTests" text="0" />	
+		</mx:FormItem>
+		<mx:FormItem direction="horizontal" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.minDocumentLines}">
+			<mx:TextInput id="txtInputMinDocumentLines" text="5" />	
+		</mx:FormItem>
+		<mx:FormItem direction="horizontal" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.maxDocumentLines}">
+			<mx:TextInput id="txtInputMaxDocumentLines" text="10" />	
+		</mx:FormItem>
+		<mx:FormItem direction="horizontal" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.numberSetting}">
+			<mx:PopUpButton label="{lstNumberSetting.selectedItem.@label}" openAlways="true" fontFamily="Arial" fontSize="14">
+				<mx:popUp>
+					<mx:List
+						id="lstNumberSetting"
+						labelField="@label"
+						backgroundAlpha="0.5"
+					/>
+				</mx:popUp>
+		</mx:PopUpButton>
+		</mx:FormItem>
+		<mx:FormItem direction="horizontal" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.typeOfDocuments}">
+			<mx:RadioButton id="rbtnSales" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.sales}" groupName="creationObjectTypeGroup" selected="true" />
+			<mx:RadioButton id="rbtnPurchase" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.purchase}" groupName="creationObjectTypeGroup" selected="false" />
+		</mx:FormItem>
+		<mx:FormItem direction="horizontal" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.generateWarehouseDocument}">
+			<mx:CheckBox id="chkBoxGenerateWarehouse" label="{LanguageManager.getInstance().labels.alert.yes}" selected="false" />
+		</mx:FormItem>
+		<mx:FormItem direction="horizontal" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.generateFinancialDocument}">
+			<mx:CheckBox id="chkBoxGenerateFinancial" label="{LanguageManager.getInstance().labels.alert.yes}" selected="false" />
+		</mx:FormItem>
+	</mx:Form>
+	<mx:HBox paddingBottom="15">
+		<mx:Button id="btnStart" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.start}" click="handleBtnStartClick(event)"/>
+		<mx:Button id="btnStop" label="{LanguageManager.getInstance().labels.diagnostics.performanceTest.stop}" click="handleBtnStopClick(event)" enabled="false"/>
+		<mx:Button id="btnExportToXls" label="{LanguageManager.getInstance().labels.common.export}" click="printResultsToExcel()" enabled="false"/>
+	</mx:HBox>
+	<mx:TextArea id="txtAreaLog" editable="false" width="100%" height="100%" valueCommit="txtAreaLog.verticalScrollPosition = txtAreaLog.maxVerticalScrollPosition"/>
+</mx:VBox>

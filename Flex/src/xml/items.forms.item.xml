@@ -1,0 +1,152 @@
+<form>
+	<windowTitle>{LanguageManager.getInstance().labels.title.item.panel}</windowTitle>
+  <!-- zakladka glowna -->
+	<tab label="\{labels.items.forms.item.basicData\}">
+      <component dataType="dictionary" dataSource="data.item.itemTypeId" labelKey="common.type" label="Typ" dictionaryName="itemTypes" required="1"/>
+      <component dataType="string" dataSource="data.item.name" labelKey="common.shortName" required="1"/>
+      <component dataType="string" dataSource="data.item.code" labelKey="items.forms.item.itemCode" required="1"/>
+      <component dataType="dictionary" dataSource="data.item.unitId" label="Jednostka miary" required="1" dictionaryName="units"/>
+      <component dataType="currency" dataSource="data.item.defaultPrice" labelKey="items.defaultSalesPrice" required="1"/>
+      <component dataType="dictionary" dataSource="data.item.vatRateId" labelKey="items.defaultVatRate" required="1" dictionaryName="vatRates"/>
+
+<!--
+      <component className="mx.containers.FormHeading">
+        <label>\{labels.items.forms.item.signs\}</label>
+      </component>
+    
+      <component className="com.makolab.components.inputComponents.SingleAttributeEditor" dataField="dataObject" dataSource="data.item.attributes">
+        <attributes>\{dictionaryManager.dictionaries.itemAttributes\}</attributes>
+        <attributeName>Attribute_FiscalName</attributeName>
+      </component>
+      <component className="com.makolab.components.inputComponents.SingleAttributeEditor" dataField="dataObject" dataSource="data.item.attributes">
+        <attributes>\{dictionaryManager.dictionaries.itemAttributes\}</attributes>
+        <attributeName>Attribute_Barcode</attributeName>
+      </component>  	    	        
+      <component className="com.makolab.components.inputComponents.SingleAttributeEditor" dataField="dataObject" dataSource="data.item.attributes">
+        <attributes>\{dictionaryManager.dictionaries.itemAttributes\}</attributes>
+        <attributeName>Attribute_PKWiU</attributeName>
+      </component> 
+      <component className="com.makolab.components.inputComponents.SingleAttributeEditor" dataField="dataObject" dataSource="data.item.attributes">
+        <attributes>\{dictionaryManager.dictionaries.itemAttributes\}</attributes>
+        <attributeName>Attribute_ManufacturerCode</attributeName>
+      </component>
+      <component className="mx.containers.FormHeading">
+        <label>\{labels.items.forms.item.additional\}</label>
+      </component>        
+      <component className="com.makolab.components.inputComponents.SingleAttributeEditor" dataField="dataObject" dataSource="data.item.attributes">
+        <attributes>\{dictionaryManager.dictionaries.itemAttributes\}</attributes>
+        <itemEditor>mx.controls.TextArea</itemEditor>
+        <height>40</height>
+        <attributeName>Attribute_Description</attributeName>
+      </component>  
+      <component className="com.makolab.components.inputComponents.SingleAttributeEditor" dataField="dataObject" dataSource="data.item.attributes">
+        <attributes>\{dictionaryManager.dictionaries.itemAttributes\}</attributes>
+        <attributeName>Attribute_Remarks</attributeName>
+      </component>
+-->
+       <!--
+        xml live view - dla celow diagnostycznych
+      <component className="mx.controls.TextArea" dataSource="data" dataField="text">
+        <height>300</height>
+      </component>
+      -->
+
+      
+      <component className="com.makolab.components.inputComponents.AttributeEditor" dataField="dataObject" dataSource="data.item.attributes">
+        <label>\{labels.items.forms.item.prices\}</label>
+        <itemEditor>com.makolab.components.inputComponents.GenericAttributeEditorComponent</itemEditor>
+        <attributeIdField>itemFieldId</attributeIdField>
+        <template>
+          <attribute/>
+        </template>
+        <attributes>\{dictionaryManager.dictionaries.itemPrices\}</attributes>
+      </component>
+      
+      <!-- atrybuty -->
+	    <component className="com.makolab.components.inputComponents.AttributeEditor" dataField="dataObject" dataSource="data.item.attributes">
+	      <label>\{labels.contractors.forms.contractor.additionalAttributes\}</label>
+	      <itemEditor>com.makolab.components.inputComponents.GenericAttributeEditorComponent</itemEditor>
+	      <attributeIdField>itemFieldId</attributeIdField>
+	      <template>
+	        <attribute />
+	      </template>
+	      <attributes>\{dictionaryManager.dictionaries.itemAttributes\}</attributes>
+	    </component>
+    
+    </tab>
+<!--  
+    <tab label="Wymiary">
+      <component className="com.makolab.components.inputComponents.SingleAttributeEditor" dataField="dataObject" dataSource="data.item.attributes">
+        <attributes>\{dictionaryManager.dictionaries.itemAttributes\}</attributes>
+        <itemEditor>com.makolab.components.inputComponents.ValueUnitEditor</itemEditor>
+        <editorAttributes>
+        	<unitType>Length_Unit</unitType>
+        </editorAttributes>
+        <editorDataField>dataObject</editorDataField>
+        <attributeName>Attribute_Width</attributeName>
+      </component>
+      <component className="com.makolab.components.inputComponents.SingleAttributeEditor" dataField="dataObject" dataSource="data.item.attributes">
+        <attributes>\{dictionaryManager.dictionaries.itemAttributes\}</attributes>
+        <itemEditor>com.makolab.components.inputComponents.ValueUnitEditor</itemEditor>
+        <editorDataField>dataObject</editorDataField>
+        <editorAttributes>
+        	<unitType>Length_Unit</unitType>
+        </editorAttributes>
+        <attributeName>Attribute_Height</attributeName>
+      </component>
+      <component className="com.makolab.components.inputComponents.SingleAttributeEditor" dataField="dataObject" dataSource="data.item.attributes">
+        <attributes>\{dictionaryManager.dictionaries.itemAttributes\}</attributes>
+        <itemEditor>com.makolab.components.inputComponents.ValueUnitEditor</itemEditor>
+        <editorDataField>dataObject</editorDataField>
+        <editorAttributes>
+        	<unitType>Weight_Unit</unitType>
+        </editorAttributes>
+        <attributeName>Attribute_Weight</attributeName>
+      </component>
+      <component className="com.makolab.components.inputComponents.SingleAttributeEditor" dataField="dataObject" dataSource="data.item.attributes">
+        <attributes>\{dictionaryManager.dictionaries.itemAttributes\}</attributes>
+        <itemEditor>com.makolab.components.inputComponents.ValueUnitEditor</itemEditor>
+        <editorDataField>dataObject</editorDataField>
+        <editorAttributes>
+        	<unitType>Volume_Unit</unitType>
+        </editorAttributes>
+        <attributeName>Attribute_Volume</attributeName>
+      </component>
+      <component className="com.makolab.components.inputComponents.SingleAttributeEditor" dataField="dataObject" dataSource="data.item.attributes">
+        <attributes>\{dictionaryManager.dictionaries.itemAttributes\}</attributes>
+        <attributeName>Attribute_Current</attributeName>
+      </component>
+    </tab>
+-->
+
+    <!-- zamienniki -->    
+    <tab label="\{labels.items.forms.item.equivalents\}">
+      <component className="com.makolab.components.inputComponents.EquivalentEditor" dataField="data" dataSource="data.item">
+          <label>\{labels.items.forms.item.equivalents\}</label>
+          <columns>\{model.configManager.values.items_lists_items.equivalents.columns\}</columns>
+      </component>
+  	</tab>
+  	
+	<tab label="\{labels.items.forms.item.groups\}">
+    <component className="com.makolab.components.inputComponents.GroupSelectionEditor" dataField="dataObject" dataSource="data.item.groupMemberships" permissionKey="catalogue.items.edit.groupMembership">
+    	<groups>\{configManager.values.items_group\}</groups>
+    	<idVariableName>itemGroupId</idVariableName>
+    </component>
+    </tab>
+    
+    <!-- ilustracje -->
+    <tab label="\{labels.items.forms.item.images\}">
+	  <component className="com.makolab.components.inputComponents.ItemImageComponent" dataSource="data.item" dataField="dataObject"/>
+	  <!--
+	  <component className="com.makolab.components.inputComponents.AttributeEditor" dataField="dataObject" dataSource="data.item.attributes">
+	      <label>\{labels.items.forms.item.images\}</label>
+	      <itemEditor>com.makolab.components.inputComponents.ImageComponent</itemEditor>
+	      <attributeIdField>itemFieldId</attributeIdField>
+	      <template>
+	        <attribute/>
+	      </template>
+	      <attributes>\{dictionaryManager.dictionaries.itemImage\}</attributes>
+	  </component>
+	  -->
+    </tab>
+</form>

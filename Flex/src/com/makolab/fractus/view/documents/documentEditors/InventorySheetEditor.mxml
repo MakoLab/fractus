@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DocumentEditor 
+	creationComplete="init()" 
+	xmlns="com.makolab.fractus.view.documents.documentEditors.*"
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:catalogue="com.makolab.components.catalogue.*"
+	xmlns:lineList="com.makolab.components.lineList.*" 
+	xmlns:layoutComponents="com.makolab.components.layoutComponents.*" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	xmlns:documents="com.makolab.fractus.view.documents.*"
+	xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*" 
+	xmlns:filters="com.makolab.fractus.view.documents.reports.filters.*"
+	xmlns:generic="com.makolab.fractus.view.generic.*">
+	
+	<mx:TabNavigator width="100%" height="100%">
+
+		<mx:Form
+				label="{LanguageManager.getInstance().labels.common.basicTab}"
+				paddingLeft="15"
+				paddingRight="15"
+				width="100%"
+				height="100%"
+				paddingTop="0"
+				paddingBottom="0"
+		>
+			<!-- numer i status -->
+			<mx:HBox horizontalGap="14" verticalAlign="middle" width="100%">
+				<generic:DocumentStatusRenderer status="{Number(inventorySheet.status)}"/>
+				<mx:Label text="{LanguageManager.getInstance().labels.inventory.sheet}" fontSize="18"/>
+				<mx:Label
+				text="{inventorySheet.inventoryDocumentFullNumber}/{inventorySheet.ordinalNumber}" 
+				fontSize="20"
+				/>
+				<!--
+				<mx:LinkButton icon="{IconManager.getIcon('print_small')}" toolTip="{LanguageManager.getInstance().labels.common.printGraphical}" height="27" enabled="{inventorySheet.id &amp;&amp; printProfile}" click="printDocument(printProfile)"/>
+				-->
+				<mx:Label text="{LanguageManager.getInstance().labels.documentRenderer.warehouse}" width="100%" textAlign="right"/>
+				<generic:FractusDictionarySelector
+					enabled="false"
+					id="warehouseSelector"
+					dataProvider="{DictionaryManager.getInstance().dictionaries.warehouses.(valueOf().branchId == model.branchId)}"
+					selectedId="{inventorySheet.warehouseId}" 
+					width="100"
+				/>
+			</mx:HBox>
+			<mx:HBox width="100%">
+				<mx:Button icon="{IconManager.getIcon('print_small')}" label="{LanguageManager.getInstance().labels.inventory.printSheet}" toolTip="{LanguageManager.getInstance().labels.common.printGraphical}" height="27" enabled="{isSheetSaved(inventorySheet) &amp;&amp; printProfile}" click="printDocument(printProfile)"/>
+				<mx:Button icon="{IconManager.getIcon('print_small')}" label="{LanguageManager.getInstance().labels.inventory.printSheetText}" toolTip="{LanguageManager.getInstance().labels.common.print}" height="27" enabled="{isSheetSaved(inventorySheet) &amp;&amp; printProfileText}" click="printDocumentText(printProfileText)"/>
+				<mx:VBox enabled="{enabledEditor}" horizontalAlign="right" width="100%">
+					<!--
+					<mx:FormItem label="{LanguageManager.getInstance().labels.documents.commited}">
+						<mx:CheckBox id="commitedCB" selected="{inventorySheet.status == DocumentStatusChangeOperation.COMMITED }" change="{if(commitedCB.selected)cancelledCB.selected = false}"/>
+					</mx:FormItem>
+					<mx:FormItem label="{LanguageManager.getInstance().labels.documents.cancelled}" >
+						<mx:CheckBox id="cancelledCB" selected="{inventorySheet.status == DocumentStatusChangeOperation.CANCELLED }" />
+					</mx:FormItem>
+					-->
+				</mx:VBox>
+			</mx:HBox>
+			
+			<!-- lista pozycji arkusza spisowego -->
+			<mx:VBox width="100%" height="100%">	
+				<InventorySheetLinesComponent
+					id="grid" 
+					dataProvider="{inventorySheet.lines}"
+					width="100%" 
+					visibleOptionsColumn="false" height="100%" 	
+				/>
+				<mx:LinkButton id="addButton" click="openCreator()" label="{LanguageManager.getInstance().labels.inventory.manageLines}" width="100%" textAlign="center" color="#888888" textDecoration="underline" visible="{enabledEditor}"/>	
+			</mx:VBox>	
+		</mx:Form>
+		
+		<!-- ZAKLADKA SZCZEGOLOW -->
+		<mx:Form 
+				label="{LanguageManager.getInstance().labels.documents.details}"
+				paddingLeft="15"
+				paddingRight="15"
+				width="100%"
+				height="100%"
+				paddingTop="14"
+				paddingBottom="0"	
+			>
+			
+			<!-- daty -->		
+			<mx:FormItem label="{LanguageManager.getInstance().labels.common.creationDate}">
+				<inputComponents:DateTimeEditor data="{inventorySheet.creationDate}" enabled="false" />
+			</mx:FormItem>
+			<mx:FormItem label="{LanguageManager.getInstance().labels.common.creationUser}">
+				<mx:Label
+				text="{dictionaryManager.getById(inventorySheet.creationApplicationUserId).label}" 
+				fontWeight="bold"
+				/>
+			</mx:FormItem>		
+		</mx:Form>		
+
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.GetDeliveriesValueCommand;
+			import com.makolab.fractus.view.documents.TextPrintPreviewWindow;
+			import com.makolab.components.util.ComponentExportManager;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.events.CloseEvent;
+			import mx.collections.ArrayCollection;
+			import mx.controls.DataGrid;
+			import mx.collections.*;
+			import mx.controls.Alert;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.components.inputComponents.CurrencyRenderer;
+			import mx.managers.PopUpManager;
+			import com.makolab.fractus.model.document.InventorySheetLine;
+			import com.makolab.fractus.model.document.InventorySheet;
+			import com.makolab.fractus.commands.GetStockList;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.components.lineList.*;
+			import com.makolab.fractus.view.documents.documentEditors.InventorySheetLinesComponent;
+			import com.makolab.fractus.model.ModelLocator;
+			import assets.IconManager;
+			import com.makolab.fractus.commands.SaveBusinessObjectCommand;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.commands.CreateBusinessObjectCommand;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.commands.SearchCommand;
+			import com.makolab.fractus.view.documents.documentLists.DocumentStatusChangeOperation;
+			import com.makolab.fractus.model.DictionaryManager;
+		
+			[Bindable] public var typeDescriptor:DocumentTypeDescriptor;
+			[Bindable] private var printProfile:String;/*TODO*///podstawic odpowiedni profil drukowqania
+			[Bindable] private var printProfileText:String;/*TODO*///podstawic odpowiedni profil drukowqania
+			
+			[Bindable] public var languageManager:LanguageManager = LanguageManager.getInstance();	
+			[Bindable] private var model:ModelLocator = ModelLocator.getInstance();
+			
+			private var win:ComponentWindow; 
+		
+			[Bindable] public var inventorySheet:InventorySheet;
+			[Bindable] public var enabledEditor:Boolean = true;
+						
+			public function reloadInventorySheet(event:Event):void
+			{
+				if(inventorySheet.id)loadInventorySheet(inventorySheet.id);
+			}
+			
+			public function loadInventorySheet(inventorySheetId:String):void
+			{
+				var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand("InventorySheet", inventorySheetId);
+				cmd.addEventListener(ResultEvent.RESULT, handleResult);
+				cmd.execute();
+			}
+			
+			private function handleResult(event:ResultEvent):void
+			{
+				this.inventorySheet = new InventorySheet(XML(event.result).sheet[0]); 
+				
+				if(inventorySheet.status == DocumentStatusChangeOperation.SAVED) 
+				{
+					var wID:String = this.inventorySheet.warehouseId;
+					var listOfIds:XMLListCollection = new XMLListCollection();
+					
+					for each (var node:InventorySheetLine in this.inventorySheet.lines) {
+				 		listOfIds.addItem(XML('<delivery itemId="' + node.itemId + '" warehouseId="' + wID + '"/>'));
+				 	}
+				 	
+				 	if(listOfIds.length) {
+						extendEditLines(listOfIds);
+					}
+				} else {
+					enabledEditor = false;
+				}
+				
+				grid.documentLines.editable = enabledEditor;
+				
+				//typeDescriptor = new DocumentTypeDescriptor(inventorySheet.arkuszSpisowyXML.documentTypeId);
+				printProfile = "defaultInventorySheetPdf";//typeDescriptor.getDefaultPrintProfile();
+				printProfileText = "defaultInventorySheetText";
+				
+			}
+			
+			private function extendEditLines(listOfIds:XMLListCollection):void
+			{
+				var cmd:GetDeliveriesValueCommand = new GetDeliveriesValueCommand(listOfIds);
+				cmd.addEventListener(ResultEvent.RESULT, extendEditLinesResult);
+				cmd.execute();
+			}
+			
+			private function extendEditLinesResult(event:ResultEvent):void
+			{
+				var result:XMLList = XML(event.result)..item;
+				//trace(result);
+				var i:int = 0;
+				for each(var item:InventorySheetLine in inventorySheet.lines) {
+					if(item.itemId == result[i].@itemId.toXMLString()) {
+						item.deliveries = result[i].children();
+						item.lastPurchaseNetPrice = (result[i].@lastPurchaseNetPrice != undefined) ? result[i].@lastPurchaseNetPrice : 0;
+					} else {
+						trace("not ok");
+						for each(var item2:InventorySheetLine in inventorySheet.lines) {
+							if(item2.itemId == result[i].@itemId.toXMLString()) {
+								item2.deliveries = result[i].children();
+								item2.lastPurchaseNetPrice = (result[i].@lastPurchaseNetPrice != undefined) ? result[i].@lastPurchaseNetPrice : 0;
+								break;
+							}
+						}
+					}
+					i++;
+				}
+				grid.committedInventoryStatus = false;
+			}
+			
+			
+			private function confirmFunction(event:CloseEvent):void
+			{
+				if(event.detail == Alert.YES) changeStatus();
+			}
+				 	
+			private function changeStatus():void
+			{
+				inventorySheet.status = DocumentStatusChangeOperation.CANCELLED;
+				saveInventorySheet();
+			}
+			
+			private function saveInventorySheet():void{
+				var cmd:SaveBusinessObjectCommand = new SaveBusinessObjectCommand();
+				cmd.addEventListener(ResultEvent.RESULT, handleCommitResult);
+				cmd.execute(<root>{this.inventorySheet.getFullXML()}</root>);
+			}
+			private function commitChanges():void
+			{
+				//if(commitedCB.selected == true) inventorySheet.status = DocumentStatusChangeOperation.COMMITED;
+				//else 
+				//if(cancelledCB.selected == true) Alert.show(LanguageManager.getInstance().labels.alert.cancelDocumentQuestion, inventorySheet.inventoryDocumentFullNumber+"/"+inventorySheet.ordinalNumber, (Alert.YES | Alert.NO), null, confirmFunction);			
+				//else 
+				saveInventorySheet();
+			}
+			
+			private function handleCommitResult(event:ResultEvent):void
+			{
+				dispatchEvent(new Event('dataCommited'));
+				if (win) win.hide();
+			}
+			
+			public static function showWindow(id:String):ComponentWindow
+			{
+				var editor:InventorySheetEditor = new InventorySheetEditor();
+				editor.loadInventorySheet(id);
+				
+				var win:ComponentWindow = ComponentWindow.showWindow(
+					editor,
+					ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL,
+					new Rectangle(-1, -1, 1000, 600),
+					LanguageManager.getInstance().labels.inventory.sheet
+				);
+				
+				editor.win = win;
+				win.closeFunction = win.hide;
+				win.commitFunction = editor.commitChanges;
+				win.setStyle("headerColors", [IconManager.INVENTORY_COLOR, IconManager.INVENTORY_COLOR_LIGHT]);
+				win.setStyle("themeColor", IconManager.INVENTORY_COLOR);
+				return win;
+			}
+			
+			private function printDocument(profile:String):void /*TODO*/
+			{
+				ComponentExportManager.getInstance().exportObject(profile, inventorySheet.id, 'content');
+			}
+			
+			private function printDocumentText(profile:String):void
+			{
+				TextPrintPreviewWindow.showWindow(inventorySheet.id, profile);
+			}
+					
+			protected function init():void
+			{
+			}
+			public function openCreator():void
+			{
+				InventorySheetCreator(
+					InventorySheetCreator.showWindow(inventorySheet).innerComponent
+				).addEventListener('dataCommited', reloadInventorySheet);
+			}
+			
+			private static function isSheetSaved(sheet:InventorySheet):Boolean
+			{
+				return Boolean(sheet.id);
+			}
+		]]>
+	</mx:Script>
+
+	</mx:TabNavigator>
+
+</DocumentEditor>

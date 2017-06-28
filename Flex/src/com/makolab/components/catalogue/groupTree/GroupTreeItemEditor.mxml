@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300">
+	<mx:LinkButton id="lbName" click="showGroupWindow(XML(data))"/>
+	<mx:LinkButton label="{LanguageManager.getInstance().labels.common.add}"/>
+	<mx:LinkButton label="{LanguageManager.getInstance().labels.common.Delete}"/>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.managers.PopUpManager;
+			private var _dataObject:XML;
+			
+			[Bindable]
+			public function set dataObject(value:Object):void
+			{
+				_dataObject = XML(value);
+				lbName.label = _dataObject.labels.label[0];
+			}
+			public function get dataObject():Object { return _dataObject; }
+			
+			public override function set data(value:Object):void
+			{
+				super.data = value;
+				dataObject = value;
+			}
+			
+			private var groupWindow:GroupEditWindow
+			public function showGroupWindow(groupData:XML):void
+			{
+				if (!groupWindow)
+				{
+					groupWindow = new GroupEditWindow();
+					groupWindow.languages = (<l><language><symbol>pl</symbol></language><language><symbol>en</symbol></language></l>).*;
+				}
+				groupWindow.data = groupData;
+				PopUpManager.addPopUp(groupWindow, this.parent, true);
+				//PopUpManager.centerPopUp(groupWindow);
+				groupWindow.visible = true;
+			}
+			
+			public function hideGroupWindow():void
+			{
+				groupWindow.visible = false;
+				PopUpManager.removePopUp(groupWindow);
+			}
+		]]>
+	</mx:Script>
+</mx:HBox>

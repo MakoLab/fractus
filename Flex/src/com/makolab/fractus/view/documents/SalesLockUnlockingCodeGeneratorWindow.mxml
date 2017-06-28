@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+	xmlns:catalogue="com.makolab.fractus.view.catalogue.*" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	xmlns:generic="com.makolab.fractus.view.generic.*" creationComplete="onCreationComplete()"
+	horizontalScrollPolicy="off"
+	xmlns:permission="com.makolab.components.permission.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.view.documents.reports.financialReports.FinancialReport;
+			import com.makolab.fractus.view.catalogue.ContractorsCatalogue;
+			import com.makolab.fractus.commands.GetContractorByNip;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.components.util.Tools;
+			import com.adobe.crypto.MD5;
+			import mx.controls.Alert;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			public static function showWindow():ComponentWindow
+			{
+				var editor:SalesLockUnlockingCodeGeneratorWindow = new SalesLockUnlockingCodeGeneratorWindow();
+				
+				var window:ComponentWindow = ComponentWindow.showWindow(editor, ComponentWindow.BUTTON_CLOSE, new Rectangle(0, 0, 550, 240));
+				window.title = LanguageManager.getInstance().labels.title.salesLockUnlockingCodeGeneratorTitle;
+				window.closeFunction = window.hide;
+
+				return window;	
+			}
+			
+			[Bindable]
+			private var contractorId:String;
+					
+			[Bindable]
+			private var detailsShow:Boolean = false;
+			
+			private var codeTemp:Object; 
+			
+			private function setContractor(item:Object, data:Object):void
+			{
+				this.contractorId = item.@id;
+			}
+			
+			private function onCreationComplete():void
+			{
+				//permission hard coded
+				detailsShow = ModelLocator.getInstance().permissionManager.isEnabled('catalogue.contractors.details');
+				
+				this.dateEditor.selectedDate = new Date();
+				this.lockCode.setFocus();
+				this.addEventListener(KeyboardEvent.KEY_DOWN, function (event:KeyboardEvent):void
+																{
+																	if(event.keyCode == Keyboard.ENTER) 
+																	{
+																		generateBtn.dispatchEvent(new MouseEvent(MouseEvent.CLICK))
+																	}
+																});
+			}
+			
+			public static function generateCode(contractorId:String, branchId:String, applicationUserId:String, date:Date = null, lockCode:String = null):String
+			{
+				if(!ModelLocator.getInstance().challengeCodeLocks)
+				{
+					if (date == null) date = new Date();
+					
+					var currentDate:Date = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+					
+					var hash:String = MD5.hash(Tools.dateToIso(currentDate) + contractorId + branchId + applicationUserId);
+					var code:int = parseInt(hash.substr(0, 8), 16)%10000;
+					return code.toString();
+				}
+				else
+				{
+					var hash2:String = MD5.hash(lockCode);
+					var code2:int = parseInt(hash2.substr(0, 8), 16)%10000;
+					return code2.toString();
+				}
+			}
+			
+			private function btnGenerateClick(event:MouseEvent):void
+			{
+				data = null;
+				fiRepeater.permissionKey = 'false';
+				fiError.permissionKey = 'false';
+				codeTemp = getCodeFromText(this.lockCode.text);
+				this.txtCode.text = generateCode(this.contractorId, this.dctBranch.selectedId, this.dctUser.selectedId, this.dateEditor.selectedDate, codeTemp.code);
+				
+				getContractorsData(codeTemp.nip);
+			}
+			
+
+			private function getContractorsData(value:String):void
+			{
+				var cmd:GetContractorByNip = new GetContractorByNip(value);
+				cmd.addEventListener(ResultEvent.RESULT, getContractorsDataResult);
+				cmd.execute();
+			}
+			
+			private function getContractorsDataResult(event:ResultEvent):void
+			{
+				var result:XML = XML(event.result);
+				if(result.contractor.entry.length()) {
+					data = XMLList(result.contractor.entry);
+					fiRepeater.permissionKey = 'true';
+					fiError.permissionKey = 'false';
+				} else {
+					data = null;
+					fiRepeater.permissionKey = 'false';
+					fiError.permissionKey = 'true';
+				}
+			}
+			
+			public static function getCodeFromText(value:String):Object {
+				var t:String = value.replace( /\s/g, "");
+				
+				var code:String = t.substr(3, 2)+""+t.substr(8, 2);
+				var nip:String = t.substr(0, 3)+""+t.substr(5, 3);
+				var piseNip:String = t.substr(10, t.length - 10);
+				if(piseNip != '') {
+					nip = nip+""+piseNip;
+				}
+				var nipNumber:String = String(parseInt(nip, 36));
+				
+				while(nipNumber.length < 10) {
+					nipNumber = '0' + nipNumber;
+				}
+				
+				return {nip:String(nipNumber), code:code};
+			}
+			
+			private function showDetails(event:MouseEvent):void {
+				var i:int = (event.target.instanceIndex);
+				
+				var item:XML = (rep.dataProvider[i]);
+				
+				if(item) { 
+					if(item.shortName != '' && item.id != '') {
+						ContractorsCatalogue.showPaymentsContractorWindow(item.id, item.shortName);
+					}
+				}
+			}
+			
+			private function showSettlement(event:MouseEvent):void {
+				var i:int = (event.target.instanceIndex);
+				
+				var item:XML = (rep.dataProvider[i]);
+				
+				if(item) { 
+					if(item.shortName != '' && item.id != '') {
+						//trace(item.shortName)
+						//trace(item.id)
+						FinancialReport.showWindow(item.id);
+					}
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:Form width="100%" paddingBottom="10">
+		<mx:FormItem label="{LanguageManager.getInstance().labels.contractors.contractor}" width="100%" visible="{!ModelLocator.getInstance().challengeCodeLocks}" includeInLayout="{!ModelLocator.getInstance().challengeCodeLocks}">
+			<catalogue:ContractorSearchEditor 
+					id="searchEditor"
+					width="100%"
+					searchCommandType="contractors"
+					labelField="@fullName"
+					setFunction="{setContractor}"
+					showItemOperations="false"/>		
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.common.branch}" width="100%" visible="{!ModelLocator.getInstance().challengeCodeLocks}" includeInLayout="{!ModelLocator.getInstance().challengeCodeLocks}">
+			<generic:FractusDictionarySelector id="dctBranch" dictionaryName="branches" width="100%" comboLabelField="label"/>
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.common.user}" width="100%" visible="{!ModelLocator.getInstance().challengeCodeLocks}" includeInLayout="{!ModelLocator.getInstance().challengeCodeLocks}">
+			<generic:FractusDictionarySelector id="dctUser" dictionaryName="users" width="100%" />
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.common.date}" width="100%" visible="{!ModelLocator.getInstance().challengeCodeLocks}" includeInLayout="{!ModelLocator.getInstance().challengeCodeLocks}">
+			<inputComponents:DateEditor id="dateEditor" />
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.documents.messages.unLockCode}" width="100%" visible="{ModelLocator.getInstance().challengeCodeLocks}" includeInLayout="{ModelLocator.getInstance().challengeCodeLocks}">
+			<mx:TextInput id="lockCode" width="100%" restrict="0-9 A-Z" />
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.documents.messages.unLockingCode}" width="100%">
+			<mx:HBox width="100%">
+				<mx:TextInput id="txtCode" editable="false" width="100%" />
+				<mx:Button id="generateBtn" label="{LanguageManager.getInstance().labels.common.generate}" width="80" click="btnGenerateClick(event)" enabled="{contractorId != null || lockCode.text != ''}" />
+			</mx:HBox>
+		</mx:FormItem>
+		<permission:FormItemComponent width="100%" id="fiRepeater" permissionKey="false">
+			<mx:Repeater id="rep" dataProvider="{data}" >
+				<mx:Form width="100%" paddingTop="0" paddingBottom="5">
+					
+					<mx:FormItem label="{LanguageManager.getInstance().labels.common.shortName}" styleName="attributeLabel">
+						<mx:Text text="{rep.currentItem.shortName}" fontWeight="bold" fontSize="15" paddingBottom="-5"/>
+					</mx:FormItem>
+						
+					<mx:FormItem label="{LanguageManager.getInstance().labels.common.nip}" styleName="attributeLabel">
+						<mx:Text text="{rep.currentItem.nip}" fontWeight="normal"/>
+					</mx:FormItem>
+					
+					<mx:FormItem>
+						<mx:HBox>
+							<permission:ButtonComponent permissionKey="catalogue.contractors.relatedDocuments" label="{LanguageManager.getInstance().labels.contractors.forms.contractor.payments}" click="showDetails(event)" />
+							<permission:ButtonComponent permissionKey="finance.reports2" label="{LanguageManager.getInstance().labels.menu.settlementExport}" click="showSettlement(event)" />
+						</mx:HBox>
+					</mx:FormItem>
+				</mx:Form>
+			</mx:Repeater>
+		</permission:FormItemComponent>
+		<permission:FormItemComponent id="fiError" permissionKey="false">
+			<mx:Text text="{LanguageManager.getInstance().labels.error.getDataOrWrongCode}" fontWeight="bold" fontSize="15"/>
+		</permission:FormItemComponent>
+	</mx:Form>
+</mx:Canvas>
+
+<!--
+
+		<mx:FormItem label="{LanguageManager.getInstance().labels.common.shortName}" styleName="attributeLabel" visible="{Boolean(shortNameText.text != '')}" includeInLayout="{Boolean(shortNameText.text != '')}" paddingTop="15">
+			<mx:Text text="{data.shortName}" fontWeight="bold" fontSize="15" id="shortNameText"/>
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.common.nip}" styleName="attributeLabel" visible="{Boolean(nipText.text != '')}" includeInLayout="{Boolean(nipText.text != '')}">
+			<mx:Text text="{data.nip}" fontWeight="normal" id="nipText"/>
+		</mx:FormItem>
+		<mx:FormItem visible="{Boolean(detailsShow &amp;&amp; nipText.text != '' &amp;&amp; shortNameText.text != '')}" includeInLayout="{Boolean(detailsShow &amp;&amp; nipText.text != '' &amp;&amp; shortNameText.text != '')}">
+			<mx:Button label="{LanguageManager.getInstance().labels.common.detailsTab}" click="showDetails()" />
+		</mx:FormItem>
+		
+		-->

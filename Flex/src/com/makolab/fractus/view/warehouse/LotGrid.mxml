@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<advancedDataGrid:AutoResizableADG autoSize="3"
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	xmlns:advancedDataGrid="com.makolab.components.advancedDataGrid.*"
+	>
+	<advancedDataGrid:columns>
+			<mx:AdvancedDataGridColumn editable="false" headerText="{LanguageManager.getLabel('common.code')}" width="100" dataField="@itemCode" itemRenderer="com.makolab.fractus.view.generic.TooltipLabelRenderer" />
+			<mx:AdvancedDataGridColumn editable="false" headerText="{LanguageManager.getLabel('items.availableShort')}" width="60" dataField="@quantity" itemRenderer="com.makolab.components.inputComponents.FloatRenderer"/>
+			<mx:AdvancedDataGridColumn editable="false" headerText="Położenie" width="90" dataField="@containerLabel"/>
+			<!--<mx:AdvancedDataGridColumn editable="false" headerText="Położenie fizyczne" width="70" dataField="@slotContainerLabel"/>-->
+			<mx:AdvancedDataGridColumn editable="false" headerText="{LanguageManager.getLabel('common.attributes')}" dataField="@attributes" width="80" sortable="false">
+				<mx:itemRenderer>
+					<mx:Component>
+						<mx:HBox width="100%" height="100%" horizontalAlign="center">
+							<mx:LinkButton visible="{data != null &amp;&amp; data.@shiftId.length() > 0}" includeInLayout="{data != null &amp;&amp; data.@shiftId.length() > 0}" width="100%" click="outerDocument.editAttributesFunction(data)" label="{outerDocument.linkButtonLabelFunction(XML(data))}" />
+						</mx:HBox>
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:AdvancedDataGridColumn>
+			<mx:AdvancedDataGridColumn editable="false" headerText="Data przes." width="100" dataField="@shiftDate" textAlign="center" itemRenderer="com.makolab.components.inputComponents.DateRenderer"/>
+			<mx:AdvancedDataGridColumn editable="false" headerText="Data dostawy" width="100" dataField="@incomeDate" textAlign="center" itemRenderer="com.makolab.components.inputComponents.DateRenderer"/>
+			<mx:AdvancedDataGridColumn editable="false" headerText="Nr dok. dostawy" width="110" dataField="@fullNumber" textAlign="center"/>
+			<mx:AdvancedDataGridColumn editable="false" headerText="Cena zakupu" width="90" dataField="@price" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" textAlign="right"/>
+			<mx:AdvancedDataGridColumn headerText="" minWidth="60" resizable="false" width="60" editable="false" paddingLeft="1" paddingRight="1" sortable="false">
+				<mx:itemRenderer>
+					<mx:Component>
+						<mx:Button paddingLeft="1" paddingRight="1" label="Przesuń" height="22" click="outerDocument.addShiftFunction(data)" />
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:AdvancedDataGridColumn>
+	</advancedDataGrid:columns>
+	<mx:Metadata>
+		[Event(name="searchComplete", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.GetItemLotsCommand;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.commands.GetCommercialFinancialRelationsCommand;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.SearchCommand;
+			import com.makolab.fractus.commands.GetCorrectiveDocumentsCommand;
+			import com.makolab.components.layoutComponents.DataGridImageItemRenderer;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.generic.FractusDictionaryRenderer;
+			import com.makolab.fractus.view.generic.FractusDictionarySelector;
+			import com.makolab.fractus.commands.GetRelatedComercialDocumentsCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.commands.GetRelatedWarehouseDocumentsCommand;
+			import com.makolab.fractus.model.LanguageManager;
+
+			[Bindable]public var lots:Array = [];
+			
+			private var _data:Object = new Object();
+			
+			[Bindable]
+			public var addShiftFunction:Function;
+			
+			[Bindable]
+			public var editAttributesFunction:Function;
+			
+			[Bindable]
+			override public function set data(value:Object):void
+			{
+				_data = value;
+				getLots();
+			}
+			
+			override public function get data():Object
+			{
+				return _data;
+			}
+			
+			public function linkButtonLabelFunction(data:XML):String
+			{
+				if(data)
+				{
+					if(data.@attributes.length() > 0 && String(data.@attributes) != "")
+						return data.@attributes;
+					else
+						return " ";
+				}
+				else
+					return null;
+			}
+			
+			public function getLots():void
+			{
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("warehouse.p_getAvailableLots", XML(this._data));
+				cmd.addEventListener(ResultEvent.RESULT, handleSearchCompleted, false, 0, true);
+				cmd.execute(); 
+			}
+			
+			private function handleSearchCompleted(event:ResultEvent):void
+			{
+				this.lots = [];
+				
+				for each(var o:XML in XML(event.result).*){
+					lots.push(o);
+				}
+				this.dataProvider = lots;
+				this.dispatchEvent(new Event("searchComplete"));
+			}
+		]]>
+	</mx:Script>
+</advancedDataGrid:AutoResizableADG>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Text xmlns:mx="http://www.adobe.com/2006/mxml" >
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.dataGridClasses.DataGridListData;
+			import com.makolab.components.inputComponents.DataObjectManager;
+
+		public override function set data(value:Object):void
+		{
+			super.data = value;
+			var dataObject:Object = DataObjectManager.getDataObject(value, listData);
+			if (dataObject == null) this.text = "";
+			else this.text = dataObject.toString();					
+		}
+		
+		private var _textFontColor:String;
+		public function set textFontColor(value:String):void
+		{
+			_textFontColor = value;
+			updateText();			
+		}
+		public function get textFontColor():String
+		{
+			return _textFontColor;
+		}
+		
+		protected function updateText():void
+		{
+			this.setStyle("color", textFontColor);			
+		}				
+	]]>
+	</mx:Script>
+		
+</mx:Text>

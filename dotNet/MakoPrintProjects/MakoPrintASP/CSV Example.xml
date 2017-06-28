@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<document outputEncoding="windows-1250" fieldSeparator=";" decimalSeparator="," quoteAllFields="true">
+  <table>
+    <configuration visible="false">
+      <no type="autonumbering">Lp.</no>
+      <name>Nazwa</name>
+      <amount type="decimal">Ilość</amount>
+      <value type="decimal">Wartość</value>
+    </configuration>
+    <items>
+      <item>
+        <name>Browarek</name>
+        <amount>2</amount>
+        <value>123</value>
+      </item>
+      <item>
+        <name>Towarek</name>
+        <amount>22</amount>
+        <value>1233</value>
+      </item>
+      <item>
+        <name>Kiełbaska</name>
+        <amount>6</amount>
+        <value>666.12</value>
+      </item>
+      <item>
+        <name>Oponka</name>
+        <amount>2</amount>
+        <value>314.12</value>
+      </item>
+      <item>
+        <name>Klamka</name>
+        <amount>5</amount>
+        <value>3214.12</value>
+      </item>
+    </items>
+  </table>
+</document>

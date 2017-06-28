@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:generic="com.makolab.fractus.view.generic.*" xmlns:layoutComponents="com.makolab.components.layoutComponents.*"
+		paddingTop="4"
+		paddingBottom="4"
+		paddingLeft="4"
+		paddingRight="4"
+	>
+	<mx:Metadata>
+		[Event(name="processingCompleted", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.controls.Alert;
+			import mx.collections.ArrayCollection;
+			private function changeSelection(arg:int):void
+			{
+				if (list)
+				{
+					for each (var x:XML in list)
+					{
+						switch(arg)
+						{
+							case 1: x.@selected = 1; break;
+							case 2: x.@selected = 0; break;
+							case 3: x.@selected = parseInt(x.@selected) ? 0 : 1; break;
+						}
+					}
+				}
+			}
+			
+			private var totalItems:int;
+			private var idList:Array;
+			private var currentId:String;
+			private var succeeded:int;
+			private var failed:int;
+			
+			[Bindable]
+			private var logItems:ArrayCollection = new ArrayCollection();
+			
+			/**
+			 * Returns item label for logging based on given item XML.
+			 */
+			public var itemLabelFunction:Function;
+			
+			/**
+			 * Returns XML passed to AsyncTask based on given id.
+			 */
+			public var taskParamsFunction:Function;
+			
+			public function startExport():void
+			{
+				clearLog();
+				idList = [];
+				currentId = null;
+				succeeded = 0;
+				failed = 0;
+				var l:XMLList = list.(valueOf().@selected == 1).@id;
+				for each (var x:XML in l) idList.push(String(x));
+				totalItems = idList.length;
+				exportNextItem();
+			}
+			
+			public function exportNextItem(error:Boolean = false):void
+			{
+				if (asyncTask.result)
+				{
+					/*if (asyncTask.status == AsyncTaskComponent.STATUS_ERROR)
+					{
+						log(asyncTask.result.toXMLString());
+					}
+					else
+					{*/
+						var messages:XMLList = asyncTask.result..message;
+						for each (var x:XML in messages)
+						{
+							log(String(x), String(asyncTask.result));
+						}
+					//}
+					asyncTask.result = null;
+				} 
+				pbTotal.setProgress(totalItems - idList.length, totalItems);
+				if (!error && currentId)
+				{
+					var l:XMLList = list.(@id == currentId);
+					if (l.length() == 0)
+					{
+						l.@selected = 0;
+						l.@objectExported = 1;
+					}
+				}
+				if (idList.length > 0)
+				{
+					var id:String = idList.shift();
+					currentId = id;
+					
+					var xmlList:XMLList = taskParamsFunction(id);
+
+					if(xmlList.(valueOf().localName() == "procedureName").length() > 0)
+					{
+						asyncTask.taskName = "StoredProcedureTask";
+						asyncTask.procedureName = xmlList.(valueOf().localName() == "procedureName")[0].*;
+						xmlList = new XMLList(<root>{xmlList}</root>);
+					}
+					else
+						asyncTask.taskName = "ExportToAccountingTask";
+					
+					asyncTask.startTask(xmlList);
+					var item:XMLList = list.(@id == currentId);
+					if (item.length() > 0 && itemLabelFunction != null) log("Przetwarzanie: " + itemLabelFunction(item[0]));
+				}
+				else showSummary();
+			}
+			
+			private function showSummary():void
+			{
+				this.dispatchEvent(new Event("processingCompleted"));
+				log(
+					"------------------------------------------------------" + 
+					"\nPODSUMOWANIE: Przetworzono " + succeeded + ", błędów " + failed
+				);
+				pLog.open = true;
+			}
+			
+			public function log(s:String, toolTip:String = null, error:Boolean = false):void
+			{	
+				this.logItems.addItem({ label : s, toolTip : toolTip });
+				this.logList.verticalScrollPosition = this.logList.maxVerticalScrollPosition;
+			}
+			
+			private function logListDblClickHandler(value:Object):void
+			{
+				if(this.logList.selectedItem != null && this.logList.selectedItem.toolTip)
+					Alert.show(this.logList.selectedItem.toolTip);
+			} 
+			
+			private function clearLog():void
+			{
+				this.logItems.removeAll();
+				this.logList.verticalScrollPosition = this.logList.maxVerticalScrollPosition;
+			}
+			
+		
+			[Bindable]
+			public var columns:Array;
+			
+			[Bindable]
+			public var list:XMLList;
+			
+			[Bindable]
+			public var exportButtonLabel:String = LanguageManager.getInstance().labels.common.exportSelectedItems;
+			
+			[Bindable]
+			public var exportButtonEnabled:Boolean = true;
+
+		]]>
+	</mx:Script>
+	
+	<mx:Array id="defaultColumns">
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.filters.exported}" dataField="@objectExported" editable="false" width="110" itemRenderer="com.makolab.components.inputComponents.AccountingStatusRenderer"/>
+		<mx:DataGridColumn
+			headerText="{LanguageManager.getInstance().labels.catalogue.select}"
+			itemRenderer="com.makolab.components.inputComponents.CheckBoxEditor"
+			editable="true"
+			rendererIsEditor="true"
+			width="70"
+			editorDataField="dataObject"
+			dataField="@selected"
+			textAlign="center"
+		/>		
+	</mx:Array>
+<mx:DataGrid id="grid" dataProvider="{list}" width="100%" height="100%" editable="true" columns="{columns.concat(defaultColumns)}"/>
+	<mx:HBox horizontalAlign="right" width="100%">
+		<mx:Label text="{LanguageManager.getInstance().labels.catalogue.select}:"/>
+		<mx:Button label="{LanguageManager.getInstance().labels.catalogue.all}" click="changeSelection(1)" width="100"/>
+		<mx:Button label="{LanguageManager.getInstance().labels.catalogue.nothing}" click="changeSelection(2)" width="100"/>
+		<mx:Button label="{LanguageManager.getInstance().labels.catalogue.revers}" click="changeSelection(3)" width="100"/>
+	</mx:HBox>
+	<mx:HBox width="100%">
+		
+		<mx:Button label="{exportButtonLabel}" enabled="{exportButtonEnabled}" click="startExport()"/>
+		<generic:AsyncTaskComponent id="asyncTask" taskName="ExportToAccountingTask" result="succeeded++; exportNextItem()" fault="failed++; exportNextItem(true)" abort="showSummary()" width="100%"/>
+	</mx:HBox>
+	<layoutComponents:CollapsablePanel id="pLog" height="120" width="100%" title="Log" open="false">
+		<mx:List id="logList" width="100%" height="94" editable="false" labelField="label" doubleClickEnabled="true" itemDoubleClick="logListDblClickHandler(event)" variableRowHeight="true" dataProvider="{this.logItems}" />
+	</layoutComponents:CollapsablePanel>
+	<mx:ProgressBar id="pbTotal" label="{LanguageManager.getInstance().labels.common.progressTotal} %1/%2" labelPlacement="center" width="100%" mode="manual"/>
+</mx:VBox>

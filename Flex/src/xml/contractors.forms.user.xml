@@ -1,0 +1,151 @@
+<form>
+	<windowTitle>{LanguageManager.getInstance().labels.title.contractor.panel}</windowTitle>
+  <tab label="\{labels.contractors.forms.contractor.basicData\}">
+    <!-- nazwy -->
+    <component className="com.makolab.components.inputComponents.LabelListEditor" dataField="dataObject" dataSource="data.contractor.isBusinessEntity">
+      <label>\{labels.common.type\}</label>
+      <dataProvider>
+        <item value="0" label="Osoba fizyczna"/><!--TODO: label="\{labels.contractors.forms.contractor.naturalPerson\}"-->
+        <item value="1" label="Przedsiębiorstwo"/><!--TODO: label="\{labels.contractors.forms.contractor.company\}"-->
+      </dataProvider>
+      <itemEditor>mx.controls.ComboBox</itemEditor>
+      <valueField>@value</valueField>
+      <labelField>@label</labelField>
+    </component>
+    <component className="com.makolab.components.inputComponents.NameEditor" dataField="dataObject" dataSource="data.contractor"/>
+    <!--
+    <component className="com.makolab.components.inputComponents.LabelValueEditor" dataField="dataObject" dataSource="data.contractor.shortName">
+    <label>Nazwa skrócona</label>
+    </component>
+    <component className="com.makolab.components.inputComponents.LabelValueEditor" dataField="dataObject" dataSource="data.contractor.fullName">
+    <label>Nazwa pełna</label>
+    </component>
+    -->
+    <component className="com.makolab.components.inputComponents.NIPEditor" dataField="dataObject" dataSource="data.contractor">
+      <label>\{labels.common.nip\}</label>
+      <countries>\{dictionaryManager.dictionaries.countries\}</countries>
+    </component>
+    
+    <!---component className="com.makolab.components.inputComponents.NIPEditor" dataField="dataObject" dataSource="data.contractor.nip"/-->
+    
+        <!-- konta bankowe -->
+	<!--
+    <component className="com.makolab.components.inputComponents.AttributeEditor" dataField="dataObject" dataSource="data.contractor.accounts">
+      <label>\{labels.contractors.forms.contractor.accounts\}</label>
+      <itemEditor>com.makolab.fractus.view.catalogue.BankAccountEditor</itemEditor>
+      <editorDataField>dataObject</editorDataField>
+      <attributeIdField>contractorFieldId</attributeIdField>
+      <template>
+        <account>
+          <contractorBankId></contractorBankId>
+          <accountNumber></accountNumber>
+        </account>
+      </template>
+      <attributes>\{dictionaryManager.dictionaries.contractorAccounts\}</attributes>
+    </component>
+	-->
+
+    <component className="com.makolab.fractus.view.catalogue.BankAccountEditor" dataField="dataObject" dataSource="data.contractor.accounts"/>
+   
+	
+    <!-- adresy -->
+    <component className="com.makolab.components.inputComponents.AttributeEditor" dataField="dataObject" dataSource="data.contractor.addresses">
+      <label>\{labels.contractors.forms.contractor.addresses\}</label>
+      <itemEditor>com.makolab.components.inputComponents.AddressEditor</itemEditor>
+      <editorDataField>dataObject</editorDataField>
+      <attributeIdField>contractorFieldId</attributeIdField>
+      <valueField/>
+      <template>
+        <address>
+          <countryId>8C67F218-903D-4A1D-8D21-E8040E7DCBCC</countryId>
+        </address>
+      </template>
+      <attributes>\{dictionaryManager.dictionaries.contractorAddresses\}</attributes>
+    </component>
+    
+    <!-- kontakty -->
+    <component className="com.makolab.components.inputComponents.AttributeEditor" dataField="dataObject" dataSource="data.contractor.attributes">
+      <label>\{labels.common.contacts\}</label>
+      <itemEditor>com.makolab.components.inputComponents.GenericAttributeEditorComponent</itemEditor>
+      <attributeIdField>contractorFieldId</attributeIdField>
+      <template>
+        <attribute/>
+      </template>
+      <attributes>\{dictionaryManager.dictionaries.contractorContacts\}</attributes>
+    </component>
+    
+    <!-- atrybuty -->
+    <component className="com.makolab.components.inputComponents.AttributeEditor" dataField="dataObject" dataSource="data.contractor.attributes">
+      <label>\{labels.contractors.forms.contractor.additionalAttributes\}</label>
+      <itemEditor>com.makolab.components.inputComponents.GenericAttributeEditorComponent</itemEditor>
+      <attributeIdField>contractorFieldId</attributeIdField>
+      <template>
+        <attribute/>
+      </template>
+      <attributes>\{dictionaryManager.dictionaries.contractorAttributes\}</attributes>
+    </component>
+
+  </tab>
+  <tab label="\{labels.contractors.forms.contractor.contractorType\}">
+    <component className="com.makolab.components.inputComponents.CheckBoxEditor" dataField="dataObject" dataSource="data.contractor.isSupplier">
+      <label>\{labels.common.deliverer\}</label>
+    </component>
+    <component className="com.makolab.components.inputComponents.CheckBoxEditor" dataField="dataObject" dataSource="data.contractor.isReceiver">
+      <label>\{labels.common.recipient\}</label>
+    </component>
+    <component className="com.makolab.components.inputComponents.CheckBoxEditor" dataField="dataObject" dataSource="data.contractor.isBank">
+      <label>\{labels.common.bank\}</label>
+    </component>
+    <component className="com.makolab.components.inputComponents.CheckBoxEditor" dataField="dataObject" dataSource="data.contractor.isBusinessEntity">
+      <label>\{labels.contractors.forms.contractor.company\}</label>
+    </component>
+    <component className="com.makolab.components.inputComponents.CheckBoxEditor" dataField="dataObject" dataSource="data.contractor.isEmployee">
+      <label>\{labels.common.employee\}</label>
+    </component>
+  </tab>
+  <!--
+  <tab label="Podgląd">	
+  <component className="com.makolab.components.inputComponents.ContractorRenderer" dataSource="data.contractor"/>
+  </tab>
+  <tab label="XML">
+  <component className="mx.controls.TextArea" dataSource="data">
+  <percentWidth>100</percentWidth>
+  <percentHeight>100</percentHeight>
+  </component>
+  </tab>
+  -->
+  
+  <tab label="\{labels.contractors.forms.contractor.notes\}">
+    
+    <component className="com.makolab.components.inputComponents.AttributeEditor" dataField="dataObject" dataSource="data.contractor.attributes">
+      <label>\{labels.common.comments\}</label>
+      <itemEditor>com.makolab.components.inputComponents.GenericAttributeEditorComponent</itemEditor>
+      <attributeIdField>contractorFieldId</attributeIdField>
+      <valueField>value</valueField>
+      <template>
+        <attribute>
+          <contractorFieldId/>
+          <value/>
+        </attribute>
+      </template>
+      <attributes>\{dictionaryManager.dictionaries.contractorRemarks\}</attributes>
+    </component>
+    
+  </tab>
+  
+  <!--
+  <tab label="Mapa">
+  <component className="com.makolab.components.inputComponents.GoogleMapsAddressFinder" dataField="dataObject" dataSource="data.contractor">
+  <percentHeight>100</percentHeight>
+  </component>		
+  </tab>
+  -->
+  
+  <tab label="\{labels.contractors.forms.contractor.groups\}">
+    <component className="com.makolab.components.inputComponents.GroupSelectionEditor" dataField="dataObject" dataSource="data.contractor.groupMemberships">
+    	<groups>\{configManager.values.contractors_group\}</groups>
+    	<idVariableName>contractorGroupId</idVariableName>
+    </component>
+  </tab>
+  
+</form>

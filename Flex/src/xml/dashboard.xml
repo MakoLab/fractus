@@ -1,0 +1,28 @@
+<config url="http://svn_serv/LatestBuilds/Proxy/default.aspx">
+				<panel position='1'>
+					<dockPanel type="DashboardDockPanelRSS">
+						<config>
+								<site label="Gazeta Prawna" data="http://rss.gazetaprawna.pl/GazetaPrawna" /> 
+								<site label="Gazeta Prawna - wiadomości" data="http://www.gazetaprawna.pl/wiadomosci/najwazniejsze/rss.xml" />
+								<site label="Gazeta wyborcza" data="http://serwisy.gazeta.pl/pub/rss/najnowsze_wyborcza.xml" />
+						</config>
+					</dockPanel>
+				</panel>
+				<panel position='2'>
+					<dockPanel type="DashboardDockPanelRSS">
+						<config>
+								<site label="Biznes" data="http://www.biznes-firma.pl/rss/rss.php?d=177" />
+								<site label="Gospodarka" data="http://rss.gazeta.pl/pub/rss/gospodarka.xml" />
+						</config>
+					</dockPanel>
+				</panel>
+				<panel position='3'>
+					<dockPanel type="DashboardDockPanelCurrency" open="false">
+						<config>
+	                            <site data="http://www.nbp.pl/kursy/xml/LastA.xml" />
+	                    </config>
+	                </dockPanel>	
+	                <dockPanel type="DashboardDockPanelMostWanted"/>	
+	                <dockPanel type="DashboardDockPanelByBranches"/>
+				</panel>						
+</config>

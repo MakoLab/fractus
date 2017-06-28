@@ -1,0 +1,48 @@
+﻿<%@ Master Language="C#" Inherits="System.Web.Mvc.ViewMasterPage" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title><asp:ContentPlaceHolder ID="TitleContent" runat="server" /></title>
+    <link href="<%= Url.Content("~/Content/Site.css") %>" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="<%= Url.Content("~/Scripts/jquery/jquery-1.5.1.min.js") %>"></script>
+    <script type="text/javascript" src="<%= Url.Content("~/Scripts/jquery/jquery-ui-1.8.10.custom.min.js") %>"></script>
+    
+    <script type="text/javascript">
+        jQuery(document).ready(function ($) {
+            $(".topMenuItem").hover(function () { $(this).addClass("hover"); }, function () { $(this).removeClass("hover"); });
+        });
+	</script>
+
+    <asp:ContentPlaceHolder ID="HeadContent" runat="server">
+    </asp:ContentPlaceHolder>
+</head>
+
+<body>
+    <div class="page">
+
+        <div id="header" class="header">
+            <div id="title" class="title">
+                <h1>Śledzenie stanu zamówień</h1>
+            </div>
+              
+            <div id="logindisplay" class="loginDisplay">
+                <% Html.RenderPartial("LogOnUserControl"); %>
+            </div> 
+            
+            <div class="clear hideSkiplink"> 
+                <div class="topMenuItem"><%: Html.ActionLink("Lista zamówień", "Index", "Home")%></div>
+                <%--<div class="topMenuItem"><%: Html.ActionLink("Zamówienie", "Order", "Home")%></div>--%>
+            </div>
+            
+        </div>
+
+        <div id="main" class="main">
+            <asp:ContentPlaceHolder ID="MainContent" runat="server" /> 
+			<div class="createdBy">Created by <a href="http://www.makolab.pl" target="_blank">MakoLab</div>
+        </div>
+        <div class="clear"></div>
+    </div>
+    <div id="footer"></div>
+</body>
+</html>

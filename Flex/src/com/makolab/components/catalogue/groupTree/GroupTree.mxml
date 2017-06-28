@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Tree
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		selectable="true"
+		labelFunction="getLabel"
+		dataDescriptor="{treeDataDescriptor}"
+		iconFunction="getIcon"
+		xmlns:groupTree="com.makolab.components.catalogue.groupTree.*"
+		editable="false"
+		creationComplete="creationCompleteHandler()"
+>
+	
+	<mx:Metadata>
+		[Style(name="groupIcon", type="Class", inherit="no")]
+		[Style(name="groupFolderIcon", type="Class", inherit="no")]
+		/**
+		 * Dispatched when a user drops an element onto tree item and the GroupTree instance allows it. 
+		 * @see #dragItemType
+		 */
+		[Event(name="itemDragDrop", type="com.makolab.components.catalogue.groupTree.GroupTreeEvent")]
+		[Event(name="changeSelection",type="flash.events.Event")]
+	</mx:Metadata>
+
+	<mx:itemRenderer>
+		<mx:Component>
+			<groupTree:GroupSelectionRenderer 
+				multipleSelection="{outerDocument.multipleSelection}"
+				branchSelectable="{outerDocument.enabled}"
+				change="outerDocument.itemRendererChangeHandler(event)"
+				changeSelection="outerDocument.itemRendererChangeHandler(event)"
+				/>
+		</mx:Component>
+	</mx:itemRenderer>
+	<!--
+	<mx:itemEditor>
+		<mx:Component>
+			<groupTree:GroupTreeItemEditor/>
+		</mx:Component>
+	</mx:itemEditor>
+	-->
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.remoteInterface.Int;
+			
+			import mx.collections.XMLListCollection;
+			import mx.controls.List;
+			import mx.controls.treeClasses.ITreeDataDescriptor2;
+			import mx.controls.treeClasses.TreeItemRenderer;
+			import mx.core.UIComponent;
+			import mx.events.DragEvent;
+			import mx.events.ListEvent;
+			import mx.managers.DragManager;
+			
+			import assets.IconManager;
+			
+			private var created:Boolean;
+			[Bindable]
+			public var multipleSelection:Boolean = true;
+			[Bindable]
+			public var branchSelectable:Boolean = false;
+			[Bindable]
+			public var allowItemToGroupAssign:Boolean = false;
+			
+			[Bindable]
+			private var treeDataDescriptor:ITreeDataDescriptor2 = new GroupTreeDataDescriptor();
+			/*
+			override public function set openItems(value:Object):void {
+				trace(value);
+				super.openItems = value;
+			}
+			*/
+			
+			public function itemRendererChangeHandler(event:Event):void
+			{
+			
+				_selectedGroups = getSelectedGroups();
+				dispatchEvent(new ListEvent("change"));
+			}
+			
+			private var dataForFormatResult:Object = new Object();
+			
+			/**
+			 * Free-form string specifing what type of items can be dropped onto tree area
+     		 */
+			public var dragItemType:String = "contractor";
+			
+		
+			
+			/**
+			 * Returns icon of a given item.
+			 * @param item Reference to tree item.
+			 */
+			protected function getIcon(item:Object):Class
+			{
+				/*
+				if (XML(item).subgroups != undefined) return Class(getStyle('groupFolderIcon'));
+				else return Class(getStyle('groupIcon'));
+				*/
+				if (XML(item).subgroups != undefined) return IconManager.getIcon('group_group_small');
+				else return IconManager.getIcon('group_subgroup_small');
+			}
+			
+			/**
+			 * Returns the label of given tree item.
+			 * @param node Reference to dataProvider node.
+			 */
+			protected function getLabel(node:Object):String
+			{
+				return String(node.labels.label.(@lang == LanguageManager.getInstance().currentLanguage));
+			}
+			
+			/**
+			 * An object that contains the data to be displayed.
+			 */
+			override public function set dataProvider(value:Object):void
+			{
+				var xml:XML = XML(value);
+				for each (var x:XML in xml..group)
+				{
+					if (x.subgroups.group.length() == 0 && x.@selected == undefined) x.@selected = 0;
+				}
+				super.dataProvider = value;
+				setSelection(_selectedGroups);
+				expand(_expandChildren);
+				this.dispatchEvent(new ListEvent("change"));
+			}
+			
+			/**
+			 * @private
+			 */
+			override public function get dataProvider():Object
+			{
+				return super.dataProvider;
+			}
+			
+			private function creationCompleteHandler():void
+			{
+				created = true;
+				expand(_expandChildren);
+			}
+			
+			private var _expandChildren:int = -1;
+			public function set expandChildren(level:int):void
+			{
+				_expandChildren = level;
+				expand(level);
+			}
+			public function get expandChildren():int
+			{
+				return _expandChildren;
+			}
+			
+			private function expand(level:int = -1):void
+			{
+				if (created && dataProvider && dataProvider is XMLListCollection)
+					if (level == -1)
+					{
+						var items:XMLList = new XMLList();
+						items = (dataProvider as XMLListCollection).source..group;
+						this.openItems = items;
+						
+						/* var branches:XMLList = this.dataProvider.source..group;
+						for each (var branch:Object in branches)
+						{
+							if (dataDescriptor.isBranch(branch)) expandItem(branch,true);
+						}
+						var rootElement:Object = (dataProvider as XMLListCollection).getItemAt(0);
+						expandItem(rootElement,true); */
+					} else {
+						
+						items = new XMLList();
+						
+						items = (dataProvider as XMLListCollection).source;
+						//trace(items[0].subgroups[0].toXMLString());
+						//items = items.subgroups.group
+						
+						for (var i:int = 0; i < level; i++) {
+							if(items.subgroups.group) {
+								items = items + items.subgroups.group;
+							} else {
+								break;
+							}
+						}
+						
+						this.openItems = items;
+						
+					}
+			}
+			
+			/**
+			 * @inherit
+			 */
+			override protected function dragEnterHandler(event:DragEvent):void
+			{
+				super.dragEnterHandler(event);
+				if(event.dragSource.hasFormat(dragItemType))
+				{
+					var data:Object = event.dragSource.dataForFormat(dragItemType);
+					dataForFormatResult = data;
+					DragManager.acceptDragDrop(UIComponent(event.currentTarget));
+				}
+				// gdereck - na wszelki wypadek czyscimy zmienna jezeli nic ciekawego nie ma w evencie
+				else dataForFormatResult = null;
+			}
+			
+			/**
+			 * @inherit
+			 */
+			override protected function dragOverHandler(event:DragEvent):void
+			{
+				super.dragOverHandler(event);
+				var data:Object = dataForFormatResult;
+				if (data && data.length > 0)
+				{
+					var dropTarget:XML = selectDropTarget(event);
+	
+					if(!treeDataDescriptor.isBranch(dropTarget) && allowItemToGroupAssign) {
+						DragManager.showFeedback(DragManager.LINK);
+					}
+				}
+			}
+			
+			/**
+			 * @inherit
+			 */
+			override protected function dragDropHandler(event:DragEvent):void
+			{
+				super.dragDropHandler(event);
+				var data:Object = dataForFormatResult;
+				
+				if (data && data.length > 0)
+				{
+					var dropTarget:XML = selectDropTarget(event);
+					
+					var newEvent:GroupTreeEvent = new GroupTreeEvent(GroupTreeEvent.ITEM_DRAG_DROP);
+					newEvent.itemId = data[0].id;
+					newEvent.groupId = dropTarget.@id;
+					var dropItems:Array = [];
+					for(var i:int = 0; i < data.length; i++){
+						dropItems.push(data[i].id);
+					}
+					newEvent.itemIds = dropItems;
+					dispatchEvent(newEvent);
+				}
+				
+				// gdereck - trzeba po sobie posprzatac...
+				this.dataForFormatResult = null;
+			}
+			
+			private function selectDropTarget(event:DragEvent):XML
+			{
+				var dropTarget:Tree = Tree(event.currentTarget);
+				var r:int = dropTarget.calculateDropIndex(event);
+				this.selectedIndex = r;
+				return this.selectedItem as XML;
+			}
+			
+			/**
+			 * Returns leaf IDs of given branch
+			 * @param groupId ID of a branch to look through.
+			 * @return Array
+			 */
+			public function getLeafs(groupId:String):Array
+			{
+				var parentGroup:XML = XML(dataProvider)..group.(valueOf().@id == groupId)[0];
+				return new XMLListCollection(parentGroup..group.(valueOf().subgroups == undefined && valueOf().@id != '').@id + parentGroup.(valueOf().subgroups == undefined && valueOf().@id != '').@id).toArray();
+			}
+			
+			/**
+			 * Returns an array of ticked groups IDs.
+			 */
+			public function getSelectedGroups():Array
+			{
+				var list:XMLList = XML(this.dataProvider.source)..group.(valueOf().@selected == 1 && valueOf().subgroups == undefined);
+				var selected:Array = [];
+				for each (var i:XML in list) selected.push(String(i.@id));
+				return selected;
+			}
+			
+			/**
+			 * Returns an array of ticked groups IDs.
+			 */
+			public function getSelectedGroupsLabels():Array
+			{
+				var list:XMLList = XML(this.dataProvider.source)..group.(valueOf().@selected == 1 && valueOf().subgroups == undefined);
+				var selected:Array = [];
+				for each (var i:XML in list)
+				{
+					var path:String = String(i.labels.label.(@lang == LanguageManager.getInstance().currentLanguage));
+					var x:XML = i;
+					while (x.parent() != undefined) 
+					{
+						x = x.parent();
+						if (!showRoot && x.parent() == undefined) break;
+						if (x.name().toString() != "subgroups")
+							path = String(x.labels.label.(@lang == LanguageManager.getInstance().currentLanguage)) + " " + path ;
+					}
+					selected.push(path);
+				}
+				return selected;
+			}
+			
+			private var _selectedGroups:Array = [];
+			
+			public function set selectedGroups(value:Array):void
+			{
+				_selectedGroups = value;
+				deselectAll();
+				setSelection(_selectedGroups);
+			}
+			
+			public function get selectedGroups():Array
+			{
+				return _selectedGroups;
+			}
+			
+			private function setSelection(value:Array):void
+			{
+				if(dataProvider){
+					for(var i:int = 0; i < value.length; i++){
+						var nodes:XMLList = XML(this.dataProvider.source)..group.(valueOf().@id == value[i]);
+						if(nodes.length() == 1)nodes[0].@selected = 1;
+					}
+				}
+			}
+			
+			
+			public function selectAll():void
+			{
+				if(dataProvider){
+				var nodes:XMLList = this.dataProvider.source..group;
+				for each(var o:XML in nodes){
+					o.@selected = 1;
+				}
+				}
+				
+			}
+			
+			public function deselectAll():void
+			{
+				if(dataProvider)
+				{
+				var nodes:XMLList = this.dataProvider.source..group;
+				for each(var o:XML in nodes){
+					o.@selected = 0;
+				}
+				}
+			}
+			
+		]]>
+	</mx:Script>
+</mx:Tree>

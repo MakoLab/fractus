@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="290" height="100%" xmlns:generic="com.makolab.fractus.view.generic.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.components.util.Tools;
+			
+			[Bindable]
+			private var requestXML:XML = <root>
+					<month>{(new Date()).month + 1}</month>
+					<year>{(new Date()).fullYear}</year>
+					<receipts>true</receipts>
+					<shifts>false</shifts>
+				</root>;
+			
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:SettlementExport = new SettlementExport();
+				window.innerComponent = component;
+				window.buttons = (ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CLOSE);
+				window.show(null,new Rectangle(-1,-1,310,190),"Rozliczenia");
+				window.commitButton.label = "Wyślij";
+				window.commitFunction = component.commitFunction;
+				return window;
+			}
+			
+			[Bindable]
+			private var today:Date = new Date();
+			
+			public function commitFunction():void
+			{
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("accounting.p_getSettlements",requestXML);
+				cmd.addEventListener(ResultEvent.RESULT,commandResultHandler);
+				cmd.execute();
+			}
+			
+			private function commandResultHandler(event:ResultEvent):void
+			{
+				var taskParameters:XMLList = XML(event.result).*;
+				asyncTask.startTask(taskParameters);
+			}
+			
+			private function taskResultHandler(event:ResultEvent):void
+			{
+				var result:XML = XML(event.result);
+				if (result.result.length() > 0 && result.result.toString().length > 0)
+					Alert.show(result.result.toString(),"Błąd");
+				else
+					Alert.show("Dane wysłano do programu księgowego","Fractus2");
+			}
+			
+			private function taskFaultHandler(event:FaultEvent):void
+			{
+				Alert.show("Wystąpił błąd podczas wysyłania danych do programu księgowego","Fractus2");
+			}
+			
+			private function monthChangeHandler(event:Event):void {requestXML.month = monthSelector.selectedIndex + 1;}
+			private function yearChangeHandler(event:Event):void {requestXML.year = yearSelector.value;}
+			private function receiptsChangeHandler(event:Event):void {requestXML.receipts = receiptsCheckBox.selected;}
+			private function shiftChangeHandler(event:Event):void {requestXML.shifts = shiftsCheckBox.selected;}
+		]]>
+	</mx:Script>
+	<mx:ComboBox id="monthSelector" dataProvider="{LanguageManager.getInstance().monthNames}" selectedIndex="{int(parseFloat(requestXML.month)) - 1}" change="monthChangeHandler(event)" top="10" left="10" width="180"/>
+	<mx:NumericStepper id="yearSelector" value="{int(parseFloat(requestXML.year))}" top="10" left="200" width="70" minimum="1900" maximum="2100" change="yearChangeHandler(event)"/>
+	<mx:CheckBox id="receiptsCheckBox" label="FZ - PZ" selected="{Tools.parseBoolean(requestXML.receipts)}" top="40" left="10" change="receiptsChangeHandler(event)"/>
+	<mx:CheckBox id="shiftsCheckBox" label="MM" selected="{Tools.parseBoolean(requestXML.shifts)}" top="70" left="10" change="shiftChangeHandler(event)"/>
+	<generic:AsyncTaskComponent id="asyncTask" taskName="SettlementTask" result="taskResultHandler(event)" fault="taskFaultHandler(event)" top="100" left="10" right="10"/>
+</mx:Canvas>

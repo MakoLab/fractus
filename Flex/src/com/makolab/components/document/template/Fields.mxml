@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas  xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Label;
+			import mx.core.EdgeMetrics;
+			import mx.containers.HBox;
+			import inputComponents.DateEditor; 
+/*
+ * Wymagane pola:
+ * listFields - tablica objektów { label: " nazwa do wyswietlenia", value: "scieżka do zmiennej przechowywanej w xml" }
+ * dataObject - fragment xml w którym znajdują się dane 
+ *
+ */
+			public var listFields: Array;
+			
+			public function set dataObject(obj:XML):void
+			{
+				for (var i :int =0 ; i < listFields.length ; i++)
+				{	
+					var field:HBox = new HBox();
+					field.setStyle("width","100%");
+					
+					var labelField:Label = new Label()
+					labelField.scaleY=0.9;
+					labelField.setStyle("fontSize",14);
+					labelField.text = listFields[i].label  ;
+					
+				   	var valueField:Label = new Label();
+				   	valueField.width = 200;
+				   	valueField.scaleY = 0.85 ;
+				   	valueField.scaleX = 0.7;
+				   	valueField.setStyle("right",0);
+				   	valueField.setStyle("fontFamily","Arial");
+				   	valueField.setStyle("fontSize",14);
+				  	valueField.setStyle("fontWeight","bold"); 	
+				  	valueField.text = obj[listFields[i].value];
+				  	
+				  	field.addChild(labelField); 
+				  	field.addChild(valueField);
+				  	fields.addChild(field);
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox id="fields" width="100%" height="100%"/>
+</mx:Canvas>

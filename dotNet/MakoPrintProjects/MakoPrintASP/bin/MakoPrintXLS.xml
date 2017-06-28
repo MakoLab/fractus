@@ -1,0 +1,175 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>MakoPrintXLS</name>
+    </assembly>
+    <members>
+        <member name="T:Makolab.Printing.XLS.MakoPrintXls">
+            <summary>
+            Class that prints document to XLS format.
+            </summary>
+        </member>
+        <member name="M:Makolab.Printing.XLS.MakoPrintXls.Generate(System.String,System.IO.Stream)">
+            <summary>
+            Generates an XLS file from the specified xml to the specified output stream.
+            </summary>
+            <param name="xml">Input xml.</param>
+            <param name="output">Output stream.</param>
+        </member>
+        <member name="M:Makolab.Printing.XLS.MakoPrintXls.ProcessSheet(org.in2bits.MyXls.XlsDocument,System.Xml.Linq.XElement)">
+            <summary>
+            Processes the sheet.
+            </summary>
+            <param name="xls">Main XLS document.</param>
+            <param name="sheetXml">Input sheet xml.</param>
+        </member>
+        <member name="M:Makolab.Printing.XLS.MakoPrintXls.ProcessTable(System.Xml.Linq.XElement,org.in2bits.MyXls.Worksheet,System.Int32)">
+            <summary>
+            Processes the main table of the output document.
+            </summary>
+            <param name="sheetXml">Input sheet xml.</param>
+            <param name="sheet">Worksheet to operate on.</param>
+            <param name="startingRow">Row number to start.</param>
+        </member>
+        <member name="M:Makolab.Printing.XLS.MakoPrintXls.ProcessDecimal2Column(System.Xml.Linq.XElement,org.in2bits.MyXls.Worksheet,System.Int32,System.Int32,System.String)">
+            <summary>
+            Processes the column of the output document as decimal2 column.
+            </summary>
+            <param name="sheetXml">Input sheet xml.</param>
+            <param name="sheet">Worksheet to operate on.</param>
+            <param name="startingRow">Row number to start.</param>
+            <param name="columnIndex">1-based index of the column.</param>
+            <param name="columnName">Name of the column.</param>
+        </member>
+        <member name="M:Makolab.Printing.XLS.MakoPrintXls.ProcessMoneyColumn(System.Xml.Linq.XElement,org.in2bits.MyXls.Worksheet,System.Int32,System.Int32,System.String)">
+            <summary>
+            Processes the column of the output document as money column.
+            </summary>
+            <param name="sheetXml">Input sheet xml.</param>
+            <param name="sheet">Worksheet to operate on.</param>
+            <param name="startingRow">Row number to start.</param>
+            <param name="columnIndex">1-based index of the column.</param>
+            <param name="columnName">Name of the column.</param>
+        </member>
+        <member name="M:Makolab.Printing.XLS.MakoPrintXls.ProcessDoubleColumn(System.Xml.Linq.XElement,org.in2bits.MyXls.Worksheet,System.Int32,System.Int32,System.String)">
+            <summary>
+            Processes the column of the output document as double column.
+            </summary>
+            <param name="sheetXml">Input sheet xml.</param>
+            <param name="sheet">Worksheet to operate on.</param>
+            <param name="startingRow">Row number to start.</param>
+            <param name="columnIndex">1-based index of the column.</param>
+            <param name="columnName">Name of the column.</param>
+        </member>
+        <member name="M:Makolab.Printing.XLS.MakoPrintXls.ProcessTextColumn(System.Xml.Linq.XElement,org.in2bits.MyXls.Worksheet,System.Int32,System.Int32,System.String)">
+            <summary>
+            Processes the column of the output document as text column.
+            </summary>
+            <param name="sheetXml">Input sheet xml.</param>
+            <param name="sheet">Worksheet to operate on.</param>
+            <param name="startingRow">Row number to start.</param>
+            <param name="columnIndex">1-based index of the column.</param>
+            <param name="columnName">Name of the column.</param>
+        </member>
+        <member name="M:Makolab.Printing.XLS.MakoPrintXls.ProcessAutonumberColumn(System.Xml.Linq.XElement,org.in2bits.MyXls.Worksheet,System.Int32,System.Int32,System.String)">
+            <summary>
+            Processes the column of the output document as autonumbering column.
+            </summary>
+            <param name="sheetXml">Input sheet xml.</param>
+            <param name="sheet">Worksheet to operate on.</param>
+            <param name="startingRow">Row number to start.</param>
+            <param name="columnIndex">1-based index of the column.</param>
+            <param name="columnName">Name of the column.</param>
+        </member>
+        <member name="M:Makolab.Printing.XLS.MakoPrintXls.WriteTableHeader(System.Xml.Linq.XElement,org.in2bits.MyXls.Worksheet,System.Int32,System.Int32,System.String)">
+            <summary>
+            Writes the header of the main table.
+            </summary>
+            <param name="sheetXml">Input sheet xml.</param>
+            <param name="sheet">Worksheet to operate on.</param>
+            <param name="row">Header's row number.</param>
+            <param name="columnIndex">1-based index of the column.</param>
+            <param name="columnName">Name of the column.</param>
+        </member>
+        <member name="M:Makolab.Printing.XLS.MakoPrintXls.ProcessDocumentHeader(System.Xml.Linq.XElement,org.in2bits.MyXls.Worksheet)">
+            <summary>
+            Processes the document header of the output document.
+            </summary>
+            <param name="sheetXml">Input sheet xml.</param>
+            <param name="sheet">Worksheet to operate on.</param>
+            <returns><c>true</c> if the header exists; otherwise <c>false</c>.</returns>
+        </member>
+        <member name="M:Makolab.Printing.XLS.MakoPrintXls.CreateNewItemCell(org.in2bits.MyXls.Worksheet,System.Int32,System.Int32,System.Xml.Linq.XElement,System.Xml.Linq.XElement)">
+            <summary>
+            Creates the new item cell in the specified worksheet getting defaults from item-* attributes and from the individual cell settings.
+            </summary>
+            <param name="sheet">The worksheet in which to create the cell.</param>
+            <param name="row">Row number.</param>
+            <param name="col">Column number.</param>
+            <param name="configurationElement">Element that contains item-* configuration for the cell.</param>
+            <param name="itemElement">The item element that may contains settings for particular cell.</param>
+            <returns>Created cell.</returns>
+        </member>
+        <member name="M:Makolab.Printing.XLS.MakoPrintXls.OverrideXmlAttributes(System.Xml.Linq.XElement,System.Xml.Linq.XElement)">
+            <summary>
+            Overrides and merges XML attributes in slave element with elements from the master element.
+            </summary>
+            <param name="masterElement">The master element.</param>
+            <param name="slaveElement">The slave element.</param>
+        </member>
+        <member name="M:Makolab.Printing.XLS.MakoPrintXls.CreateNewCell(org.in2bits.MyXls.Worksheet,System.Int32,System.Int32,System.Xml.Linq.XElement)">
+            <summary>
+            Creates the new cell in the specified worksheet.
+            </summary>
+            <param name="sheet">The worksheet in which to create the cell.</param>
+            <param name="row">Row number.</param>
+            <param name="col">Column number.</param>
+            <param name="configurationElement">Element that contains configuration for the cell.</param>
+            <returns>Created cell.</returns>
+        </member>
+        <member name="M:Makolab.Printing.XLS.MakoPrintXls.CreateNewCell(org.in2bits.MyXls.Worksheet,System.Int32,System.Int32,System.Nullable{org.in2bits.MyXls.FontWeight},System.UInt16,org.in2bits.MyXls.Color,org.in2bits.MyXls.HorizontalAlignments,System.Boolean,System.Nullable{org.in2bits.MyXls.UnderlineTypes},System.Boolean,Makolab.Printing.XLS.FontColor,System.String,System.Nullable{System.UInt16})">
+            <summary>
+            Creates the new cell in the specified worksheet.
+            </summary>
+            <param name="sheet">The worksheet in which to create the cell.</param>
+            <param name="row">Row number.</param>
+            <param name="col">Column number.</param>
+            <param name="fontWeight">The font weight.</param>
+            <param name="border">The border.</param>
+            <param name="backgroundColor">Color of the background.</param>
+            <param name="horizontalAlignment">Cell's content horizontal alignment.</param>
+            <param name="italic">if set to <c>true</c> font will be italic.</param>
+            <param name="underlineType">Type of the underline style.</param>
+            <param name="struckOut">if set to <c>true</c> font will be struck out.</param>
+            <param name="color">The color of font.</param>
+            <param name="fontName">Name of the font.</param>
+            <param name="fontSize">Size of the font.</param>
+            <returns>Created cell.</returns>
+        </member>
+        <member name="T:Makolab.Printing.XLS.Utils">
+            <summary>
+            Class that contains utils for XLS printing.
+            </summary>
+        </member>
+        <member name="M:Makolab.Printing.XLS.Utils.Capitalize(System.String)">
+            <summary>
+            Capitalizes the specified value.
+            </summary>
+            <param name="value">The value.</param>
+            <returns>Capitalized value.</returns>
+        </member>
+        <member name="M:Makolab.Printing.XLS.Utils.ParseColor(System.String)">
+            <summary>
+            Parses the color from input string and returns proper <see cref="T:org.in2bits.MyXls.Color"/> structure.
+            </summary>
+            <param name="name">The name of color.</param>
+            <exception cref="T:System.ArgumentException">If the color is unknown.</exception>
+            <returns>Parsed color.</returns>
+        </member>
+        <member name="T:Makolab.Printing.XLS.FontColor">
+            <summary>
+            Enums for Font coloring (mapping colors to colorIndex).
+            </summary>
+        </member>
+    </members>
+</doc>

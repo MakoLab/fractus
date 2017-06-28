@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		implements="com.makolab.fractus.view.documents.documentControls.IDocumentControl"
+		xmlns:inputComponents="com.makolab.components.inputComponents.*"
+		creationComplete="init()"
+		enabled="{!disableLinesChangeMessage &amp;&amp; !hasRelations}"
+		borderStyle="solid"
+		borderThickness="1"
+		borderColor="white"
+	>
+	<mx:Script>
+		<![CDATA[
+			import mx.validators.ValidationResult;
+			import com.makolab.fractus.view.documents.plugins.DocumentValidationPlugin;
+			import mx.events.ValidationResultEvent;
+			import mx.events.ItemClickEvent;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.view.documents.plugins.CommercialDocumentCalculationPlugin;			
+			import com.makolab.fractus.model.LanguageManager;
+			
+			public static const CALC_NET_PRICE:String = '1';
+			public static const CALC_GROSS_PRICE:String = '0';			
+			private var _documentObject:DocumentObject;
+			
+			[Bindable]
+			private var disableLinesChangeMessage:Boolean;
+			
+			[Bindable]
+			private var hasRelations:Boolean;
+			
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				if(_documentObject)
+					_documentObject.removeEventListener(ValidationResultEvent.INVALID, handleValidationEvent);
+					
+				_documentObject = value;
+				
+				if(_documentObject)
+				{
+					_documentObject.addEventListener(ValidationResultEvent.INVALID, handleValidationEvent);
+					
+					if(_documentObject.draftId && _documentObject.xml.netCalculationType.@selected.length() > 0)
+					{
+						if(_documentObject.xml.netCalculationType.@selected == "1")
+						{
+							if(_documentObject.xml.netCalculationType == "0")
+								this.gross.selected = true;
+							else
+								this.net.selected = true;
+						}	
+					}
+					
+					if(!_documentObject.isNewDocument) //jezeli to edycja
+					{
+						_documentObject.xml.netCalculationType.@selected = "1";
+						
+						if(_documentObject.xml.netCalculationType.* == "1")
+							this.net.selected = true;
+						else
+							this.gross.selected = true;
+					}
+					
+					if(_documentObject.xml.relations.*.length() == 0)
+						this.hasRelations = false;
+					else
+						this.hasRelations = true;
+				}
+				
+				if (_documentObject && _documentObject.xml.@disableLinesChange.length() > 0)
+					disableLinesChangeMessage = true;
+				else
+					disableLinesChangeMessage = false;
+					
+				if(documentObject.xml.netCalculationType.@selected == "1")
+				{
+					if(documentObject.xml.netCalculationType.* == CALC_NET_PRICE)
+					{
+						net.selected = true;
+					}
+					else if(documentObject.xml.netCalculationType.* == CALC_GROSS_PRICE)
+					{
+						gross.selected = true;
+					}
+				}
+			
+					
+			}
+			public function get documentObject():DocumentObject { return _documentObject; }
+			
+			private function handleValidationEvent(event:ValidationResultEvent):void
+			{
+				this.errorString = "";
+				this.setStyle("borderColor", "white");
+				
+				for each(var valResult:ValidationResult in event.results)
+				{
+					if(valResult.subField == DocumentValidationPlugin.CALCULATION_TYPE_SUBFIELD)
+					{
+						this.errorString = valResult.errorMessage;
+						this.setStyle("borderColor", "red");
+					}
+				}
+			}
+			
+			private function init():void	
+			{
+			}
+			
+			private function calcTypeChange(event:ItemClickEvent):void	
+			{				
+				documentObject.xml.netCalculationType.* = event.currentTarget.selectedValue;
+				documentObject.xml.netCalculationType.@selected = "1";
+				var e:DocumentEvent = DocumentEvent.createEvent(DocumentEvent.DOCUMENT_RECALCULATE);
+				documentObject.dispatchEvent(e);
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:label>{LanguageManager.getInstance().labels.common.clientType}</mx:label>
+	<mx:VBox verticalGap="0">
+		<mx:RadioButtonGroup id="calcType" itemClick="calcTypeChange(event)"/>
+		<mx:RadioButton groupName="calcType" id="net" label="{LanguageManager.getInstance().labels.documents.businessEntity}" value="{CALC_NET_PRICE}" width="300"/>
+		<mx:RadioButton groupName="calcType" id="gross" label="{LanguageManager.getInstance().labels.documents.retailCustomer}" value="{CALC_GROSS_PRICE}" width="300"/>	
+	</mx:VBox>
+</mx:FormItem>

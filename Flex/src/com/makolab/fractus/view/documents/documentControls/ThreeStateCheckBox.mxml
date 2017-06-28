@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:CheckBox xmlns:mx="http://www.adobe.com/2006/mxml" change="handleChange(event)">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.inputComponents.DataObjectManager;
+			private var _data:Object
+		
+			public override function set data(value:Object):void
+			{
+				_data = value;
+				
+				if(value)
+					this.dataObject = DataObjectManager.getDataObject(data, listData);
+				else
+					this.dataObject = null;
+			}
+			
+			public override function get data():Object
+			{
+				return this._data;
+			}
+			
+			private var _dataObject:Object;
+			
+			public function set dataObject(value:Object):void
+			{
+				this._dataObject = value;
+				
+				if(value != null)
+				{
+					if(value == 0)
+					{
+						this.enabled = true;
+						this.selected = false;
+					}
+					else if(value == 1)
+					{
+						this.enabled = true;
+						this.selected = true;
+					}
+					else
+					{
+						this.enabled = false;
+						this.selected = true;
+					}
+				}
+				else
+				{
+					this.enabled = false;
+					this.selected = false;
+				}
+			}
+			
+			public function get dataObject():Object
+			{
+				return this._dataObject;
+			}
+			
+			private function handleChange(event:Event):void
+			{
+				if(this.enabled == true && this.selected == false)
+					this._dataObject = 0;
+				else if(this.enabled == true && this.selected == true)
+					this._dataObject = 1;
+			}
+		]]>
+	</mx:Script>
+</mx:CheckBox>

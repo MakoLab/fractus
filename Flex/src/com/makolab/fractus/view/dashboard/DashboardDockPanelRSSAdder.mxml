@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300">
+	
+	<mx:Form paddingLeft="0" paddingRight="2" paddingTop="10" paddingBottom="10">
+		<mx:FormItem label="Nazwa:">
+			<mx:TextInput id="rssName"/>
+		</mx:FormItem>
+		<mx:FormItem label="RSS:">
+			<mx:TextInput id="rssData"/>
+		</mx:FormItem>
+	</mx:Form>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.WindowManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			[Bindable]
+			private var sites:XMLList;
+			
+			
+			private var window:ComponentWindow;
+					
+			public static function showWindow(sites:XMLList):ComponentWindow
+			{
+				var window:ComponentWindow = ComponentWindow.showWindow(null, ComponentWindow.BUTTON_COMMIT, new Rectangle(-1, -1, 300, 150), "Dodaj adres RSS");
+				var component:DashboardDockPanelRSSAdder = new DashboardDockPanelRSSAdder();
+				component.sites = sites;
+				component.window = window;
+				window.innerComponent = component;
+				window.commitFunction = component.addSite;
+
+				return window;
+			}
+			
+			private function addSite():void{
+			 	sites[sites.length()] = <site label={rssName.text} data={rssData.text} />;
+				window.hide();
+			}
+		]]>
+	</mx:Script>
+</mx:Canvas>

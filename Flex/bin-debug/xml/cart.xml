@@ -1,0 +1,7 @@
+<clipboard>
+  <quantities>1</quantities>
+  <columns>
+    <column field="@name" labelKey="common.shortName" label="Nazwa" />
+    <column field="@quantity" labelKey="common.quantity" label="Ilość" editor="integer" />
+  </columns>
+</clipboard>

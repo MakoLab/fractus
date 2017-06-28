@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas  xmlns:mx="http://www.adobe.com/2006/mxml" width="800" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:layoutComponents="com.makolab.components.layoutComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.rpc.events.FaultEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.ConfigManager;
+			import mx.managers.PopUpManagerChildList;
+			import mx.managers.PopUpManager;
+			import mx.core.UIComponent;
+			import mx.events.MenuEvent;
+			import mx.controls.List;
+			import com.makolab.components.list.DataGridComboHeader;
+			import com.makolab.components.inputComponents.CheckBoxListItemRenderer;
+			import mx.controls.CheckBox;
+			import mx.events.CloseEvent;
+			import mx.containers.GridItem;
+			import mx.collections.XMLListCollection;
+			import com.makolab.fractus.model.WindowManager;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.items.ItemUpdateCataloguePricesCommand;
+			import mx.events.ListEvent;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.collections.ArrayCollection;
+		
+			import com.makolab.components.util.LocalFileLoader;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.controls.Alert;
+			
+			private const ERROR_COLOR:uint = 0xffcccc;
+			private const IN_COLOR:uint = 0xccffcc;
+			private const DEFAULT_COLOR:uint = 0xffffff;
+			
+			[Bindable]
+			private var dataXML:XML = new XML();
+			//[Bindable]
+			//private var itemsList:Array = [];
+			
+			public var effectiveRows:XMLList;
+			public var window:ComponentWindow;
+			public var userConfiguration:Boolean = false;
+			[Bindable] public var selectedItems:XMLList;
+			[Bindable] private var selectedItemsString:String = "";
+			[Bindable] private var selectedItemsCount:int = 0;
+			[Bindable] private var progressBarVisibility:Boolean = false;
+			[Bindable] private var filePath:String = "";
+			[Bindable] private var OkVisibility:Boolean = false;
+			private var fileRef:FileReference;
+			private var keyColumn:DataGridColumn;
+			private var valueColumn:DataGridColumn;
+			private var configuration:XML;
+		
+			public static function showWindow():ComponentWindow
+			{
+				var component:ExcelToXmlManager=new ExcelToXmlManager();
+				var window:ComponentWindow=ComponentWindow.showWindow(component);
+				window.title = "Import";
+				window.buttons = ( ComponentWindow.BUTTON_CLOSE);
+				window.commitButton.label = "Importuj";
+				window.closeFunction = component.closeFunction;
+				window.xmlButton
+				component.window = window;
+				return window;
+			}
+			
+			private function creationCompleteHandler():void
+			{
+				ModelLocator.getInstance().configManager.requestList(["import.itemPrices"],configurationLoaded);
+			}
+			
+			private function configurationLoaded():void
+			{
+				configuration = ModelLocator.getInstance().configManager.getXMLValue("import.itemPrices");
+				if (configuration) userConfiguration = Tools.parseBoolean(configuration.@userConfiguration);
+			}
+			
+		
+			
+			public function closeFunction():void
+			{
+				if (window) window.hide();
+			}
+			
+			
+		
+			
+			private function handleUploadClick(event:MouseEvent):void
+			{
+				var imageTypes:FileFilter = new FileFilter("Pliki Excel", "*.xls");
+
+				if (!this.fileRef)
+				{
+					this.fileRef = new FileReference();
+					this.fileRef.addEventListener(Event.SELECT, selectHandler);
+					this.fileRef.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA, completeHandler);
+					this.fileRef.addEventListener(HTTPStatusEvent.HTTP_STATUS, errorHandler);
+					this.fileRef.addEventListener(IOErrorEvent.IO_ERROR, errorHandler);
+				}
+				try
+				{
+				    var success:Boolean = this.fileRef.browse([imageTypes]);
+				}
+				catch (error:Error)
+				{
+				    Alert.show("Brak możliwości otwarcia okienka przeglądania plików. Sprawdź ustawienia zabezpieczeń.");
+				}
+			}
+			
+			private function errorHandler(event:Event):void
+			{
+				Alert.show("Wystąpił błąd podczas wysyłania pliku.");
+				progressBarVisibility = false;
+			}
+			
+			/* private function getNameList():void
+			{
+				nameList = [];
+				for each(var item:XML in dataXML.*)
+				nameList.push(item.name().toString());
+			} */
+			
+			private function completeHandler(event:DataEvent):void
+			{
+				try
+				{
+					dataXML = new XML(event.data);
+					
+					var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("custom.p_importBankDocument",dataXML );
+					cmd.addEventListener(ResultEvent.RESULT, resultHandler, false, 0, true);
+					cmd.addEventListener(FaultEvent.FAULT, errorHandler1, false, 0, true);
+					cmd.execute();
+					
+				}
+				catch(error:Error)
+				{
+					Alert.show("Wystąpił błąd podczas przetwarzania pliku","Błąd");
+				}
+				finally
+				{
+					progressBarVisibility = false;
+				}
+				this.filePath = fileRef.name;
+				//getNameList();
+				
+			}
+			private function errorHandler1(event:Event):void
+			{
+				Alert.show("Wystąpił błąd podczas wysyłania pliku.");
+				progressBarVisibility = false;
+				OkVisibility=false;
+			}
+			private function resultHandler(e:ResultEvent):void
+			{
+				trace("poszlo");
+				OkVisibility=true;
+				//tekstK.text="  kjdnqwn  qwdqhw f qhbqwdfqwf  fhjbwqdn qw n  jhbqwfdqw f";
+				tekstK.text=XML(e.result).toString();
+			}
+		
+			private function selectHandler(event:Event):void
+			{
+				//var url:String = "http://127.0.0.1:3131/KernelServices/PrintService" + "/XlsToXml";
+		
+				var url:String = ModelLocator.getInstance().configManager.values.services_printService_address.* + "/XlsToXmlGeneric";
+			    var request:URLRequest = new URLRequest(url);
+			    //request
+			    try
+			    {
+			        fileRef.upload(request);
+			        progressBarVisibility = true;
+			    }
+			    catch (error:Error)
+			    {
+			        Alert.show("Wysyłanie pliku nie powiodło się.");
+			    }
+			}
+		
+		]]>
+	</mx:Script>
+
+	
+	
+	<mx:VBox paddingLeft="5" paddingBottom="5" paddingTop="5">
+		<mx:Button label="Wczytaj plik" click="{handleUploadClick(event)}" width="200" />
+	
+		<mx:Text id="tekstK" width="380" textAlign="left" text="{LanguageManager.getInstance().labels.tools.bankImportOk}" visible="{OkVisibility}" fontSize="14" verticalCenter="0" horizontalCenter="0"/>
+	</mx:VBox >
+	<mx:Canvas id="progressBar" x="0" y="0" width="100%" height="100%" backgroundColor="0x000000" backgroundAlpha="0.2" visible="{progressBarVisibility}" includeInLayout="{progressBarVisibility}">
+		<mx:ProgressBar label="Konwertowanie pliku, proszę czekać." indeterminate="true" verticalCenter="0" horizontalCenter="0" visible="{progressBarVisibility}"/>
+		<!--<mx:Button label="Anuluj" click="cancelCommand()" verticalCenter="30" horizontalCenter="0"/>-->
+	</mx:Canvas>
+</mx:Canvas>

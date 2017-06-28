@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		implements="com.makolab.fractus.view.documents.documentControls.IDocumentControl"
+		xmlns:inputComponents="com.makolab.components.inputComponents.*"
+		xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*"
+	>
+
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import mx.controls.Alert;
+			
+			private var _documentObject:DocumentObject;
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				_documentObject = value;
+				updateText();
+			}
+			public function get documentObject():DocumentObject { return _documentObject; }	
+			
+			public function get enterRemarksLabel():String
+			{
+				return LanguageManager.getLabel("documents.enterRemarks");
+			}
+			
+			private function updateText():void
+			{
+				var attrib:XML = documentObject.getAttribute('Attribute_Remarks');
+				remarksText = attrib ? attrib.value : null; 
+			}
+			
+			[Bindable]
+			public var remarksText:String;
+		]]>
+	</mx:Script>
+	
+	<inputComponents:EditorContainer
+			width="100%" height="100%"
+			editorUsesEnterKey="true"
+			change="updateText()"
+		>
+		<inputComponents:itemEditor>
+			<mx:Component>
+				<documentControls:RemarksComponent documentObject="{outerDocument.documentObject}" width="100%" height="100%"/>
+			</mx:Component>
+		</inputComponents:itemEditor>
+		<inputComponents:itemRenderer>
+			<mx:Component>
+				<mx:Text
+						width="100%"
+						height="100%"
+						text="{outerDocument.remarksText ? outerDocument.remarksText : outerDocument.enterRemarksLabel}"
+						color="{outerDocument.remarksText ? 0 : 0xCCCCCC}"
+					/>
+			</mx:Component>
+		</inputComponents:itemRenderer>
+	</inputComponents:EditorContainer>
+</mx:VBox>

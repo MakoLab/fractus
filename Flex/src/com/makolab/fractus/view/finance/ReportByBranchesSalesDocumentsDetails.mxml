@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="1000" height="500" xmlns:list="com.makolab.components.list.*" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<list:CommonGrid
+			id="grid"
+			headerWordWrap="true"
+			labelFunctions="{this}"
+			width="100%"
+			height="100%"
+			dataProvider="{this.result.*}"
+			itemDoubleClick="handleItemDoubleClick(event)"
+			doubleClickEnabled="true"
+			rowTextColorFunction="{getLineColor}"
+		/>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.SearchCommand;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.controls.CheckBox;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			import mx.events.ListEvent;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			[Bindable]
+			public var result:XML;
+			
+			private var window:ComponentWindow;
+			
+			public static function showWindow(params:XML, branchId:String):ComponentWindow
+			{
+				var cpsd:ReportByBranchesSalesDocumentsDetails = new ReportByBranchesSalesDocumentsDetails();
+				cpsd.loadData(params, branchId);
+				var window:ComponentWindow = ComponentWindow.showWindow(cpsd, 0, new Rectangle(-1, -1, 1000, 500));
+				cpsd.window = window;
+				return window;
+			}
+			
+			private function getLineColor(item:XML):Number
+			{
+				var result:Boolean = item.@hasNegativeProfit.length() > 0 && item.@hasNegativeProfit == "1"
+				return result ? 0xff0000 : NaN;
+			}
+			
+			private function exportButtonClickHandler():void
+			{
+				var xml:XML;
+				xml = grid.exportXml('xml');
+				xml.elements.* = xml.elements.documents.(valueOf().@enabled == 1);
+				ModelLocator.getInstance().exportListXML = xml;
+				grid.showExportDialog();
+			}
+			
+			public function loadData(params:XML, branchId:String):void
+			{
+				var xml:XML = this.config.copy();
+				
+				/*if(params.filters.column.(@field == "paymentMethodId").length() > 0)
+				{
+					var paymentsId:String = params.filters.column.(@field == "paymentMethodId")[0].*;
+					var splittedPaymentsId:Array = paymentsId.split(',');
+					
+					for(var i:int=0; i < splittedPaymentsId.length; i++)
+						splittedPaymentsId[i] = "'" + splittedPaymentsId[i] + "'";
+					
+					XML(xml.filters).appendChild(<column field="paymentMethodId">{splittedPaymentsId.join(',')}</column>);
+				}*/
+					
+				if(params.dateFrom.length() > 0)
+					xml.appendChild(params.dateFrom);
+					
+				if(params.dateTo.length() > 0)
+					xml.appendChild(params.dateTo);
+					
+				XML(xml.filters).appendChild(<column field="branchId">{branchId}</column>);
+				
+				var cmd:SearchCommand = new SearchCommand(SearchCommand.DOCUMENTS, xml);
+				cmd.addEventListener(ResultEvent.RESULT, handleResult);
+				cmd.execute();				
+			}
+			
+			private function handleResult(event:ResultEvent):void
+			{
+				this.grid.config = XMLList(this.columnsConfig);
+				this.result = XML(event.result);
+			}
+			
+			private function handleItemDoubleClick(event:ListEvent):void
+			{
+				var item:Object = event.itemRenderer.data;
+				if (item.@id.length() > 0) DocumentRenderer.showWindow(DocumentTypeDescriptor.COMMERCIAL_DOCUMENT, item.@id);
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:XML id="columnsConfig" xmlns="">
+		<columns>
+			<column field="@status" dataType="documentStatus" width="25"/>
+			<column field="@documentTypeId" labelKey="documents.type" dataType="documentType" width="70"/>
+			<column field="@fullNumber" labelKey="documents.documentNumber" width="120"/>
+			<column field="@issueDate" labelKey="documents.issueDateShort" dataType="date" width="80"/> 
+			<column field="@contractor" labelKey="contractors.contractor"/>
+			<column field="@grossValue" labelKey="documents.grossValue" dataType="currency" width="100"/>
+			<column field="@profit" labelKey="common.profit" dataType="percentage" width="100"/>
+    		<column field="@profitValue" labelKey="common.profitValue" dataType="currency" width="100"/>
+		</columns>
+	</mx:XML>
+	
+	<mx:XML id="config">
+		<searchParams type="CommercialDocument">
+  			<pageSize>1000000</pageSize>
+  			<page>1</page>
+  			<columns>
+				<column field="documentTypeId" column="documentTypeId"/>
+				<column field="status" column="status"/>
+				<column field="fullNumber"/>
+				<column field="issueDate" sortOrder="1" sortType="DESC"/>
+				<column field="contractor" column="fullName" relatedObject="contractor"/>
+				<column field="grossValue"/>
+				<column field="profit"/>
+			    <column field="profitValue"/>
+			    <column field="hasNegativeProfit"/>
+			</columns>
+			<query/>
+  			<filters>
+  				<column field="documentCategory">0,5</column>
+  				<column field="status">60,40</column>
+  			</filters>
+		</searchParams>
+	</mx:XML>
+</mx:VBox>

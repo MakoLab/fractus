@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:AdvancedDataGrid  doubleClick="showItem(event)" doubleClickEnabled="true" styleFunction="myStyleFunction" xmlns="com.makolab.components.layoutComponents.*"  xmlns:list="com.makolab.components.list.*"  xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" showHeaders="false" rowCount="1" paddingTop="0" paddingBottom="0" >
+		<mx:groupedColumns>	
+			<mx:AdvancedDataGridColumn visible="{!vis}" headerText="Nazwisko" dataField="@name" width="85"/>
+			<mx:AdvancedDataGridColumn visible="{!vis}" headerText="E-mail" dataField="@orderedQty" width="85"/>
+			<mx:AdvancedDataGridColumn visible="{!vis}" headerText="Strona" dataField="@currentStock" width="85"/>
+			
+			<mx:AdvancedDataGridColumn visible="{vis}" headerText="Strona" dataField="@PrestaStatus" width="85"/>
+			<mx:AdvancedDataGridColumn visible="{vis}" headerText="Strona" dataField="@PrestaIdentifier" width="85"/>
+			<mx:AdvancedDataGridColumn visible="{vis}" headerText="Strona" dataField="@FractusStatus" width="85"/>
+			<mx:AdvancedDataGridColumn visible="{vis}" headerText="Strona" dataField="@PrestaStatus" width="85"/>
+			<mx:AdvancedDataGridColumn visible="{vis}" dataField="@creationDate" headerText="{LanguageManager.getInstance().labels.dashboard.deliveryDate}" width="150" itemRenderer="com.makolab.components.inputComponents.DateRenderer"/>
+			<mx:AdvancedDataGridColumn visible="{vis}" dataField="@grossValue" headerText="{LanguageManager.getInstance().labels.dashboard.grossValue}" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" width="100"/>
+		</mx:groupedColumns>
+
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.catalogue.CatalogueItemInfo;
+			
+			import mx.collections.HierarchicalData;
+			import mx.events.ListEvent;
+			[Bindable]
+			private var vis:Boolean=true;
+			private var myId:String='';
+	
+		override public function set data(value:Object):void
+		{
+			
+			if(value)
+				if(value.localName()=="item")
+				{
+					vis=false;
+					if(value.@row!='1')
+						myId=value.@id;
+				}
+				else
+					vis=true;
+			else return;
+		this.dataProvider=value;
+		}
+			private function myStyleFunction(data:Object,col:AdvancedDataGridColumn):Object
+			{
+				if(data.@row=="1")
+				return {color:0x000000,backgroundColor:0x000000,fontWeight:"bold"};
+				else
+					return {};
+			}
+			override public function validateDisplayList():void{
+				super.validateDisplayList();
+			}
+			private function showItem(event:*):void
+			{
+				
+				if (myId=='') return;
+				CatalogueItemInfo.showWindow(myId,null,CatalogueItemInfo.ITEM_DETAILS);
+				//DocumentRenderer.showWindow(DocumentTypeDescriptor.COMMERCIAL_DOCUMENT, item.@id.toString());		
+			}
+		]]>
+	</mx:Script>
+</mx:AdvancedDataGrid>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheckBoxCombo xmlns="com.makolab.components.inputComponents.*" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	dataProvider="{getDictionary(DictionaryManager.getInstance().dictionaries, dictionaryName, showAll)}">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.listClasses.BaseListData;
+			import mx.controls.dataGridClasses.DataGridListData;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+		
+			[Bindable]
+			public var dictionaryName:String;
+			
+			[Bindable]
+			public var comboLabelField:String = null;
+			
+			[Bindable]
+			public var showAll:Boolean = false;
+			
+			private var dictionary:XMLList;
+			
+			override public function set dataProvider(value:Object):void
+			{
+				if (value is XMLList) dictionary = XMLList(value);
+				super.dataProvider = value;
+			}
+			
+			private var _selectedIds:Array = [];
+			
+		    [Bindable("change")]
+		    [Bindable("collectionChange")]
+		    [Bindable("valueCommit")]
+			public function set selectedIds(value:Array):void
+			{
+				var items:Array = [];
+				if (dictionary && value)
+				{
+					for (var j:int = 0; j < value.length; j++)
+					{
+						for (var i:int = 0; i < dictionary.length(); i++)
+						{
+							if (value[j] == dictionary[i].@id.toString()) items.push(dictionary[i]);
+						}
+					}
+				}
+				selectedItems = items;
+			}
+			public function get selectedIds():Array
+			{
+				_selectedIds = [];
+				for (var i:int = 0; i < selectedItems.length; i++)
+				{
+					if (selectedItems[i].@id.length() > 0)
+						_selectedIds.push(selectedItems[i].@id.toString());
+					else if (selectedItems[i].id.length() > 0)
+						_selectedIds.push(selectedItems[i].id.toString());
+				}
+				return _selectedIds;
+			}
+			
+			override public function set listData(value:BaseListData):void
+			{
+				super.listData = value;
+				var dgld:DataGridListData = value as DataGridListData;
+				if (dgld && !dictionaryName)
+				{
+					var name:String = dgld.dataField.replace(/(.*)Id$/, "$1s");
+					if (DictionaryManager.getInstance().dictionaries.hasOwnProperty(name)) dictionaryName = name;
+				}
+			}
+			
+			protected function getDictionary(dictionaries:Object, dictionaryName:String, showAll:Boolean = false):Object
+			{
+				var result:Object = dictionaries && dictionaryName ? dictionaries[dictionaryName] : null;
+				if (showAll) result = XMLList(<entry><label>{LanguageManager.getLabel('documentFilters.all')}</label></entry>) + result;
+				return result;
+			}
+			
+		]]>
+	</mx:Script>
+	
+</CheckBoxCombo>

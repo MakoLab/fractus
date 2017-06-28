@@ -1,0 +1,31 @@
+/*
+name=[item].[ItemDictionary]
+version=1.0.1
+lastUpdate=2017-01-24 10:37:21
+7abLsc8RRnDQ4hNc6CXztQ==
+*/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[item].[ItemDictionary]') AND type in (N'U'))
+BEGIN
+CREATE TABLE [item].[ItemDictionary](
+	[id] [uniqueidentifier] NOT NULL,
+	[field] [nvarchar](100) NOT NULL,
+ CONSTRAINT [PK_ItemDictionary] PRIMARY KEY CLUSTERED 
+(
+	[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+END
+GO
+SET ANSI_PADDING ON
+
+GO
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[item].[ItemDictionary]') AND name = N'IND_ItemDictionary_firld')
+CREATE UNIQUE NONCLUSTERED INDEX [IND_ItemDictionary_firld] ON [item].[ItemDictionary]
+(
+	[field] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = OFF) ON [PRIMARY]
+GO

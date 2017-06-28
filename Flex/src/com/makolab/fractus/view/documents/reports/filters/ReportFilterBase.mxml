@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.CatalogueFilterError;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			private var _parameters:XML
+			[Bindable]
+			public var columnName:String = "companyId";
+			
+			protected function get value():Object
+			{
+				var ret:Array = [];
+				for(var i:int=0;i<combo.selectedItems.length;i++){
+					ret.push("" + combo.selectedItems[i].contractorId.* + "");
+				}
+				return ret.join(",");
+			}
+			[Bindable]
+			public function set parameters(value:XML):void
+			{
+				_parameters = value;
+			}
+			
+			public function get parameters():XML
+			{
+				return _parameters;
+			}
+			
+			private function setParameters(params:XML):void
+			{
+				if(combo.selectedItems.length != 0){
+					if(value.toString() != ""){
+						if(!params.filters)params.filters = "";
+						var filterNodes:XMLList = params.filters.column.(@field == columnName);
+						if(filterNodes.length() == 0){
+							var newCondition:XML = <column/>;
+							newCondition.@field = columnName;
+							newCondition.* = value;
+							params.filters.columns += newCondition;
+						}else{
+							filterNodes[0].* = value;
+						}
+					}
+				}else{
+					if(!params.filters)params.filters = "";
+					var filterNodes2:XMLList = params.filters.column.(@field == columnName);
+					if(filterNodes2.length() == 1)delete filterNodes2[0];
+				}
+			}
+			
+			private function getSelectedItems():Array
+			{
+				var items:Array = [];
+				var objects:Object = combo.dataProvider;
+				for each(var o:Object in objects){
+					if(Number(o.value.*) > -20)items.push(o);
+				}
+				return items;
+			}
+			
+			private function setSelection():void
+			{
+				combo.selectedItems = getSelectedItems();
+				setParameters(parameters);
+			}
+			
+			private function comboLabelFunction(item:Object):String
+			{
+				var ret:String = item.label.(@lang == LanguageManager.getInstance().currentLanguage).*; 
+				return ret;
+			}
+		]]>
+	</mx:Script>
+		<inputComponents:CheckBoxCombo id="combo" creationComplete="setSelection()" width="100%" labelFunction="comboLabelFunction">
+			<inputComponents:dataProvider>
+				{DictionaryManager.getInstance().dictionaries.companies}
+			</inputComponents:dataProvider>
+		</inputComponents:CheckBoxCombo>
+</mx:FormItem>

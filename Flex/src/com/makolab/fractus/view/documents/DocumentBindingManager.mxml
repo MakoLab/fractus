@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.GetRelatedComercialDocumentsCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			
+			public static function showWindow(documentCategory:String, documentXML:XML):ComponentWindow
+			{
+				var renderer:DocumentBindingManager = new DocumentBindingManager();
+				renderer.documents = [documentXML];
+				return ComponentWindow.showWindow(renderer,ComponentWindow.BUTTON_CLOSE,null,"Powiązania dokumentów");
+			}
+			
+			private var _documents:Array = [];
+			
+			public function set documents(value:Array):void
+			{
+				_documents = value;
+			}
+			
+			public function get documents():Array
+			{
+				return _documents;
+			}
+			
+			[Bindable]
+			public var relatedDocuments:Array = [];
+			
+			private function getRelations():void
+			{
+				if(documentsGrid.selectedItem){
+					var cmdWarehouse:GetRelatedComercialDocumentsCommand;
+					cmdWarehouse = new GetRelatedComercialDocumentsCommand(documentsGrid.selectedItem.commercialDocument.id.*,GetRelatedComercialDocumentsCommand.COMMERCIAL_DOCUMENT);
+					cmdWarehouse.execute(setRelatedResult);
+				}
+			}
+			
+			private function setRelatedResult(resultXML:XML):void
+			{
+				for each(var o:Object in resultXML.*){
+					relatedDocuments.push(o);
+				}
+				relatedDocumentsGrid.dataProvider = relatedDocuments;
+			}
+			
+			private function getNumberFunction(item:Object,column:Object):String
+			{
+				return item.commercialDocument.number.fullNumber.*;
+			}
+			
+			private function getDocType(item:Object,column:Object):String
+			{
+				return DictionaryManager.getInstance().dictionaries.documentTypes.(id.* == item.commercialDocument.documentTypeId.*).label.(@lang == LanguageManager.getInstance().currentLanguage);
+			}
+			
+			private function getDocTypeById(item:Object,column:Object):String
+			{
+				return DictionaryManager.getInstance().dictionaries.documentTypes.(id.* == item.@documentTypeId).label.(@lang == LanguageManager.getInstance().currentLanguage);
+			}
+			
+			private function getDateFunction(item:Object,column:Object):String
+			{
+				return item.commercialDocument.issueDate.*;
+			}
+			
+			private function removeRelations():void
+			{
+				var selection:Array = relatedDocumentsGrid.selectedItems;
+				for(var i:int=0;i<selection.length;i++){
+					
+				}
+			}
+			
+			private function createRelation():void
+			{
+				
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox width="100%" height="100%">
+		<mx:VBox height="100%" width="100%">
+			<mx:Label text="{LanguageManager.getInstance().labels.documents.salesDocuments}"/>
+			<mx:DataGrid id="documentsGrid" themeColor="0xFF5114" height="100%" width="100%" dataProvider="{documents}" change="getRelations()">
+				<mx:columns>
+					<mx:DataGridColumn labelFunction="getNumberFunction" width="120" headerText="{LanguageManager.getInstance().labels.documents.documentNumber}"/>
+					<mx:DataGridColumn labelFunction="getDocType" headerText="{LanguageManager.getInstance().labels.documents.documentType}"/>
+					<mx:DataGridColumn labelFunction="getDateFunction" width="100" headerText="{LanguageManager.getInstance().labels.common.date}" itemRenderer="com.makolab.components.inputComponents.DateRenderer"/>
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:VBox>
+		<mx:VBox height="100%" width="100%">
+			<mx:Label text="{LanguageManager.getInstance().labels.documents.warehouseDocuments}"/>
+			<mx:DataGrid id="relatedDocumentsGrid" themeColor="0xA14DD4" height="100%" width="100%" dataProvider="{relatedDocuments}">
+				<mx:columns>
+					<mx:DataGridColumn width="120" dataField="@fullNumber" headerText="{LanguageManager.getInstance().labels.documents.documentNumber}"/>
+					<mx:DataGridColumn labelFunction="getDocTypeById" headerText="{LanguageManager.getInstance().labels.documents.documentType}"/>
+					<mx:DataGridColumn width="100" dataField="@issueDate" headerText="{LanguageManager.getInstance().labels.common.date}" itemRenderer="com.makolab.components.inputComponents.DateRenderer"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:HBox width="100%">
+				<mx:Button width="100%" label="{LanguageManager.getInstance().labels.common.add}" height="40"/>
+				<mx:Button width="100%" enabled="{relatedDocumentsGrid.selectedItem}" label="{LanguageManager.getInstance().labels.common.deleteAll}" click="removeRelations()" height="40"/>
+			</mx:HBox>
+		</mx:VBox>
+	</mx:HBox>
+</mx:VBox>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml" width="316" height="214" title="Eksport" layout="absolute" creationComplete="init()">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.ComponentExportManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.managers.PopUpManager;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			private var model:ModelLocator = ModelLocator.getInstance();
+			
+			private function export(type:String,content:String):void	{
+				ComponentExportManager.getInstance().exportObject(type,model.exportListXML.*,content);
+				close();
+			}
+			private function close(): void	{
+				PopUpManager.removePopUp(this);			
+			}
+			
+			private function init():void
+			{
+				var url:String = ModelLocator.getInstance().configManager.values.services_printService_address.* + "/PrintBusinessObject/" + model.exportListXML.* + "/defaultContractorHtml/content";
+				this.txtInputLink.text = url;	
+			}
+			
+			private function handleDblClick(event:Event):void
+			{
+				this.txtInputLink.selectionBeginIndex = 0;
+				this.txtInputLink.selectionEndIndex = this.txtInputLink.text.length;
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox paddingTop="50" width="100%" horizontalAlign="center">
+		<mx:Button label="PDF" width="67" click="export('defaultContractorPdf','content')" />
+		<mx:Button label="vCard" width="67" click="export('defaultContractorVcf','Kontrahent')" />		
+	</mx:HBox>
+	
+	<mx:TextInput id="txtInputLink" editable="false" width="310" x="4" y="90" doubleClickEnabled="true" doubleClick="handleDblClick(event)" />
+	
+	<mx:Button label="{LanguageManager.getInstance().labels.common.cancel}" width="125" click="close()" x="91.5" y="141"/>	
+	<mx:Label x="58.5" y="19" text="Wybierz format eksportu danych:"/>
+</mx:Panel>

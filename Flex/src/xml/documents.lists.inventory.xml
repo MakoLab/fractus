@@ -1,0 +1,43 @@
+<config title="{LanguageManager.getInstance().labels.title.documents.list.inventoryDocument}">
+				<headerColor>INVENTORY_COLOR</headerColor>
+				<headerColorLight>INVENTORY_COLOR_LIGHT</headerColorLight>
+				<objectType>InventoryDocument</objectType>
+				<columns>
+					<column field="@status" labelKey="documents.status" dataType="documentStatus" width="50"/>
+					<column field="@fullNumber" labelKey="documents.documentNumber" />
+					<column field="@type" labelKey="common.shortName" dataType="type" width="200"/>
+				</columns>
+				<getItemDataParams>
+					<type>Document</type>
+					<id/>
+				</getItemDataParams>
+				<filterField>@fullNumber</filterField>
+				<searchParams type="InventoryDocument">
+					<pageSize>200</pageSize>
+					<page>1</page>
+					<columns>
+						<column field="fullNumber" column="fullNumber" sortOrder="1" sortType="DESC"/>
+						<column field="status" column="status"/>
+						<column field="type" column="type"/>
+					</columns>
+				</searchParams>
+				<filters>
+				  	<filter label="" type="dateFilter"/>
+				  	<filter label="Numer dokumentu"  labelKey="documents.documentNumber" type="docNumberFilter" disableFilterType="dateFilter"/>
+				  	<filter label="Status dokumentu" type="docStatusFilter"/>
+				</filters>
+				<filtersTemplates label="Na podstawie szablonu">
+					<template label="Status zaksięgowany lub zapisany">
+						<filter type="docStatusFilter" value="60,20"/>
+						<filter type="dateFilter">
+							<dateFormat value="DD-MM-YYYY"/>
+							<dateFrom value="30-12-2007"/>
+							<dateTo value="30-12-2010"/>
+						</filter>
+						<filter type="docNumberFilter" value=""/>
+					</template>
+					<template label="Status zaksięgowany">
+						<filter type="docStatusFilter" value="60"/>
+					</template>
+				</filtersTemplates>
+			</config>

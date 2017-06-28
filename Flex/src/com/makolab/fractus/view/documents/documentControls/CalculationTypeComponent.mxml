@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		implements="com.makolab.fractus.view.documents.documentControls.IDocumentControl"
+		xmlns:inputComponents="com.makolab.components.inputComponents.*"
+		creationComplete="init()"
+		enabled="{!disableLinesChangeMessage}"
+	>
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ItemClickEvent;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.view.documents.plugins.CommercialDocumentCalculationPlugin;			
+			import com.makolab.fractus.model.LanguageManager;
+			
+			public static const CALC_NET_PRICE:String = '1';
+			public static const CALC_GROSS_PRICE:String = '0';			
+			private var _documentObject:DocumentObject;
+			
+			[Bindable]
+			private var disableLinesChangeMessage:Boolean;
+			
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				_documentObject = value;
+				
+				if (_documentObject)
+				{
+					if(_documentObject.xml.@disableLinesChange.length() > 0 || !_documentObject.typeDescriptor.allowGuiCalculationTypeChange)
+						disableLinesChangeMessage = true;
+					else
+						disableLinesChangeMessage = false;
+				}
+				else
+					disableLinesChangeMessage = false;
+			}
+			public function get documentObject():DocumentObject { return _documentObject; }
+			
+			private function init():void	
+			{
+			}
+			
+			private function calcTypeChange(event:ItemClickEvent):void	
+			{
+				documentObject.xml.netCalculationType.* = event.currentTarget.selectedValue;
+				var e:DocumentEvent = DocumentEvent.createEvent(DocumentEvent.DOCUMENT_RECALCULATE);
+				documentObject.dispatchEvent(e);
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:label>{LanguageManager.getInstance().labels.common.calculateBy}</mx:label>
+	<mx:VBox verticalGap="0">
+		<mx:RadioButtonGroup id="calcType" itemClick="calcTypeChange(event)"/>
+		<mx:RadioButton groupName="calcType" id="net" label="{LanguageManager.getInstance().labels.common.net}" value="{CALC_NET_PRICE}" selected="{Boolean(documentObject.xml.netCalculationType.* == '1')}" width="100"/>
+		<mx:RadioButton groupName="calcType" id="gross" label="{LanguageManager.getInstance().labels.common.gross}" value="{CALC_GROSS_PRICE}" selected="{Boolean(documentObject.xml.netCalculationType.* == '0')}" width="100"/>	
+	</mx:VBox>
+</mx:FormItem>

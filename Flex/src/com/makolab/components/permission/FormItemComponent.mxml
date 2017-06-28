@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			
+			private var _permissionKey:String;
+			
+			public function get permissionKey():String {
+				return _permissionKey;
+			}
+			
+			public function set permissionKey(value:String):void {
+				_permissionKey = value;
+				
+				if(value == 'false') {
+					this.includeInLayout = false;
+					this.visible = false;
+				} else if(value == 'true') {
+					this.includeInLayout = true;
+					this.visible = true;
+				} else {
+					var per:Boolean = true;
+					var permissions:Array = value.split(',');
+					
+					for each(var permision:String in permissions) {
+						per = per && ModelLocator.getInstance().permissionManager.isEnabled(permision);
+					}
+					
+					if(!per || value == null) {
+						this.includeInLayout = false;
+						this.visible = false;
+					} else {
+						this.includeInLayout = true;
+						this.visible = true;
+					}
+				}
+			}
+		]]>
+	</mx:Script>
+</mx:FormItem>

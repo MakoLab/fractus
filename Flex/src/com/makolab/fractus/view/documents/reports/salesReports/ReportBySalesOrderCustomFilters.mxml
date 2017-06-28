@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="100%" height="100%" horizontalGap="10" paddingBottom="0" paddingTop="0" paddingLeft="5"
+	implements="com.makolab.fractus.view.documents.reports.ICustomReportFilter" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.controls.TextInput;
+			import com.makolab.fractus.model.DictionaryManager;
+			
+			public function getSearchParams():XML
+			{
+				var xml:XML = <searchParams/>
+				
+				if(combo && combo.selectedItems.length != 0){
+					if(value.toString() != ""){
+						xml.appendChild(<status value={value.toString()} />);
+					}
+				}
+				
+				return xml;
+			}
+			
+			protected function get value():Object
+			{
+				var ret:Array = [];
+				for(var i:int=0;i<combo.selectedItems.length;i++){
+						ret.push("" + combo.selectedItems[i].value.* + "");
+				}
+				return ret.join(",");
+			}
+			
+			private function getSelectedItems():Array
+			{
+				var items:Array = [];
+				var objects:Object = combo.dataProvider;
+				for each(var o:Object in objects){
+					if(o.value.* != 'cancel')items.push(o);
+				}
+				return items;
+			}
+			
+			private function setSelection():void
+			{
+				combo.selectedItems = getSelectedItems();
+			}
+
+			private function comboLabelFunction(item:Object):String
+			{
+				var ret:String = item.label.(@lang == LanguageManager.getInstance().currentLanguage).*; 
+				return ret;
+			}
+			
+			private function getDataProvider(xml:XML):XMLList{
+				var results:XMLList = xml.*;
+				return results;
+			}
+			
+			private var config:XML = <config> 
+	                <entry> 
+	                	<label lang="pl">Otwarte</label>
+	                	<value>open</value>
+	                </entry>
+	                <entry> 
+	                	<label lang="pl">Rozliczone</label>
+	                	<value>settle</value>
+	                </entry>
+	                <entry> 
+	                	<label lang="pl">Nierozliczone</label>
+	                	<value>unsettle</value>
+	                </entry>
+	                <entry> 
+	                	<label lang="pl">Anulowane</label>
+	                	<value>cancel</value>
+	                </entry>
+	                <entry> 
+	                	<label lang="pl">Przyjęte zaliczki</label>
+	                	<value>advance</value>
+	                </entry>
+                </config>
+			
+			private var configView:XML = <config> 
+	                <entry> 
+	                	<label lang="pl">Zaliczki</label>
+	                	<value>advance</value>
+	                </entry>
+	                <entry> 
+	                	<label lang="pl">Rozliczenia</label>
+	                	<value>settlement</value>
+	                </entry>
+	                <entry> 
+	                	<label lang="pl">Rezerwacje</label>
+	                	<value>reservation</value>
+	                </entry>
+	                <entry> 
+	                	<label lang="pl">Magazyn</label>
+	                	<value>warehouse</value>
+	                </entry>
+	                <entry> 
+	                	<label lang="pl">Montażysta</label>
+	                	<value>monter</value>
+	                </entry>  
+                </config>
+		]]>
+	</mx:Script>
+	<mx:FormItem label="{LanguageManager.getLabel('common.type')}">
+		<inputComponents:CheckBoxCombo id="combo" dataProvider="{getDataProvider(config)}" creationComplete="setSelection()" width="160"/>
+	</mx:FormItem>	
+	<mx:FormItem label="Widok">
+		<inputComponents:CheckBoxCombo id="comboView" dataProvider="{getDataProvider(configView)}" width="160" creationComplete="{comboView.selectAll()}"/>
+	</mx:FormItem>	
+</mx:HBox>

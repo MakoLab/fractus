@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10"
+	xmlns:layoutComponents="com.makolab.components.layoutComponents.*" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	xmlns:list="com.makolab.components.list.*"
+	xmlns:filters="com.makolab.fractus.view.documents.reports.filters.*"
+	xmlns:catalogue="com.makolab.components.catalogue.*"
+	xmlns:catalogue1="com.makolab.fractus.view.catalogue.*"
+	xmlns:documents="com.makolab.fractus.view.documents.*"
+	xmlns:documents1="com.makolab.fractus.view.documents.documentLists.*"
+	
+	creationComplete="init()">
+
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.PermissionManager;
+			import com.makolab.components.util.Tools;
+			import com.makolab.components.catalogue.Clipboard;
+			import flight.binding.Bind;
+			import com.makolab.components.layoutComponents.DynamicDetailRenderer;
+			import com.makolab.fractus.view.finance.FinancialReportEditor;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.GlobalEvent;
+			import com.makolab.fractus.view.documents.TextPrintPreviewWindow;
+			import com.makolab.fractus.view.documents.documentEditors.InventoryDocumentPreview;
+			import com.makolab.fractus.view.warehouse.LabelPrintingWindow;
+			import mx.formatters.SwitchSymbolFormatter;
+			import com.makolab.fractus.view.finance.FinancialReportPreview;
+			import mx.events.CloseEvent;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			import com.makolab.fractus.view.documents.DocumentFromOrderComponent;
+			import com.makolab.fractus.view.documents.DocumentBinder;
+			import com.makolab.fractus.view.documents.DocumentAccounter;
+			import com.makolab.fractus.view.documents.MassiveBarcodePrintingWindow;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.components.inputComponents.DocumentAttributeEditor;
+			import com.makolab.fractus.commands.ChangeDocumentStatusCommand;
+			import mx.controls.Alert;
+			import com.makolab.components.catalogue.CatalogueOperation;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.components.util.ComponentExportManager;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import assets.IconManager;
+			import com.makolab.components.catalogue.CatalogueEvent;
+			import mx.collections.XMLListCollection;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.SearchCommand;
+			import com.makolab.components.catalogue.GroupTreeEditorEvent;
+			import com.makolab.components.catalogue.groupTree.GroupTreeEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.view.documents.documentEditors.InventoryDocumentEditor;
+			import com.makolab.fractus.commands.PrintDocumentCommandParcel;
+			import com.makolab.fractus.commands.OfflinePrintCommand;
+			import com.makolab.fractus.commands.PrintDocumentCommand;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			import mx.events.ListEvent;
+			import com.makolab.fractus.view.finance.FinancialReportEditor;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			// trzeba zdefiniowac
+			private var currentDocumentTypeDescriptor:DocumentTypeDescriptor;
+			private var config:XML;
+			private var listType:String;
+			// koniec definiowania potrzeby
+			[Bindable]
+			private var permissionDenied:Boolean;
+			
+			private var _permissionKey:String;
+			
+			[Bindable]
+			public function set permissionKey(value:String):void
+			{
+				_permissionKey = value;
+				permissionDenied = !ModelLocator.getInstance().permissionManager.isEnabled(_permissionKey);
+			}
+			public function get permissionKey():String
+			{
+				return _permissionKey;
+			}
+			
+			[Bindable]
+			public var listPermissionKey:String;
+	
+			
+			[Bindable]
+			public var generalOperations:Array;
+					
+			[Bindable]
+			public var dblClickPermissionKey:String;
+			
+			private function operationInvokeHandler(event:CatalogueEvent):void
+			{
+					if (!(event.target is CatalogueOperation)) return;
+				var id:String;
+				if (itemCatalogue.selectedItem) id = itemCatalogue.selectedItem.id;
+				if (!id) return;
+				switch (event.operation.operationId)
+				{
+					case "operationExportParcelPdf":
+					var cmd:PrintDocumentCommandParcel = new PrintDocumentCommandParcel("printService", "object");
+					var requestXML:XML = <root/>;
+					requestXML.id = id;
+					requestXML.profileName ="operationExportParcelPdf";
+					requestXML.outputContentType = "content";
+					//cmd.addEventListener(ResultEvent.RESULT, fiscalPrintHandler, false, 0, true);
+					cmd.addEventListener(ErrorEvent.ERROR,onFaultPrint);
+				
+					cmd.exportObject(requestXML,false);
+						break;
+						case "operationExportParcelPdf1":
+					ComponentExportManager.getInstance().exportObject("PrintParcelOrder",id,id, false, null);
+						break;	
+					case "operationShowInvoice":
+					DocumentRenderer.showWindow("CommercialDocument", id);
+					break;
+				}
+			}
+				
+			private function onFaultPrint(e:ErrorEvent):void
+			{
+			trace(e);	
+			}
+			public var ml:ModelLocator = ModelLocator.getInstance();
+			//	private var dblClickPermissionKey:String="sales.preview";
+			private function init():void {
+				
+				//searchParcel(<root></root>);
+				itemCatalogue.initSearch("");
+			}
+			
+		
+			
+			public static function showWindow():ComponentWindow	{
+					
+				var window:ComponentWindow = new ComponentWindow();
+				var component:ParcelWindow= new ParcelWindow();
+				window.innerComponent = component;
+				window.show(null,ComponentWindow.MAXIMIZED,LanguageManager.getInstance().labels.tools.parcel);
+				//window.buttons = ComponentWindow.BUTTON_CANCEL;
+				return window;
+			}
+			       
+            private function userNamePlusLogin(item:Object):String {
+            	return (item.shortName != undefined) ? item.shortName + " - " + item.login : '';
+            }
+  
+private function fiscalPrintHandler(event:ResultEvent):void
+		{
+			//trace(event.result);
+			//this.printDocumentFiscal(XML(event.result));
+		}
+		private function clearSelectionFunction():void
+		{
+			
+			
+		}
+
+			private function getContractorData(event:CatalogueEvent):void
+			{	
+				var id:String=event.target.selectedItem.orderNumber;
+				//if(id!=""&& id!=null)
+				itemCatalogue.itemData=event.target.selectedItem;
+			}
+            
+            private function tabNavigatorCreationComplete():void
+            {
+            	
+            }
+            
+            private function searchParcel(parameters:Object):void
+			{
+				var cmd:SearchCommand = new SearchCommand(SearchCommand.PARCEL);
+				cmd.searchParams = XML(parameters);
+				cmd.addEventListener(ResultEvent.RESULT,handleSearchResults);
+				cmd.execute();
+			}
+			private function gridDoubleClickHandler(event:MouseEvent):void
+			{
+				var id:String;
+				if (itemCatalogue.selectedItem) id = itemCatalogue.selectedItem.id;
+				if (!id) return;
+				DocumentRenderer.showWindow("CommercialDocument", id);
+			}
+			private function handleSearchResults(event:ResultEvent):void
+			{
+				var result:XML = XML(event.result);
+				itemCatalogue.searchResults = new XMLListCollection(result.deliveryOrder);
+				itemCatalogue.rowCount =1;// result.@rowCount;
+				itemCatalogue.pageNumber =1;// result.@page;
+				itemCatalogue.itemData = result.itemData;
+			}
+            	private var model:ModelLocator = ModelLocator.getInstance();
+            public var listConfig:XML = 
+<config>
+  <columns>
+    <column field="fullNumber" sortOrder="1" sortType="ASC" labelKey="menu.sales.invoice" filter="1"/>
+    <column field="creationDate" dataType="date" labelKey="documents.orderDate" filter="1"/>
+    <column field="orderNumber" labelKey="documents.documentNumber" filter="1"/>
+    <column field="orderStatus" labelKey="documentRenderer.status" filter="1"/>
+  </columns>
+  <searchParams>
+    <query/>
+    <pageSize>
+      200
+    </pageSize>
+    <page>
+      1
+    </page>
+    <columns>
+      <column field="fullNumber"/>
+      <column field="creationDate"/>
+      <column field="orderNumber"/>
+      <column field="orderStatus"/>
+    </columns>
+
+  </searchParams>
+  	<filters>
+				  	<filter label="" type="dateFilter"/>
+				  	<filter label="Numer dokumentu" labelKey="documents.documentNumber" type="deliveryNumberFilter"/>
+				  	<!--<filter label="Status FV" type="docStatusFilter"/>-->
+				  	<!--<filter label="Firma" type="docCompanyFilter"/>-->
+				  	<filter label="Stan przesyłki" type="deliveryStatusFilter" />
+				  	<filter label="Kontrahent" type="contractorFilter" />
+				</filters>
+			
+  <getItemDataParams>
+    <type>
+      deliveryOrder
+    </type>
+    <id/>
+  </getItemDataParams>
+  <filterField>
+    @orderStatus
+   </filterField>
+  <clipboard>
+   </clipboard>
+</config>
+
+		]]>
+	</mx:Script>
+	
+<catalogue:CatalogueBrowser
+			id="itemCatalogue"
+			showClipboard="false"
+			operationInvoke="operationInvokeHandler(event)"
+			itemSearch="searchParcel(event.parameters)"
+			itemGetData="getContractorData(event)"
+			doubleClick="gridDoubleClickHandler(event)"
+			itemsType="parcel"
+			showLeftPanel="false"
+			config="{listConfig}"
+			listPermissionKey="catalogue.banks.list"
+		>
+
+		<!-- definicje operacji -->
+		
+		<catalogue:itemOperations>
+			<catalogue:CatalogueOperation permissionKey="catalogue.banks.exportPDF" operationId="operationExportParcelPdf" label="{LanguageManager.getInstance().labels.parcel.printParcelOrder}" image="{IconManager.getIcon('print_small')}" operationInvoke="operationInvokeHandler(event)"/>
+			<catalogue:CatalogueOperation permissionKey="catalogue.banks.exportPDF" operationId="operationShowInvoice" label="{LanguageManager.getInstance().labels.parcel.showFV}" image="{IconManager.getIcon('print_small')}" operationInvoke="operationInvokeHandler(event)"/>
+			<!--<documents1:EditDocumentOperation permissionKey="sales.edit" category="{DocumentTypeDescriptor.CATEGORY_SALES}" typeDescriptor="{this.currentDocumentTypeDescriptor}"/>-->
+		</catalogue:itemOperations>
+	</catalogue:CatalogueBrowser>
+</mx:VBox>

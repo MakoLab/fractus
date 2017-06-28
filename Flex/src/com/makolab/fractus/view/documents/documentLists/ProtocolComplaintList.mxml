@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DocumentList icon="{IconManager.getIcon('complaint_documentList')}" 
+	themeColor="{IconManager.COMPLAINT_COLOR}" 
+	xmlns="com.makolab.fractus.view.documents.documentLists.*" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:catalogue="com.makolab.components.catalogue.*" 
+	xmlns:data="data.*"
+	documentCategory="complaintDocument"
+	config="{listConfig}"
+	listPermissionKey="complaint.list"
+	>
+	<!-- OPERATIONS -->
+	<itemOperations>
+		<catalogue:CatalogueOperation permissionKey="complaint.preview" operationId="operationPreviewDocument" label="{LanguageManager.getInstance().labels.documents.preview}" image="{IconManager.getIcon('properties_small')}" defaultOperation="true"/>
+		<EditDocumentOperation permissionKey="complaint.edit" category="{DocumentTypeDescriptor.CATEGORY_PROTOCOL_COMPLAINTS}" typeDescriptor="{this.currentDocumentTypeDescriptor}"/>
+		<catalogue:CatalogueOperation permissionKey="complaint.printGraphical" operationId="operationPrintContainerContent" label="{LanguageManager.getInstance().labels.documents.printPdfApplication}" image="{IconManager.getIcon('print_small')}" />
+		<catalogue:CatalogueOperation permissionKey="complaint.printConsiderationGraphical" operationId="operationPrintContainerContent" label="{LanguageManager.getInstance().labels.documents.printPdfConsideration}" image="{IconManager.getIcon('print_small')}" />
+		<catalogue:CatalogueOperation permissionKey="complaint.close" operationId="operationPrintContainerContent" label="{LanguageManager.getInstance().labels.documents.closeProtocol}" image="{IconManager.getIcon('status_commited')}" />
+		<DocumentStatusChangeOperation permissionKey="complaint.cancel" status="{DocumentStatusChangeOperation.CANCELLED}"/>
+		<catalogue:CatalogueOperation permissionKey="complaint.addToClipboard" operationId="operationAddDocumentToClipboard" label="{LanguageManager.getInstance().labels.common.addToClipboard}" image="{IconManager.getIcon('add_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink1Item" label="{LanguageManager.getLabel(listConfig.operations['link1'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link1OperationVisible}" includeInLayout="{link1OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink2Item" label="{LanguageManager.getLabel(listConfig.operations['link2'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link2OperationVisible}" includeInLayout="{link2OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink3Item" label="{LanguageManager.getLabel(listConfig.operations['link3'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link3OperationVisible}" includeInLayout="{link3OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink4Item" label="{LanguageManager.getLabel(listConfig.operations['link4'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link4OperationVisible}" includeInLayout="{link4OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink5Item" label="{LanguageManager.getLabel(listConfig.operations['link5'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link5OperationVisible}" includeInLayout="{link5OperationVisible}"/>
+	</itemOperations>
+	<!-- CONFIGURATION -->
+	<!--
+	<config>
+		<mx:XML xmlns="">
+			<config title="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+				<headerColor>COMPLAINT_COLOR</headerColor>
+				<headerColorLight>COMPLAINT_COLOR_LIGHT</headerColorLight>
+				<objectType>ComplaintDocument</objectType>
+				<alwaysShowOperationsPanel>true</alwaysShowOperationsPanel>
+				<columns>
+					<column field="@status" dataType="documentStatus" width="25"/>
+					<column field="@documentTypeId" labelKey="documents.type" dataType="documentType" width="70"/>
+					<column field="@fullNumber" label="{LanguageManager.getInstance().labels.documents.documentNumber}"/>
+					<column field="@issueDate" label="{LanguageManager.getInstance().labels.documents.issueDate}" dataType="date" sortable="false"/> 
+					<column field="@contractor" label="{LanguageManager.getInstance().labels.contractors.contractor}"/>
+				</columns>
+				<getItemDataParams>
+					<type>Document</type>
+					<id/>
+				</getItemDataParams>
+				<filterField>@fullNumber</filterField>
+				<searchParams type="ComplaintDocument">
+					<pageSize>200</pageSize>
+					<page>1</page>
+					<columns>
+						<column field="status" column="status"/>
+						<column field="documentTypeId" column="documentTypeId"/>
+						<column field="fullNumber" sortOrder="1" sortType="DESC"/>
+						<column field="issueDate"/>
+						<column field="contractor" column="fullName" relatedObject="contractor"/>
+					</columns>		
+				</searchParams>
+				<filters>
+				  	<filter label="" type="dateFilter"/>
+				  	<filter label="Numer dokumentu" type="docNumberFilter"/>
+				  	<filter label="Status dokumentu" type="docStatusFilter"/>
+				  	<filter label="Ustawienia numerowania" type="docNumSettingsFilter"/>
+				</filters>
+			</config>
+		</mx:XML>
+	</config>
+	-->
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import assets.IconManager;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+			[Bindable]
+			public var listConfig:XML = model.configManager.getXML("documents.lists.protocolComplaint");
+			
+		]]>
+	</mx:Script>
+
+</DocumentList>

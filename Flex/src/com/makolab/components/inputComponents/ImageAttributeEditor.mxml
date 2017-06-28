@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import com.makolab.fractus.business.Services;
+			import mx.events.FlexEvent;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			[Bindable]
+			public var dataObject:XML;
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				if (value is XML) this.dataObject = (value as XML);
+				else if (value is XMLList && value.length() > 0) this.dataObject = value[0];
+				else this.dataObject = null;
+			}
+			
+			private function getImageUrl(name:String):String
+			{
+				if(name != null && name != "")
+					return ModelLocator.getInstance().configManager.values.services_repositoryService_address.* + '/GetFile/' + name;
+				else
+					return null;
+			}
+
+			/**
+			 * Event handler for the link button click event.
+			 * 
+			 * @param event MouseEvent object containing event data.
+			 */
+			private function handleLinkButtonClick(event:MouseEvent):void
+			{
+				if(Services.getInstance().serviceMode == Services.MODE_EXTERNAL_INTERFACE)
+					Alert.show("Funkcja niedostępna w wersji desktop");
+				else
+					ImageSelector.show(ModelLocator.getInstance().applicationObject, this.dataObject.image, 'name');
+			}
+			
+			private function resetHeight():void{
+				img.height = img.measuredHeight*img.width/img.measuredWidth;
+			}
+			
+			// jg - przenioslem dotychczasowy kod do funkcji ale bylo i w dalszym ciagu jest cos nie tak
+			// z wysokoscia obrazkow w trybie edycji 
+			private function getImgHeight(width:Number):Number
+			{
+				return img.measuredHeight * width / img.measuredWidth;
+			}
+		]]>
+	</mx:Script>
+	<mx:Binding source="txtBoxDescription.text" destination="this.dataObject.image.description" />
+	<mx:Image id="img" creationComplete="{resetHeight()}" scaleContent="true" width="100%" height="{this.getImgHeight(img.width)}"
+		source="{this.getImageUrl(this.dataObject.image.name)}"
+		visible="{Boolean(this.dataObject.image.name.length() > 0)}" />
+	<mx:HBox width="100%" autoLayout="true">
+		<mx:Label text="{LanguageManager.getInstance().labels.common.description}" width="100%" />
+		<mx:LinkButton label="{LanguageManager.getInstance().labels.images.change}" click="handleLinkButtonClick(event)" focusOut="event.preventDefault(); event.stopImmediatePropagation();"/>
+	</mx:HBox>
+	<mx:TextArea wordWrap="true" height="100" id="txtBoxDescription" text="{this.dataObject.image.description}" width="100%" />
+</mx:VBox>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layoutComponents1:DockPanel xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:layoutComponents1="com.makolab.components.layoutComponents.*" layout="absolute" xmlns:catalogue="com.makolab.components.catalogue.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.view.documents.documentLists.DocumentList;
+			
+			[Bindable]
+			public var clearSelectionFunction:Function;
+			
+			[Bindable]
+			public var documentList:DocumentList;
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" id="vBox" verticalGap="0" baseline="1" bottom="1">
+		
+	</mx:VBox>
+	<catalogue:DynamicOperationsPanel documentList="{documentList}" width="100%" id="dynamicVBox" verticalGap="0" baseline="1" bottom="1" visible="false" includeInLayout="false" clearSelectionFunction="{this.clearSelectionFunction}" />
+</layoutComponents1:DockPanel>

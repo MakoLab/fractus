@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TextInput xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.document.WarehouseDocumentLine;
+			import com.makolab.fractus.model.document.ShiftObject;
+			
+			private var _selectedItems:Array = [];
+			
+			[Bindable]
+			public function set selectedItems(value:Array):void
+			{
+				_selectedItems = value;
+				var txt:Array = [];
+				this.text = "";
+				if(value){
+					for(var i:int=0;i<value.length;i++){
+						txt.push(value[i].containerId); 
+					}
+				}
+				this.text = txt.join(",");
+			}
+			
+			public function get selectedItems():Array
+			{
+				var ids:Array = this.text.split(",");
+				_selectedItems = [];
+				for(var i:int=0;i<ids.length;i++){
+					_selectedItems.push(new ShiftObject({containerId : ids[i],status : 40,quantity : 1}));
+				}
+				return _selectedItems;
+			}
+			 
+			override public function set data(value:Object):void{
+				super.data = value;
+				if(value)selectedItems = (value as WarehouseDocumentLine).shifts;
+			}
+		]]>
+	</mx:Script>
+</mx:TextInput>

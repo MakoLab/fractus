@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:ComboBox xmlns:mx="http://www.adobe.com/2006/mxml"
+			 labelFunction="{lFunction}"
+		dataProvider="{getDictionary(DictionaryManager.getInstance().dictionaries, dictionaryName, showAll)}"
+		dropdownWidth="{getDropdownWidth(dataProvider, width)}"
+		
+	    open="onOpenEvent(event)"
+	    close="onCloseEvent(event)"   
+	>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.inputComponents.DataObjectManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			import flash.sampler.getInvocationCount;
+			
+			import mx.collections.XMLListCollection;
+			import mx.controls.dataGridClasses.DataGridListData;
+			import mx.controls.listClasses.BaseListData;
+			import mx.events.FlexEvent;
+			[Bindable]
+			public var dictionaryName:String;
+			
+			[Bindable]
+			public var comboLabelField:String = null;
+			
+			[Bindable]
+			public var showAll:Boolean = false;
+			
+			[Bindable]
+			public var leftSidedDropDown:Boolean = false;
+			
+			private var leftSidedDDPositionFlag:Boolean = false;
+			
+		    [Bindable("change")]
+		    [Bindable("collectionChange")]
+		    [Bindable("valueCommit")]
+			public function set selectedId(value:String):void
+			{
+				var index:Number = -1;
+				var i:int = 0;
+				if (showAll && value == null) index = 0;
+				else for each (var x:XML in dataProvider)
+				{
+					if (x.id == value)
+					{
+						index = i;
+						break;
+					}
+					i++;
+				}
+				selectedIndex = index;
+			}
+			public function get selectedId():String
+			{
+				return selectedItem && String(selectedItem.id) ? selectedItem.id : null;
+			}
+			
+			override public function set listData(value:BaseListData):void
+			{
+				super.listData = value;
+				var dgld:DataGridListData = value as DataGridListData;
+				if (dgld && !dictionaryName)
+				{
+					var name:String = dgld.dataField.replace(/(.*)Id$/, "$1s");
+					if (DictionaryManager.getInstance().dictionaries.hasOwnProperty(name)) dictionaryName = name;
+				}
+			}
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				selectedId = String(DataObjectManager.getDataObject(data, listData));
+				if(this.dictionaryName=="vatRates")
+				leftSidedDropDown=true;
+				
+			}
+	
+		
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+			{
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+				//var item:Object=
+				if(!comboLabelField)
+					labelFunction=lFunction;
+				text =getComboLabel(selectedIndex);
+				
+			}
+			
+			private function getComboLabel(index:Number):String
+			{
+				if (index < 0) return null;
+				var item:Object = dataProvider[index];
+				if (!item) return null;
+				else if (String(item.symbol)) return item.symbol;
+				else if (labelFunction != null) return labelFunction(item);
+				else if (comboLabelField != null) return item[comboLabelField];
+				
+				else return item.label.@lang.length()?item.label.(@lang==LanguageManager.getInstance().currentLanguage)[0].toString():item.label.toString();
+			}
+			
+			private function lFunction(item:Object):String
+			{
+				if(item.labels.length())
+				{
+					if(item.labels.label.@lang.length())
+					{
+						if(item.labels.label.(@lang==LanguageManager.getInstance().currentLanguage).length())
+							return item.labels.label.(@lang==LanguageManager.getInstance().currentLanguage)[0].toString();
+						else
+							return item.labels.label.toString();
+					}
+					else
+						return item.labels.label;
+				}
+				else if(item.label.@lang.length())
+				{	
+					if(item.label.(@lang==LanguageManager.getInstance().currentLanguage).length())
+						return item.label.(@lang==LanguageManager.getInstance().currentLanguage)[0].toString();
+					else 
+						return item.label.toString();
+				}
+				else
+					return item.label.toString();
+			}
+			private function getDropdownWidth(dataProvider:Object, width:Number):Number
+			{
+				
+				var preferredWidth:Number = calculatePreferredSizeFromData(dataProvider.length).width;
+				if (!isNaN(width) && width > preferredWidth) return width;
+				else return preferredWidth+10;
+			}
+			
+			protected function getDictionary(dictionaries:Object, dictionaryName:String, showAll:Boolean = false):Object
+			{
+				var result:Object = dictionaries && dictionaryName ? dictionaries[dictionaryName] : null;
+				if (showAll) result = XMLList(<entry><label>{LanguageManager.getLabel('documentFilters.all')}</label></entry>) + result;
+				return result;
+			}
+			
+			public static function getSelectorFactory(dictionaryName:String):ClassFactory
+			{
+				var cf:ClassFactory = new ClassFactory(FractusDictionarySelector);
+				cf.properties = { dictionaryName : dictionaryName };
+				return cf;
+			}
+			
+			override protected function keyDownHandler(event:KeyboardEvent):void
+			{
+				if (event.keyCode != Keyboard.RIGHT && event.keyCode != Keyboard.LEFT && event.keyCode != Keyboard.TAB) super.keyDownHandler(event);
+			}
+			
+			public function onOpenEvent(event:Event):void
+			{
+				leftSidedDDPositionFlag = true;	
+			}
+			
+			public function onCloseEvent(event:Event):void
+			{
+				leftSidedDDPositionFlag = false;
+			}
+			
+			override protected function downArrowButton_buttonDownHandler(event:FlexEvent):void
+			{		    	
+				super.downArrowButton_buttonDownHandler(event);
+				if(leftSidedDropDown && !leftSidedDDPositionFlag)
+				{
+					this.dropdown.x = this.dropdown.x-(this.dropdown.width - this.width);		      	
+				}
+				
+			}
+		    
+		    
+		    import com.makolab.fractus.model.ModelLocator;
+			
+			private var _permissionKey:String;
+			
+			public function get permissionKey():String {
+				return _permissionKey;
+			}
+			
+			public function set permissionKey(value:String):void {
+				_permissionKey = value;
+				
+				var per:Boolean = true;
+				var permissions:Array = value.split(',');
+				
+				for each(var permision:String in permissions) {
+					/*
+					// dodatek jeszcze nie użyty na ory;
+					if(permision.indexOf('|')) {
+						var:orPermissions:Array = permision.split('|');
+						var orPer:Boolean = false;
+						for each(var orPermision:String in orPermissions) {
+							orPer = orPer || ModelLocator.getInstance().permissionManager.isEnabled(orPermision);
+						}
+						per = per && orPer;
+					} else {
+						per = per && ModelLocator.getInstance().permissionManager.isEnabled(permision);
+					}
+					*/
+					per = per && ModelLocator.getInstance().permissionManager.isEnabled(permision);
+				}
+				
+				if(!per || value == null) {
+					this.visible = false;
+					this.includeInLayout = false;
+				} else {
+					this.visible = true;
+					this.includeInLayout = true;
+				}
+			}
+			
+		]]>
+	</mx:Script>
+	
+</mx:ComboBox>

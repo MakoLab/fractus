@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AbstractLinesComponent xmlns="com.makolab.fractus.view.documents.documentControls.*" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:lineList="com.makolab.components.lineList.*"
+	xmlns:catalogue="com.makolab.fractus.view.catalogue.*" xmlns:generic="com.makolab.fractus.view.generic.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+		]]>
+	</mx:Script>
+	<columns>
+	
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.lp')}" minWidth="20" width="30" editable="false" itemRenderer="com.makolab.components.inputComponents.OrdinalNumberRenderer"/>
+		
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.item')}" dataField="itemName" headerWordWrap="true" editorUsesEnterKey="true" editorDataField="dataObject">
+			<mx:itemEditor>
+				<mx:Component>
+					<catalogue:ItemSearchEditor
+							setFunction="{outerDocument.setLineItem}"
+							itemId="{data.itemId}"
+							itemReload="outerDocument.documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_SET_ITEM, 'itemId', data, true))"
+						>
+						<mx:Script>
+							<![CDATA[
+								import com.makolab.components.document.DocumentEvent;
+								
+							]]>
+						</mx:Script>
+					</catalogue:ItemSearchEditor>
+				</mx:Component>
+			</mx:itemEditor>
+		</mx:DataGridColumn>
+		
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.quantity')}" dataField="quantity" width="50" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('dictionaries.unitIdShort')}" dataField="unitId" editable="false" width="40" minWidth="20" headerWordWrap="true" editorDataField="selectedId" itemEditor="com.makolab.fractus.view.generic.FractusDictionarySelector" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" headerStyleName="headerRight" />
+		<mx:DataGridColumn headerText="Data przyj." dataField="dateIncom" width="100" minWidth="20" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.DateEditor" itemRenderer="com.makolab.components.inputComponents.DateRenderer" headerStyleName="headerRight" />
+		<generic:CellDetailColumn  headerText="Uwagi" cellWindowEditor="{new RemarksCellWindowEditor()}" parent="{this.parent}" dataField="remarks" headerStyleName="headerRight"   titleWindow="Uwagi" width="300" /> 
+				
+		<mx:DataGridColumn headerText="Decyzja" minWidth="20" width="60" editable="false">
+			<mx:itemRenderer>
+				<mx:Component>
+					<mx:LinkButton label="Dodaj" toolTip="Dodaj decyzje"  click="outerDocument.lineListAddDecisionComplain(data)" textAlign="left"   />
+				</mx:Component>
+			</mx:itemRenderer>
+		</mx:DataGridColumn>
+		
+		<mx:DataGridColumn headerText="" minWidth="20" width="20" editable="false">
+			<mx:itemRenderer>
+				<mx:Component>
+					<lineList:LineMenu enabled="{!outerDocument.disableLinesChangeMessage}">
+						<mx:Script>
+							<![CDATA[
+								import com.makolab.fractus.model.LanguageManager;
+							]]>
+						</mx:Script>
+						<lineList:operations>
+							<lineList:LineOperation label="{LanguageManager.getLabel('common.Delete')}" operationInvoke="outerDocument.lineListDeleteLine(event)" icon="{outerDocument.getIcon('delete_small')}" textAlign="left" />
+							<lineList:LineOperation label="{LanguageManager.getLabel('common.duplicate')}" operationInvoke="outerDocument.lineListDuplicateLine(event)" icon="{outerDocument.getIcon('duplicate_small')}" textAlign="left"/>
+							<lineList:LineOperation label="{LanguageManager.getLabel('common.addNewF')}" operationInvoke="outerDocument.lineListAddNewLine(event)" icon="{outerDocument.getIcon('add_small')}" textAlign="left"/>
+						</lineList:operations>
+					</lineList:LineMenu>
+				</mx:Component>
+			</mx:itemRenderer>
+		</mx:DataGridColumn>
+
+	</columns>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.document.BusinessObject;
+			import com.makolab.fractus.view.documents.documentControls.RemarksCellWindowEditor;
+			import com.makolab.components.lineList.LineOperation;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.document.ProtocolComplainDocumentLine;
+			import com.makolab.fractus.model.document.DecisionComplainDocumentLine;
+			import com.makolab.components.lineList.LineOperationEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import mx.controls.Alert;
+			
+			override public function set documentObject(value:DocumentObject):void
+			{
+				super.documentObject = value;
+			}
+			
+			override public function get documentObject():DocumentObject
+			{
+				return super.documentObject;
+			}
+			
+			/**
+			 *  Event handler for add new line decision of complain operation in <code>lineList</code>.
+			 * 
+			 * @param event Event object containing event data.
+			 */ 
+			public function lineListAddDecisionComplain(value:Object):void
+			{
+				
+				var line:DecisionComplainDocumentLine =new DecisionComplainDocumentLine();
+				var protLine:ProtocolComplainDocumentLine = ProtocolComplainDocumentLine(value);
+				if (protLine.isEmpty())return;
+			 	line.createFromProtocol(protLine);
+				line.documentObject = documentObject;
+				this.documentObject.decisionComplaint.addItem(line);
+				this.documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_LINE_ADD_DECISION_COMPLAIN, false, false, null, line));
+			}
+			
+			public override function lineListDeleteLine(event:LineOperationEvent):void
+			{
+				var line:BusinessObject = BusinessObject(LineOperation(event.target).line);
+				if (ProtocolComplainDocumentLine(line).relatedDecisionCount()>0)
+				{
+					Alert.show("Nie można usunąć pozycji z powiązanymi decyzjami");
+					return;	
+				} 
+				this.documentObject[linesObjectName].removeItemAt(this.documentObject[linesObjectName].getItemIndex(line));
+				this.documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_DELETE, null, line));
+			}
+		]]>
+	</mx:Script>
+</AbstractLinesComponent>

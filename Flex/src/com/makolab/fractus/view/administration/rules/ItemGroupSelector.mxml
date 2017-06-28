@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<groupTree:GroupTree
+	xmlns="com.makolab.components.catalogue.*" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:groupTree="com.makolab.components.catalogue.groupTree.*"
+	dataProvider="{ModelLocator.getInstance().configManager.values.items_group.configValue.*.copy()}"
+	multipleSelection="true" 
+	showRoot="false"
+	width="400"
+	height="300"
+	initialize="init()">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.ConfigManager;
+			
+			public function get groupIds():String
+			{
+				return selectedGroups.join(",");
+				//return "";
+			}
+			
+			public function set groupIds(value:String):void
+			{
+				if(value)this.selectedGroups = value.split(",");
+			}
+			
+			public function get groupNames():String
+			{
+				return selectedGroupNames.join(",");
+			}
+			
+			private function init():void
+			{
+				ModelLocator.getInstance().configManager.requestValue("items.group");
+			}
+			
+			public function get selectedGroupNames():Array
+			{
+				var list:XMLList = XML(this.dataProvider.source)..group.(valueOf().@selected == 1 && valueOf().subgroups == undefined);
+				var selected:Array = [];
+				for each (var i:XML in list) selected.push(String(i.labels.label.(@lang == LanguageManager.getInstance().currentLanguage)));
+				return selected;
+			}
+		]]>
+	</mx:Script>
+	
+</groupTree:GroupTree>

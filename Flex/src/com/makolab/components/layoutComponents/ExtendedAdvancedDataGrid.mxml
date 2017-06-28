@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:AdvancedDataGrid xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ListCollectionView;
+			override protected function drawRowBackground(s:Sprite, rowIndex:int, y:Number, height:Number, color:uint, dataIndex:int):void
+			{
+				var dp:ListCollectionView = dataProvider as ListCollectionView;
+				if (dp && rowColorFunction != null)
+				{
+					var item:Object;
+					if (dataIndex < dp.length) item = dp.getItemAt(dataIndex);
+					var c:Number = NaN;
+					if (item != null) c = rowColorFunction(item);
+					if (!isNaN(c)) color = c;
+					super.drawRowBackground(s, rowIndex, y, height, color, dataIndex);
+				}
+				super.drawRowBackground(s, rowIndex, y, height, color, dataIndex);
+			}
+			
+			public var rowColorFunction:Function = null;
+		]]>
+	</mx:Script>
+</mx:AdvancedDataGrid>

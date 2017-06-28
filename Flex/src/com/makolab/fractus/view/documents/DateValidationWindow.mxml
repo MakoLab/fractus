@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="450" height="150">
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			import mx.core.UIComponent;
+			
+			private static var dateValidationWindow:DateValidationWindow;
+			private var okFunction:Function;
+			
+			public static function show(parent:UIComponent, okFunction:Function,fullXML:XML,lines:ArrayCollection,got:Array,prze:Array,usluga:String,options:XMLList):void
+			{
+				var isG:Boolean=false;
+				var isP:Boolean=false;
+				var isU:Boolean=false;
+				var isS:Boolean=true;
+				var payMet:String=fullXML.payments.*.paymentMethodId;
+				
+				for(var i:int=0;i<got.length;i++)
+				{
+					if(got[i]==payMet)
+					isG=true;
+				}
+				for(var j:int=0;j<prze.length;j++)
+				{
+					if(prze[j]==payMet)
+					isP=true;
+				}
+				for(var k:int=0;k<lines.length;k++)
+				{
+					if(lines[k].itemTypeId==usluga)
+					isU=true;
+				}
+				for(var l:int=0;l<options.length();l++)
+				{
+					if(options[l].@selected!='1'&& 
+					(//options[l].@method=='outcomeFromSales' || 
+					options[l].@method=='financialFromCommercial' ))
+					{
+						isS=false;
+					}
+				}
+		
+				var d1:String=String(fullXML.issueDate.toString()).slice(0,10);
+				var d2:String=String(fullXML.eventDate.toString()).slice(0,10);
+				
+				if(
+				(d1==d2)&&((isP||isU) 
+				 || (isG&&!isS))
+				 )
+				{
+					if (!dateValidationWindow) dateValidationWindow = new DateValidationWindow();
+					dateValidationWindow.okFunction = okFunction;
+					PopUpManager.addPopUp(dateValidationWindow, parent, true);
+					PopUpManager.centerPopUp(dateValidationWindow);
+					dateValidationWindow.visible = true;
+				}
+		 		else
+		 		{
+		 			okFunction();
+		 		}
+			}
+			
+			private function close():void
+			{
+				PopUpManager.removePopUp(dateValidationWindow);
+				dateValidationWindow.visible = false;
+				dateValidationWindow = null;
+			
+			}
+			private function btnOkClick(e:Event):void
+			{
+				PopUpManager.removePopUp(dateValidationWindow);
+				dateValidationWindow.visible = false;
+				dateValidationWindow = null;
+				okFunction();
+			}
+		
+		]]>
+	</mx:Script>
+	
+		<mx:VBox horizontalAlign="center" verticalAlign="middle" width="100%" verticalGap="0" >
+		<mx:Text width="300" textAlign="center" selectable="false" paddingTop="5" paddingBottom="5" fontSize="14" text="{LanguageManager.getInstance().labels.alert.alert}"/>
+		<mx:Text width="300" textAlign="center" selectable="false" paddingTop="5" paddingBottom="5" fontSize="12" text="{LanguageManager.getInstance().labels.documents.messages.dateValidationWindow}"/>
+		
+		<mx:Form width="100%" defaultButton="{btnOk}" paddingTop="10" paddingBottom="5">
+			<mx:HBox width="100%" horizontalAlign="center" paddingTop="3">
+				<mx:Button id="btnOk" label="{LanguageManager.getInstance().labels.alert.yes}" width="80" click="btnOkClick(event)"/>
+				<mx:Button label="{LanguageManager.getInstance().labels.alert.no}" width="80" click="close()"/>
+			</mx:HBox>
+		</mx:Form>
+	</mx:VBox>
+</mx:TitleWindow>

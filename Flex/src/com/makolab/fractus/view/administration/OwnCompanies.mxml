@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas creationComplete="init()" xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	xmlns:generic="com.makolab.fractus.view.generic.*" 
+	xmlns:lineList="com.makolab.components.lineList.*" xmlns:openzet="http://www.openzet.org/2009/mxml" xmlns:layoutComponents="com.makolab.components.layoutComponents.*" xmlns:permission="com.makolab.components.permission.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.inputComponents.ContractorRenderer;
+			import com.makolab.components.catalogue.CatalogueEvent;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.view.administration.UserPanel;
+			import assets.IconManager;
+			import com.makolab.fractus.commands.SaveBusinessObjectCommand;
+			import com.makolab.components.catalogue.CatalogueItemWindowEvent;
+			import com.makolab.components.catalogue.CatalogueItemWindow;
+			import mx.events.ListEvent;
+			import com.makolab.fractus.view.catalogue.ContractorsCatalogue;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.Alert;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.commands.GetPermissionProfilesCommand;
+			
+			[Bindable]
+			private var employees:Object;
+			[Bindable]
+			private var dataProvider:Array = [];
+			[Bindable]
+			public var profiles:XML;
+			[Bindable]
+			private var users:XMLList;
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+			[Bindable]
+			public var languageManager:LanguageManager = LanguageManager.getInstance();
+			
+			private var index:Number = 0;
+			
+			public function editCompany(item:XML):void
+			{
+				//ModelLocator.getInstance().contractorsCatalogueManager.editedItemData = item;
+			}
+			
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:OwnCompanies = new OwnCompanies();
+				window.innerComponent = component;
+				window.show(null,null,LanguageManager.getInstance().labels.title.companies.panel);
+				return window;
+			}
+			
+			private function init():void
+			{
+				createDataProvider();
+				getProfiles();
+			}
+			
+			private function getProfiles():void
+			{
+				var cmd:GetPermissionProfilesCommand = new GetPermissionProfilesCommand();
+				cmd.addEventListener(ResultEvent.RESULT,getProfilesResult);
+				cmd.execute();
+			}
+			
+			private function getProfilesResult(event:ResultEvent):void
+			{
+				profiles = XML(event.result);
+			}
+			
+			private function createDataProvider():void
+			{
+				var companies:XMLList = DictionaryManager.getInstance().dictionaries.companies;
+				var newDataProvider:Array = [];
+				for each(var o:Object in companies){
+					var node:XML = <company/>;
+					node.shortName = o.label.(@lang == LanguageManager.getInstance().currentLanguage).*;
+					node.id = o.contractorId.*;
+					newDataProvider.push(node);
+					var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand(LoadBusinessObjectCommand.TYPE_CONTRACTOR,o.contractorId.*);
+					cmd.addEventListener(ResultEvent.RESULT,getDetails);
+					cmd.execute();
+				}
+				dataProvider = newDataProvider;
+				usersLoadedHandler(null);
+				DictionaryManager.getInstance().addEventListener("usersLoaded",usersLoadedHandler);
+			}
+			
+			private function usersLoadedHandler(event:Event):void
+			{
+				users = model.isDebug() ?
+					XMLList(model.dictionaryManager.dictionaries.users) :
+					XMLList(model.dictionaryManager.dictionaries.users.(valueOf().login != 'xxx'));
+			}
+			
+			private function getDetails(event:ResultEvent):void
+			{
+				var newDataProvider:Array = dataProvider;
+				for(var i:int=0; i<newDataProvider.length; i++){
+					if(newDataProvider[i].id.toString() == XML(event.result).contractor.id.*){
+						newDataProvider[i] = XML(event.result).*;
+						dataProvider = newDataProvider;
+						companies.dataProvider = dataProvider;
+						break;
+					}
+				}
+			}
+			
+			private var editedRenderer:ContractorRenderer;
+			
+			/* private function companyEditHandler(event:Event):void
+			{
+				var editWindow:CatalogueItemWindow = ContractorsCatalogue.showContractorWindow(event.currentTarget.data.id.*);
+			} */
+			
+			private function userEditHandler(event:ListEvent):void
+			{
+				var window:CatalogueItemWindow;
+				if(grid.selectedItem)window = ContractorsCatalogue.showContractorWindow(grid.selectedItem.id,"contractors.forms.user");
+				window.addEventListener(CatalogueItemWindowEvent.DATA_SAVE_COMPLETE,userDataChangeHandler);
+			}
+			
+			private function userDataChangeHandler(event:CatalogueItemWindowEvent):void{
+				createDataProvider();
+			}
+			
+			public function saveProfilesAssignment():void
+			{
+				if(grid.selectedIndex >= 0)	{
+					var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand();
+					cmd.targetObject = this;
+					cmd.targetField = "user";
+					cmd.execute( { id : grid.selectedItem.id, type : 'ApplicationUser' } );
+				}			
+			}
+			
+			private var _user:XML;
+			
+			private function selectIndex():void
+			{
+				index = grid.selectedIndex;
+			}
+						
+			public function set user(value:XML):void
+			{
+				_user = value;
+				_user.contractor.permissionProfile = grid.dataProvider[index].permissionProfile;
+				var cmd:SaveBusinessObjectCommand = new SaveBusinessObjectCommand();
+				cmd.addEventListener(ResultEvent.RESULT, saveUserResult);
+				cmd.targetObject = this;
+				cmd.execute(_user);
+			}
+			
+			public function get user():XML {
+				return _user;
+			}
+			
+			private function saveUserResult(event:ResultEvent):void
+			{
+				//Alert.show("ok");
+			}
+			
+			public function getIcon(name:String):Class
+			{
+				return IconManager.getIcon(name);
+			}
+			
+			public function openUserPanel(item:XML = null):void
+			{				
+				if(item) UserPanel.showWindow(profiles,item);
+				else UserPanel.showWindow(profiles);
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:VBox width="100%" height="100%" top="4">
+		<!--<mx:List
+				id="list"
+				height="100%"
+				width="60%"
+				itemRenderer="com.makolab.components.inputComponents.ContractorRenderer"
+				dataProvider="{dataProvider}"
+				labelField=""
+				itemClick="showEmployees(XML(list.selectedItem))"
+				itemDoubleClick="editCompany(XML(list.selectedItem))"
+				doubleClickEnabled="true"
+			/>-->
+		<layoutComponents:CollapsablePanel title="Informacje o firmach" width="100%" maxHeight="400">
+			<mx:Repeater id="companies" dataProvider="{dataProvider}">
+				<inputComponents:ContractorRenderer data="{companies.currentItem}" allowModification="{ModelLocator.getInstance().permissionManager.isEnabled('administration.ownCompanies.edit')}" width="100%"/>
+				<!--<inputComponents:ExtendedContractorRenderer id="renderer" data="{companies.currentItem}" edit="companyEditHandler(event)" width="100%" height="100%"/>-->
+			</mx:Repeater>
+		</layoutComponents:CollapsablePanel>
+		<mx:VBox height="100%" width="100%">
+			<mx:HBox width="100%" paddingRight="4" paddingLeft="5">
+				<!--
+				//permission hard coded
+				-->
+				<permission:ButtonComponent label="{languageManager.labels.common.add}" width="100" click="openUserPanel()" permissionKey="administration.ownCompanies.users.add,administration.ownCompanies.users.edit,administration.ownCompanies.users.edit.changeUsersPassword,administration.ownCompanies.users.edit.editPermissions,administration.ownCompanies.users.edit.editAssignedToBranch" />
+				<permission:ButtonComponent label="{languageManager.labels.common.edit}" width="100" enabled="{grid.selectedItem}" click="openUserPanel(XML(grid.selectedItem))" permissionKey="administration.ownCompanies.users.edit,administration.ownCompanies.users.list"/>
+			</mx:HBox>
+			<!--
+			//permission hard coded
+			-->
+			<lineList:LineList
+				id="grid"
+				height="100%"
+				width="100%"
+				doubleClickEnabled="{ModelLocator.getInstance().permissionManager.isEnabled('administration.ownCompanies.users.edit')}"
+				itemDoubleClick="openUserPanel(XML(grid.selectedItem))"
+				editable="false"
+				dataProvider="{users}"
+				itemFocusOut="selectIndex(); saveProfilesAssignment()"
+				permissionKey="administration.ownCompanies.users.list"
+				>
+				<lineList:columns>
+					<mx:DataGridColumn editable="false" headerText="{LanguageManager.getInstance().labels.common.nameAndSurname}" dataField="shortName"/>
+					<mx:DataGridColumn editable="false" headerText="{LanguageManager.getInstance().labels.common.login}" dataField="login"/>
+					<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.profile}" dataField="permissionProfile">
+						<mx:itemRenderer>
+							<mx:Component>							
+								<!-- 
+									Ten komponent nie zawsze wyświetla/odświeża dane. Wymieniam na LabelRenderera
+									<inputComponents:DictionaryRenderer
+									dataProvider="{outerDocument.profiles.*}"
+									valueMapping="{{ '@id' : '*' }}"
+									labelField="@label"/>
+								-->
+									<inputComponents:LabelRenderer text="{outerDocument.profiles.*.(@id == listData.label).@label}"/>						
+							</mx:Component>
+						</mx:itemRenderer>
+					</mx:DataGridColumn>
+					<mx:DataGridColumn editable="false" headerText="{LanguageManager.getInstance().labels.common.active}" dataField="isActive" itemRenderer="com.makolab.components.inputComponents.TickRenderer"/>
+				</lineList:columns>
+			</lineList:LineList>
+		</mx:VBox>		
+	</mx:VBox>
+</mx:Canvas>

@@ -1,0 +1,521 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		width="100%"
+		click="clickHandler(event)"
+		paddingLeft="5"
+		paddingRight="5"
+		paddingTop="0"
+		paddingBottom="0"
+		backgroundColor="#f8f8f8"
+		enabled="false"
+	>
+	<mx:Metadata>
+		/**
+		 * Dispatched when the control becomes new data (when you create new assignment to itemData property).
+		 */
+		[Event(name="updateEvent", type="com.makolab.components.catalogue.CatalogueEvent")]
+		/**
+		 * Dispatched when a user clicks the operation.
+		 */
+		[Event(name="operationInvoke", type="com.makolab.components.catalogue.CatalogueEvent")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			
+			import mx.controls.LinkButton;
+			import mx.controls.Menu;
+			import mx.controls.PopUpButton;
+			import mx.events.DropdownEvent;
+			import mx.events.MenuEvent;
+			import mx.skins.halo.PopUpButtonSkin;
+			
+			import assets.MyPopUpButtonSkin;
+		
+			public static const CANCELLED:String = "-20";
+			public static const COMMITED:String = "40";
+			public static const SAVED:String = "20";
+			public static const BOOKED:String = "60";
+			
+			private var _permissionKey:String;
+			private var _selectedItems:Array;
+			
+			public function get permissionKey():String {
+				return _permissionKey;
+			}
+			public function set selectedItems(value:Array):void {
+				_selectedItems=value;
+			}
+			public function set permissionKey(value:String):void {
+				_permissionKey = value;
+				
+				var per:Boolean = true;
+				var permissions:Array = value.split(',');
+				
+				for each(var permision:String in permissions) {
+					
+					// dodatek jeszcze nie użyty na ory;
+					if(permision.indexOf('|')>-1) {
+						var orPermissions:Array = permision.split('|');
+						var orPer:Boolean = false;
+						for each(var orPermision:String in orPermissions) {
+							orPer = orPer || ModelLocator.getInstance().permissionManager.isEnabled(orPermision);
+						}
+						per = per && orPer;
+					} else {
+						//trace("permision:",permision,ModelLocator.getInstance().permissionManager.isEnabled(permision));
+						per = per && ModelLocator.getInstance().permissionManager.isEnabled(permision);
+					}
+					
+					//per = per && ModelLocator.getInstance().permissionManager.isEnabled(permision);
+				}
+				
+				if(!per || value == null) {
+					this.visible = false;
+					this.includeInLayout = false;
+				} else {
+					this.visible = true;
+					this.includeInLayout = true;
+				}
+			}
+			
+			public var extraPermissionKey:Array;
+			
+			private var _extendedOperations:Array;
+			public function set extendedOperations(value:Array):void
+			{
+				_extendedOperations = value;
+				if (popUpButton)
+				{
+					(popUpButton.popUp as Menu).dataProvider = _extendedOperations;
+				}
+			}
+			public function get extendedOperations():Array
+			{
+				return _extendedOperations;
+			}
+			
+			public static function getOperation(config:XML):CatalogueOperation
+			{
+				var operation:CatalogueOperation;
+				
+				if (config)
+				{
+					var type:String = config.@type.toString();
+					switch(type)
+					{
+						case "CreateNewDocumentOperation":
+							operation = new CreateNewDocumentOperation();
+							operation.operationId = config.@id;
+							(operation as CreateNewDocumentOperation).configuration = config;
+							break;
+					}
+				}
+				
+				return operation;
+			}
+			
+			protected var popUpButton:PopUpButton;
+			
+			/**
+			 * Icon image source.
+			 */
+			[Bindable]
+			public var image:Object = "default.gif";
+			// operacja wywolywana automatycznie po dwukliku
+			/**
+			 * Determines if the operation is the default one.
+			 */
+			public var defaultOperation:Boolean = false;
+			/**
+			 * Operation's id.
+			 */
+			public var operationId:String;
+			
+			/* private function enableFunction(value:Object):Boolean
+			{
+				if(value != null)return true;
+				else return false;
+			} */
+			
+			[Bindable]
+			private var _itemData:Object;
+			
+			protected var model:ModelLocator = ModelLocator.getInstance();
+			
+			protected var isPending:Boolean = false;
+			
+			[Bindable]
+			public override function set visible(value:Boolean):void
+			{
+				//height = value ? NaN : 0;
+				includeInLayout = value;
+				super.visible = value;
+			}
+			
+			/**
+			 * Use this property to pass data to the control.
+			 */
+			[Bindable]
+			public function set itemData(val: Object):void
+			{
+				_itemData = val;
+				var typeDescriptor:DocumentTypeDescriptor;
+				if(val && val.*.documentTypeId.toString() != "")typeDescriptor = new DocumentTypeDescriptor(val.*.documentTypeId);
+				// domyslne ustawienie widocznosci i dostepnosci, do nadpisania w obsludze zdarzenia
+				var docStatus:String = "";
+				if(val)docStatus = val.*.status.*.toString();
+				
+				// jezeli wczesniej dana kontrolka zostala ukryta, nie sprawdzaj dalszych warunkow (bo dalej jest this.visible = true) 
+				if(
+					(operationId == "sendPictureToPresta"||operationId == "addPictureToPresta"||operationId == "operationDeleteItem" || operationId == "operationDeleteContractor" || operationId== "operationAccountancy"||
+						operationId == "operationLink1Item"||operationId == "operationLink2Item"||operationId == "operationLink3Item"||operationId == "operationLink4Item"||operationId == "operationLink5Item")
+					&& this.visible == false
+				) return;
+				
+				if(operationId == "operationOrderToWarehouse" && typeDescriptor && typeDescriptor.isIncomeShiftOrder)
+				{
+					this.enabled = false;
+					this.visible = true;
+					this.includeInLayout = true;
+					return;
+				}
+				
+				this.visible = true;
+				this.includeInLayout = true;
+				
+				//przerobka do testow
+				
+				var per:Boolean = true;
+				if(permissionKey) {
+					var permissions:Array = permissionKey.split(',');
+					
+					for each(var permision:String in permissions) {
+						
+						if(permision.indexOf('|')) {
+							var orPermissions:Array = permision.split('|');
+							var orPer:Boolean = false;
+							for each(var orPermision:String in orPermissions) {
+								orPer = orPer || ModelLocator.getInstance().permissionManager.isEnabled(orPermision);
+							}
+							per = per && orPer;
+						} else {
+							per = per && ModelLocator.getInstance().permissionManager.isEnabled(permision);
+						}
+						
+						//per = per && ModelLocator.getInstance().permissionManager.isEnabled(permision);
+					}
+					
+					if(!per || permissionKey == null) {
+						this.enabled = false;
+						this.visible = false;
+						this.includeInLayout = false;
+						
+					} else {
+						this.enabled = true;
+						this.visible = true;
+						this.includeInLayout = true;
+					}
+				} else {
+					this.enabled = model.permissionManager.isEnabled(permissionKey);
+					if(model.permissionManager.isHidden(permissionKey)){
+						this.visible = false;
+						this.includeInLayout = false;
+					}
+				}
+				
+				if(this.enabled) {
+					if(val == null || (String(val) == "" && val.@*.length() == 0))this.enabled = false;
+					else this.enabled = true;
+					if(operationId == "operationOrderToWarehouse" && docStatus < COMMITED)this.enabled = false;
+					//sprawdzamy czy rezerwacja/zamówienie jest w pełni zrealizowane i ew. wyszarzamy operację.
+					if(val != null && operationId == "operationOrderToWarehouse" && docStatus >= COMMITED){
+						var status:Boolean = false; //na wszelki wypadek zeby operacja nie mrugala na wolnym kompie i duzym zamowieniu
+						
+						for each(var line:Object in itemData.commercialDocument.lines.line){
+							var totalQuantity:Number = 0;
+							for each(var relation:Object in line.commercialWarehouseRelations.commercialWarehouseRelation){
+								if(relation.isOrderRelation.* == "1")totalQuantity += Number(relation.quantity.*);
+							}
+							if(totalQuantity < Number(line.quantity.*)){
+								status = true;
+								break;
+							}
+						}
+						
+						this.enabled = status;
+					}
+					
+					if(operationId == "operationAddDocumentToClipboard")
+					{
+						if(val && val.length() > 0 && parseInt(val.*[0].status.*) >= 40)
+							this.enabled = true;
+						else
+							this.enabled = false;
+					}
+					
+					if(operationId == "createOutcomeShift")
+					{
+						if(val && val.length() > 0
+						&& DictionaryManager.getInstance().getById(val.*[0].documentTypeId.*)
+						&& DictionaryManager.getInstance().getById(val.*[0].documentTypeId.*).xmlOptions.*.*.@warehouseDirection.length() > 0
+						&& String(DictionaryManager.getInstance().getById(val.*[0].documentTypeId.*).xmlOptions.*.*.@warehouseDirection) == 'income')
+						{
+							this.visible = true;
+							this.includeInLayout = true;
+							this.enabled = true;
+						}
+						else
+						{
+							this.visible = true;
+							this.includeInLayout = true;
+							this.enabled = false;
+						}
+					}
+					
+					//sprawdzamy czy wydruk fiskalny jest dopuszczalny
+					if(operationId == "operationPrintDocumentFiscal")
+					{
+						if(val && val.length() > 0
+						&& DictionaryManager.getInstance().getById(val.*[0].documentTypeId.*)
+						&& String(DictionaryManager.getInstance().getById(val.*[0].documentTypeId.*).xmlOptions.*.commercialDocument.@defaultFiscalPrintProfile) != ''
+						&& val.*[0].netCalculationType.* == "0")
+						{
+							//this.visible = true;
+							//this.includeInLayout = true;
+							
+							if(docStatus < COMMITED) this.enabled = false;
+							else this.enabled = true;
+						}
+						else
+							this.enabled = false;
+							//this.visible = true;
+							//this.includeInLayout = true;
+					}
+					
+					if(operationId == "operationPrintDocumentText")
+					{
+						if(val && val.length() > 0
+						&& DictionaryManager.getInstance().getById(val.*[0].documentTypeId.*)
+						&& String(DictionaryManager.getInstance().getById(val.*[0].documentTypeId.*).xmlOptions.*.*.@defaultTextPrintProfile) != '')
+						{
+							//this.visible = true;
+							
+							if(docStatus < COMMITED) this.enabled = false;
+							else this.enabled = true;
+						}
+						else if(val && val.length() > 0
+						&& DictionaryManager.getInstance().getById(val.*[0].financialRegisterId.*)
+						&& String(DictionaryManager.getInstance().getById(val.*[0].financialRegisterId.*).xmlOptions.*.*.@defaultTextPrintProfile) != '')
+						{
+							//this.visible = true;
+							this.enabled = true;
+						} else {
+							//this.visible = false;
+							this.enabled = false;
+						}
+					}
+					
+					if(operationId == "operationPrintDocumentGraphicalLocation")
+					{
+						if(val && val.length() > 0
+						&& DictionaryManager.getInstance().getById(val.*[0].documentTypeId.*)
+						&& String(DictionaryManager.getInstance().getById(val.*[0].documentTypeId.*).xmlOptions.*.warehouseDocument.@defaultPrintLocationProfile) != ''
+						&& String(DictionaryManager.getInstance().getById(val.*[0].warehouseId.*).valuationMethod.*) == '1')
+						{
+							//this.visible = true;
+							//this.includeInLayout = true;
+							
+							if(docStatus < COMMITED) this.enabled = false;
+							else this.enabled = true;
+						}
+						else
+							this.enabled = false;
+							//this.visible = true;
+							//this.includeInLayout = true;
+					}
+					
+					if(operationId == "operationAccountancy")
+					{
+						if((typeDescriptor && typeDescriptor.xmlOptions.@simulatedInvoice.length() > 0) || !val || (val && val is XMLList && val.length() == 0))
+							enabled = false;
+						else
+							enabled = true;
+					}
+					
+					if(operationId == "operationEditBinding")
+					{
+						if(typeDescriptor && typeDescriptor.xmlOptions.@simulatedInvoice.length() > 0)
+						{
+							this.enabled = false;
+						}
+						else
+						{
+							if(val && val.length() > 0)
+								this.enabled = true;
+							else
+								this.enabled = false;
+							
+							if(docStatus == CANCELLED || docStatus == BOOKED)
+								this.enabled = false;
+							
+							if(typeDescriptor && typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_SALES_CORRECTION)
+								this.enabled = false;
+						}
+					}
+					
+					if(operationId == "operationExportDocumentToFile")
+					{
+						if(val && typeDescriptor && typeDescriptor.xmlOptions.@exportable.length() > 0)
+						{
+							this.enabled = true;
+							this.visible = true;
+							this.includeInLayout = true;
+						} else if (!(val is XML)) {
+							this.enabled = false;
+							this.visible = true;
+							this.includeInLayout = true;
+						} else {
+							this.enabled = false;
+							this.visible = true;
+							this.includeInLayout = true;
+						}
+					}
+					
+					//sprawdzenie czy jest to PZ i ma przesuniecia
+					if(operationId == "operationPrintContainerContent")
+					{
+						if(val && val.length() > 0
+							&& typeDescriptor && typeDescriptor.isWarehouseIncome &&
+							val.shiftTransaction.shifts.shift.length() > 0)
+						{
+							this.visible = true;
+							this.includeInLayout = true;
+							this.enabled = true;
+						}
+						else
+						{
+							this.visible = true;
+							this.includeInLayout = true;
+							
+							//tu zmieni na false żeby dziaao jak poprzednio
+							this.enabled = true;
+						}
+					}
+					
+					if(operationId == "operationOpenDocument")
+					{
+						if(val && ((val.financialReport.closureDate && val.financialReport.closureDate.toString() != "") || !val.financialReport.closingDate)){
+							this.enabled = true;
+						}else{
+							this.enabled = false;
+						}
+					}
+					
+					if(operationId == "operationPrintBarcodeLabelsForPurchase")
+					{
+						if(typeDescriptor && 
+							(typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_SALES ||
+							typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_PURCHASE))
+						{
+							this.enabled = true;
+							this.visible = true;
+							this.includeInLayout = true;
+						}
+						else
+						{
+							this.enabled = false;
+							this.visible = true;
+							this.includeInLayout = true;
+						}						
+					}
+				}
+				dispatchEvent(new CatalogueEvent(CatalogueEvent.UPDATE_EVENT, this, _itemData));
+			}
+			/**
+			 * @private
+			 */
+			public function get itemData():Object
+			{
+				return _itemData;
+			}
+			
+			/**
+			 * Calls the <code>invokeOperation</code> method.
+			 */
+			protected function clickHandler(event:MouseEvent):void
+			{
+				invokeOperation();
+			}
+			/**
+			 * Dispatches the operationInvoke event.
+			 */
+			public function invokeOperation(extendedOperationId:String = null):void
+			{
+				if(this.visible && this.enabled) dispatchEvent(new CatalogueEvent(CatalogueEvent.OPERATION_INVOKE, this, _itemData, null, extendedOperationId));				
+			}
+			
+			protected override function createChildren():void
+			{
+				super.createChildren();
+				if (this.extendedOperations != null && this.extendedOperations.length > 0)
+				{
+					popUpButton = new PopUpButton();
+					popUpButton.label = this.label;
+					popUpButton.percentWidth = 100;
+					popUpButton.setStyle('skin', MyPopUpButtonSkin);
+					popUpButton.setStyle('upSkin', MyPopUpButtonSkin);
+					popUpButton.setStyle('downSkin', PopUpButtonSkin);
+					popUpButton.setStyle('overSkin', PopUpButtonSkin);
+					popUpButton.setStyle('popUpDownSkin', PopUpButtonSkin);
+					popUpButton.setStyle('popUpOverSkin', PopUpButtonSkin);
+					popUpButton.setStyle('paddingLeft', 6);
+					popUpButton.setStyle('textAlign', 'left');
+					popUpButton.setStyle('themeColor', 0x9E9E9E);
+					popUpButton.setStyle('fillColors', [0xFFFFFF, 0xCCD1D1D1]);
+					popUpButton.addEventListener(DropdownEvent.OPEN, popupHandler);
+					popUpButton.addEventListener(DropdownEvent.CLOSE, popupHandler);
+					var menu:Menu = new Menu();
+					popUpButton.popUp = menu;
+					menu.dataProvider = this.extendedOperations;
+					menu.labelField = 'label';
+					menu.addEventListener(MenuEvent.ITEM_CLICK, handleItemClick);
+					menu.setStyle('paddingLeft', 0);
+					this.addChild(popUpButton);
+				}
+				else
+				{
+					var linkButton:LinkButton = new LinkButton();
+					linkButton.label = this.label;
+					linkButton.percentWidth = 100;
+					linkButton.setStyle('textAlign', 'left');
+					this.addChild(linkButton);
+				}
+			}
+			
+			protected function popupHandler(event:DropdownEvent):void
+			{
+				if (event.type == DropdownEvent.OPEN) this.popUpButton.setStyle('upSkin', PopUpButtonSkin);
+				else if (event.type == DropdownEvent.CLOSE) this.popUpButton.setStyle('upSkin', MyPopUpButtonSkin);
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+			{
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+				if (this.popUpButton && this.popUpButton.popUp) this.popUpButton.popUp.width = this.popUpButton.width;
+			}
+			
+			public function handleItemClick(event:MenuEvent):void
+			{
+				this.invokeOperation(event.item.operationId);
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:Image source="{image}" width="40" height="25" scaleContent="false" horizontalAlign="center" verticalAlign="middle"/>
+	<!--<mx:LinkButton id="linkButton" label="{label}" width="100%" textAlign="left"/>-->
+</mx:HBox>

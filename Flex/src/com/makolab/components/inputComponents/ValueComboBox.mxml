@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:ComboBox xmlns:mx="http://www.adobe.com/2006/mxml" >
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.components.inputComponents.DataObjectManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			
+			import mx.controls.dataGridClasses.DataGridListData;
+			import mx.controls.listClasses.BaseListData;
+			import mx.events.DropdownEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			[Bindable]
+			public var dictionaryName:String;
+			
+			[Bindable]
+			public var comboLabelField:String = null;
+			
+		    [Bindable("change")]
+		    [Bindable("collectionChange")]
+		    [Bindable("valueCommit")]
+		    
+		    private var _isNew:Boolean;
+		   
+		    public function set isNew(a:Boolean):void
+		    {
+		    	_isNew=a;
+		    }
+		    public function get isNew():Boolean
+		    {
+		    	return _isNew;
+		    }
+			public function set selectedValue(value:String):void
+			{
+				var index:Number = -1;
+				for (var i:String in dataProvider) if (dataProvider[i][_valueField] == value)
+				{
+					
+					index = parseInt(i);
+					break;
+				}
+			//	trace("MAMY INDEX:",selectedIndex,"::",index," val:",value);
+			//QLA ten if zosta dodany , potrzebuje testu
+			//if(index!=-1||!isNew)
+					selectedIndex = index;
+			}
+			public function get selectedValue():String
+			{
+				return selectedItem ? selectedItem[_valueField] : null;
+			}
+			
+			private var _valueField:String = 'value';
+			public function set valueField(value:String):void
+			{
+				var prevVal:String = selectedValue;
+				this._valueField = value;
+				if (prevVal != selectedValue) dispatchEvent(new Event(Event.CHANGE));
+			}
+			public function get valueField():String
+			{
+				return this._valueField;
+			}
+			
+			override public function set data(value:Object):void
+			{
+				//QLA ten if zosta dodany , potrzebuje testu
+				if(selectedValue==null&& isNew)
+				{
+					super.data = value;
+					
+					selectedValue = String(DataObjectManager.getDataObject(data, listData));
+				}
+				else if(value)
+						{
+							var list:XMLList=value as XMLList;
+							if(list &&list.length()>0)
+							{
+						super.data = value;
+						selectedValue = String(DataObjectManager.getDataObject(data, listData));
+							}
+							else
+								if(value as String)
+								selectedValue=String(value);
+						}
+				labelFunction=lFunction;
+			}
+			private function lFunction(item:Object):String
+			{
+				if(item.label is String)
+					return item.label;
+				else
+				return item.label.@lang.length()?item.label.(@lang==LanguageManager.getInstance().currentLanguage)[0]:item.label.length()?item.label:item.@label;	
+			}
+
+			
+		]]>
+	</mx:Script>
+	
+</mx:ComboBox>

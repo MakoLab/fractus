@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:rules="com.makolab.fractus.view.administration.rules.*" xmlns:actions="com.makolab.fractus.view.administration.actions.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			
+			[Bindable]public var ruleXML:XML = <root/>;
+			
+			public static function showWindow(ruleId:String = "",ruleXML:XML = null):ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:RuleCreator = new RuleCreator();
+				component.addEventListener("commited",function ():void{window.dispatchEvent(new Event("commited"));});
+				if(ruleId && ruleId != "") component.ruleId = ruleId;
+				if(ruleXML) component.ruleData = ruleXML;
+				window.innerComponent = component;
+				window.commitFunction = component.commit;
+				window.buttons = (ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL);
+				if(component.icon)window.titleIcon = component.icon;
+				window.show(null,new Rectangle(0,0,700,500),LanguageManager.getInstance().labels.title.ruleCreator);
+				return window;
+			}
+			
+			private var _ruleId:String;
+			
+			public function set ruleId(value:String):void
+			{
+				_ruleId = value;
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("item.p_getPriceRuleById",<root>{value}</root>);
+				cmd.addEventListener(ResultEvent.RESULT,getRuleHandler);
+				cmd.execute();
+			}
+			
+			public function set ruleData(value:XML):void
+			{
+				ruleXML = value.copy();
+			}
+			
+			private function getRuleHandler(event:ResultEvent):void
+			{
+				ruleXML = XML(event.result);
+				if(_ruleId && _ruleId != "")ruleXML.id = _ruleId;
+			}
+			
+			public function commit():void
+			{
+				var errors:Array = conditions.errors.concat(actions.errors);
+				if(nameInput.text == "")errors.push("Podaj nazwę reguły");
+				if(conditions.conditions.length() == 0)errors.push("Brak warunków dla reguły");
+				if(actions.actions.length() == 0)errors.push("Brak akcji dla reguły");
+				if(errors.length > 0){
+					Alert.show(errors.join("\n\n"));
+					return;
+				}
+				buildXML();
+				/* var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("item.p_createPriceRule",ruleXML);
+				cmd.addEventListener(ResultEvent.RESULT,saveResultHandler);
+				cmd.execute(); */
+				
+				dispatchEvent(new Event("commited"));
+			}
+			
+			private function buildXML():void
+			{
+				if(!ruleXML){ruleXML = <root/>};
+				if(ruleXML.id.length() == 0){
+					var xml:XML = <root><conditions/><actions/></root>;
+					xml.conditions.* = conditions.conditions;
+					xml.actions.* = actions.actions;
+					xml.name = nameInput.text;
+					if(ruleXML.uid.length() > 0)xml.uid = ruleXML.uid;
+					ruleXML = xml;
+				}else{
+					ruleXML.conditions.* = conditions.conditions;
+					ruleXML.actions.* = actions.actions;
+					ruleXML.name = nameInput.text;
+				}
+			}
+			
+			/* private function saveResultHandler(event:ResultEvent):void
+			{
+				dispatchEvent(new Event("commited"));
+			} */
+		]]>
+	</mx:Script>
+	<mx:FormItem label="Nazwa reguły" width="100%">
+		<mx:TextInput id="nameInput" width="100%" text="{ruleXML.name}" change="{ruleXML.name = nameInput.text}"/>
+	</mx:FormItem>
+	<rules:RuleConditionsGrid id="conditions" width="100%" height="60%" conditions="{ruleXML.conditions.*}"/>
+	<actions:RuleActionsGrid id="actions" width="100%" height="40%" actions="{ruleXML.actions.*}"/>
+	
+	<mx:XML id="testXML" xmlns="">
+		<root>
+		  <conditions>
+		    <condition name="itemGroups" label="Towar należący do grupy" editor="itemGroupSelector" enabled="1">
+		      <value>55D8AC80-BE67-4250-B002-2D89E490A51F,32F4C358-D589-48EC-A882-2F11A2011C0F,AE9231AA-94AA-4F3B-8E70-4ADBF19DE608,E3513787-FD52-437F-A60E-7196249EDBCC,F546CF78-D53B-4CC7-9E0E-0DF6C99139B0,06582EA2-326D-4F42-9A48-505DF5FEE7AF</value>
+		      <textValue>Nowości,Rekomendacje,Zapowiedzi,Dodruki,Test 01,Test 02</textValue>
+		    </condition>
+		    <condition name="contractorGroups" label="Kontrahent należący do grupy" editor="contractorGroupSelector" enabled="1">
+		      <value>A75DCC41-93F0-44CA-897B-96FCA9934B06,7CC1037B-9611-4D4E-8204-3AD1034B928D</value>
+		      <textValue>GRUPA1a,GRUPA1b</textValue>
+		    </condition>
+		    <condition name="dateRange" label="Data z przedziału" editor="dateRangeChooser" enabled="1">
+		      <value>
+		        <dateFrom>2010-02-16</dateFrom>
+		        <dateTo>2010-02-26T23:59:59.997</dateTo>
+		      </value>
+		      <textValue>2010-02-16 - 2010-02-26</textValue>
+		    </condition>
+		    <condition name="contractorDealing" label="Obroty na kontrahencie w ciągu ostatnich x dni" editor="numericStepper" enabled="1">
+		      <value>4</value>
+		      <textValue>4</textValue>
+		    </condition>
+		    <condition name="branch" label="Oddział" editor="branchSelector" enabled="1">
+		      <value>DFC07022-2743-4C03-8960-8FB62A85B524,3A8D5267-2721-4D2A-9260-73F538521F46</value>
+		      <textValue>Centrala,Oddział 2</textValue>
+		    </condition>
+		    <condition name="documentCategory" label="Kategoria dokumentu" editor="documentCategorySelector" enabled="1">
+		      <value>2,0</value>
+		      <textValue>Zakup,Sprzedaż</textValue>
+		    </condition>
+		  </conditions>
+		  <actions>
+		    <action name="initialNetPriceBeforeDiscount" label="Wstaw cenę kartotekową przed rabatem" enabled="1">
+		      <value>1</value>
+		    </action>
+		    <action name="initialNetPriceAfterDiscount" label="Wstaw cenę kartotekową po rabacie" enabled="1">
+		      <value>1</value>
+		    </action>
+		    <action name="discountPercent" label="Wstaw rabat procentowy" editor="currencyEditor" enabled="1">
+		      <value>14.23</value>
+		      <textValue>14.23</textValue>
+		    </action>
+		    <action name="discountAmount" label="Wstaw rabat kwotowy" editor="currencyEditor" enabled="1">
+		      <value>123.45</value>
+		      <textValue>123.45</textValue>
+		    </action>
+		  </actions>
+		  <name>testowa reguła</name>
+		</root>
+	</mx:XML>
+</mx:VBox>

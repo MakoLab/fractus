@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem implements="com.makolab.fractus.view.documents.reports.filters.IReportFilter" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import com.makolab.components.catalogue.CatalogueFilterError;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			private var _parameters:XML
+			[Bindable]
+			public var allowEmptySelection:Boolean = false;
+			
+			[Bindable]
+			public function set parameters(value:XML):void
+			{
+				_parameters = value;
+			}
+			
+			public function get parameters():XML
+			{
+				return _parameters;
+			}
+			
+			public function set text (value:String):void
+			{
+				textInput.text = value;
+				setParameters(parameters);
+			}
+			public function get text():String
+			{
+				return textInput.text;
+			}
+			
+			public var fieldName:String = null;
+			
+			private function setParameters(params:XML):void
+			{
+				// filters/column[@fieldName = {fieldName}]
+				if (fieldName)
+				{
+					var txt:String = textInput.text;
+					if (txt)
+					{
+						if (params.filters.length() == 0) params.appendChild(<filters/>);
+						if (params.filters.column.(valueOf().@field == this.fieldName).length() == 0) params.filters.appendChild(<column field={this.fieldName}/>);
+						params.filters.column.(valueOf().@field == this.fieldName).* = txt;
+					}
+					else
+					{
+						Tools.xmlDeleteNodes(params.filters.column.(valueOf().@field == this.fieldName));
+					}
+				}
+				// query
+				else
+				{
+					if(textInput.text.length != 0)
+					{
+						if(!params.query)params.appendChild(<query/>);
+						params.query.* = textInput.text;
+					}
+					else if(params.query) delete params.query;
+				}
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			public function get validationError():String
+			{
+				return null;
+			}
+			
+			public function get stringValue():String
+			{
+				return textInput.text;
+			}
+		]]>
+	</mx:Script>
+		<mx:TextInput id="textInput" change="setParameters(parameters)" width="100%"/>
+</mx:FormItem>

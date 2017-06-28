@@ -1,0 +1,459 @@
+﻿/* DEFAULTS
+----------------------------------------------------------*/
+
+html {
+    background-image: url(Images/back.jpg);
+	background-repeat: no-repeat;
+    background-position: top left;
+}
+
+body   
+{
+    font-size: .80em;
+    font-family: "Helvetica Neue", "Lucida Grande", "Segoe UI", Arial, Helvetica, Verdana, sans-serif;
+    margin: 0px;
+    padding: 0px;
+    color: #696969;
+}
+
+a:link, a:visited
+{
+    color: #034af3;
+}
+
+a:hover
+{
+    color: #1d60ff;
+    text-decoration: none;
+}
+
+a:active
+{
+    color: #034af3;
+}
+
+p
+{
+    margin-bottom: 10px;
+    line-height: 1.6em;
+}
+
+
+/* HEADINGS   
+----------------------------------------------------------*/
+
+h1, h2, h3, h4, h5, h6
+{
+    font-size: 1.5em;
+    color: #666666;
+    font-variant: small-caps;
+    text-transform: none;
+    font-weight: 200;
+    margin-bottom: 0px;
+}
+
+h1
+{
+    font-size: 1.6em;
+    padding-bottom: 0px;
+    margin-bottom: 0px;
+}
+
+h2
+{
+    font-size: 1.5em;
+    font-weight: 600;
+}
+
+h3
+{
+    font-size: 1.2em;
+}
+
+h4
+{
+    font-size: 1.1em;
+}
+
+h5, h6
+{
+    font-size: 1em;
+}
+
+/* this rule styles <h1> and <h2> tags that are the 
+first child of the left and right table columns */
+.rightColumn > h1, .rightColumn > h2, .leftColumn > h1, .leftColumn > h2
+{
+    margin-top: 0px;
+}
+
+
+/* PRIMARY LAYOUT ELEMENTS   
+----------------------------------------------------------*/
+
+.page
+{
+    width: 960px;
+    background-color: #fff;
+    margin: 20px auto 0px auto;
+    border: 1px solid #665f55;
+    padding-bottom: 5px;
+}
+
+.header
+{
+    position: relative;
+    margin: 0px;
+    padding: 0px;
+    background: #a09484;
+	background-image: url(Images/sykomat_logo_top.png);
+	background-position: top right;
+	background-repeat: no-repeat;
+    width: 100%;
+}
+
+.header h1
+{
+    font-weight: 700;
+    margin: 0px;
+    padding: 0px 0px 0px 20px;
+    color: #f9f9f9;
+    border: none;
+    line-height: 2em;
+    font-size: 2em;
+}
+
+.main
+{
+    padding: 0px 12px;
+    margin: 12px 8px -18px 8px;
+    min-height: 100px;
+}
+
+.leftCol
+{
+    padding: 6px 0px;
+    margin: 12px 8px 8px 8px;
+    width: 200px;
+    min-height: 200px;
+}
+
+.footer
+{
+    color: #4e5766;
+    padding: 8px 0px 0px 0px;
+    margin: 0px auto;
+    text-align: center;
+    line-height: normal;
+}
+
+
+/* TAB MENU   
+----------------------------------------------------------*/
+
+div.hideSkiplink
+{
+    background-color:#665f55;
+    width:100%;
+    height: 40px;
+    position: relative;
+	background-image: url(Images/sykomat_logo_bottom.png);
+	background-position: top right;
+	background-repeat: no-repeat;
+}
+
+div.menu
+{
+    padding: 4px 0px 4px 8px;
+}
+
+div.menu ul
+{
+    list-style: none;
+    margin: 0px;
+    padding: 0px;
+    width: auto;
+}
+
+div.menu ul li a, div.menu ul li a:visited
+{
+    background-color: #b8aa99;
+    border: 1px #a09484 solid;
+    color: #665f55;
+    display: block;
+    line-height: 1.35em;
+    padding: 4px 20px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+div.menu ul li a:hover
+{
+    background-color: #b8aa99;
+    color: #99ee00;
+    text-decoration: none;
+}
+
+div.menu ul li a:active
+{
+    background-color: #b8aa99;
+    color: #99ee00;
+    text-decoration: none;
+}
+
+/* FORM ELEMENTS   
+----------------------------------------------------------*/
+
+fieldset
+{
+    margin: 1em 0px;
+    padding: 1em;
+    border: 1px solid #ccc;
+}
+
+fieldset p 
+{
+    margin: 2px 12px 10px 10px;
+}
+
+fieldset.login label, fieldset.register label, fieldset.changePassword label
+{
+    display: block;
+}
+
+fieldset label.inline 
+{
+    display: inline;
+}
+
+legend 
+{
+    font-size: 1.1em;
+    font-weight: 600;
+    padding: 2px 4px 8px 4px;
+}
+
+input.textEntry 
+{
+    width: 320px;
+    border: 1px solid #ccc;
+}
+
+input.passwordEntry 
+{
+    width: 320px;
+    border: 1px solid #ccc;
+}
+
+div.accountInfo
+{
+    width: 42%;
+}
+
+/* MISC  
+----------------------------------------------------------*/
+
+.clear
+{
+    clear: both;
+}
+
+.title
+{
+    display: block;
+    float: left;
+    text-align: left;
+    width: auto;
+}
+
+.loginDisplay
+{
+    font-size: 1.1em;
+    display: block;
+    text-align: right;
+    padding: 10px;
+    color: #666;
+    height: 30px;
+	margin-right: 15px;
+	position: relative;
+	top: 100px;
+}
+
+.loginDisplay a:link
+{
+    color: #666;
+}
+
+.loginDisplay a:visited
+{
+    color: #666;
+}
+
+.loginDisplay a:hover
+{
+    color: #666;
+}
+
+.failureNotification
+{
+    font-size: 1.2em;
+    color: Red;
+}
+
+.bold
+{
+    font-weight: bold;
+}
+
+.submitButton
+{
+    text-align: right;
+    padding-right: 10px;
+}
+
+/*ACCORDION*/
+.ui-accordion {}
+
+.ui-accordion-header {
+    background-color: Gray;
+    background-image: url(Images/gradient_gray.jpg);
+	background-repeat: repeat-x;
+    height: 30px;
+    padding-top: 10px;
+    padding-left: 10px;
+    cursor: pointer;
+}
+.ui-accordion-header a {
+    color: White;
+    font-weight: bold;
+    padding-left: 20px;
+    text-decoration: none;
+}
+.ui-state-active a {
+    color: #99ee00;
+}
+.ui-state-default {
+}
+.ui-icon {
+    background-image: url(Images/ui-icons_s.png);
+	background-repeat: no-repeat;
+	width: 16px;
+	height: 20px;
+    display: block; 
+    position: absolute; 
+    overflow: hidden; 
+}
+.ui-icon-triangle-1-s {
+	background-position: -64px 5px;
+}
+.ui-icon-triangle-1-e {
+    background-position: -32px 5px;
+}
+.ui-accordion-content-active {
+    /*border: 0px solid #a09484;*/
+}
+
+table.dataTable {
+    border: 1px solid #a09484;
+    border-bottom: 5px solid #a09484;
+}
+
+.dataTable {
+    border: 1px solid #a09484;
+    border-bottom: 5px solid #a09484;
+}
+
+.ui-accordion-content {
+}
+
+.dlDiv {   
+    height: auto;
+    padding: 10px;
+}
+
+.dt {
+    width: 160px;
+    vertical-align: top;
+}
+
+.dd {
+    font-weight: bold;
+    text-align: justify;
+}
+
+.header_status {
+float: right;
+}
+
+.dataTable {
+    text-align: left;
+    width: 100%;
+}
+
+.dataTable th {
+    border-bottom: 1px solid #a09484;
+    padding: 5px;
+    background-color: #d4ccbf;
+    text-align: left;
+}
+
+.dataTable th.right {
+    text-align: right !important;
+}
+
+.dataTable th.center {
+    text-align: center !important;
+}
+
+
+.dataTable td {
+    padding: 5px;
+}
+
+.dataTable .odd td {
+    background-color: #f2eadc;
+}
+
+.topMenuItem {
+     float: left;
+     margin: 5px;
+     padding: 5px;
+     border: 1px #a09484 solid;
+     background-color: #a09484;
+}
+
+.topMenuItem a {
+    text-decoration: none;
+    width: 100%;
+    height: 100%;
+    color: #665f55;
+    font-weight: bold;
+}
+
+.topMenuItem.hover
+{
+    background-color: #b8aa99;
+}
+
+.topMenuItem a:hover, .topMenuItem a:active
+{
+    color: #99ee00;
+}
+
+.createdBy
+{
+	margin-top: 10px;
+	color: #666;
+	position: relative;
+	top: 6px;
+	left: 18px;
+	width: 100%;
+	text-align: right;
+}
+
+.createdBy a
+{
+	color: #666;
+	text-decoration: none;
+	font-weight: bold;
+}

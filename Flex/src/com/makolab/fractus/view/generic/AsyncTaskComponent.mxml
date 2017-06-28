@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:utils="flash.utils.*">
+	<mx:Metadata>
+		[Event(name="result", type="mx.rpc.events.ResultEvent")]
+		[Event(name="fault", type="mx.rpc.events.FaultEvent")]
+		[Event(name="abort", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:ProgressBar id="progressBar" mode="manual" width="100%" label="" labelPlacement="center" enabled="false"/>
+	<mx:Button id="btAbort" label="{LanguageManager.getInstance().labels.common.stopBreak}" enabled="false" click="abortTask()"/>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.rpc.Fault;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.AsyncTaskCommand;
+			
+			public static const STATUS_TERMINATED:String = 'terminated';
+			public static const STATUS_ERROR:String = 'error';
+			public static const STATUS_COMPLETED:String = 'completed';
+			public static const STATUS_IN_PROGRESS:String = 'inProgress';
+			public static const STATUS_IGNORED:String = 'ignored';
+			
+			public var indeterminate:Boolean = false;
+			
+			public function startTask(params:XMLList):void
+			{
+				var cmd:AsyncTaskCommand = new AsyncTaskCommand(AsyncTaskCommand.CREATE_TASK, taskName, procedureName);
+				cmd.addEventListener(ResultEvent.RESULT, handleCreateTask);
+				cmd.addEventListener(FaultEvent.FAULT, handleFault);
+				cmd.execute(params);
+				btAbort.enabled = true;
+				if (!timer) timer = new Timer(this.delay);
+				timer.addEventListener(TimerEvent.TIMER, updateProgress);
+				progressBar.enabled = true;
+				progressBar.setProgress(0, 100);
+				progressBar.indeterminate = this.indeterminate;
+			}
+			
+			protected function handleCreateTask(event:ResultEvent):void
+			{
+				this.taskId = AsyncTaskCommand(event.target).taskId;
+				timer.start();
+			}
+			
+			public function abortTask():void
+			{
+				stopTask();
+				if (this.taskId)
+				{
+					var cmd:AsyncTaskCommand = new AsyncTaskCommand(AsyncTaskCommand.TERMINATE_TASK);
+					cmd.execute(this.taskId);
+				}
+				this.dispatchEvent(new Event("abort"));
+			}
+			
+			public var taskName:String;
+			public var procedureName:String = null;
+			[Bindable]
+			public var delay:Number = 500;
+			
+			public var taskId:String;
+			
+			[Bindable]
+			public var result:XML;
+			
+			protected var timer:Timer;
+			
+			public var status:String;
+			
+			protected function updateProgress(arg:Object):void
+			{
+				if (!taskId || !timer.running) return;
+				var cmd:AsyncTaskCommand = new AsyncTaskCommand(AsyncTaskCommand.QUERY_TASK);
+				cmd.addEventListener(ResultEvent.RESULT, handleProgressResult);
+				cmd.addEventListener(FaultEvent.FAULT, handleFault);				
+				cmd.execute(taskId);
+			}
+			
+			protected function stopTask():void
+			{
+				if (timer) timer.stop();
+				btAbort.enabled = false;
+				progressBar.enabled = false;
+				progressBar.indeterminate = false;
+			}
+			
+			protected function handleFault(event:FaultEvent):void
+			{
+				stopTask();
+				this.dispatchEvent(event);
+			}
+			
+			protected function handleProgressResult(event:ResultEvent):void
+			{
+				var cmd:AsyncTaskCommand = AsyncTaskCommand(event.target);
+				
+				if(cmd.status == STATUS_IGNORED) return;
+				
+				var progress:Number = cmd.progress;
+				this.status = cmd.status;
+				this.progressBar.setProgress(progress, 100);
+				if (progress >= 100 || status == STATUS_COMPLETED || status == STATUS_ERROR)
+				{
+					stopTask();
+					var cmd2:AsyncTaskCommand = new AsyncTaskCommand(AsyncTaskCommand.GET_TASK_RESULT);
+					cmd2.addEventListener(ResultEvent.RESULT, handleTaskResult);
+					cmd2.execute(this.taskId);
+				}
+			}
+			
+			protected function handleTaskResult(event:ResultEvent):void
+			{
+				this.result = AsyncTaskCommand(event.target).taskResult;
+				if (status == STATUS_ERROR) this.dispatchEvent(FaultEvent.createEvent(new Fault(STATUS_ERROR, this.result))); 
+				else this.dispatchEvent(event);
+			}
+			
+		]]>
+	</mx:Script>
+</mx:HBox>

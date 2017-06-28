@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CatalogueOperation xmlns="com.makolab.components.catalogue.*" xmlns:mx="http://www.adobe.com/2006/mxml"
+	image="{customImage}"
+	label = "{customLabel}"
+	operationInvoke="handleInvoke(event)">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.inputComponents.DocumentImportDetailsColorMix;
+			import com.makolab.components.util.LocalFileLoader;
+			import com.makolab.components.inputComponents.DocumentImportDetails;
+			import com.makolab.components.catalogue.CatalogueEvent;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ConfigManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import assets.IconManager;
+			import mx.controls.Alert;
+			
+			[Bindable]
+			private var _itemData:Object;
+			
+			[Bindable]
+			public var expectedFileType:String;
+			
+			[Bindable]
+			public var documentCategory:uint = DocumentTypeDescriptor.CATEGORY_WAREHOUSE;
+			
+			[Bindable]
+			public var template:String = "internalIncome";
+			
+			[Bindable]
+			public var customLabel:String = LanguageManager.getInstance().labels.documents.importDocument;
+			
+			[Bindable]
+			public var customImage:Object = IconManager.getIcon('save_small');
+			
+			public var fileLoader:LocalFileLoader = new LocalFileLoader;
+			
+			private var putService:String="/PutFile";
+			private var putServiceAnsi:String="/PutFileAnsi";
+			private var fileTypes:Object = {
+				portaOrder : [new FileFilter("ZAM","*.zam"),new FileFilter(LanguageManager.getInstance().labels.documentFilters.all, "*.*")],
+				portaOrderCsv : [new FileFilter("Pliki excel","*.csv"),new FileFilter(LanguageManager.getInstance().labels.documentFilters.all, "*.*")],
+				
+				externalPortaSalesInvoice : [new FileFilter("XML","*.xml"),new FileFilter(LanguageManager.getInstance().labels.documentFilters.all, "*.*")],
+				externalPortaSalesXml : [new FileFilter("XML","*.xml"),new FileFilter(LanguageManager.getInstance().labels.documentFilters.all, "*.*")]
+				
+			};
+			
+			public override function set itemData(val:Object):void
+			{
+				this._itemData = val;
+			}
+			
+			public override function get itemData():Object
+			{
+				return this._itemData;
+			}
+			
+			protected function handleInvoke(event:CatalogueEvent):void
+			{
+				//funkcja fileLoaded musi odbiera XML i nazwę pliku.
+				if(this.expectedFileType=="portaOrderCsv")
+				fileLoader.loadFile(fileLoaded,fileTypes[expectedFileType],putServiceAnsi);
+				else
+				fileLoader.loadFile(fileLoaded,fileTypes[expectedFileType],putService);
+			}
+			
+			public function fileLoaded(resultFile:XML, fileName:String):void
+			{
+				var fileContent:XML = resultFile;
+
+				if((this.expectedFileType == "externalPortaSalesInvoice") && (fileContent.name() == "Document-Invoice"))
+				{
+					var cmd:ShowDocumentEditorCommand = new ShowDocumentEditorCommand(this.documentCategory);
+					cmd.template = this.template;
+					
+					var tempXML:XML = 	<source>
+											<insertMissingItems>1</insertMissingItems>
+											{fileContent}
+										</source>;
+					tempXML.@type = this.expectedFileType;
+					cmd.source = tempXML;
+					cmd.execute();
+				}
+				else if((this.expectedFileType == "externalPortaSalesXml") && (fileContent.name() == "karta-klienta"))
+				{//ecorsonOrder
+					//this.documentCategory=DocumentTypeDescriptor.CATEGORY_SALES_PREORDER;
+					var cmd1:ShowDocumentEditorCommand = new ShowDocumentEditorCommand(this.documentCategory);
+					cmd1.template = this.template;
+					var tempXML1:XML =	<source type="ecorsonOrder">
+											<insertMissingItems>1</insertMissingItems>
+											{fileContent}
+										</source>;
+					tempXML1.@fileName = fileName;
+					cmd1.source = tempXML1;
+					cmd1.isImport=true;
+					cmd1.execute();
+					//var dc:DocumentImportDetailsColorMix=new DocumentImportDetailsColorMix();
+					//DocumentImportDetailsColorMix.showWindow(this, this.documentCategory, this.template, this.expectedFileType, fileName, fileContent);
+				}
+				else if ((this.expectedFileType == "portaOrder") && (!fileContent.name()))
+				{
+					DocumentImportDetails.showWindow(this, this.documentCategory, this.template, this.expectedFileType, fileName, fileContent);
+				}
+				else if ((this.expectedFileType == "portaOrderCsv") && (!fileContent.name()))
+				{
+					DocumentImportDetails.showWindow(this, this.documentCategory, this.template, this.expectedFileType, fileName, fileContent,"","",";",1);
+				}
+				else
+				{
+					Alert.show(LanguageManager.getInstance().labels.error.wrongImportFileType);
+					return;
+				}
+			}
+
+			private function checkDocumentType(receivedFileType:String):Boolean
+			{
+				if((!expectedFileType) ||(expectedFileType == receivedFileType)){
+					return true;
+				}
+				return false;
+			}
+		]]>
+	</mx:Script>
+	<!-- Konfiguracja w bazie externalFilesImport-->
+</CatalogueOperation>

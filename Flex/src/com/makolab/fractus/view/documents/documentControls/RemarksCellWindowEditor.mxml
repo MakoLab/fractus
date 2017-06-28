@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CellDetailsWindowEditor xmlns="com.makolab.fractus.view.generic.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.document.ProtocolComplainDocumentLine;
+			
+			[Bindable]
+			private var _itemData:Object;
+			
+			public override function set itemData(value:Object):void
+			{
+				this._itemData = value;
+				
+				if(tArea && value)
+				{
+					tArea.text  = ProtocolComplainDocumentLine(value).remarks;
+				}
+			}
+			
+			public override function get itemData():Object
+			{
+				return this._itemData;
+			}
+			
+			public  override  function load():void
+			{	
+				tArea.text  = ProtocolComplainDocumentLine(itemData).remarks;
+				tArea.setFocus();
+			}
+			
+			public  override function  save():void
+			{
+				ProtocolComplainDocumentLine(itemData).remarks = this.tArea.text;
+			}
+		]]>
+	</mx:Script>
+	<mx:TextArea id="tArea" width="100%" height="90%" />
+</CellDetailsWindowEditor>

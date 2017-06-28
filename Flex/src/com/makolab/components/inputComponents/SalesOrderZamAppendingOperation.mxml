@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CatalogueOperation xmlns="com.makolab.components.catalogue.*" xmlns:mx="http://www.adobe.com/2006/mxml"
+	creationComplete = "init()"
+	image="{customImage}"
+	label = "{customLabel}"
+	operationInvoke="handleInvoke(event)" visible="{isOperationEnabled}" enabled="{isOperationEnabled}" includeInLayout="{isOperationEnabled}">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.LocalFileLoader;
+			import com.makolab.components.inputComponents.DocumentImportDetails;
+			import com.makolab.components.catalogue.CatalogueEvent;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ConfigManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import assets.IconManager;
+			import mx.controls.Alert;
+	
+			[Bindable] 
+			private var isOperationEnabled:Boolean;
+			
+			[Bindable]
+			private var _itemData:Object;			
+			
+			[Bindable]
+			public var documentType:String = "CommercialDocument";			
+						
+			[Bindable]
+			public var customLabel:String = LanguageManager.getInstance().labels.documents.importDocument;
+			
+			[Bindable]
+			public var customImage:Object = IconManager.getIcon('save_small');
+			
+			[Bindable]
+			public var expectedFileType:String;
+			
+			public var fileLoader:LocalFileLoader = new LocalFileLoader;
+			
+			private var fileTypes:Object = {
+				portaOrder : [new FileFilter("ZAM","*.zam"),new FileFilter("wszystkie","*.*")],
+				portaOrderCsv : [new FileFilter("Pliki excel","*.csv"),new FileFilter(LanguageManager.getInstance().labels.documentFilters.all, "*.*")]
+				
+			};
+					private var putService:String="/PutFile";
+			private var putServiceAnsi:String="/PutFileAnsi";		
+			public var documentId:String = null;
+			
+			public override function set itemData(val:Object):void
+			{
+				this._itemData = val;
+			}
+			
+			public override function get itemData():Object
+			{
+				return this._itemData;
+			}
+			
+			protected function init():void
+			{
+				if(model.configManager.isAvailable("externalFilesImport"))
+				{
+					setVisibility(Boolean(parseInt(model.configManager.getXMLValue("externalFilesImport").showImportOperation.salesOrderPorta[0])));
+				}
+				else
+				{
+					ModelLocator.getInstance().configManager.requestList(["externalFilesImport"],importConfigurationLoaded);
+				}
+			}
+			
+			protected function importConfigurationLoaded():void
+			{		
+				if(model.configManager.isAvailable("externalFilesImport"))
+				{
+					setVisibility(Boolean(parseInt(model.configManager.getXMLValue("externalFilesImport").showImportOperation.salesOrderPorta[0])));
+				}
+				else
+				{
+					setVisibility(false);
+				}
+			}
+			
+			public function setVisibility(isOperationEnabled:Boolean):void
+			{
+				this.visible = isOperationEnabled;
+				this.enabled = isOperationEnabled;
+				this.includeInLayout = isOperationEnabled;
+			}
+			
+			protected function handleInvoke(event:CatalogueEvent):void
+			{
+				//funkcja fileLoaded musi odbiera XML i nazwę pliku.
+				//fileLoader.loadFile(fileLoaded,fileTypes[expectedFileType]);
+				
+				if(this.expectedFileType=="portaOrderCsv")
+				fileLoader.loadFile(fileLoaded,fileTypes[expectedFileType],putServiceAnsi);
+				else
+				fileLoader.loadFile(fileLoaded,fileTypes[expectedFileType],putService);
+			}
+			
+			public function fileLoaded(resultFile:XML, fileName:String):void
+			{
+				var fileContent:XML = resultFile;
+				//DocumentImportDetails.showWindow(this, 0, null, this.expectedFileType, fileName, fileContent, documentId, documentType);
+				if ((this.expectedFileType == "portaOrder") && (!fileContent.name()))
+				{
+					DocumentImportDetails.showWindow(this, 0, null, this.expectedFileType, fileName, fileContent, documentId, documentType);
+				}
+				else if ((this.expectedFileType == "portaOrderCsv") && (!fileContent.name()))
+				{
+					DocumentImportDetails.showWindow(this, 0, null, this.expectedFileType, fileName, fileContent, documentId, documentType,";",1);
+				}
+				else
+				{
+					Alert.show(LanguageManager.getInstance().labels.error.wrongImportFileType);
+					return;
+				}
+			}
+		]]>
+	</mx:Script>
+	<!-- Konfiguracja w bazie externalFilesImport-->
+</CatalogueOperation>

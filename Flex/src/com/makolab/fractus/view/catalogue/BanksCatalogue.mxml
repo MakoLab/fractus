@@ -1,0 +1,432 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox
+	icon="{IconManager.getIcon('bank_catalogue')}"
+	themeColor="{IconManager.BANKS_COLOR}" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:catalogue="com.makolab.components.catalogue.*" xmlns:view="com.makolab.fractus.view.*"
+	xmlns:layoutComponents="layoutComponents.*" xmlns:layoutComponents1="com.makolab.components.layoutComponents.*"
+	creationComplete="init()"
+	>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.CatalogueItemWindowEvent;
+			import com.makolab.fractus.commands.GetDocumentsForContractorCommand;
+			import com.makolab.components.layoutComponents.DragElementProxy;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.events.ResizeEvent;
+			import com.makolab.fractus.view.ComponentWindow;
+			import flash.sampler.getInvocationCount;
+			import com.makolab.fractus.model.ConfigManager;
+			import com.makolab.fractus.commands.SearchCommand;
+			import com.makolab.fractus.commands.CreateBusinessObjectCommand;
+			import com.makolab.fractus.commands.SaveBusinessObjectCommand;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.commands.AssignItemToGroupCommand;
+			import com.makolab.components.list.CommonGrid;
+			import com.makolab.components.catalogue.GroupTreeEditorEvent;
+			import com.makolab.fractus.commands.SaveConfigurationCommand;
+			import com.makolab.components.catalogue.ClipboardPanel;
+			import com.makolab.components.util.ComponentExportManager;
+			import mx.effects.effectClasses.HideShowEffectTargetFilter;
+			import com.makolab.fractus.business.Services;
+			import mx.rpc.soap.WebService;
+			import com.makolab.components.catalogue.CatalogueEvent;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.view.LogInWindow;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.components.catalogue.CatalogueItemWindow;
+			import com.makolab.components.inputComponents.ImageAttributeEditor;
+
+			import mx.collections.XMLListCollection;
+			import mx.rpc.AbstractOperation;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.controls.List;
+			import mx.controls.ComboBox;
+			import mx.rpc.events.ResultEvent;
+			import mx.managers.PopUpManager;
+			import mx.collections.ICollectionView;
+			import mx.collections.ArrayCollection;
+			import mx.rpc.Responder;
+			import assets.IconManager;
+			import com.makolab.components.inputComponents.*;
+			
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+			
+			[Bindable]
+			public var listConfig:XML = model.configManager.getXML("banks.lists.banks");
+			[Bindable]
+			public var panelConfig:XML = model.configManager.getXML("banks.panel.bank");
+			
+			[Bindable]
+			public var link1OperationVisible:Boolean = false;
+			[Bindable]
+			public var link2OperationVisible:Boolean = false;
+			[Bindable]
+			public var link3OperationVisible:Boolean = false;
+			[Bindable]
+			public var link4OperationVisible:Boolean = false;
+			[Bindable]
+			public var link5OperationVisible:Boolean = false;
+			private var logInWindow:LogInWindow;
+			private var contractorWindow:CatalogueItemWindow;
+
+		
+			
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var catalogue:BanksCatalogue = new BanksCatalogue();
+				ModelLocator.getInstance().configManager.requestValue("contractors.group");
+				window.innerComponent = catalogue;
+				window.setStyle("headerColors",[IconManager.BANKS_COLOR,IconManager.BANKS_COLOR_LIGHT]); 
+				if(catalogue.icon)window.titleIcon = catalogue.icon;
+				window.show(null,null,LanguageManager.getInstance().labels.title.banks.list);
+				return window;
+			}
+			private function onInitialize():void
+			{
+				//permission hard coded
+				if(listConfig && listConfig.operations["link1"].length() > 0 ) {
+					link1OperationVisible = true;
+				} else {
+					link1OperationVisible = false;
+				}
+				
+				if(listConfig && listConfig.operations["link2"].length() > 0 ) {
+					link2OperationVisible = true;
+				} else {
+					link2OperationVisible = false;
+				}
+				if(listConfig && listConfig.operations["link3"].length() > 0 ) {
+					link3OperationVisible = true;
+				} else {
+					link3OperationVisible = false;
+				}
+				if(listConfig && listConfig.operations["link4"].length() > 0 ) {
+					link4OperationVisible = true;
+				} else {
+					link4OperationVisible = false;
+				}
+				
+				if(listConfig && listConfig.operations["link5"].length() > 0 ) {
+					link5OperationVisible = true;
+				} else {
+					link5OperationVisible = false;
+				}
+			}
+			private function init():void
+			{
+				model = ModelLocator.getInstance();
+				//dockManager.getState();
+				onInitialize();
+			}
+			
+			public static function showContractorWindow(contractorId:String = null, formConfig:XML = null):CatalogueItemWindow
+			{
+				var contractorWindow:CatalogueItemWindow;
+				contractorWindow = new CatalogueItemWindow();
+				contractorWindow.setStyle("headerColors",[IconManager.BANKS_COLOR_LIGHT,IconManager.BANKS_COLOR_LIGHT]);
+				contractorWindow.width = 700;
+				contractorWindow.height = 600;
+				contractorWindow.addEventListener("accept", itemWindowEventHandler);
+				contractorWindow.addEventListener("cancel", itemWindowEventHandler);
+				
+				ModelLocator.getInstance().configManager.requestList(
+						[
+							'contractors.group',
+							'banks.forms.bank'
+						],
+						showContractorWindowLater,
+						[contractorWindow, contractorId, formConfig]
+					);
+					
+				return contractorWindow;
+			}
+			
+			public static function showRelatedDocumentsContractorWindow(contractorId:String,name:String = ""):void
+			{
+			 	CatalogueContractorInfo.showWindow(contractorId, CatalogueContractorInfo.CONTRACTOR_DOCUMENTS,name);
+			}
+
+			private static function showContractorWindowLater(contractorWindow:CatalogueItemWindow, contractorId:String = null, formConfig:XML = null):CatalogueItemWindow
+			{
+				var model:ModelLocator = ModelLocator.getInstance();
+				
+				if (formConfig == null) formConfig = model.configManager.getXML("banks.forms.bank");
+				contractorWindow.formConfig = formConfig;
+				contractorWindow.setStyle("headerColors",[IconManager.BANKS_COLOR_LIGHT,IconManager.BANKS_COLOR_LIGHT]); 
+				contractorWindow.title = formConfig.windowTitle;
+				contractorWindow.show(model.applicationObject);
+				if (contractorId)
+				{
+					var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand();
+					cmd.targetObject = contractorWindow;
+					cmd.targetField = "data";
+					cmd.execute( { id : contractorId, type : 'Contractor' } );
+				}
+				else
+				{
+					var createCmd:CreateBusinessObjectCommand = new CreateBusinessObjectCommand('Bank');
+					createCmd.targetObject = contractorWindow;
+					createCmd.targetField = "data";
+					createCmd.execute();
+				}
+				return contractorWindow;
+			}
+			
+			private static function itemWindowEventHandler(event:Event):void
+			{
+				var window:CatalogueItemWindow = event.target as CatalogueItemWindow;
+				if (event.type == "accept")
+				{
+					var cmd:SaveBusinessObjectCommand = new SaveBusinessObjectCommand();
+					cmd.addEventListener(ResultEvent.RESULT, itemSaveResultHandler);
+					cmd.targetObject = window;
+					cmd.execute(window.dataObject);
+				}
+				else if (event.type == "cancel")
+				{
+					window.hide();
+				}
+			}
+			
+			private static function itemSaveResultHandler(event:ResultEvent):void
+			{
+				var window:CatalogueItemWindow = event.target.targetObject as CatalogueItemWindow;
+				window.hide();
+				var newEvent:CatalogueItemWindowEvent = new CatalogueItemWindowEvent(CatalogueItemWindowEvent.DATA_SAVE_COMPLETE);
+				newEvent.itemData = window.dataObject;
+				newEvent.itemId = XML(event.result).id;
+				window.dispatchEvent(newEvent);		
+			}
+			
+			public function operationInvokeHandler(event:CatalogueEvent):void
+			{
+				if (!(event.target is CatalogueOperation)) return;
+				
+				var arr:Array;
+				var value:Object;
+				var it:String;
+				var id:String;
+				var str:String;
+				
+				
+				if(event.operation.operationId=="operationLink1Item")
+				{
+					arr=String(listConfig.operations['link1'].@toRep).split(".");
+					value=event.currentTarget.itemData;
+					for each (it in arr) {
+						value = value[it];
+					}
+					id=value.toString();
+					str=listConfig.operations['link1'].@url;
+					str=str.replace(listConfig.operations['link1'].@rep,id);
+					navigateToURL(new URLRequest(str),"_blank");
+				}
+				else if(event.operation.operationId=="operationLink2Item")
+				{
+					arr=String(listConfig.operations['link2'].@toRep).split(".");
+					value=event.currentTarget.itemData;
+					for each (it in arr) {
+						value = value[it];
+					}
+					id=value.toString();
+					str=listConfig.operations['link2'].@url;
+					str=str.replace(listConfig.operations['link2'].@rep,id);
+					navigateToURL(new URLRequest(str),"_blank");
+				}
+				else if(event.operation.operationId=="operationLink3Item")
+				{
+					arr=String(listConfig.operations['link3'].@toRep).split(".");
+					value=event.currentTarget.itemData;
+					for each (it in arr) {
+						value = value[it];
+					}
+					id=value.toString();
+					str=listConfig.operations['link3'].@url;
+					str=str.replace(listConfig.operations['link3'].@rep,id);
+					navigateToURL(new URLRequest(str),"_blank");
+				}
+				else if(event.operation.operationId=="operationLink4Item")
+				{
+					arr=String(listConfig.operations['link4'].@toRep).split(".");
+					value=event.currentTarget.itemData;
+					for each (it in arr) {
+						value = value[it];
+					}
+					id=value.toString();
+					str=listConfig.operations['link4'].@url;
+					str=str.replace(listConfig.operations['link4'].@rep,id);
+					navigateToURL(new URLRequest(str),"_blank");
+				}
+				else if(event.operation.operationId=="operationLink5Item")
+				{
+					arr=String(listConfig.operations['link5'].@toRep).split(".");
+					value=event.currentTarget.itemData;
+					for each (it in arr) {
+						value = value[it];
+					}
+					id=value.toString();
+					str=listConfig.operations['link5'].@url;
+					str=str.replace(listConfig.operations['link5'].@rep,id);
+					navigateToURL(new URLRequest(str),"_blank");
+				}
+				else if (event.operation.operationId == "operationNewContractor")
+				{
+					showContractorWindow();
+					//ContractorsCatalogueEvent.createEvent(ContractorsCatalogueEvent.CONTRACTOR_CREATE_NEW).dispatch();
+				}
+				else if (event.operation.operationId == "operationEditContractor")
+				{
+					if (itemCatalogue.selectedItem) BanksCatalogue.showContractorWindow(itemCatalogue.selectedItem.@id);
+				}
+				else if (event.operation.operationId == "operationExportContractorPdf")
+				{
+					ComponentExportManager.getInstance().exportObject("defaultContractorPdf", String(itemCatalogue.itemData.contractor.id), "content");
+				}
+				else if (event.operation.operationId == "operationExportContractorVcf")
+				{
+					ComponentExportManager.getInstance().exportObject("defaultContractorVcf", String(itemCatalogue.itemData.contractor.id), "content");
+				}
+				else if (event.operation.operationId == "operationClipboardContractor")
+				{
+					//itemCatalogue.clipboardPanel.clipboard.addElement(itemCatalogue.selectedItem);
+				}
+				else if (event.operation.operationId == "relatedDocumentsContractor")
+				{
+					if (itemCatalogue.selectedItem) BanksCatalogue.showRelatedDocumentsContractorWindow(itemCatalogue.selectedItem.@id,itemCatalogue.selectedItem.@shortName);
+				}
+			}
+			
+			private function groupsStructureSave(event:ResultEvent):void
+			{
+				//trace(event.result.toString());
+				model.configManager.requestValue("contractors.group",true);
+			}
+			
+			private function groupsStructureChange(event:GroupTreeEditorEvent):void
+			{
+				var cmd:SaveConfigurationCommand = new SaveConfigurationCommand();
+				cmd.addEventListener(ResultEvent.RESULT,groupsStructureSave);
+				//cmd.targetObject = model;
+				//cmd.targetField = "";
+				//trace(event.target.toString());
+				cmd.execute( { requestXml : event.groups} );
+			}
+			
+			private function itemToGroupAssignHandler(event:CatalogueEvent):void
+			{
+				var command:AssignItemToGroupCommand = new AssignItemToGroupCommand(AssignItemToGroupCommand.CONTRACTOR);
+				command.execute(event.itemData);
+			}
+
+			private function searchContractor(parameters:Object):void
+			{
+				var cmd:SearchCommand = new SearchCommand(SearchCommand.CONTRACTORS);
+				cmd.searchParams = XML(parameters);
+				cmd.addEventListener(ResultEvent.RESULT,handleSearchResults);
+				cmd.execute();
+			}
+			
+			private function handleSearchResults(event:ResultEvent):void
+			{
+				var result:XML = XML(event.result);
+				itemCatalogue.searchResults = new XMLListCollection(result.contractor);
+				itemCatalogue.rowCount = result.@rowCount;
+				itemCatalogue.pageNumber = result.@page;
+				itemCatalogue.itemData = result.itemData;
+			}
+			
+			private function getContractorData(parameters:Object):void
+			{
+				var xml:XML = XML(parameters);
+				var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand();
+				cmd.targetObject = itemCatalogue;
+				cmd.targetField = "itemData";
+				cmd.execute({ id : xml.id, type : xml.type });
+			}
+			
+			/* ----- include typow ----- */
+			private var lve:LabelValueEditor;
+			private var lle:LabelListEditor;
+			private var cbe:CheckBoxEditor;
+			private var rbe:RadioButtonEditor;
+			private var ate:AttributeEditor;
+			private var adr:AddressRenderer;
+			private var ade:AddressEditor;
+			private var cb:ComboBox;
+			private var l:List;
+			private var nipe:NIPEditor;
+			private var ne:NameEditor;
+			private var gaec:GenericAttributeEditorComponent;
+			private var ee:EmployeeEditor;
+			private var cr:ContractorRenderer;
+			private var gse:GroupSelectionEditor;
+			private var cg:CommonGrid;
+			//private var gmaf:GoogleMapsAddressFinder;
+			private var cp:ClipboardPanel;
+			private var sae:SingleAttributeEditor;
+			private var iae:ImageAttributeEditor;
+			private var bae:com.makolab.fractus.view.catalogue.BankAccountEditor;
+			/* ------------------------- */
+		]]>
+	</mx:Script>
+	<!-- komponent kartoteki -->
+	<mx:XML id="layoutConfig">
+		<root>
+		  <dockObject>
+		    <name>do1</name>
+		    <parent>dc3</parent>
+		    <index>2</index>
+		    <properties/>
+		  </dockObject>
+		  <dockObject>
+		    <name>do2</name>
+		    <parent>dc2</parent>
+		    <index>2</index>
+		    <properties/>
+		  </dockObject>
+		</root>
+	</mx:XML>
+	<!--<layoutComponents1:DockManager id="dockManager" configuration="{layoutConfig}" dockContainers="{itemCatalogue.dockContainers}" dockObjects="{itemCatalogue.dockObjects}"/>-->
+	<catalogue:CatalogueBrowser
+			id="itemCatalogue"
+			showClipboard="false"
+			showProdClipboard="false"
+			operationInvoke="operationInvokeHandler(event)"
+			itemSearch="searchContractor(event.parameters)"
+			itemGetData="getContractorData(event.parameters)"
+			itemsType="contractors"
+			showLeftPanel="false"
+			config="{listConfig}"
+			listPermissionKey="catalogue.banks.list"
+		>
+
+		<!-- definicje operacji -->
+		
+		<catalogue:itemOperations>
+			<catalogue:CatalogueOperation permissionKey="catalogue.banks.edit" operationId="operationEditContractor" label="{LanguageManager.getInstance().labels.common.edit}" image="{IconManager.getIcon('contractor_edit_small')}" operationInvoke="operationInvokeHandler(event)" defaultOperation="true"/>
+			<catalogue:CatalogueOperation permissionKey="catalogue.banks.exportPDF" operationId="operationExportContractorPdf" label="{LanguageManager.getInstance().labels.common.printGraphical}" image="{IconManager.getIcon('print_small')}" operationInvoke="operationInvokeHandler(event)"/>
+			<catalogue:CatalogueOperation permissionKey="catalogue.banks.exportVcard" operationId="operationExportContractorVcf" label="{LanguageManager.getInstance().labels.common.exportVcf}" image="{IconManager.getIcon('contractor_export_small')}" operationInvoke="operationInvokeHandler(event)"/>
+			<!--catalogue:CatalogueOperation operationId="operationClipboardContractor" label="{LanguageManager.getInstance().labels.catalogue.clipboard.inTo}" image="{IconManager.getIcon('contractor_toCart_small')}" operationInvoke="operationInvokeHandler(event)"/-->
+			<!--catalogue:CatalogueOperation operationId="relatedDocumentsContractor" label="{LanguageManager.getInstance().labels.documents.relatedDocuments}" image="{IconManager.getIcon('properties_small')}"  operationInvoke="operationInvokeHandler(event)"/-->
+			<catalogue:CatalogueOperation permissionKey="" operationId="operationLink1Item" label="{LanguageManager.getLabel(listConfig.operations['link1'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link1OperationVisible}" includeInLayout="{link1OperationVisible}"/>
+			<catalogue:CatalogueOperation permissionKey="" operationId="operationLink2Item" label="{LanguageManager.getLabel(listConfig.operations['link2'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link2OperationVisible}" includeInLayout="{link2OperationVisible}"/>
+			<catalogue:CatalogueOperation permissionKey="" operationId="operationLink3Item" label="{LanguageManager.getLabel(listConfig.operations['link3'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link3OperationVisible}" includeInLayout="{link3OperationVisible}"/>
+			<catalogue:CatalogueOperation permissionKey="" operationId="operationLink4Item" label="{LanguageManager.getLabel(listConfig.operations['link4'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link4OperationVisible}" includeInLayout="{link4OperationVisible}"/>
+			<catalogue:CatalogueOperation permissionKey="" operationId="operationLink5Item" label="{LanguageManager.getLabel(listConfig.operations['link5'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link5OperationVisible}" includeInLayout="{link5OperationVisible}"/>
+		</catalogue:itemOperations>
+		<catalogue:generalOperations>
+			<catalogue:CatalogueOperation permissionKey="catalogue.banks.add" operationId="operationNewContractor" label="{LanguageManager.getInstance().labels.banks.newBank}" image="{IconManager.getIcon('contractor_new_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		</catalogue:generalOperations>
+
+		<!-- panel wyswietlajacy informacje o biezacej pozycji -->
+		<catalogue:rightPanel>
+			<layoutComponents1:XmlItemInfoPanel width="100%" id="itemInfoPanel" source="{panelConfig}" data="{itemCatalogue.itemData}"/>
+		</catalogue:rightPanel>
+		
+	</catalogue:CatalogueBrowser>
+
+</mx:VBox>

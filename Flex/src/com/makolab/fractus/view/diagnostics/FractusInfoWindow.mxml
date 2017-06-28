@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" 
+	creationComplete="init()"
+	backgroundColor="#84a9ce" backgroundAlpha="1"
+	horizontalScrollPolicy="off"
+	>
+		<mx:Script>
+		<![CDATA[
+			import assets.Version;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			private function init():void {
+				versionInfo.htmlText = LanguageManager.getInstance().labels.fractusinfo.windowText + "<br><p><b>Release version</b>: " + Version.releaseVersion + "     " +
+				"<b>Build</b>: " + Version.buildTime + "     " +
+				"<b>Revision</b>: " + Version.repositoryRevision + "</p>";
+			}
+			
+			//window
+			public static function showWindow():ComponentWindow
+			{
+				var editor:FractusInfoWindow = new FractusInfoWindow();
+				var window:ComponentWindow = ComponentWindow.showWindow(editor,  ComponentWindow.BUTTON_CLOSE, new Rectangle(-1, -1, 700, 500));
+				window.title = LanguageManager.getInstance().labels.fractusinfo.windowTitle;
+				window.closeFunction = window.hide;
+				return window;
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:VBox id="box" width="100%" height="600" top="-220" styleName="defaultView" horizontalCenter="0" />
+	
+	<mx:Text id="versionInfo" horizontalCenter="0" top="220" color="white" width="100%" minHeight="210" paddingRight="20" paddingLeft="20" paddingBottom="20"/>
+	
+</mx:Canvas>

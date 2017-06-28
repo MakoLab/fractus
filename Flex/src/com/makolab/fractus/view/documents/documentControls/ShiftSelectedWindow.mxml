@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"  xmlns:warehouse="com.makolab.fractus.view.warehouse.*"  width="100%" height="100%">
+		
+	<mx:Metadata>
+		[Event(name="commit", type="flash.events.Event")]
+		[Event(name="close", type="flash.events.Event")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.SaveBusinessObjectCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.document.ShiftObject;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.view.documents.documentEditors.DocumentEditor;
+			import com.makolab.fractus.vo.ErrorVO;
+			
+			import mx.containers.HBox;
+			import mx.containers.TitleWindow;
+			import mx.controls.Button;
+			import mx.effects.easing.Linear;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			private var _alocations:XML;
+			
+			public function set allocations(value:XML):void
+			{
+				var tempLines:Array = [];
+				for each(var allocation:XML in value.allocation){
+					tempLines.push({});
+					for each(var node:XML in allocation.*){
+						if(node.name() != "shifts"){
+							tempLines[tempLines.length - 1][node.localName()] = node.*;
+						}else{
+							tempLines[tempLines.length - 1]["shifts"] = [];
+							for(var i:int = 0; i < node.shift.length(); i++){
+								//node.shift[i].containerLabel = getContainerLabel(String(node.shift[i].sourceShiftId).toUpperCase()); 
+								tempLines[tempLines.length - 1].shifts.push(new ShiftObject(node.shift[i]));
+							}
+						}
+					}
+				}
+				lines = tempLines;
+			}
+			
+			/* private function getContainerLabel(id:String):String
+			{
+				var ret:String = "*";
+				var mapStructure:XML = ModelLocator.getInstance().configManager.getXML("warehouse.warehouseMap");
+				for each(var group:XML in mapStructure.configValue.warehouseMap..slotGroup){
+					for each(var slot:XML in group.slot){
+						if(slot.@id == id)ret = slot.@label;
+					}
+				}
+				return ret;
+			} */
+			
+			public function get allocations():XML
+			{
+				_alocations = <allocations/>;
+				var alocationNode:XML = <allocation/>;
+				for(var j:int = 0; j < lines.length; j++){
+					for(var property:String in lines[j]){
+						if(property != "shifts" && property != "mx_internal_uid"){
+							alocationNode[property] = lines[j][property]
+						}else if(property == "shifts"){
+							alocationNode.shifts = "";
+							for (var s:int = 0; s < lines[j].shifts.length; s++){
+								alocationNode.shifts.appendChild((lines[j].shifts[s] as ShiftObject).getXML());
+							}
+						}
+					}
+					_alocations.appendChild(alocationNode.copy());
+				}
+				return _alocations;
+			}
+			
+			[Bindable]
+			private var lines:Array = [];
+			
+			private var documentObject:DocumentObject;
+			private var window:TitleWindow;
+			private var editorWindow:ComponentWindow;
+			private var documentEditor:DocumentEditor;	
+			
+			private function isWmsAvailable(documentObject:DocumentObject):Boolean
+			{
+				return ModelLocator.getInstance().isWmsEnabled && documentObject.typeDescriptor.isCommercialDocument;
+			}
+			
+			public static function showWindow(parent:DisplayObject ,allocations:XML, document:DocumentObject, editorWindow:ComponentWindow, documentEditor:DocumentEditor):TitleWindow 
+			{
+				var editor:ShiftSelectedWindow = new ShiftSelectedWindow();
+				editor.allocations = allocations;
+				editor.documentObject = document;
+				editor.editorWindow = editorWindow;
+				editor.documentEditor = documentEditor;
+				
+				var window:TitleWindow = new TitleWindow();
+				
+				window.width = 700;
+				window.height = 500;
+				window.addChild(editor);
+				window.title = "Wybór transz";
+				editor.window = window;
+				
+				PopUpManager.addPopUp(window, parent, true);
+				PopUpManager.centerPopUp(window);
+				
+				return window;	
+			}
+			
+			public function save():void
+			{
+				var documentXML:XML = documentObject.getFullXML();
+				documentXML.appendChild(allocations);
+				var command:SaveBusinessObjectCommand = new SaveBusinessObjectCommand();
+				//command.defaultErrorHandling = false;
+				command.addEventListener(ResultEvent.RESULT, handleSaveResult);
+				command.addEventListener(FaultEvent.FAULT, handleSaveFault);
+				command.execute(<root>{documentXML}</root>);
+			}
+			
+			private function handleSaveResult(event:ResultEvent):void
+			{
+				DocumentObject.exportDocument(documentObject,XML(event.result));
+				if(window)
+				{ 
+					window.dispatchEvent(new CloseEvent(CloseEvent.CLOSE));
+					PopUpManager.removePopUp(this.window);
+				}
+				
+				if(editorWindow)
+					editorWindow.hide();
+			}
+			
+			private function handleSaveFault(event:FaultEvent):void
+			{
+				//var error:ErrorVO = ErrorVO.createFromFault(event.fault);
+				//if(XML(event.fault.faultString).@id != "SelectLots")ModelLocator.getInstance().errorManager.handleError(error);
+			}
+			
+			private function commit(event:Event):void
+			{
+				this.save();
+			}	
+			
+			private function close(event:Event):void
+			{
+				if(this.window)
+				{
+					window.dispatchEvent(new CloseEvent(CloseEvent.CLOSE));
+					PopUpManager.removePopUp(this.window);
+				}
+				
+				this.documentEditor.setButtonsEnabled(true);
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:DataGrid id="dataGrid" dataProvider="{lines}" editable="true"  width="100%" height="100%" >
+		<mx:columns>
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.item')}" dataField="itemName" width="120" headerWordWrap="true" editorUsesEnterKey="true" 
+				editorDataField="dataObject" editable="false" itemRenderer="mx.controls.Label"/>
+		
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.warehouse')}" dataField="warehouseId" width="30" minWidth="40" headerWordWrap="true"  
+				itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" headerStyleName="headerRight" textAlign="right" editable="false"/>
+		
+			<mx:DataGridColumn id="shiftColumn" sortable="false" itemRenderer="com.makolab.fractus.view.warehouse.ShiftsItemRenderer" headerText="Alokacje" width="80" dataField="shifts"  visible="true" editable="true"  editorUsesEnterKey="true" editorDataField="selectedItems">
+				<mx:itemEditor>
+					<mx:Component>
+						<warehouse:AllocationSelector2 grid="{outerDocument.dataGrid}" editedPosition="{outerDocument.dataGrid.editedItemPosition}"/>
+					</mx:Component>
+				</mx:itemEditor>
+			</mx:DataGridColumn>
+		
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:HBox horizontalAlign="center" width="100%">
+		<mx:Button label="{LanguageManager.getInstance().labels.common.accept}" click="commit(event)" />
+		<mx:Button label="{LanguageManager.getInstance().labels.common.cancel}" click="close(event)" />
+	</mx:HBox>
+</mx:VBox>

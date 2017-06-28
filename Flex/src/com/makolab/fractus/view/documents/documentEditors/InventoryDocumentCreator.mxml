@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DocumentEditor 
+	xmlns="com.makolab.fractus.view.documents.documentEditors.*"
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	xmlns:generic="com.makolab.fractus.view.generic.*">
+	
+	<mx:StringValidator id="typeInputValidator"
+		source="{typeInput}"
+		property="text"
+		trigger="{typeInput}"
+		requiredFieldError="{LanguageManager.getInstance().labels.login.error.required}"/>
+		
+	<mx:StringValidator id="warehouseSelectorValidator"
+		source="{warehouseSelector}"
+		property="text"
+		trigger="{warehouseSelector}"
+		triggerEvent="change"
+		requiredFieldError="{LanguageManager.getInstance().labels.login.error.required}"/>
+
+		<mx:Form
+				label="{LanguageManager.getInstance().labels.common.basicTab}"
+				paddingLeft="15"
+				paddingRight="15"
+				width="100%"
+				height="100%"
+				paddingTop="0"
+				paddingBottom="0" verticalGap="20"
+		>
+			<!-- numer i status -->
+			<mx:HBox horizontalGap="14" verticalAlign="middle" width="100%" paddingTop="15">
+				<generic:DocumentStatusRenderer status="{Number(inventoryDocument.status)}"/>
+				<mx:Label text="{LanguageManager.getInstance().labels.inventory.document}" fontSize="18"/>
+				<mx:Label
+				text="{inventoryDocument.fullNumber}" 
+				fontSize="20"
+				/>
+				<mx:Label text="{LanguageManager.getInstance().labels.common.warehouse}" width="100%" textAlign="right"/>
+				<generic:FractusDictionarySelector
+					id="warehouseSelector"
+					dataProvider="{DictionaryManager.getInstance().dictionaries.warehouses.(valueOf().branchId == model.branchId)}"
+					selectedId="{inventoryDocument.warehouseId}"
+					change="warehouseChange()" 
+					width="100"
+				/>
+			</mx:HBox>
+			
+			<!-- typ -->
+			<mx:FormItem label="{LanguageManager.getInstance().labels.common.shortName}" width="100%">
+				<mx:TextInput id="typeInput" text="{inventoryDocument.type}" change="{handleDataChange(event)}" width="100%"/>
+			</mx:FormItem>
+			
+			<!-- naglowek -->
+			<mx:FormItem label="{LanguageManager.getInstance().labels.inventory.header}" width="100%">
+				<mx:TextArea 
+					id="headerInput" 
+					text="{inventoryDocument.header}" 
+					change="{handleDataChange(event)}"
+					width="100%" height="90"/>
+			</mx:FormItem>
+			
+			<!-- stopka -->
+			<mx:FormItem label="{LanguageManager.getInstance().labels.inventory.footer}" width="100%">
+				<mx:TextArea 
+					id="footerInput" 
+					text="{inventoryDocument.footer}" 
+					change="{handleDataChange(event)}"
+					width="100%" height="90"/>
+			</mx:FormItem>	
+			
+			<!-- daty -->		
+			<mx:FormItem label="{LanguageManager.getInstance().labels.common.issueDate}">
+				<inputComponents:DateTimeEditor id="issueDateDTE" data="{inventoryDocument.issueDate}" change="{handleDataChange(event)}"/>
+			</mx:FormItem>
+			<mx:FormItem label="{LanguageManager.getInstance().labels.common.creationUser}">
+			<mx:Label
+				text="{dictionaryManager.getById(inventoryDocument.creationApplicationUserId).label}" 
+				fontWeight="bold"
+				/>
+			</mx:FormItem>	
+		</mx:Form>
+			
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ValidationResultEvent;
+			import mx.validators.Validator;
+			import com.makolab.fractus.model.GlobalEvent;
+			import com.makolab.fractus.model.EventManager;
+			import mx.controls.Alert;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.commands.CreateBusinessObjectCommand;
+			import com.makolab.fractus.commands.DeleteBusinessObjectCommand;
+			import com.makolab.fractus.commands.SaveBusinessObjectCommand;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			import assets.IconManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			import mx.events.CloseEvent;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.model.document.InventoryDocumentObject;
+
+			[Bindable] 
+			public var languageManager:LanguageManager = LanguageManager.getInstance();	
+			
+			private var win:ComponentWindow;
+			
+			[Bindable]
+			public var inventoryDocument:InventoryDocumentObject;
+
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+
+			
+			public function createInventoryDocument():void
+			{
+				var cmd:CreateBusinessObjectCommand = new CreateBusinessObjectCommand("InventoryDocument");
+				cmd.addEventListener(ResultEvent.RESULT, handleResult);
+				cmd.execute({template : "inventoryDocument" });
+			}
+			
+			private function handleResult(event:ResultEvent):void
+			{
+				this.inventoryDocument = new InventoryDocumentObject(XML(event.result).inventoryDocument[0]); 
+			}
+			
+			private function handleDataChange(event:Event):void
+			{
+				inventoryDocument.type = typeInput.text;
+				inventoryDocument.header = headerInput.text;
+				inventoryDocument.footer = footerInput.text;
+				inventoryDocument.issueDate = Tools.dateToIso(issueDateDTE.selectedDate);
+				//this.dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			private function commitChanges():void
+			{
+				var validatorErrorArray:Array = Validator.validateAll([typeInputValidator, warehouseSelectorValidator]);
+				var isValidForm:Boolean = validatorErrorArray.length == 0;
+				
+				if (isValidForm) {
+					var cmd:SaveBusinessObjectCommand = new SaveBusinessObjectCommand();
+					cmd.addEventListener(ResultEvent.RESULT, handleCommitResult);
+					cmd.execute(<root>{this.inventoryDocument.getFullXML()}</root>);
+				} else {
+					var err:ValidationResultEvent;
+					var errorMessageArray:Array = [];
+					for each (err in validatorErrorArray) {
+						errorMessageArray.push(err.message);
+					}
+				}
+			}
+			
+			private function handleCommitResult(event:ResultEvent):void
+			{
+				dispatchEvent(new Event('dataCommited'));
+				model.eventManager.dispatchEvent(new GlobalEvent(GlobalEvent.DOCUMENT_CHANGED, "12"));
+			
+				if (win) win.hide();
+				InventoryDocumentEditor.showWindow(inventoryDocument.id);
+			}
+			
+			public static function showWindow():ComponentWindow
+			{
+				var editor:InventoryDocumentCreator = new InventoryDocumentCreator();
+				var win:ComponentWindow;
+				editor.createInventoryDocument();
+				win = ComponentWindow.showWindow(
+					editor,
+					ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL,
+					new Rectangle(-1, -1, 700, 500),
+					LanguageManager.getInstance().labels.inventory.documentCreator
+				);
+				win.commitFunction = editor.commitChanges;
+				win.closeFunction = win.hide;
+				win.setStyle("headerColors", [IconManager.INVENTORY_COLOR, IconManager.INVENTORY_COLOR_LIGHT]);
+				win.setStyle("themeColor", IconManager.INVENTORY_COLOR);
+				editor.win = win;
+				return win;
+			}
+			
+			private function warehouseChange():void
+			{
+				inventoryDocument.warehouseId = warehouseSelector.selectedId;
+			}
+			
+		]]>
+	</mx:Script>
+
+</DocumentEditor>

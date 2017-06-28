@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:catalogue="com.makolab.components.catalogue.*" xmlns:layoutComponents="com.makolab.components.layoutComponents.*"
+	implements="com.makolab.components.inputComponents.IFormBuilderComponent"
+	verticalGap="5"
+	width="470"
+	paddingTop="0"
+	paddingBottom="0"
+	>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.GetBankByNumberCommand;
+			import com.makolab.fractus.commands.SearchCommand;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.validators.ValidationResult;
+			import mx.controls.Alert;
+						
+			private var bankNumber:String;
+			private var accountBankNumber:String;
+	
+			private var _dataObject:XML = new XML();
+			
+			[Bindable]
+			public function set dataObject(value:XML):void
+			{
+				var prevBCId:String = _dataObject.account.bankContractorId;
+				_dataObject = value;
+				if(!isEmpty(value.toString()))	{
+					accountNumber.text = value.account.accountNumber;
+        			if(!isEmpty(value.account.bankContractorId) && value.account.bankContractorId != prevBCId)	{
+        				var command:LoadBusinessObjectCommand = new LoadBusinessObjectCommand();
+						command.addEventListener(ResultEvent.RESULT, getBankResult);
+						command.execute( { type : "Contractor", id : value.account.bankContractorId } );
+        			}
+    			}
+			}
+			
+			[Bindable]
+			override public function set data(value:Object):void
+			{
+				if(!isEmpty(String(value)))	{
+					super.data = value;
+					dataObject = XML(value).copy();
+				}
+				else
+					dataObject = template.copy();
+			}
+			
+			override public function get data():Object { return dataObject; }
+			public function get dataObject():XML { return _dataObject; }
+			
+			public function setBank(item:Object, data:Object):void
+			{
+				if(_dataObject) _dataObject.account.bankContractorId = item.@id;
+				bankName.text = item.@fullName;
+				var command:LoadBusinessObjectCommand = new LoadBusinessObjectCommand();
+				command.addEventListener(ResultEvent.RESULT, getBankResult);
+				command.execute( { type : "Contractor", id : item.@id } );
+			}
+			
+			public function getBankResult(event:ResultEvent):void
+			{
+				var result:XML = XML(event.result);
+				bank.text = result.contractor.shortName;
+				bankName.text = result.contractor.fullName;
+				bankNumber = result.contractor.bankNumber;
+				//deleteButton.visible = deleteButton.includeInLayout = true;
+			}
+			
+			private function strReplace(needle:String, replacement:String, haystack:String):String	{
+	  			var strArr:Array = haystack.split(needle);
+	  			return strArr.join(replacement);
+			}
+			
+			private function findBank(number:String):void
+			{
+				var cmd:GetBankByNumberCommand = new GetBankByNumberCommand(number);
+				cmd.addEventListener(ResultEvent.RESULT, findBankResult);
+				cmd.execute();
+			}	
+			
+			private function findBankResult(event:ResultEvent):void
+			{
+				var result:XML = XML(event.result);
+				if(result.bank[0])	{
+					_dataObject.account.bankContractorId = result.bank[0].id.text();				
+					bank.text = result.bank[0].shortName;
+					bankName.text = result.bank[0].fullName;
+					bankNumber = result.bank[0].bankNumber;
+				}
+				else Alert.show("Brak definicji banku o podanym numerze konta");
+			}	
+
+			public function validate():Object
+			{
+				var result:Object;
+				var errorMessage:String;
+				var accountPattern:RegExp = /^([A-z]{2})?[0-9]{26}$/;
+				if (_dataObject && !isEmpty(_dataObject.*.bankContractorId) && isEmpty(_dataObject.*.accountNumber))
+				{
+					errorMessage = LanguageManager.getInstance().labels.error.bankAccountEmpty;
+					result = new ValidationResult(true, "accountNumber", "emptyAccountNumber", errorMessage);
+				}
+				else if(_dataObject && verifyAccountNumber.selected)	{
+					var number:String = strReplace(" ","",_dataObject.account.accountNumber.toString());				
+					if(accountPattern.test(number)) {
+						if(!number.match(/^([A-z]{2})/)) number = "PL" + number;
+						number = number.toLocaleUpperCase();
+						if(!checkControlNumber(number) && number.length == 28)	{
+							errorMessage = LanguageManager.getInstance().labels.error.bankAccountIncorrect;
+							result = new ValidationResult(true, "accountNumber", "incorrectAccountNumber", errorMessage);
+						}
+						else	{
+							accountBankNumber = number.slice(4,12);
+							if(bankNumber && accountBankNumber!=bankNumber)	{
+								errorMessage = LanguageManager.getInstance().labels.error.bankAccountIncorrect;
+								result = new ValidationResult(true, "accountNumber", "incorrectAccountNumber", errorMessage);
+							}							
+							findBank(accountBankNumber);
+						}
+					}
+					else {
+						errorMessage = LanguageManager.getInstance().labels.error.bankAccountFormat;
+						result = new ValidationResult(true, "accountNumber", "wrongFormatAccountNumber", errorMessage);
+					}
+				}
+				return result;				
+			}
+			
+			private function checkControlNumber(number:String):Boolean
+			{
+				var result:String = "";
+				number = number.slice(4,28) + number.slice(0,4);
+				number = replaceLetters(number);
+				for(var i:Number = 0; i < number.length; i+=6)	{
+					result = (Number(String(result + number.slice(0+i,6+i))) % 97).toString();	
+				}
+				return ( Number(result) == 1 ? true: false );						
+			}
+			
+			private function replaceLetters(s:String):String
+			{				
+				s = s.replace("A","10");
+				s = s.replace("B","11");
+				s = s.replace("C","12");
+				s = s.replace("D","13");
+				s = s.replace("E","14");
+				s = s.replace("F","15");
+				s = s.replace("G","16");
+				s = s.replace("H","17");
+				s = s.replace("I","18");
+				s = s.replace("J","19");
+				s = s.replace("K","20");
+				s = s.replace("L","21");
+				s = s.replace("M","22");
+				s = s.replace("N","23");
+				s = s.replace("O","24");
+				s = s.replace("P","25");
+				s = s.replace("Q","26");
+				s = s.replace("R","27");
+				s = s.replace("S","28");
+				s = s.replace("T","29");
+				s = s.replace("U","30");
+				s = s.replace("V","31");
+				s = s.replace("W","32");
+				s = s.replace("X","33");
+				s = s.replace("Y","34");
+				s = s.replace("Z","35");
+				return s;
+			}
+			
+			public function commitChanges():void 
+			{
+				if(_dataObject && isEmpty(_dataObject.account.accountNumber) && isEmpty(_dataObject.account.bankContractorId))
+				 	dataObject = new XML("<accounts/>");			 
+			}
+			
+			public function reset():void 
+			{
+
+			}
+			
+			private function handleChange(event:Event):void
+			{				
+				if (_dataObject) 
+				{
+					_dataObject.account.accountNumber = accountNumber.text;
+				}
+				validate();
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			private function isEmpty(s:String):Boolean
+			{
+				return Boolean(s.match(/^\s*$/));
+			}
+			
+			private function deleteBank():void
+			{
+				dataObject = new XML("<accounts/>");
+				bank.text = "";
+				bankName.text = "";
+				accountNumber.text = "";
+				//deleteButton.visible = deleteButton.includeInLayout = false;
+			}
+			
+			private function checkForValidation():void
+			{
+				if(verifyAccountNumber.selected) validate();
+			}
+			
+			//60 1140 2004 0000 3702 5781 2621 
+			//26 1050 1445 1000 0022 7647 0461
+			//84 1750 1149 0000 0000 0118 2307
+		]]>
+	</mx:Script>
+	<mx:FormItem label="{LanguageManager.getInstance().labels.contractors.forms.contractor.bank}" labelWidth="135" width="449">
+		<mx:VBox width="100%">
+			<mx:HBox width="100%">
+				<catalogue:CatalogueSearchEditor
+					id="bank"
+					width="100%"
+					searchCommandType="contractors"
+					labelField="@shortName"				
+					searchParams="{contractorSearchParams}"
+				 	setFunction="{setBank}"
+				/>		
+				<mx:Button label="{LanguageManager.getInstance().labels.common.search}" click="bank.outerSearchRequest()" focusEnabled="false"/>
+			</mx:HBox>
+		</mx:VBox>
+	</mx:FormItem>
+	<mx:FormItem label="{LanguageManager.getInstance().labels.contractors.forms.contractor.accountNumber}" labelWidth="135" width="449">
+		<mx:TextInput id="accountNumber" width="300" change="handleChange(event)" maxChars="35" restrict="0-9 A-z" />
+		<mx:HBox width="300">
+			<mx:CheckBox id="verifyAccountNumber" selected="false" click="checkForValidation()"/>
+			<mx:Label text="{LanguageManager.getInstance().labels.contractors.forms.contractor.verifyAccount}"/>	
+		</mx:HBox>
+		<mx:HBox width="300">
+			<mx:Text id="bankName" width="100%"/>
+			<mx:Button label="{LanguageManager.getInstance().labels.common.Delete}" id="deleteButton" click="deleteBank()" includeInLayout="{Boolean(bankName.text.length)}" visible="{Boolean(bankName.text.length)}" />
+		</mx:HBox>	
+	</mx:FormItem>
+	
+	<mx:XML id="template" xmlns="">
+		<accounts/>
+	</mx:XML>
+	<mx:XML id="contractorSearchParams" xmlns="">
+		<searchParams>
+			<query></query>
+			<sqlConditions>
+    			<condition>isBank=1</condition>
+  			</sqlConditions>
+			<columns>
+				<column field="shortName" sortOrder="1" sortType="ASC"/>
+				<column field="fullName"/>
+			</columns>
+		</searchParams>
+	</mx:XML>
+</mx:Form>

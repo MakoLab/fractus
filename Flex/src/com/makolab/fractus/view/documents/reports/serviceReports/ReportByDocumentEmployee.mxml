@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReportBase xmlns="com.makolab.fractus.view.documents.reports.*" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:layoutComponents="com.makolab.components.layoutComponents.*">
+	
+	<config>
+		<mx:XML xmlns="">
+			<config>
+				<columns>
+					<column number="4" dataField="@labour" dataType="currency"/>
+					<column number="5" dataField="@materials" dataType="currency"/>
+					<column number="6" dataField="@value" dataType="currency"/>
+				</columns>
+			</config>
+		</mx:XML>
+	</config>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ListEvent;
+			import com.makolab.components.layoutComponents.SummaryColumn;
+			import mx.collections.ArrayCollection;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			import assets.IconManager;
+			import mx.collections.HierarchicalData;
+			import mx.collections.HierarchicalCollectionView;
+			import com.makolab.fractus.view.payments.PaymentList;
+			import com.makolab.fractus.view.finance.PaymentSettlementEditor;
+			import com.makolab.components.util.Tools;
+			import mx.formatters.CurrencyFormatter;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			[Bindable] 
+			public var languageManager:LanguageManager = LanguageManager.getInstance();
+			
+			
+			private function showServiceOrder(event:ListEvent):void
+			{
+				var item:Object = event.itemRenderer.data;
+				var itemId:String = null;
+				if (!item) return;
+				if (String(item.@serviceId)) itemId = item.@serviceId
+				else if (String(item.parent().@serviceId)) itemId = item.parent().@serviceId;
+				DocumentRenderer.showWindow(DocumentTypeDescriptor.SERVICE_DOCUMENT, itemId);
+			}
+			/*
+			public override function set dataProvider(value:XMLList):void
+			{
+				// uwaga, kolejnosc przypisan ma znaczenie
+				grid.dataProvider = new HierarchicalData(value);
+				super.createSummaryTable();
+			}
+			*/
+			private function getRowLabel(item:Object, column:Object):String
+			{
+				if (item.localName() == 'employee') return '  \u2022 ' + item.@name;
+				else return item.@documentType + ' ' + item.@fullNumber;
+			}
+			
+			private function getTimeFraction(item:Object, column:Object):String
+			{
+				var value:Number = parseFloat(item[column.dataField]);
+				if (!isNaN(value)) return value.toString() + '%';
+				else return null;
+			}
+			
+			private function getIcon(item:Object):Class
+			{
+				//return item.localName() == 'serviceDocument' ? IconManager.getIcon('list_service') : null;
+				return null;
+			}
+			
+			private function getValueSum(item:Object, column:Object, precision:Number = 2):String
+			{
+				var value:Number = NaN;
+				if (item.localName() == 'serviceDocument')
+				{
+					value = 0;
+					for each (var x:XML in item.employee)
+					{
+						value +=  parseFloat(x[column.dataField])
+					}
+				} 
+				else value = parseFloat(item[column.dataField]);
+				return CurrencyManager.formatCurrency(value, '', null, precision);
+			}
+			
+			private function reverseGetValueSum(item:Object, column:Object, precision:Number = 2):String
+			{
+				var value:Number = NaN;
+				if (item.localName() == 'serviceDocument')
+				{
+					value = 0;
+					for each (var x:XML in item.employee)
+					{
+						value +=  parseFloat(x[column.dataField])
+					}
+				} 
+				else value = parseFloat(item[column.dataField]);
+				return value.toString();
+			}
+			
+			private function getValueSumFraction(item:Object, column:Object):String
+			{
+				return getValueSum(item, column, -2) + '%';
+			}
+			
+			private function formatMoney(value:Object, column:Object):String
+			{
+				return CurrencyManager.formatCurrency(parseFloat(value[column.dataField]), '');
+			}
+			
+			[Bindable]
+			private var totalTimeFraction:Function = 	function (source:XMLList,dataField:String,childDataField:String = null,childDataFields:Array=null):String{
+															var result:Number = 0;
+															var valueEmployee:Number = 0;
+															var valueTotal:Number = 0;
+															if(source){
+																for(var i:int=0;i<source.length();i++){
+																	if(source[i].@value.length() > 0)valueTotal += parseFloat(source[i].@value);
+																	for each (var element:XML in source[i].*){
+																		if(element.@employee_value.length() > 0)valueEmployee += parseFloat(element.@employee_value);
+																		if(element[childDataField].length() > 0)result += parseFloat(element[childDataField]);
+																	}
+																}
+															}
+															result = Tools.round(100 * valueEmployee / valueTotal, 2)
+															return result.toString();
+														}
+			/* private function calculateSummary(gridDataProvider:Object):Object
+			{
+				var
+					labourTotal:Number = 0,
+					materialsTotal:Number = 0,
+					valueTotal:Number = 0,
+					count:Number = 0,
+					labourEmployee:Number = 0,
+					materialsEmployee:Number = 0,
+					valueEmployee:Number = 0;
+					
+				var x:XML;
+				
+				if (gridDataProvider.source && gridDataProvider.source.source)
+				{
+					for each (x in gridDataProvider.source.source)
+					{
+						count++;
+						labourTotal += parseFloat(x.@labour);
+						materialsTotal += parseFloat(x.@materials);
+						valueTotal += parseFloat(x.@value);
+					}
+					for each (x in gridDataProvider.source.source.employee)
+					{
+						labourEmployee += parseFloat(x.@employee_labour);
+						materialsEmployee += parseFloat(x.@employee_materials);
+						valueEmployee += parseFloat(x.@employee_value);
+						var fraction:Number = parseFloat(x.@timeFraction);
+					}
+				}
+				
+				return XMLList(<summary
+						fullNumber={count}
+						labour={labourTotal}
+						materials={materialsTotal}
+						value={valueTotal}
+						timeFraction={Tools.round(100 * valueEmployee / valueTotal, 2)}
+						employee_labour={labourEmployee}
+						employee_materials={materialsEmployee}
+						employee_value={valueEmployee}
+					/>);
+			} */
+		]]>
+	</mx:Script>
+	<treeTable>
+		<mx:AdvancedDataGrid id="grid" width="100%" height="100%" iconFunction="{getIcon}" doubleClickEnabled="true" itemDoubleClick="showServiceOrder(event)">
+			<mx:columns>
+				<mx:AdvancedDataGridColumn headerText="" width="20"/>
+				<mx:AdvancedDataGridColumn headerText="" itemRenderer="com.makolab.fractus.view.generic.DocumentTypeRenderer" width="70" dataField="@documentTypeId"/>
+				<mx:AdvancedDataGridColumn id="nameColumn" headerText="Zlecenie/mechanik" labelFunction="getRowLabel" dataField="@fullNumber"/>
+				<mx:AdvancedDataGridColumn headerText="{LanguageManager.getLabel('common.date')}" itemRenderer="com.makolab.components.inputComponents.DateRenderer" width="80" dataField="@issueDate"/>
+				<mx:AdvancedDataGridColumn id="labour" sortCompareFunction="{Tools.getSortFunction('@labour')}" headerText="Wartość usług" dataField="@labour" labelFunction="formatMoney" textAlign="right" width="90"/>
+				<mx:AdvancedDataGridColumn id="materials" sortCompareFunction="{Tools.getSortFunction('@materials')}" headerText="Wartość towarów" dataField="@materials" labelFunction="formatMoney" textAlign="right" width="90"/>
+				<mx:AdvancedDataGridColumn id="value" sortCompareFunction="{Tools.getSortFunction('@value')}" headerText="Wartość całkowita" dataField="@value" labelFunction="formatMoney" textAlign="right" width="90"/>
+				
+				<mx:AdvancedDataGridColumn id="timeFraction" sortCompareFunction="{Tools.getSortFunction('@timeFraction')}" headerText="Udział" dataField="@timeFraction" labelFunction="getValueSumFraction" textAlign="right" width="70"/>
+				<mx:AdvancedDataGridColumn id="employee_labour" sortCompareFunction="{Tools.getSortFunction('@employee_labour')}" headerText="Wartość usług" dataField="@employee_labour" labelFunction="getValueSum" textAlign="right" width="90"/>
+				<mx:AdvancedDataGridColumn id="employee_materials" sortCompareFunction="{Tools.getSortFunction('@employee_materials')}" headerText="Wartość towarów" dataField="@employee_materials" labelFunction="getValueSum" textAlign="right" width="90"/>
+				<mx:AdvancedDataGridColumn id="employee_value" sortCompareFunction="{Tools.getSortFunction('@employee_value')}" headerText="Wartość całkowita" dataField="@employee_value" labelFunction="getValueSum" textAlign="right" width="90"/>
+			</mx:columns>
+		</mx:AdvancedDataGrid>
+	</treeTable>
+	<summary>
+		<layoutComponents:AdvancedDataGridSummary2 source="{grid}">
+			<layoutComponents:summaryColumns>
+				<layoutComponents:SummaryColumn sourceColumn="{nameColumn}" operations="{[SummaryColumn.ROW_COUNT]}"/>
+				<layoutComponents:SummaryColumn sourceColumn="{labour}" operations="{[SummaryColumn.SUM]}"/>
+				<layoutComponents:SummaryColumn sourceColumn="{materials}" operations="{[SummaryColumn.SUM]}"/>
+				<layoutComponents:SummaryColumn sourceColumn="{value}" operations="{[SummaryColumn.SUM]}"/>
+				<layoutComponents:SummaryColumn sourceColumn="{timeFraction}" operations="{[totalTimeFraction]}" childDataField="@timeFraction"/>
+				<layoutComponents:SummaryColumn sourceColumn="{employee_labour}" operations="{[SummaryColumn.SUM]}" childDataField="@employee_labour"/>
+				<layoutComponents:SummaryColumn sourceColumn="{employee_materials}" operations="{[SummaryColumn.SUM]}" childDataField="@employee_materials"/>
+				<layoutComponents:SummaryColumn sourceColumn="{employee_value}" operations="{[SummaryColumn.SUM]}" childDataField="@employee_value"/>
+			</layoutComponents:summaryColumns>
+		</layoutComponents:AdvancedDataGridSummary2>
+	</summary>
+</ReportBase>

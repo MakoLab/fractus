@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mdi:DragPanel
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		layout="absolute" 
+		close="hide()"
+		showCloseButton="true"
+		borderThicknessLeft="10"
+		borderThicknessRight="10"
+		backgroundAlpha="1"
+		titleStyleName="windowTitleBar"
+		xmlns:mdi="com.makolab.components.layoutComponents.mdi.*"
+		width="600"
+		height="400"
+		horizontalScrollPolicy="off"
+		verticalScrollPolicy="off"
+		minWidth="400"
+		minHeight="300"
+	>
+	<!--
+	width="900"
+	height="700"
+	-->
+	<mx:Script>
+		<![CDATA[
+			import mx.containers.Canvas;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.controls.ProgressBar;
+			import com.makolab.components.layoutComponents.mdi.DragCanvas;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.managers.PopUpManager;
+			import mx.core.UIComponent;
+			import mx.controls.Alert;
+			
+			public static const BUTTON_CLOSE:int = 1;
+			public static const BUTTON_COMMIT:int = 2;
+			public static const BUTTON_CANCEL:int = 4;
+			public static const BUTTON_SAVE:int = 8;
+			
+			public static const FULLSCREEN:Rectangle = new Rectangle(-1,-1,-1,-1);
+			public static const MAXIMIZED:Rectangle = null;
+			public static const NORMAL:Rectangle = new Rectangle(0,0,600,400);
+			
+			[Bindable]
+			public var buttons:int
+			
+			private var _innerComponent:UIComponent;
+			
+			[Bindable]
+			public var commitFunction:Function;
+			
+			[Bindable]
+			public var showXmlFunction:Function;
+			
+			[Bindable]
+			public var closeFunction:Function;
+			
+			[Bindable]
+			public var saveFunction:Function;
+			
+			public var hideAfterCommit:Boolean = true;
+			
+			private var _mode:Rectangle = ComponentWindow.MAXIMIZED;
+			public function set mode(value:Rectangle):void
+			{
+				_mode = value;
+			}
+			public function get mode():Rectangle
+			{
+				return _mode;
+			}
+			
+			[Bindable]
+			public function set innerComponent(value:UIComponent):void
+			{
+				if (_innerComponent) removeChild(_innerComponent);
+				_innerComponent = value;
+				if (_innerComponent)
+				{
+					_innerComponent.setConstraintValue("top", 0);
+					_innerComponent.setConstraintValue("bottom", 0);
+					_innerComponent.setConstraintValue("left", 0);
+					_innerComponent.setConstraintValue("right", 0);
+					addChildAt(_innerComponent, 0);
+				}
+			}
+			public function get innerComponent():UIComponent
+			{
+				return _innerComponent;
+			}
+			
+			private var originalAlpha:Number = NaN;
+			
+			public function setTransparent(value:Boolean):void
+			{
+				const OPAQUE_ALPHA:Number = 0.8;
+				if (isNaN(originalAlpha) && getStyle("borderAlpha") != OPAQUE_ALPHA) originalAlpha = getStyle("borderAlpha");
+				setStyle("borderAlpha", value && !isNaN(originalAlpha) ? originalAlpha : OPAQUE_ALPHA);
+			}
+			
+			public static function showWindow(innerComponent:UIComponent, buttons:int = 0, dimensions:Rectangle = null, title:String = null):ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				window.buttons = buttons;
+				window.title = title;
+				window.innerComponent = innerComponent;
+				window.show(null, dimensions, title);
+				return window;
+			}
+			
+			
+			public function show(parent:UIComponent = null, dimensions:Rectangle = null, title:String = null):void
+			{
+				//var top:int = 80;
+				//var app:Main = ModelLocator.getInstance().applicationObject;
+				//this.width = app.width;
+				//this.height = app.height - top;
+				//this.y = top;
+				//PopUpManager.addPopUp(this, (parent || DisplayObject(ModelLocator.getInstance().applicationObject)));
+				//PopUpManager.centerPopUp(this);
+				var canvas:DragCanvas = DragCanvas.instance;
+				if ( dimensions == FULLSCREEN )
+				{
+					this.mode = FULLSCREEN;
+					ExternalInterface.call("fullscreenOn");
+					Application.application.layoutMode = Application.application.FULLSCREEN;
+					//Application.application.addChild(this);
+					canvas.addChild(this);
+					this.setStyle("headerHeight",0);
+					this.controlBar.visible = this.controlBar.includeInLayout = false;
+					this.setStyle("top",0);
+					this.setStyle("bottom",0);
+					this.setStyle("right",0);
+					this.setStyle("left",0);
+				}
+				else
+				{
+					if (canvas)
+					{
+						this.includeInLayout = false;
+						this.title = title;
+						if (!dimensions)
+						{
+							mode = MAXIMIZED;
+							canvas.addMaximized(this, this.minWidth, this.minHeight);
+						}
+						else
+						{
+							mode = NORMAL;
+							canvas.addChild(this);
+							this.width = dimensions.width;
+							this.height = dimensions.height;
+							var x:Number, y:Number;
+							x = dimensions.x > 0 ? dimensions.x : canvas.width / 2 - this.width / 2;
+							y = dimensions.y > 0 ? dimensions.y : canvas.height / 2 - this.height / 2;
+							if (x < 0) x = 0;
+							if (y < 0) y = 0;
+							move(x, y);
+						}
+						this.includeInLayout = true;
+						if (this.innerComponent) this.innerComponent.setFocus();
+					}
+					else
+					{
+						mode = MAXIMIZED;
+						Application.application.addChild(this);
+						this.percentHeight = 100;
+						this.percentWidth = 100;
+						this.showCloseButton = false;
+					}
+				}
+			}
+			
+			public function hide():void
+			{
+				this.visible = false;
+				if(parent) parent.removeChild(this);
+				this.innerComponent = null;
+				this.commitFunction = null;
+				this.closeFunction = null
+				this.showXmlFunction = null;
+				this.saveFunction = null;
+				Application.application.setFocus();
+				Application.application.layoutMode = Application.application.NORMAL;
+			}
+			
+			protected function handleButtonClick(event:MouseEvent):void
+			{
+				if (event.target == commitButton)
+				{
+					if (commitFunction != null && commitFunction() && hideAfterCommit) hide();
+				}
+				else if (event.target == cancelButton) hide();
+				else if (event.target == xmlButton)
+				{
+					if (this.showXmlFunction != null)
+						this.showXmlFunction();
+				}
+				else if (event.target == btnClose)
+				{
+					if(this.closeFunction != null && closeFunction()) hide();
+				}
+				else if (event.target == saveButton)
+				{
+					if(this.saveFunction != null && saveFunction()) hide();
+				}
+			}
+			
+			// kod pozwalajacy na wymuszenie pojawienia sie komponentu 
+			private var showLaterComponent:UIComponent;
+			private var progressBar:ProgressBar;
+			public function showLater(component:UIComponent):void
+			{
+				showLaterComponent = component;
+				progressBar = new ProgressBar();
+				progressBar.indeterminate = true;
+				progressBar.width = 100;
+				progressBar.height = 30;
+				progressBar.setConstraintValue("verticalCenter", 0);
+				progressBar.setConstraintValue("horizontalCenter", 0);
+				progressBar.label = LanguageManager.getLabel("common.loading");
+				this.addChildAt(progressBar, 0);
+			}
+			
+			public function showLaterHandler(arg:Object = null):void
+			{
+				removeChild(progressBar);
+				innerComponent = showLaterComponent;
+			}
+			
+			[Bindable]
+			public var buttonsEnabled:Boolean = true;
+		]]>
+	</mx:Script>
+
+	<mx:ControlBar id="windowControlBar" horizontalAlign="center" includeInLayout="{buttons != 0}" paddingTop="5" paddingBottom="5" enabled="{buttonsEnabled}">
+		<mx:Button id="commitButton" label="{LanguageManager.getInstance().labels.common.accept}" click="handleButtonClick(event)" visible="{(buttons &amp; BUTTON_COMMIT) != 0}" includeInLayout="{(buttons &amp; BUTTON_COMMIT) != 0}"/>
+		<mx:Button id="cancelButton" label="{LanguageManager.getInstance().labels.common.cancel}" click="handleButtonClick(event)" visible="{(buttons &amp; BUTTON_CANCEL) != 0}" includeInLayout="{(buttons &amp; BUTTON_CANCEL) != 0}"/>
+		<mx:Button id="saveButton" label="{LanguageManager.getInstance().labels.common.save}" click="handleButtonClick(event)" visible="{(buttons &amp; BUTTON_SAVE) != 0}" includeInLayout="{(buttons &amp; BUTTON_SAVE) != 0}"/>
+		<mx:Button id="btnClose" label="{LanguageManager.getInstance().labels.common.close}" click="handleButtonClick(event)" visible="{(buttons &amp; BUTTON_CLOSE) != 0}" includeInLayout="{(buttons &amp; BUTTON_CLOSE) != 0}"/>
+		<mx:Button id="xmlButton" label="XML" click="handleButtonClick(event)" visible="{Boolean(showXmlFunction) &amp;&amp; ModelLocator.getInstance().isDebug()}" includeInLayout="{Boolean(showXmlFunction) &amp;&amp; ModelLocator.getInstance().isDebug()}"/>
+	</mx:ControlBar>				
+</mdi:DragPanel>

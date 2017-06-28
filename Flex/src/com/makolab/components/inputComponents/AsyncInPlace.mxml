@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml">
+<!--
+// Author: Anirudh Sasikumar (http://anirudhs.chaosnet.org/)
+// Copryright (C) 2009 Anirudh Sasikumar
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+-->	
+	<mx:Script>
+		<![CDATA[
+import com.makolab.components.inputComponents.as3syntaxhighlight.PseudoThread;
+import mx.controls.textClasses.TextRange;
+import com.makolab.components.inputComponents.as3syntaxhighlight.CodePrettyPrint;
+
+private var cssString:String =".spl {font-family:sandboxcode;color: #4f94cd;} .str { font-family:sandboxcode; color: #880000; } .kwd { font-family:sandboxcode; color: #000088; } .com { font-family:sandboxcode; color: #008800; } .typ { font-family:sandboxcode; color: #0068CF; } .lit { font-family:sandboxcode; color: #006666; } .pun { font-family:sandboxcode; color: #666600; } .pln { font-family:sandboxcode; color: #222222; } .tag { font-family:sandboxcode; color: #000088; } .atn { font-family:sandboxcode; color: #660066; } .atv { font-family:sandboxcode; color: #880000; } .dec { font-family:sandboxcode; color: #660066; } ";
+private var codeStyle:StyleSheet;
+private var codePrettyPrint:CodePrettyPrint;
+private var codeTimer:Timer;
+private var asyncStop:Boolean;
+private var asyncRunning:Boolean;
+private var codeStylePF:StyleSheet;
+private var srclenPF:int;
+private var arrPF:Array;
+private var lenPF:int;
+private var firstNodePF:Boolean;
+private var firstIndexPF:int;
+private var pfasyncrunning:Boolean;
+private var pfasyncstop:Boolean;
+private var desclenPF:int;
+private var colorThread:PseudoThread;
+[Bindable]
+private var asyncCodeState:String;
+[Bindable]
+private var textLabel:String;
+[Bindable]
+public var dataProvider:String;
+
+public function setTextLabel(o:Object):void
+{
+	textLabel = o.toString();	
+}
+
+public function codeHighlight():void
+{
+    if ( !codeTimer )
+    {
+        codeTimer = new Timer(200,1);
+        codeTimer.addEventListener(TimerEvent.TIMER, doPrettyPrint);
+        
+    }	
+    
+    if ( codeTimer.running )
+    {
+        codeTimer.stop();
+    }
+    codeTimer.reset();
+    // wait for some time to see if we need to highlight or not
+    codeTimer.start();
+}
+
+private function doPrettyPrint(event:TimerEvent=null):void
+{
+    if ( !codeStyle )
+    {
+        codeStyle = new StyleSheet();
+        codePrettyPrint = new CodePrettyPrint();
+        codeStyle.parseCSS(cssString);
+    }
+    
+    if ( codePrettyPrint.asyncRunning )
+    {
+        codePrettyPrint.prettyPrintStopAsyc = true;
+        callLater(doPrettyPrint);
+        return;
+    }
+    
+    if ( pfasyncrunning )
+    {
+        pfasyncstop = true;
+        callLater(doPrettyPrint);
+        return;
+    }	
+    codeHighlightInPlace();
+    
+}
+
+private function pfinit(startIdx:int, endIdx:int):void
+{
+    codeStylePF = codeStyle;
+    srclenPF = endIdx - startIdx;
+    arrPF = codePrettyPrint.mainDecorations;
+    lenPF = arrPF.length;
+    desclenPF = tarea1.text.length;
+    firstNodePF = false;
+    firstIndexPF = 0;
+    pfasyncrunning = false;
+    pfasyncstop = false;	
+}
+
+private function processFormattedCodeAsync(startIdx:int, endIdx:int, completeFn:Function, optIdx:int=0):Boolean
+{			
+    if ( pfasyncstop )
+    {
+        pfasyncrunning = false;
+        pfasyncstop = false;
+        return false;
+    }
+    pfasyncrunning = true;
+    if ( arrPF == null || srclenPF < 1 ) 
+    {
+    	pfasyncrunning = false;
+        return false;
+    }
+   // trace("color worker " + optIdx);
+    var tr:TextRange;
+    var thecolor:Object;
+    var i:int = optIdx;
+    if ( i > 0 && i % 5 == 0 )
+    {
+    	asyncCodeState = "Coloring (" + int((i / lenPF) * 100) + "%)...";
+    }
+    if ( i < lenPF )
+    {
+        /* find first node */
+        if ( arrPF[i] == 0 && firstNodePF == false )
+        {        
+        	firstNodePF = true;					
+            return true;
+        }
+        else if ( arrPF[i] == 0 && firstNodePF == true )
+        {
+            firstNodePF = false;
+            firstIndexPF = i;
+            
+        } 
+        if ( i - 2 > 0 )
+        {
+            if ( arrPF[i-2]  != arrPF[i] && arrPF[i] < tarea1.text.length )
+            {
+            	tr = new TextRange(tarea1, false, arrPF[i-2] + startIdx, arrPF[i] + startIdx);
+            	thecolor = codeStylePF.getStyle("." + arrPF[i-1]).color;
+            	tr.color = thecolor;
+            }
+            
+        }
+        return true;
+        
+        
+    }
+    if ( i > 0 )
+    {
+        i -= 2;
+        if ( arrPF[i] + startIdx < endIdx )
+        {
+            tr = new TextRange(tarea1, false, arrPF[i] + startIdx, endIdx);
+            thecolor = codeStylePF.getStyle("." + arrPF[i+1]).color;            
+            var totlen:int = tarea1.text.length;
+            if ( totlen >= endIdx )
+            	tr.color = thecolor;
+            
+        }
+    }
+    if ( completeFn != null )
+    	completeFn();
+   // trace("color worker done");
+    pfasyncrunning = false;
+    return false;			
+    
+}
+
+private function codePFComplete():void
+{
+	asyncCodeState = "";
+}
+
+private function codeInPlaceComplete():void
+{	
+    asyncCodeState = "Coloring...";
+    if ( pfasyncrunning )
+    {
+        pfasyncstop = true;
+        callLater(codeInPlaceComplete);
+        return;
+    }
+    asyncRunning = false;
+    
+    pfinit(0, tarea1.length);
+    colorThread = new PseudoThread(this.systemManager, processFormattedCodeAsync, this, [0, tarea1.length, codePFComplete, 0], 3, 2);
+}
+
+private function lexInt(idx:int, total:int):void
+{
+	if ( idx > 0 && idx % 5 == 0 )
+	{
+		asyncCodeState = "Lexing (" + int((idx / total) * 100) + "%)...";
+	}
+}
+
+private function codeHighlightInPlace():void
+{
+    asyncRunning = true;
+    asyncCodeState = "Lexing...";
+    codePrettyPrint.prettyPrintAsync(tarea1.text, null, codeInPlaceComplete, lexInt, this.systemManager);
+    
+}
+		]]>
+	</mx:Script>	
+	<mx:VBox width="100%" height="100%">
+	<mx:TextArea id="tarea1"  
+		width="100%" height="100%"
+		condenseWhite="true"
+		styleName="codeTextArea"
+		text="{dataProvider}"
+		visible="true" includeInLayout="true"  creationComplete="codeHighlight()" change="codeHighlight()" editable="true">
+		
+	</mx:TextArea>
+	<mx:Canvas width="100%">
+		<mx:Label left="0" text="{textLabel}" styleName="subHeading" />
+		<mx:Label right="0" text="{asyncCodeState}" styleName="subHeading" />
+	</mx:Canvas>
+	</mx:VBox>
+		</mx:Canvas>	

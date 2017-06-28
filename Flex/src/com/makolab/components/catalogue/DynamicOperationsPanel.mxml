@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.dynamicOperations.AddToCartOperation;
+			import com.makolab.components.catalogue.dynamicOperations.SalesOrderZamAppendingDynamicOperation;
+			import com.makolab.components.catalogue.dynamicOperations.PrintTextOperation;
+			import com.makolab.components.catalogue.dynamicOperations.SettleSalesOrderOperation;
+			import com.makolab.fractus.view.documents.documentLists.DocumentList;
+			import com.makolab.components.catalogue.dynamicOperations.AddToClipboardOperation;
+			import com.makolab.components.catalogue.dynamicOperations.ChangeProcessStateOperation;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.components.catalogue.dynamicOperations.CreateNewBusinessObjectOperation;
+			import com.makolab.fractus.view.documents.documentLists.DocumentStatusChangeOperation;
+			import com.makolab.components.catalogue.dynamicOperations.StatusChangeOperation;
+			import com.makolab.components.catalogue.dynamicOperations.PrintPdfOperation;
+			import com.makolab.components.catalogue.dynamicOperations.ImportDocumentDynamicOperation;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.components.catalogue.dynamicOperations.EditOperation;
+			import com.makolab.fractus.model.LanguageManager;
+			import assets.IconManager;
+			import com.makolab.components.catalogue.dynamicOperations.PreviewOperation;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.components.catalogue.dynamicOperations.DynamicOperation;
+			private var _itemData:Object;
+			
+			private var dctProcessToOperation:Array = new Array();
+			
+			[Bindable]
+			public var clearSelectionFunction:Function;
+			
+			[Bindable]
+			public var config:XML;
+			
+			private var processNameAttrId:String = DictionaryManager.getInstance().getIdByName("Attribute_ProcessType", "documentFields");
+			private var processType:String;
+			
+			[Bindable]
+			public var documentList:DocumentList;
+			
+			public function get objectType():String
+			{
+				return this.config.objectType;
+			}
+			
+			public function set itemData(value:Object):void
+			{
+				this.hideAll();
+				this._itemData = value;
+				
+				if(this._itemData)
+				{
+					var processTypeAttribute:XMLList = this.itemData.*[0].attributes.attribute.(documentFieldId == processNameAttrId);
+				
+					if(!processTypeAttribute || processTypeAttribute.length() == 0)
+						this.processType = null;
+					else
+						this.processType = processTypeAttribute[0].value.*;
+						
+					this.createNewOperations();
+					this.showOperations();
+				}
+			}
+			
+			public function get itemData():Object
+			{
+				return this._itemData;
+			}
+			
+			public function get documentId():String
+			{
+				return this._itemData.*[0].id;
+			}
+			
+			public function get documentXML():XML
+			{
+				return this._itemData.*[0];
+			}
+			
+			public function get documentTypeDescriptor():DocumentTypeDescriptor
+			{
+				return new DocumentTypeDescriptor(this._itemData.*[0].documentTypeId);
+			}
+			
+			private function showOperations():void
+			{
+				for each(var newOperation:XML in this.itemData.operations.operation)
+				{
+					var operation:DynamicOperation = this.dctProcessToOperation[this.processType][newOperation.@name + newOperation.@order];
+					
+					if(operation != null)
+					{
+						operation.loadParameters(newOperation);
+						operation.visible = true;
+						
+						if (operation.permissionKey && ModelLocator.getInstance().permissionManager.isHidden(operation.permissionKey)) {
+							operation.includeInLayout = false;
+							operation.visible = false;
+						} else {
+							operation.includeInLayout = true;
+							operation.visible = true;
+						}
+						
+						if(newOperation.@toolTipKey.length() > 0 && String(newOperation.@toolTipKey) != "")
+							operation.toolTip = LanguageManager.getLabel(newOperation.@toolTipKey);
+						else
+							operation.toolTip = null;
+							
+						if(newOperation.@enabled.length() > 0 && String(newOperation.@enabled) == "0")
+							operation.enabled = false;
+						else
+							operation.enabled = true;
+							
+						if (operation.permissionKey && !ModelLocator.getInstance().permissionManager.isEnabled(operation.permissionKey))
+							operation.enabled = false;
+					}
+				}
+			}
+			
+			private function createNewOperations():void
+			{
+				if(!this.processType) return;
+				
+				if(!this.dctProcessToOperation[this.processType])
+					this.dctProcessToOperation[this.processType] = new Array();
+				
+				for each(var newOperation:XML in this.itemData.operations.operation)
+				{
+					if(!this.dctProcessToOperation[this.processType][newOperation.@name + newOperation.@order]) //tworzymy nowa operacje
+					{
+						var operation:DynamicOperation;
+						
+						switch(String(newOperation.@name))
+						{
+							case "preview":
+								operation = new PreviewOperation();
+								break;
+							case "edit":
+								operation = new EditOperation();
+								break;
+							case "printPdf2":
+							case "printPdf":
+								operation = new PrintPdfOperation();
+								break;
+							case "printText":
+								operation = new PrintTextOperation();
+								break;
+							case "cancel":
+								operation = new StatusChangeOperation(DocumentStatusChangeOperation.CANCELLED);
+								break;
+							case "save":
+								operation = new StatusChangeOperation(DocumentStatusChangeOperation.SAVED);
+								break;
+							case "commit":			 
+								operation = new StatusChangeOperation(DocumentStatusChangeOperation.COMMITED);
+								break;
+							case "createNewBusinessObject":
+								operation = new CreateNewBusinessObjectOperation();
+								break;
+							case "changeProcessState":
+								operation = new ChangeProcessStateOperation();
+								break;
+							case "addToClipboard":
+								operation = new AddToClipboardOperation();
+								break;
+							case "addToCart":
+								operation = new AddToCartOperation();
+								break;
+							case "settleSalesOrder":
+								operation = new SettleSalesOrderOperation();
+								break;
+							case "importDocument":
+								operation = new ImportDocumentDynamicOperation();
+								break;
+							case "appenedSalesOrderPositions":
+								operation = new SalesOrderZamAppendingDynamicOperation();
+								break;
+							default:
+								operation = null;
+								break;
+						}
+						
+						if(operation != null)
+						{
+							operation.panel = this;
+							operation.image = IconManager.getIcon(newOperation.@icon);
+							operation.labelKey = newOperation.@labelKey;
+							operation.label = LanguageManager.getLabel(newOperation.@labelKey);
+							operation.isDefaultOperation = (newOperation.@defaultOperation == "true");
+							operation.name = newOperation.@name;
+							operation.order = parseInt(newOperation.@order);
+							
+							if (newOperation.nestedOperations.operation.length() > 0)
+							{
+								var extendedOperations:Array = [];
+								for each (var extendedOperation:XML in newOperation.nestedOperations.operation)
+								{
+									extendedOperations.push({label : LanguageManager.getLabel(extendedOperation.@labelKey), operationId : extendedOperation.@operationId, documentTemplate : extendedOperation.template.toString(), source : extendedOperation.source}); // todo operationId nie ma w xmlu
+								}
+								operation.extendedOperations = extendedOperations;
+							}
+							
+							if (newOperation.@permissionKey.length() > 0 && String(newOperation.@permissionKey) != "")
+								operation.permissionKey = newOperation.@permissionKey;
+							else
+								operation.permissionKey = null;
+								
+							operation.loadParameters(newOperation);
+							
+							this.dctProcessToOperation[this.processType][newOperation.@name + newOperation.@order] = operation;
+							
+							//teraz operacje wciskamy w odpowiednie miejsce w kontenerze
+							operation.visible = false;
+							operation.includeInLayout = false;
+							this.placeOperation(operation);
+						}
+					}	
+				}
+			}
+			
+			private function placeOperation(operation:DynamicOperation):void
+			{
+				if(this.getChildren().length == 0)
+					this.addChild(operation);
+				else
+				{
+					var placed:Boolean = false;
+					
+					for(var i:int=this.getChildren().length - 1; i>=0; i--)
+					{
+						var child:DynamicOperation = this.getChildAt(i) as DynamicOperation;
+						if(child.order <= operation.order)
+						{
+							this.addChildAt(operation, i + 1);
+							placed = true;
+							break;
+						}
+					}
+					
+					if(!placed) this.addChildAt(operation, 0);
+				}
+			}
+			
+			public function invokeDefaultOperation():void
+			{
+				for each(var child:Object in this.getChildren())
+				{
+					var operation:DynamicOperation = child as DynamicOperation;
+					
+					if(operation != null && operation.isDefaultOperation && operation.visible == true)
+					{
+						operation.invokeOperation();
+						break;
+					}
+				}
+			}
+			
+			private function hideAll():void
+			{
+				for each(var child:Object in this.getChildren())
+				{
+					var operation:DynamicOperation = child as DynamicOperation;
+					
+					if(operation != null)
+					{
+						operation.visible = false;
+						operation.includeInLayout = false;
+					}
+				}
+			}
+		]]>
+	</mx:Script>
+</mx:VBox>

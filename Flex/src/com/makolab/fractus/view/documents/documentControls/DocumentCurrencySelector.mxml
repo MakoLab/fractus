@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem xmlns:mx="http://www.adobe.com/2006/mxml" label="{LanguageManager.getInstance().labels.common.currency}" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:generic="com.makolab.fractus.view.generic.*" verticalGap="0">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.CurrencyManager;
+			import flight.binding.Bind;
+			import mx.events.FlexMouseEvent;
+			import mx.controls.Button;
+			import mx.containers.HBox;
+			import mx.containers.ControlBar;
+			import com.makolab.components.util.FPopUpManager;
+			import mx.containers.TitleWindow;
+			import com.adobe.utils.DateUtil;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			[Bindable] private var currencyId:String;
+			[Bindable] private var exchangeRate:Number = 1;
+			[Bindable] private var exchangeScale:Number = 1;
+			[Bindable] private var exchangeDate:Date = new Date((new Date()).getDate() - Tools.millisecondsPerDay);
+			
+			public var window:TitleWindow;
+			private var _documentObject:DocumentObject;
+			
+			private var initCurrencyId:String;
+			private var initExchangeRate:String;
+			private var initExchangeScale:String;
+			private var initExchangeDate:String;
+			
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				_documentObject = value;
+				if (_documentObject && !payment)
+				{
+					currencyId = _documentObject.xml.documentCurrencyId;
+					exchangeRate = _documentObject.xml.exchangeRate;
+					exchangeScale = _documentObject.xml.exchangeScale;
+					exchangeDate = Tools.isoToDate(_documentObject.xml.exchangeDate);
+					if (documentObject.xml.documentCurrencyId.toString() != ModelLocator.getInstance().systemCurrencyId)
+						exchangeInfoVisible = true;
+					else
+						exchangeInfoVisible = false;
+				}
+			}
+			public function get documentObject():DocumentObject
+			{
+				return _documentObject;
+			}
+			
+			private var _payment:XML;
+			public function set payment(value:XML):void
+			{
+				_payment = value;
+				currencyId = initCurrencyId = _payment.paymentCurrencyId.toString();
+				exchangeRate = _payment.exchangeRate;
+				exchangeScale = _payment.exchangeScale;
+				exchangeDate = Tools.isoToDate(_payment.exchangeDate);
+				initExchangeRate = _payment.exchangeRate.toString();
+				initExchangeScale = _payment.exchangeScale.toString();
+				initExchangeDate = _payment.exchangeDate.toString();
+				if (_payment.paymentCurrencyId.toString() == documentObject.xml.documentCurrencyId.toString())
+				{
+					exchangeInfoVisible = false;
+					//payment.exchangeRate = documentObject.xml.exchangeRate.toString();
+					//payment.exchangeScale = documentObject.xml.exchangeScale.toString();
+					//payment.exchangeDate = documentObject.xml.exchangeDate.toString();
+				}else{
+					exchangeInfoVisible = true;
+					payment.exchangeRate = exchangeRate;
+					payment.exchangeScale = exchangeScale;
+					payment.exchangeDate = Tools.dateToIso(exchangeDate);
+				}
+			}
+			public function get payment():XML
+			{
+				return _payment;
+			} 
+			
+			public static function show(parent:DisplayObject,documentObject:DocumentObject,payment:XML = null):void
+			{
+				var editor:DocumentCurrencySelector = new DocumentCurrencySelector();
+				editor.documentObject = documentObject;
+				editor.payment = payment;
+				editor.percentWidth = 100;
+				editor.percentHeight = 100;
+				
+				var window:TitleWindow = new TitleWindow();
+				window.setStyle("headerHeight",0);
+				window.setStyle("verticalGap",0);
+				window.setStyle("dropShadowEnabled",true);
+				window.setStyle("shadowDistance",2);
+				window.width = 300;
+				window.height = 180;
+				//Bind.addBinding(window,"height",editor,"height");
+				window.addChild(editor);
+				window.addEventListener(KeyboardEvent.KEY_UP,keyUpHandler);
+				window.addEventListener(FlexMouseEvent.MOUSE_DOWN_OUTSIDE,function ():void{editor.cancel();removePopUp();});
+				editor.window = window;
+				
+				var okButton:Button = new Button();
+				okButton.label = "OK";
+				okButton.toolTip = "[Enter]";
+				okButton.width = 90;
+				okButton.addEventListener(MouseEvent.CLICK,function ():void {if (editor.commit()) removePopUp();});
+				
+				var cancelButton:Button = new Button();
+				cancelButton.label = "Anuluj";
+				cancelButton.toolTip = "[Esc]";
+				cancelButton.width = 80;
+				cancelButton.addEventListener(MouseEvent.CLICK,function ():void {editor.cancel();removePopUp();});
+				
+				var controlBar:ControlBar = new ControlBar();
+				controlBar.addChild(okButton);
+				controlBar.addChild(cancelButton);
+				controlBar.height = 30;
+				controlBar.setStyle("paddingTop",0);
+				controlBar.setStyle("paddingBottom",0);
+				window.addChild(controlBar);
+				
+				FPopUpManager.addPopUp(window,parent);
+				
+				window.setFocus();
+				
+				function keyUpHandler(event:KeyboardEvent):void
+				{
+					if (event.keyCode == Keyboard.ESCAPE) {editor.cancel();removePopUp();};
+					if (event.keyCode == Keyboard.ENTER) {okButton.setFocus(); if (editor.commit()) removePopUp();}
+				}
+				
+				function removePopUp():void
+				{
+					FPopUpManager.removePopUp(window);
+				}
+			}
+			
+			private function isCurrencyChangeEnabled(document:DocumentObject):Boolean
+			{
+				return ((documentObject.xml.version.length() == 0 && !documentObject.typeDescriptor.isCorrectiveDocument)) || payment != null;
+			}
+			
+			private function handleCurrencyChange():void
+			{
+				if (payment)
+				{
+					payment.paymentCurrencyId = selector.selectedId;
+					if (selector.selectedId == documentObject.xml.documentCurrencyId.toString())
+					{
+						exchangeInfoVisible = false;
+						exchangeRate = Number(documentObject.xml.exchangeRate);
+						exchangeScale = Number(documentObject.xml.exchangeScale);
+						exchangeDate = Tools.isoToDate(documentObject.xml.exchangeDate.toString());
+					}else{
+						exchangeInfoVisible = true;
+						payment.exchangeRate = exchangeRate;
+						payment.exchangeScale = exchangeScale;
+						payment.exchangeDate = Tools.dateToIso(exchangeDate);
+					}
+				}
+				else
+				{
+					documentObject.xml.documentCurrencyId = selector.selectedId;
+					documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_FIELD_CHANGE,false,false,"currency"));
+					if (selector.selectedId == ModelLocator.getInstance().systemCurrencyId)
+					{
+						exchangeInfoVisible = false;
+						documentObject.xml.exchangeRate = 1;
+						documentObject.xml.exchangeScale = 1;
+						//documentObject.xml.exchangeDate = "";
+					}else{
+						exchangeInfoVisible = true;
+						documentObject.xml.exchangeRate = exchangeRate;
+						documentObject.xml.exchangeScale = exchangeScale;
+						documentObject.xml.exchangeDate = Tools.dateToIso(exchangeDate);
+					}
+				}
+			}
+			
+			private function handleExchangeRateChange():void
+			{
+				if (!payment) 
+				{
+					documentObject.xml.exchangeRate = exchangeEditor.dataObject;
+					documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_FIELD_CHANGE,false,false,"currency"));
+				} 
+				exchangeRate = Number(exchangeEditor.dataObject)
+			}
+			
+			private function handleExchangeScaleChange():void
+			{
+				if (!payment) 
+				{
+					documentObject.xml.exchangeScale.* = exchangeScaleEditor.dataObject;
+					documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_FIELD_CHANGE,false,false,"currency"));
+				} 
+				exchangeScale = Number(exchangeScaleEditor.dataObject)
+			}
+			
+			private function handleExchangeDateChange():void
+			{
+				if (!payment) 
+				{
+					documentObject.xml.exchangeDate = dateEditor.dataObject;
+					documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_FIELD_CHANGE,false,false,"currency"));
+				} 
+				exchangeDate = Tools.isoToDate(String(dateEditor.dataObject));
+			}
+			
+			public function commit():Boolean
+			{
+				if (payment)
+				{
+					payment.paymentCurrencyId = selector.selectedId;
+					payment.exchangeRate = exchangeRate;
+					payment.exchangeScale = exchangeScale;
+					payment.exchangeDate = Tools.dateToIso(exchangeDate);
+					documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_PAYMENT_CHANGE));
+				}
+				return true;
+			}
+			
+			public function cancel():void
+			{
+				if (payment)
+				{
+					payment.paymentCurrencyId = initCurrencyId;
+					payment.exchangeRate = initExchangeRate;
+					payment.exchangeScale = initExchangeScale;
+					payment.exchangeDate = initExchangeDate;
+				}
+				else if (documentObject)
+				{
+					documentObject.xml.documentCurrencyId = initCurrencyId;
+					documentObject.xml.exchangeRate = initExchangeRate;
+					documentObject.xml.exchangeScale = initExchangeScale;
+					documentObject.xml.exchangeDate = initExchangeDate;
+				}
+			}
+			
+			[Bindable] private var exchangeInfoVisible:Boolean;
+		]]>
+	</mx:Script>
+	<generic:FractusDictionarySelector id="selector" dictionaryName="currency" change="handleCurrencyChange()" width="100%" selectedId="{currencyId}" enabled="{isCurrencyChangeEnabled(documentObject)}"/>
+	<mx:Form width="100%" visible="{exchangeInfoVisible}" includeInLayout="{exchangeInfoVisible}">
+		<mx:FormItem label="{LanguageManager.getInstance().labels.common.exchangeRate}" width="100%">
+			<inputComponents:CurrencyEditor id="exchangeEditor" dataObject="{exchangeRate}" focusOut="handleExchangeRateChange()" precision="4" width="100%"/>
+		</mx:FormItem>
+		<mx:FormItem label="Jednostka" width="100%">
+			<inputComponents:CurrencyEditor id="exchangeScaleEditor" dataObject="{exchangeScale}" focusOut="handleExchangeScaleChange()" precision="0" width="100%"/>
+		</mx:FormItem>
+		<mx:FormItem label="Data kursu" width="100%">
+			<inputComponents:DateEditor id="dateEditor" width="100%" selectedDate="{exchangeDate}" change="handleExchangeDateChange()" focusIn="dateEditor.open()"/>
+		</mx:FormItem>
+	</mx:Form>
+</mx:FormItem>

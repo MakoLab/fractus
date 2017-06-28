@@ -1,0 +1,57 @@
+<config>
+	<dataSource type="CSV">
+		<filename>data/data.csv</filename>
+	</dataSource>
+	<defaultSlice name="Default Report">
+		<axes>
+			<axis name="rows">
+				<hierarchy>
+					<dimensionName>[Color]</dimensionName>
+					<hierarchyName>[Color].[Color]</hierarchyName>
+				</hierarchy>
+				<hierarchy>
+					<dimensionName>[Measures]</dimensionName>
+					<hierarchyName>[Measures]</hierarchyName>
+				</hierarchy>
+			</axis>
+			<axis name="columns">
+				<hierarchy>
+					<dimensionName>[Country]</dimensionName>
+					<hierarchyName>[Country].[Country]</hierarchyName>
+				</hierarchy>
+			</axis>
+		</axes>
+		<measures>
+			<measure aggregation="Count">[Measures].[Quantity]</measure>
+			<measure>[Measures].[Price]</measure>
+		</measures>
+	</defaultSlice>
+	
+	<style source="styles/skin.css"/>
+
+	<params>
+		<param name="configuratorActive">on</param>
+		<param name="configuratorButton">on</param>
+		<param name="viewType">grid</param>
+		<param name="chartType">line</param>
+		<param name="showChartZeroValues">off</param>
+		<param name="showHeaders">on</param>
+		<param name="fitGridlines">off</param>
+		<param name="showTotals">on</param>
+		<param name="showGrandTotals">on</param>
+		<param name="expandAll">on</param>
+		<param name="localSettingsURL">local.xml</param>
+		<param name="exportHTMLTemplateURL">styles/misc/export.html</param>
+		<param name="emptyDataWarning">off</param>
+	</params>
+	
+ 	<format>
+		<param name="thousandsSeparator"><![CDATA[ ]]></param>
+		<param name="decimalSeparator"><![CDATA[.]]></param>
+		<param name="decimalPlaces">-1</param> <!-- by default is -1. -1 means no formatting -->
+		<param name="maxSymbols">12</param> <!-- max number of symbols in cell. by default is 10. -->
+		<param name="maxDecimalPlaces">2</param>
+		<param name="currencySymbol"></param> <!-- if you want format numbers as currency -->
+		<param name="currencySymbolAlign">left</param> <!-- left or right / by default is left -->
+	</format>	
+</config>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DocumentList icon="{IconManager.getIcon('service_documentList')}" 
+	themeColor="{IconManager.SERVICE_COLOR}" 
+	xmlns="com.makolab.fractus.view.documents.documentLists.*" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:catalogue="com.makolab.components.catalogue.*" 
+	xmlns:data="data.*"
+	documentCategory="serviceDocument"
+	config="{listConfig}"
+	listPermissionKey="service.list"
+	>
+	
+	<!-- OPERATIONS -->
+	<itemOperations>
+		<catalogue:CatalogueOperation permissionKey="service.preview" operationId="operationPreviewDocument" label="{LanguageManager.getInstance().labels.documents.preview}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" defaultOperation="true"/>
+		<EditDocumentOperation permissionKey="service.edit" category="{DocumentTypeDescriptor.CATEGORY_SERVICE_DOCUMENT}"/>
+		<catalogue:CatalogueOperation permissionKey="service.printGraphical" operationId="operationPrintDocumentGraphical" label="{LanguageManager.getInstance().labels.documents.printPdf}" image="{IconManager.getIcon('print_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="service.printTextual" operationId="operationPrintDocumentText" label="{LanguageManager.getInstance().labels.documents.printText}" image="{IconManager.getIcon('print_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<DocumentStatusChangeOperation permissionKey="service.cancel" status="{DocumentStatusChangeOperation.CANCELLED}"/>
+		<!-- Poniższy przycisk jest zalepka ktora sie zmienia jak przychodza przyciski z operacji wybranej z listy-->
+		<catalogue:CatalogueOperation permissionKey="service.close" operationId="changeProcessState" label="{LanguageManager.getInstance().labels.service.closeServiceOrder}" image="{IconManager.getIcon('closeProcess_small')}" />
+		<catalogue:CatalogueOperation permissionKey="service.addToClipboard" operationId="operationAddDocumentToClipboard" label="{LanguageManager.getInstance().labels.common.addToClipboard}" image="{IconManager.getIcon('add_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink1Item" label="{LanguageManager.getLabel(listConfig.operations['link1'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link1OperationVisible}" includeInLayout="{link1OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink2Item" label="{LanguageManager.getLabel(listConfig.operations['link2'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link2OperationVisible}" includeInLayout="{link2OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink3Item" label="{LanguageManager.getLabel(listConfig.operations['link3'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link3OperationVisible}" includeInLayout="{link3OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink4Item" label="{LanguageManager.getLabel(listConfig.operations['link4'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link4OperationVisible}" includeInLayout="{link4OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink5Item" label="{LanguageManager.getLabel(listConfig.operations['link5'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link5OperationVisible}" includeInLayout="{link5OperationVisible}"/>
+	</itemOperations>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import assets.IconManager;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+			[Bindable]
+			public var listConfig:XML = model.configManager.getXML("service.lists.serviceDocuments");
+		]]>
+	</mx:Script>
+
+</DocumentList>

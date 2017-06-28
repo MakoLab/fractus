@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.inputComponents.AttributeEditor;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.DictionaryManager;
+			
+			private var _documentObject:DocumentObject;
+			[Bindable]
+			public var dictionaryManager:DictionaryManager = DictionaryManager.getInstance();
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void 
+			{ 
+				_documentObject = value;
+			}
+			public function get documentObject():DocumentObject { return _documentObject; }		
+		]]>
+	</mx:Script>
+	<mx:Label text="Attr:"/>
+	
+				<inputComponents:DocumentAttributeEditor 
+					dataObject="{documentObject.attrib}" 
+					attributes="{dictionaryManager.dictionaries.documentAttributes}"
+					template="{template}"
+				 	itemEditorClass="com.makolab.components.inputComponents.GenericAttributeEditorComponent"
+				 	attributeIdField="documentFieldId"
+				 	width="100%" height="100%"
+				>					
+					
+				</inputComponents:DocumentAttributeEditor>
+			
+	<mx:XML id="template">
+		<template>
+			<attribute>
+          		<documentFieldId/>
+          		<value/>
+        	</attribute>
+        </template>
+	</mx:XML>
+</mx:VBox>

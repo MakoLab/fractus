@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox
+	icon="{IconManager.getIcon('item_catalogue')}"
+	themeColor="{IconManager.CRM_COLOR_LIGHT}" 
+	borderColor="0x479BF0" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:catalogue="com.makolab.components.catalogue.*" xmlns:view="com.makolab.fractus.view.*"
+	xmlns:layoutComponents="layoutComponents.*" xmlns:layoutComponents1="com.makolab.components.layoutComponents.*"
+	initialize="onInitialize()"
+	xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.CatalogueOperation;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.model.GlobalEvent;
+			import com.makolab.fractus.model.EventManager;
+			import mx.events.CloseEvent;
+			import com.makolab.fractus.commands.DeleteBusinessObjectCommand;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.view.warehouse.ShiftTransactionEditor;
+			import com.makolab.fractus.model.PermissionManager;
+			import com.makolab.components.catalogue.CatalogueItemWindow;
+			import com.makolab.fractus.commands.GetDocumentsForItemCommand;
+			import com.makolab.components.catalogue.CatalogueItemWindowEvent;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.commands.SearchCommand;
+			import com.makolab.fractus.commands.CreateBusinessObjectCommand;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.commands.SaveBusinessObjectCommand;
+			import com.makolab.fractus.commands.AssignItemToGroupCommand;
+			import com.makolab.fractus.commands.SaveConfigurationCommand;
+			import com.makolab.components.catalogue.GroupTreeEditorEvent;
+			import com.makolab.components.list.CommonGrid;
+			import mx.containers.FormHeading;
+			import mx.controls.Label;
+			import mx.effects.effectClasses.HideShowEffectTargetFilter;
+			import com.makolab.components.util.ComponentExportManager;
+			import com.makolab.fractus.business.Services;
+			import mx.rpc.soap.WebService;
+			import com.makolab.components.catalogue.CatalogueEvent;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.view.LogInWindow;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.components.catalogue.CatalogueItemWindow;
+			import assets.IconManager;
+			import mx.collections.XMLListCollection;
+			import mx.rpc.AbstractOperation;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.controls.List;
+			import mx.controls.ComboBox;
+			import mx.rpc.events.ResultEvent;
+			import mx.managers.PopUpManager;
+			import mx.collections.ICollectionView;
+			import mx.collections.ArrayCollection;
+			import mx.rpc.Responder;
+			import com.makolab.components.inputComponents.*;
+			import com.makolab.components.inputComponents.ItemImagesRenderer;
+			
+			private var logInWindow:LogInWindow;
+			private var itemWindow:CatalogueItemWindow;
+			
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+			[Bindable]
+			public var listConfig:XML = model.configManager.getXML("news.lists.news");
+			
+			[Bindable]
+			public var deleteOperationVisible:Boolean = false;
+			[Bindable]
+			public var link1OperationVisible:Boolean = false;
+			[Bindable]
+			public var link2OperationVisible:Boolean = false;
+			[Bindable]
+			public var link3OperationVisible:Boolean = false;
+			[Bindable]
+			public var link4OperationVisible:Boolean = false;
+			[Bindable]
+			public var link5OperationVisible:Boolean = false;
+			private function onInitialize():void
+			{
+				if(listConfig && listConfig.operations["delete"].length() > 0)
+					deleteOperationVisible = true;
+				else
+					deleteOperationVisible = false;
+				if(listConfig && listConfig.operations["link1"].length() > 0 ) {
+					link1OperationVisible = true;
+				} else {
+					link1OperationVisible = false;
+				}
+				
+				if(listConfig && listConfig.operations["link2"].length() > 0 ) {
+					link2OperationVisible = true;
+				} else {
+					link2OperationVisible = false;
+				}
+				if(listConfig && listConfig.operations["link3"].length() > 0 ) {
+					link3OperationVisible = true;
+				} else {
+					link3OperationVisible = false;
+				}
+				if(listConfig && listConfig.operations["link4"].length() > 0 ) {
+					link4OperationVisible = true;
+				} else {
+					link4OperationVisible = false;
+				}
+				
+				if(listConfig && listConfig.operations["link5"].length() > 0 ) {
+					link5OperationVisible = true;
+				} else {
+					link5OperationVisible = false;
+				}
+			}
+
+			private static function itemSaveResultHandler(event:ResultEvent):void
+			{
+				var window:CatalogueItemWindow = event.target.targetObject as CatalogueItemWindow;
+				window.hide();
+				var newEvent:CatalogueItemWindowEvent = new CatalogueItemWindowEvent(CatalogueItemWindowEvent.DATA_SAVE_COMPLETE);
+				newEvent.itemData = window.dataObject;
+				newEvent.itemId = XML(event.result).id;
+				window.dispatchEvent(newEvent);	
+				ModelLocator.getInstance().eventManager.dispatchEvent(new GlobalEvent(GlobalEvent.ITEM_CHANGED));			
+			}
+			
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var catalogue:NewsCatalogue = new NewsCatalogue();
+				window.innerComponent = catalogue;
+				window.setStyle("headerColors",[IconManager.CRM_COLOR,IconManager.CRM_COLOR_LIGHT]);
+				//window.setStyle("borderColor",Number(catalogue.getStyle("themeColor")));
+				if(catalogue.icon)window.titleIcon = catalogue.icon;
+				window.show(null,null,LanguageManager.getInstance().labels.title.news.list);
+				return window;
+			}
+
+			private static function postProcessItemData(data:XML):void
+			{
+				var emptyAttributes:XMLList;
+				while((emptyAttributes = data.*.attributes.attribute.(Tools.trim(String(valueOf().value)) == "")).length() > 0)
+				{
+					delete data.*.attributes.attribute[emptyAttributes[0].childIndex()];
+				}
+			}
+			
+			public function operationInvokeHandler(event:CatalogueEvent):void
+			{
+				if (!(event.target is CatalogueOperation)) return;
+			}
+			
+			private function groupsStructureSave(event:ResultEvent):void
+			{
+				model.configManager.requestValue("items.group",true);
+			}
+			
+			private function groupStructureFault(event:FaultEvent):void
+			{
+				model.configManager.requestValue("items.group",true);
+			}
+			
+			private function groupsStructureChange(event:GroupTreeEditorEvent):void
+			{
+				var cmd:SaveConfigurationCommand = new SaveConfigurationCommand();
+				cmd.addEventListener(ResultEvent.RESULT,groupsStructureSave);
+				cmd.addEventListener(FaultEvent.FAULT,groupStructureFault);
+				//cmd.targetObject = model;
+				//cmd.targetField = "";
+				//trace(event.groups.toString());
+				cmd.execute( { requestXml : event.groups} );
+			}
+			
+			private function itemToGroupAssignHandler(event:CatalogueEvent):void
+			{
+				if(ModelLocator.getInstance().minimalProfitMarginValidation)
+				{
+					Alert.show("Nie można zmienić przypisania towaru do grup towarowych, ponieważ jest włączona blokada minimalnej marży");
+					return;
+				}
+				var xml:XML = <root><itemGroupMembership/></root>;
+				if(event.itemData && event.itemData.itemIds && event.itemData.itemIds.length > 0){
+					for(var i:int = 0; i < event.itemData.itemIds.length; i++){
+						var entry:XML = <entry><itemGroupId>{event.itemData.groupId}</itemGroupId><itemId>{event.itemData.itemIds[i]}</itemId></entry>;
+						xml.itemGroupMembership.appendChild(entry);
+					}
+				}
+				var command:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("item.p_insertItemGroupMembershipCustom",xml);
+				command.addEventListener(ResultEvent.RESULT,handleItemToGroupAssignResult);
+				command.addEventListener(FaultEvent.FAULT,handleItemToGroupAssignFault);
+				command.defaultErrorHandling = false;
+				command.execute();
+				
+				/* var command:AssignItemToGroupCommand = new AssignItemToGroupCommand(AssignItemToGroupCommand.ITEM);
+				command.execute(event.itemData); */
+			}
+			
+			private function handleItemToGroupAssignResult(event:ResultEvent):void
+			{
+				
+			}
+			
+			private function handleItemToGroupAssignFault(event:FaultEvent):void
+			{
+				Alert.show(event.fault.message);
+			}
+			
+			private function searchItem(parameters:Object):void
+			{
+				var cmd:SearchCommand = new SearchCommand(SearchCommand.ITEMS);
+				//cmd.targetObject = itemCatalogue;
+				//cmd.targetField = "searchResults";
+				cmd.searchParams = XML(parameters);
+				cmd.addEventListener(ResultEvent.RESULT,handleSearchResults);
+				cmd.execute();
+			}
+			
+			private function handleSearchResults(event:ResultEvent):void
+			{
+				//var result:XML = XML(event.result);
+				
+				var result:XML = <items page="1" pageSize="200" rowCount="2">
+  									<item date="wt 23.03" time="godz. 14:30" task="Weryfikacja oferty firmy Misiak & Misiak" context="678 0467 023" deal="true"/>
+  									<item date="śr 24.03" time="cały dzień" task="Weryfikacja oferty nr 5671" context="Siedziba firmy" deal="0"/>
+  									<item date="cz 25.03" time="godz. 14:30" task="Weryfikacja oferty nr 56 C" context="Rabka Zdrój, ul. Andrzeja Jana Poniatowskiego 111/3a" deal="true"/>
+  									<item date="pt 26.03" time="godz. 14:30" task="Weryfikacja podmiotu nr 678 095" context="Szczecin, ul. Biaostocka 111/3a" deal="0"/>
+  									<item date="pt 26.03" time="godz. 15:30" task="Spotkanie z Helen Tobiasz-Fobiasz" context="Siedziba firmy" deal="true"/>
+  									<item date="pn 29.03" time="godz. 14:30" task="Aktualizacja oferty 3457B" context="Szczecin, ul. Biaostocka 111/3a" deal="true"/>
+  									<item date="wt 30.03" time="godz. 14:30" task="Rozmowa telefoniczna z Henrykiem Kociak-Fryzurk" context="Rabka Zdrój, ul. Andrzeja Jana Poniatowskiego 111/3a" deal="true"/>
+  									<item date="śr 31.03" time="cały dzień" task="Wystawienie faktury dla Mietex-POL 2000" context="" deal="0"/>
+								</items>;
+				
+				itemCatalogue.searchResults = new XMLListCollection(result.item);
+				itemCatalogue.rowCount = result.@rowCount;
+				itemCatalogue.pageNumber = result.@page;
+				itemCatalogue.itemData = result.itemData;
+			}
+			
+			private function getItemData(parameters:Object):void
+			{
+				/*var xml:XML = XML(parameters);
+				var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand();
+				cmd.targetObject = itemCatalogue;
+				cmd.targetField = "itemData";
+				cmd.execute({ id : xml.id, type : xml.type });*/
+			}
+			private function groupsChangeAllowed():Boolean
+			{
+				//permission hard coded
+				var permition:int = model.permissionManager.getPermissionLevel("catalogue.items.groups");
+				return permition == PermissionManager.LEVEL_ENABLED ? true : false;
+			}
+
+			/* ----- include typow ----- */
+			
+			private var lve:LabelValueEditor;
+			private var lle:LabelListEditor;
+			private var lb:Label;
+			private var cbe:CheckBoxEditor;
+			private var rbe:RadioButtonEditor;
+			private var ate:AttributeEditor;
+			private var adr:AddressRenderer;
+			private var ade:AddressEditor;
+			private var cb:ComboBox;
+			private var l:List;
+			private var nipe:NIPEditor;
+			private var ne:NameEditor;
+			private var ir:ItemRenderer;
+			private var cg:CommonGrid;
+			private var eqe:EquivalentEditor;
+			private var gaec:GenericAttributeEditorComponent;
+			private var ee:EmployeeEditor;
+			private var fh:FormHeading;
+			private var vue:ValueUnitEditor;
+			private var dsw:DictionarySelectorWrapper;
+			private var cne:ContractorNotesEditor;
+			private var iar:ItemImagesRenderer;
+			private var xxx:ItemsSetRenderer;
+			/* ------------------------- */
+		]]>
+	</mx:Script>
+	<!-- komponent kartoteki -->
+
+	<catalogue:CatalogueBrowser
+			id="itemCatalogue"
+			operationInvoke="operationInvokeHandler(event)"
+			itemSearch="searchItem(event.parameters)"
+			itemGetData="getItemData(event.parameters)"
+			groupsConfiguration="{model.configManager.values.items_group}"
+			groupStructureChange="groupsStructureChange(event)"
+			groupsTreeTitle="{LanguageManager.getInstance().labels.items.forms.item.itemsGroups}"
+			itemToGroupAssign="itemToGroupAssignHandler(event)"
+			itemsType="items"
+			allowGroupsChange="{groupsChangeAllowed()}"
+			config="{listConfig}"
+			dblClickPermissionKey="catalogue.items.edit"
+			rightPanelLabel="Plan dnia"
+			showClipboard="false"
+			showProdClipboard="false"
+		>
+		
+		
+		<!-- definicje operacji -->
+		<!--catalogue:itemOperations>
+			<catalogue:CatalogueOperation permissionKey="catalogue.items.details" operationId="relatedDocumentsItem" label="{LanguageManager.getInstance().labels.documents.detailedInformation}"  image="{IconManager.getIcon('properties_small')}"  operationInvoke="operationInvokeHandler(event)" defaultOperation="true" />
+			<catalogue:CatalogueOperation permissionKey="catalogue.items.edit" operationId="operationEditItem" label="{LanguageManager.getInstance().labels.common.edit}" image="{IconManager.getIcon('item_edit_small')}" operationInvoke="operationInvokeHandler(event)" />
+			<catalogue:CatalogueOperation permissionKey="catalogue.items.delete" operationId="operationDeleteItem" label="{LanguageManager.getInstance().labels.common.Delete}" image="{IconManager.getIcon('delete_small')}" operationInvoke="operationInvokeHandler(event)" visible="{deleteOperationVisible}" includeInLayout="{deleteOperationVisible}"/>
+			<catalogue:CatalogueOperation permissionKey="catalogue.items.export" operationId="operationExportItem" label="{LanguageManager.getInstance().labels.common.printGraphical}" image="{IconManager.getIcon('print_small')}" operationInvoke="operationInvokeHandler(event)" />
+			<catalogue:CatalogueOperation permissionKey="catalogue.items.addToClipboard" operationId="operationClipboardItem" label="{LanguageManager.getInstance().labels.catalogue.clipboard.inTo}" image="{IconManager.getIcon('item_toCart_small')}" operationInvoke="operationInvokeHandler(event)" />
+			<catalogue:CatalogueOperation permissionKey="warehouse.wms.shiftTransaction" operationId="operationEditLots" label="{LanguageManager.getInstance().labels.menu.newShiftTransaction}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)"/>
+			<catalogue:CatalogueOperation permissionKey="catalogue.items.add" operationId="operationDuplicateItem" label="{LanguageManager.getInstance().labels.items.lists.items.operations.duplicateLine}" image="{IconManager.getIcon('item_new_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink1Item" label="{LanguageManager.getLabel(listConfig.operations['link1'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link1OperationVisible}" includeInLayout="{link1OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink2Item" label="{LanguageManager.getLabel(listConfig.operations['link2'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link2OperationVisible}" includeInLayout="{link2OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink3Item" label="{LanguageManager.getLabel(listConfig.operations['link3'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link3OperationVisible}" includeInLayout="{link3OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink4Item" label="{LanguageManager.getLabel(listConfig.operations['link4'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link4OperationVisible}" includeInLayout="{link4OperationVisible}"/>
+		<catalogue:CatalogueOperation permissionKey="" operationId="operationLink5Item" label="{LanguageManager.getLabel(listConfig.operations['link5'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link5OperationVisible}" includeInLayout="{link5OperationVisible}"/>
+		</catalogue:itemOperations>
+		<catalogue:generalOperations>
+			<catalogue:CatalogueOperation permissionKey="catalogue.items.add" operationId="operationNewItem" label="{LanguageManager.getInstance().labels.items.lists.items.operations.newLine}" image="{IconManager.getIcon('item_new_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		</catalogue:generalOperations-->
+
+		<!-- panel wyswietlajacy informacje o biezacej pozycji -->
+		<catalogue:rightPanel>
+			<mx:HBox>
+				<inputComponents:DayCalendar/>
+				<mx:LinkButton label="Drukuj plan dnia"/>
+			</mx:HBox>
+			<layoutComponents1:DockPanel title="Spotkania" width="100%" maxHeight="150">
+				<layoutComponents1:titleBarControls>
+					<mx:LinkButton label="+ dodaj"/>
+				</layoutComponents1:titleBarControls>
+				<catalogue:CallsList width="100%" height="100%"/>
+			</layoutComponents1:DockPanel>
+			<layoutComponents1:DockPanel title="Zadania" width="100%">
+				<layoutComponents1:titleBarControls>
+					<mx:LinkButton label="+ dodaj"/>
+				</layoutComponents1:titleBarControls>
+				<catalogue:TasksList width="100%" height="100%"/>
+			</layoutComponents1:DockPanel>
+			<layoutComponents1:DockPanel title="W najbliższym czasie" width="100%">
+				<layoutComponents1:titleBarControls>
+					<mx:LinkButton label="+ dodaj"/>
+				</layoutComponents1:titleBarControls>
+				<catalogue:TasksList width="100%" height="100%">
+					<catalogue:dataProvider>
+						<mx:ArrayCollection>
+					         <mx:Object>
+					            <mx:description>Zadzwonic do Przemka z hurtowni</mx:description>
+					         </mx:Object>
+					         <mx:Object>
+					            <mx:description>Zrobic kserwowki do raportow na spotkanie z Agnieszka Balcerzak w Cafe Kulturalna, celem omowienia drugiej...</mx:description>
+					         </mx:Object>
+					         <mx:Object>
+					            <mx:description>Lunch z mężem</mx:description>
+					         </mx:Object>
+					      </mx:ArrayCollection>
+					</catalogue:dataProvider>
+				</catalogue:TasksList>
+			</layoutComponents1:DockPanel>
+			<!--layoutComponents1:XmlItemInfoPanel width="100%" id="itemInfoPanel" source="{model.configManager.getXML('items.panel.item')}" data="{itemCatalogue.itemData}"/-->
+		</catalogue:rightPanel>
+
+		<!-- panel wyswietlajacy informacje o biezacej pozycji -->
+		<!--<catalogue:rightPanel>
+			<layoutComponents1:XmlItemInfoPanel width="100%" id="itemInfoPanel" source="{model.configManager.getXML('items.panel.item')}" data="{itemCatalogue.itemData}"/>
+		</catalogue:rightPanel>-->
+		<!-- kolumny wynikow wyszukiwania -->
+		<!--<catalogue:config>
+			{model.configManager.getXML("items.lists.items")}
+		</catalogue:config>-->
+		
+	</catalogue:CatalogueBrowser>
+
+</mx:VBox>

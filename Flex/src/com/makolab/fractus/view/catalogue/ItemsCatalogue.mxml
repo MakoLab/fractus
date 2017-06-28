@@ -1,0 +1,691 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox
+	icon="{IconManager.getIcon('item_catalogue')}"
+	themeColor="{IconManager.ITEMS_COLOR}" 
+	borderColor="0xffdd33" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:catalogue="com.makolab.components.catalogue.*" xmlns:view="com.makolab.fractus.view.*"
+	xmlns:layoutComponents="layoutComponents.*" xmlns:layoutComponents1="com.makolab.components.layoutComponents.*"
+	initialize="onInitialize()"
+	>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.inputComponents.ValueCombinationEditor;
+			import com.makolab.components.catalogue.CatalogueEvent;
+			import com.makolab.components.catalogue.CatalogueItemWindow;
+			import com.makolab.components.catalogue.CatalogueItemWindowEvent;
+			import com.makolab.components.catalogue.GroupTreeEditorEvent;
+			import com.makolab.components.inputComponents.AddressEditor;
+			import com.makolab.components.inputComponents.AddressRenderer;
+			import com.makolab.components.inputComponents.AttributeEditor;
+			import com.makolab.components.inputComponents.CheckBoxEditor;
+			import com.makolab.components.inputComponents.ContractorNotesEditor;
+			import com.makolab.components.inputComponents.DictionarySelectorWrapper;
+			import com.makolab.components.inputComponents.EmployeeEditor;
+			import com.makolab.components.inputComponents.EquivalentEditor;
+			import com.makolab.components.inputComponents.GenericAttributeEditorComponent;
+			import com.makolab.components.inputComponents.ItemImageComponent;
+			import com.makolab.components.inputComponents.ItemImagesRenderer;
+			import com.makolab.components.inputComponents.ItemRenderer;
+			import com.makolab.components.inputComponents.ItemsSetRenderer;
+			import com.makolab.components.inputComponents.LabelListEditor;
+			import com.makolab.components.inputComponents.LabelValueEditor;
+			import com.makolab.components.inputComponents.NIPEditor;
+			import com.makolab.components.inputComponents.NameEditor;
+			import com.makolab.components.inputComponents.RadioButtonEditor;
+			import com.makolab.components.inputComponents.SearchItemEditor;
+			import com.makolab.components.inputComponents.ValueUnitEditor;
+			import com.makolab.components.list.CommonGrid;
+			import com.makolab.components.util.ComponentExportManager;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.commands.CreateBusinessObjectCommand;
+			import com.makolab.fractus.commands.DeleteBusinessObjectCommand;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.commands.SaveBusinessObjectCommand;
+			import com.makolab.fractus.commands.SaveConfigurationCommand;
+			import com.makolab.fractus.commands.SearchCommand;
+			import com.makolab.fractus.model.GlobalEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.view.LogInWindow;
+			import com.makolab.fractus.view.warehouse.ShiftTransactionEditor;
+			
+			import flash.net.navigateToURL;
+			
+			import mx.collections.XMLListCollection;
+			import mx.containers.FormHeading;
+			import mx.controls.Alert;
+			import mx.controls.ComboBox;
+			import mx.controls.Label;
+			import mx.controls.List;
+			import mx.events.CloseEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.utils.Base64Encoder;
+			
+			import assets.IconManager;
+			
+			import org.asclub.net.UploadPostHelper;
+			
+			private var logInWindow:LogInWindow;
+			private var itemWindow:CatalogueItemWindow;
+			
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+			[Bindable]
+			public var listConfig:XML = model.configManager.getXML("items.lists.items");
+			[Bindable]
+			public var panelConfig:XML = model.configManager.getXML("items.panel.item");
+			
+			[Bindable]
+			public var deleteOperationVisible:Boolean = false;
+			
+			[Bindable]
+			public var link1OperationVisible:Boolean = false;
+			[Bindable]
+			public var link2OperationVisible:Boolean = false;
+			[Bindable]
+			public var link3OperationVisible:Boolean = false;
+			[Bindable]
+			public var link4OperationVisible:Boolean = false;
+			[Bindable]
+			public var link5OperationVisible:Boolean = false;
+			
+			[Bindable]
+			public var hasPrestaLink:Boolean=false;
+			[Bindable]
+			public var hasPrestaImage:Boolean=false;
+			private function onInitialize():void
+			{
+				//permission hard coded
+				if(listConfig && listConfig.operations["delete"].length() > 0 && !model.permissionManager.isHidden('catalogue.items.delete')) {
+					deleteOperationVisible = true;
+				} else {
+					deleteOperationVisible = false;
+				}
+				if(listConfig && listConfig.operations["link1"].length() > 0 ) {
+					link1OperationVisible = true;
+				} else {
+					link1OperationVisible = false;
+				}
+				
+				if(listConfig && listConfig.operations["link2"].length() > 0 ) {
+					link2OperationVisible = true;
+				} else {
+					link2OperationVisible = false;
+				}
+				if(listConfig && listConfig.operations["link3"].length() > 0 ) {
+					link3OperationVisible = true;
+				} else {
+					link3OperationVisible = false;
+				}
+				if(listConfig && listConfig.operations["link4"].length() > 0 ) {
+					link4OperationVisible = true;
+				} else {
+					link4OperationVisible = false;
+				}
+				
+				if(listConfig && listConfig.operations["link5"].length() > 0 ) {
+					link5OperationVisible = true;
+				} else {
+					link5OperationVisible = false;
+				}
+				
+			}
+
+			private static function itemSaveResultHandler(event:ResultEvent):void
+			{
+				var window:CatalogueItemWindow = event.target.targetObject as CatalogueItemWindow;
+				window.hide();
+				var newEvent:CatalogueItemWindowEvent = new CatalogueItemWindowEvent(CatalogueItemWindowEvent.DATA_SAVE_COMPLETE);
+				newEvent.itemData = window.dataObject;
+				newEvent.itemId = XML(event.result).id;
+				window.dispatchEvent(newEvent);	
+				ModelLocator.getInstance().eventManager.dispatchEvent(new GlobalEvent(GlobalEvent.ITEM_CHANGED));			
+			}
+			
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var catalogue:ItemsCatalogue = new ItemsCatalogue();
+				ModelLocator.getInstance().configManager.requestValue("items.group");
+				window.innerComponent = catalogue;
+				window.setStyle("headerColors",[IconManager.ITEMS_COLOR,IconManager.ITEMS_COLOR_LIGHT]);
+				//window.setStyle("borderColor",Number(catalogue.getStyle("themeColor")));
+				if(catalogue.icon)window.titleIcon = catalogue.icon;
+				window.show(null,null,LanguageManager.getInstance().labels.title.items.list);
+				return window;
+			}
+			
+			public static function showRelatedDocumentsItemWindow(itemId:String,name:String = ""):void
+			{
+				CatalogueItemInfo.showWindow(itemId,null,CatalogueItemInfo.ITEM_DETAILS,name);
+			}
+			
+			public static function showItemWindow(itemId:String = null, formConfig:XML = null, templateId:String = null, duplicate:Boolean = false):CatalogueItemWindow
+			{
+				var itemWindow:CatalogueItemWindow;
+				itemWindow = new CatalogueItemWindow();
+				itemWindow.setStyle("headerColors",[IconManager.ITEMS_COLOR,IconManager.ITEMS_COLOR_LIGHT]);
+				itemWindow.width = 700;
+				itemWindow.height = 600;
+				itemWindow.addEventListener("accept", itemWindowEventHandler);
+				itemWindow.addEventListener("cancel", itemWindowEventHandler);
+				ModelLocator.getInstance().configManager.requestList(
+					[
+						'items.group',
+						'items.forms.item'
+					],
+					showItemWindowLater,
+					[itemWindow, itemId, formConfig, templateId, duplicate]
+				);
+					
+				return itemWindow;
+			}
+			
+			private static function showItemWindowLater(itemWindow:CatalogueItemWindow, itemId:String = null, formConfig:XML = null, templateId:String = null,duplicate:Boolean = false):CatalogueItemWindow
+			{
+				var model:ModelLocator = ModelLocator.getInstance();
+				model.configManager.requestValue("items.group");
+
+				if (formConfig == null) formConfig = model.configManager.getXML("items.forms.item");
+				itemWindow.formConfig = formConfig;
+				itemWindow.setStyle("headerColors",[IconManager.ITEMS_COLOR,IconManager.ITEMS_COLOR_LIGHT]);
+				itemWindow.title = formConfig.windowTitle;
+				itemWindow.show(model.applicationObject as DisplayObject,duplicate);
+				if (itemId && !duplicate)
+				{
+					var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand();
+					cmd.targetObject = itemWindow;
+					cmd.targetField = "data";
+					cmd.execute( { id : itemId, type : 'Item' } );
+				}
+				else if(itemId && duplicate){
+					var duplicateCmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand();
+					duplicateCmd.targetObject = itemWindow;
+					duplicateCmd.targetField = "data";
+					duplicateCmd.execute( { id : itemId, type : 'Item' } );
+				}
+				else
+				{
+					var createCmd:CreateBusinessObjectCommand = new CreateBusinessObjectCommand('Item');
+					createCmd.targetObject = itemWindow;
+					createCmd.targetField = "data";
+					createCmd.execute( { template : templateId } );
+				}
+				return itemWindow;
+			}
+			
+			private static function itemWindowEventHandler(event:CatalogueItemWindowEvent):void
+			{
+				var window:CatalogueItemWindow = event.target as CatalogueItemWindow;
+				if (event.type == CatalogueItemWindowEvent.ACCEPT)
+				{
+					var itemData:XML = XML(window.dataObject).copy();
+					postProcessItemData(itemData);
+					var cmd:SaveBusinessObjectCommand = new SaveBusinessObjectCommand();
+					cmd.addEventListener(ResultEvent.RESULT, itemSaveResultHandler);
+					cmd.targetObject = window;
+					cmd.execute(itemData);
+				}
+				else if (event.type == CatalogueItemWindowEvent.CANCEL)
+				{
+					window.hide();
+				}
+			}
+
+			private static function postProcessItemData(data:XML):void
+			{
+				var emptyAttributes:XMLList;
+				while((emptyAttributes = data.*.attributes.attribute.(Tools.trim(String(valueOf().value)) == "")).length() > 0)
+				{
+					delete data.*.attributes.attribute[emptyAttributes[0].childIndex()];
+				}
+			}
+			
+			private function itemRemovalQuestionHandler(event:CloseEvent):void
+			{
+				if(event.detail == Alert.YES)
+				{
+					var cmd:DeleteBusinessObjectCommand = new DeleteBusinessObjectCommand();
+					cmd.execute({ requestXml : <root><type>Item</type><id>{itemCatalogue.selectedItem.@id}</id></root> });
+					
+					ModelLocator.getInstance().eventManager.dispatchEvent(new GlobalEvent(GlobalEvent.LIST_CHANGED));
+				}
+			}
+			
+			
+			//dodanie obrazka koniec
+			private var urlRequest:URLRequest;
+			private var printService:String = ModelLocator.getInstance().configManager.getString("services.printService.address");			
+			private var fileReference:FileReference = new FileReference();
+			private var urlLoader:URLLoader;
+			private var fileTypes:Object = {
+				image : [new FileFilter("png","*.png"),new FileFilter("jpg","*.jpg"),new FileFilter("JPG","*.JPG")]
+				
+			};
+	
+			
+			
+			private function onFileSelect(event:Event):void
+			{
+				var request:URLRequest = new URLRequest(this.printService + "/PutFile");
+				request.method = "POST";
+				request.contentType = "application/binary";
+				//request.contentType = "text/xml"; 
+				
+				this.fileReference.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA, this.uploadComplete, false, 0, true);
+				this.fileReference.addEventListener(IOErrorEvent.IO_ERROR, this.uploadError, false, 0, true);
+				this.fileReference.upload(request);
+			}
+			
+			private function uploadError(event:IOErrorEvent):void
+			{
+				Alert.show(LanguageManager.getInstance().labels.common.uploadError);
+			}
+			
+			private function uploadComplete(event:DataEvent):void
+			{
+				hasPrestaImage=false;
+				var uploadedFilename:String = event.data;
+				
+				var request:URLRequest = new URLRequest(this.printService + "/GetFile/" + uploadedFilename);
+				request.contentType = "application/binary";
+				urlLoader = new URLLoader(request);
+				urlLoader.dataFormat=URLLoaderDataFormat.BINARY;
+				
+				urlLoader.addEventListener(Event.COMPLETE, this.downloadComplete, false, 0, true);
+				urlLoader.addEventListener(IOErrorEvent.IO_ERROR, this.uploadError, false, 0, true);
+				urlLoader.load(request);
+				
+			}
+			var ba:ByteArray;
+			private function downloadComplete(event:Event):void
+			{
+					ba=urlLoader.data;
+					hasPrestaImage=true;
+			}
+			private function send():void{
+				
+					urlRequest.contentType = 'multipart/form-data; boundary=' + UploadPostHelper.getBoundary();
+					urlRequest.method = URLRequestMethod.POST;
+					urlRequest.data = UploadPostHelper.getPostData(fileReference.name, ba,null,'image');
+					urlRequest.requestHeaders.push( new URLRequestHeader( 'Cache-Control', 'no-cache' ) );
+					
+					var urlLoader:URLLoader = new URLLoader();
+					//urlLoader.dataFormat = URLLoaderDataFormat.BINARY;
+					urlLoader.addEventListener(Event.COMPLETE, onComplete);
+					//urlLoader.addEventListener(IOErrorEvent.IO_ERROR, onError);
+					//urlLoader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, onError);
+					urlLoader.load(urlRequest);
+			}
+			private function deleteIm():void{
+				
+				urlRequest.method = URLRequestMethod.POST;
+				var varr:URLVariables=new URLVariables();
+				varr.ps_method='DELETE'
+				urlRequest.data = varr;
+				urlRequest.requestHeaders.push( new URLRequestHeader( 'Cache-Control', 'no-cache' ) );
+				
+				var urlLoader:URLLoader = new URLLoader();
+				urlLoader.dataFormat = URLLoaderDataFormat.VARIABLES;
+				urlLoader.load(urlRequest);
+			}
+			public function operationInvokeHandler(event:CatalogueEvent):void
+			{
+				if (!(event.target is CatalogueOperation)) return;
+				
+				var arr:Array;
+				var value:Object;
+				var it:String;
+				var id:String;
+				var str:String;
+				if(event.operation.operationId=="sendPictureToPresta")
+				{
+					if(hasPrestaImage)
+					send();
+					else
+						Alert.show(LanguageManager.getInstance().labels.images.pleaseadd);
+				}
+				else if(event.operation.operationId=="addPictureToPresta")
+				{
+					
+					var id:String=itemCatalogue.selectedItem.@prestaId.toString();
+					urlRequest = new URLRequest("http://prestafractus.ux3.makodev.pl/api/images/products/"+id);//+"/11");
+					
+					var encoder:Base64Encoder = new Base64Encoder();        
+					encoder.encode("TT24Y88NVQ7XH18RG2JCY8DIXCULYHKL:");
+					
+					var credsHeader:URLRequestHeader = new URLRequestHeader("Authorization", "Basic " + encoder.toString());
+					var header:URLRequestHeader = new URLRequestHeader( "enctype", "multipart/form-data" );
+					urlRequest.requestHeaders=[];
+					urlRequest.requestHeaders.push(credsHeader);
+					urlRequest.requestHeaders.push(header)       
+				       
+					urlRequest.method = URLRequestMethod.POST;
+					if(id!="")
+					{
+						this.fileReference.addEventListener(Event.SELECT, onFileSelect);
+						this.fileReference.browse(fileTypes.image);
+					}
+					
+				}
+				else
+				if(event.operation.operationId=="operationLink1Item")
+				{
+					arr=String(listConfig.operations['link1'].@toRep).split(".");
+					value=event.currentTarget.itemData;
+					for each (it in arr) {
+						value = value[it];
+					}
+					id=value.toString();
+					str=listConfig.operations['link1'].@url;
+					str=str.replace(listConfig.operations['link1'].@rep,id);
+					navigateToURL(new URLRequest(str),"_blank");
+				}
+				else if(event.operation.operationId=="operationLink2Item")
+				{
+					arr=String(listConfig.operations['link2'].@toRep).split(".");
+					value=event.currentTarget.itemData;
+					for each (it in arr) {
+						value = value[it];
+					}
+					id=value.toString();
+					str=listConfig.operations['link2'].@url;
+					str=str.replace(listConfig.operations['link2'].@rep,id);
+					navigateToURL(new URLRequest(str),"_blank");
+				}
+				else if(event.operation.operationId=="operationLink3Item")
+				{
+					arr=String(listConfig.operations['link3'].@toRep).split(".");
+					value=event.currentTarget.itemData;
+					for each (it in arr) {
+						value = value[it];
+					}
+					id=value.toString();
+					str=listConfig.operations['link3'].@url;
+					str=str.replace(listConfig.operations['link3'].@rep,id);
+					navigateToURL(new URLRequest(str),"_blank");
+				}
+				else if(event.operation.operationId=="operationLink4Item")
+				{
+					arr=String(listConfig.operations['link4'].@toRep).split(".");
+					value=event.currentTarget.itemData;
+					for each (it in arr) {
+						value = value[it];
+					}
+					id=value.toString();
+					str=listConfig.operations['link4'].@url;
+					str=str.replace(listConfig.operations['link4'].@rep,id);
+					navigateToURL(new URLRequest(str),"_blank");
+				}
+				else if(event.operation.operationId=="operationLink5Item")
+				{
+					arr=String(listConfig.operations['link5'].@toRep).split(".");
+					value=event.currentTarget.itemData;
+					for each (it in arr) {
+						value = value[it];
+					}
+					id=value.toString();
+					str=listConfig.operations['link5'].@url;
+					str=str.replace(listConfig.operations['link5'].@rep,id);
+					navigateToURL(new URLRequest(str),"_blank");
+				}
+				else if (event.operation.operationId == "operationNewItem")
+				{
+					showItemWindow(null, null, model.getDefaultTemplate("item"));
+				}
+				else if (event.operation.operationId == "operationDeleteItem")
+				{
+					Alert.yesLabel = LanguageManager.getLabel("alert.yes");
+					Alert.noLabel = LanguageManager.getLabel("alert.no");
+					Alert.show(LanguageManager.getInstance().labels.items.deleteItem, LanguageManager.getInstance().labels.crm.question, Alert.YES | Alert.NO, null, itemRemovalQuestionHandler, null, Alert.NO);
+				}
+				else if (event.operation.operationId == "operationEditItem")
+				{
+					if (itemCatalogue.selectedItem) showItemWindow(itemCatalogue.selectedItem.@id);
+					//event.deselectItem = true;
+				}
+				else if (event.operation.operationId == "operationDuplicateItem")
+				{
+					if (itemCatalogue.selectedItem) showItemWindow(itemCatalogue.selectedItem.@id,null,null,true);
+					//event.deselectItem = true;
+				}
+				else if (event.operation.operationId == "operationExportItem")
+				{
+					ComponentExportManager.getInstance().exportObject("defaultItemPdf", String(itemCatalogue.itemData.item.id), "content");
+				}
+				else if (event.operation.operationId == "operationClipboardItem")
+				{
+					//itemCatalogue.clipboardPanel.clipboard.addElement(itemCatalogue.selectedItem,-1,1);
+					var tSelect:Array = itemCatalogue.grid.selectedItems;
+					for each (var item:XML in tSelect) {
+						itemCatalogue.clipboardPanel.clipboard.addElement(item,-1,1);
+					}
+				}
+				else if (event.operation.operationId == "relatedDocumentsItem")
+				{
+					if (itemCatalogue.selectedItem) ItemsCatalogue.showRelatedDocumentsItemWindow(itemCatalogue.selectedItem.@id,itemCatalogue.selectedItem.@name);
+				}
+				else if (event.operation.operationId == "operationEditLots")
+				{
+					ShiftTransactionEditor.showWindow(<param><itemId label={itemCatalogue.selectedItem.@name}>{itemCatalogue.selectedItem.@id}</itemId></param>);
+				}
+			}
+			
+			private function groupsStructureSave(event:ResultEvent):void
+			{
+				model.configManager.requestValue("items.group",true);
+			}
+			
+			private function groupStructureFault(event:FaultEvent):void
+			{
+				model.configManager.requestValue("items.group",true);
+			}
+			
+			private function groupsStructureChange(event:GroupTreeEditorEvent):void
+			{
+				var cmd:SaveConfigurationCommand = new SaveConfigurationCommand();
+				cmd.addEventListener(ResultEvent.RESULT,groupsStructureSave);
+				cmd.addEventListener(FaultEvent.FAULT,groupStructureFault);
+				//cmd.targetObject = model;
+				//cmd.targetField = "";
+				//trace(event.groups.toString());
+				cmd.execute( { requestXml : event.groups} );
+			}
+			
+			private function itemToGroupAssignHandler(event:CatalogueEvent):void
+			{
+				if(ModelLocator.getInstance().minimalProfitMarginValidation)
+				{
+					Alert.show(LanguageManager.getInstance().labels.group.groupChangeLockMargin);
+					return;
+				}
+				var xml:XML = <root><itemGroupMembership/></root>;
+				if(event.itemData && event.itemData.itemIds && event.itemData.itemIds.length > 0){
+					for(var i:int = 0; i < event.itemData.itemIds.length; i++){
+						var entry:XML = <entry><itemGroupId>{event.itemData.groupId}</itemGroupId><itemId>{event.itemData.itemIds[i]}</itemId></entry>;
+						xml.itemGroupMembership.appendChild(entry);
+					}
+				}
+				var command:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("item.p_insertItemGroupMembershipCustom",xml);
+				command.addEventListener(ResultEvent.RESULT,handleItemToGroupAssignResult);
+				command.addEventListener(FaultEvent.FAULT,handleItemToGroupAssignFault);
+				command.defaultErrorHandling = false;
+				command.execute();
+				
+				/* var command:AssignItemToGroupCommand = new AssignItemToGroupCommand(AssignItemToGroupCommand.ITEM);
+				command.execute(event.itemData); */
+			}
+			
+			private function handleItemToGroupAssignResult(event:ResultEvent):void
+			{
+				
+			}
+			
+			private function handleItemToGroupAssignFault(event:FaultEvent):void
+			{
+				Alert.show(event.fault.message);
+			}
+			
+			private function searchItem(parameters:Object):void
+			{
+				var cmd:SearchCommand = new SearchCommand(searchItemType);
+				//cmd.targetObject = itemCatalogue;
+				//cmd.targetField = "searchResults";
+				cmd.searchParams = XML(parameters);
+				cmd.addEventListener(ResultEvent.RESULT,handleSearchResults);
+				cmd.execute();
+			}
+			
+			private function handleSearchResults(event:ResultEvent):void
+			{
+				var result:XML = XML(event.result);
+				itemCatalogue.searchResults = new XMLListCollection(result.item);
+				itemCatalogue.rowCount = result.@rowCount;
+				itemCatalogue.pageNumber = result.@page;
+				itemCatalogue.itemData = result.itemData;
+			}
+			
+			private function getItemData(parameters:Object):void
+			{
+				var xml:XML = XML(parameters);
+				var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand();
+				cmd.targetObject = itemCatalogue;
+				cmd.targetField = "itemData";
+				cmd.execute({ id : xml.id, type : xml.type });
+				var id:String=itemCatalogue.selectedItem.@prestaId.toString();
+				if(id!="")
+					hasPrestaLink=true;
+				else
+					hasPrestaLink=false;
+			}
+			private function groupsChangeAllowed():Object
+			{
+				//permission hard coded
+				var obj:Object = {
+					mainPermission: model.permissionManager.isEnabled('catalogue.items.groups'),
+					addPermission: model.permissionManager.isEnabled('catalogue.items.groups.add'),
+					deletePermission: model.permissionManager.isEnabled('catalogue.items.groups.delete'),
+					editPermission: model.permissionManager.isEnabled('catalogue.items.groups.edit')
+				};
+				
+				return obj;
+			}
+
+			/* ----- include typow ----- */
+			
+			private var lve:LabelValueEditor;
+			private var lle:LabelListEditor;
+			private var lb:Label;
+			private var cbe:CheckBoxEditor;
+			private var rbe:RadioButtonEditor;
+			private var ate:AttributeEditor;
+			private var adr:AddressRenderer;
+			private var ade:AddressEditor;
+			private var cb:ComboBox;
+			private var l:List;
+			private var nipe:NIPEditor;
+			private var ne:NameEditor;
+			private var ir:ItemRenderer;
+			private var cg:CommonGrid;
+			private var eqe:EquivalentEditor;
+			private var gaec:GenericAttributeEditorComponent;
+			private var ee:EmployeeEditor;
+			private var fh:FormHeading;
+			private var vue:ValueUnitEditor;
+			private var vce:ValueCombinationEditor;
+			private var sie:SearchItemEditor;
+			private var dsw:DictionarySelectorWrapper;
+			private var cne:ContractorNotesEditor;
+			private var iar:ItemImagesRenderer;
+			private var xxx:ItemsSetRenderer;
+			private var iic:ItemImageComponent;
+			/* ------------------------- */
+			public var searchItemType:String=SearchCommand.ITEMS;
+			
+			protected function onComplete(event:Event):void
+			{
+				Alert.show(LanguageManager.getInstance().labels.images.added);
+				var xml:XML=XML(event.currentTarget.data);
+				var id:String=xml.image.id.toString();
+				var prodId:String=xml.image.id_product.toString();
+				var position:String=xml.image.position.toString();
+				xml.image[0].appendChild(<fractusId>{itemCatalogue.selectedItem.@id}</fractusId>);
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("custom.p_PrestaImageMapUpdate",xml.image[0] );
+				cmd.addEventListener(ResultEvent.RESULT, resultHandler, false, 0, true);
+				cmd.addEventListener(FaultEvent.FAULT, errorHandler, false, 0, true);
+				cmd.execute();
+			}
+			private function resultHandler(e:ResultEvent):void
+			{
+				trace("done");
+			}
+			private function errorHandler(event:Event):void
+			{
+				Alert.show(LanguageManager.getInstance().labels.common.uploadError);
+				
+			}
+			
+		]]>
+	</mx:Script>
+	<!-- komponent kartoteki -->
+
+	<catalogue:CatalogueBrowser
+			id="itemCatalogue"
+			operationInvoke="operationInvokeHandler(event)"
+			itemSearch="searchItem(event.parameters)"
+			itemGetData="getItemData(event.parameters)"
+			groupsConfiguration="{model.configManager.values.items_group}"
+			groupStructureChange="groupsStructureChange(event)"
+			groupsTreeTitle="{LanguageManager.getInstance().labels.items.forms.item.itemsGroups}"
+			itemToGroupAssign="itemToGroupAssignHandler(event)"
+			itemsType="items"
+			allowGroupsChange="{groupsChangeAllowed()}"
+			allowItemToGroupAssign="{model.permissionManager.isEnabled('catalogue.items.edit.groupMembership')}"
+			showLeftPanel="true"
+			config="{listConfig}"
+			dblClickPermissionKey="catalogue.items.details"
+			listPermissionKey="catalogue.items.list"
+		>
+		<!--
+		//permission hard coded
+		-->
+
+		<!-- definicje operacji -->
+		<!-- Towary --> 
+		<catalogue:itemOperations>
+			<catalogue:CatalogueOperation permissionKey="catalogue.items.details" operationId="relatedDocumentsItem" label="{LanguageManager.getInstance().labels.documents.detailedInformation}"  image="{IconManager.getIcon('properties_small')}"  operationInvoke="operationInvokeHandler(event)" defaultOperation="true" />
+			<catalogue:CatalogueOperation permissionKey="catalogue.items.edit" operationId="operationEditItem" label="{LanguageManager.getInstance().labels.common.edit}" image="{IconManager.getIcon('item_edit_small')}" operationInvoke="operationInvokeHandler(event)" />
+			<catalogue:CatalogueOperation permissionKey="catalogue.items.delete" operationId="operationDeleteItem" label="{LanguageManager.getInstance().labels.common.Delete}" image="{IconManager.getIcon('delete_small')}" operationInvoke="operationInvokeHandler(event)" visible="{deleteOperationVisible}" includeInLayout="{deleteOperationVisible}"/>
+			<catalogue:CatalogueOperation permissionKey="catalogue.items.export" operationId="operationExportItem" label="{LanguageManager.getInstance().labels.common.printGraphical}" image="{IconManager.getIcon('print_small')}" operationInvoke="operationInvokeHandler(event)" />
+			<catalogue:CatalogueOperation permissionKey="catalogue.items.addToCart" operationId="operationClipboardItem" label="{LanguageManager.getInstance().labels.cart.inTo}" image="{IconManager.getIcon('item_toCart_small')}" operationInvoke="operationInvokeHandler(event)" />
+			<catalogue:CatalogueOperation permissionKey="warehouse.wms.shiftTransaction" operationId="operationEditLots" label="{LanguageManager.getInstance().labels.menu.newShiftTransaction}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)"/>
+			<catalogue:CatalogueOperation permissionKey="catalogue.items.add" operationId="operationDuplicateItem" label="{LanguageManager.getInstance().labels.items.lists.items.operations.duplicateLine}" image="{IconManager.getIcon('item_new_small')}" operationInvoke="operationInvokeHandler(event)"/>
+			<catalogue:CatalogueOperation permissionKey="" operationId="operationLink1Item" label="{LanguageManager.getLabel(listConfig.operations['link1'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link1OperationVisible}" includeInLayout="{link1OperationVisible}"/>
+			<catalogue:CatalogueOperation permissionKey="" operationId="operationLink2Item" label="{LanguageManager.getLabel(listConfig.operations['link2'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link2OperationVisible}" includeInLayout="{link2OperationVisible}"/>
+			<catalogue:CatalogueOperation permissionKey="" operationId="operationLink3Item" label="{LanguageManager.getLabel(listConfig.operations['link3'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link3OperationVisible}" includeInLayout="{link3OperationVisible}"/>
+			<catalogue:CatalogueOperation permissionKey="" operationId="operationLink4Item" label="{LanguageManager.getLabel(listConfig.operations['link4'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link4OperationVisible}" includeInLayout="{link4OperationVisible}"/>
+			<catalogue:CatalogueOperation permissionKey="" operationId="operationLink5Item" label="{LanguageManager.getLabel(listConfig.operations['link5'].@labelKey)}" image="{IconManager.getIcon('properties_small')}" operationInvoke="operationInvokeHandler(event)" visible="{link5OperationVisible}" includeInLayout="{link5OperationVisible}"/>
+			
+			<catalogue:CatalogueOperation  permissionKey="" operationId="addPictureToPresta" label="{LanguageManager.getInstance().labels.images.add}" image="{IconManager.getIcon('edit_small')}" operationInvoke="operationInvokeHandler(event)" visible="{hasPrestaLink}" includeInLayout="{hasPrestaLink}"/>
+			<catalogue:CatalogueOperation  permissionKey="" operationId="sendPictureToPresta" label="{LanguageManager.getInstance().labels.images.save}" image="{IconManager.getIcon('item_new_small')}" operationInvoke="operationInvokeHandler(event)" visible="{hasPrestaLink}" includeInLayout="{hasPrestaLink}"/>
+			
+		</catalogue:itemOperations>
+		<catalogue:generalOperations>
+			<catalogue:CatalogueOperation permissionKey="catalogue.items.add" operationId="operationNewItem" label="{LanguageManager.getInstance().labels.items.lists.items.operations.newLine}" image="{IconManager.getIcon('item_new_small')}" operationInvoke="operationInvokeHandler(event)"/>
+		</catalogue:generalOperations>
+
+		<!-- panel wyswietlajacy informacje o biezacej pozycji -->
+		<catalogue:rightPanel>
+			<layoutComponents1:XmlItemInfoPanel width="100%" id="itemInfoPanel" source="{model.configManager.getXML('items.panel.item')}" data="{itemCatalogue.itemData}"/>
+		</catalogue:rightPanel>
+		<!-- kolumny wynikow wyszukiwania -->
+		<!--<catalogue:config>
+			{model.configManager.getXML("items.lists.items")}
+		</catalogue:config>-->
+		
+	</catalogue:CatalogueBrowser>
+
+</mx:VBox>

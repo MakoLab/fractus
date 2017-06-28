@@ -1,0 +1,35 @@
+<config title="{LanguageManager.getInstance().labels.documents.list.sales}">
+				<headerColor>SALES_COLOR</headerColor>
+				<headerColorLight>SALES_COLOR_LIGHT</headerColorLight>
+				<objectType>Draft</objectType>
+				<columns>
+					<column field="@documentTypeId" labelKey="documents.type" dataType="documentType" width="70"/>
+					<column field="@date" labelKey="documents.saveDate" dataType="dateTime" width="160"/> 
+					<column field="@contractor" labelKey="contractors.contractor"/>
+				</columns>
+				<getItemDataParams>
+					<type>Document</type>
+					<id/>
+				</getItemDataParams>
+				<searchParams type="Draft">
+					<pageSize>200</pageSize>
+					<page>1</page>
+					<columns>
+						<column field="documentTypeId" column="documentTypeId"/>
+						<column field="date" sortOrder="1" sortType="DESC"/>
+						<column field="contractor" column="fullName" relatedObject="contractor"/>
+					</columns>
+				</searchParams>
+				<filters>
+				  	<filter label="" type="dateFilter"/>
+				  	<!-- 
+				  	itemsType = może byc z atrybutu zmieniony w noda z dodatkowym atrybutem uprawnienia permissionKey.
+				  	Stara wersja dalej dziala ale w pierwszej kolejnosci sprawdzane sa nody
+				  	<filter labelKey="documents.documentType" label="Typ dokumentu" type="docTypeFilter" itemsType="0,13">
+				  	-->
+				  	<filter labelKey="documents.documentType" label="Typ dokumentu" type="docTypeFilter">
+				  		<itemsType value="0" permissionKey="sales.drafts.list.salesDocuments"/>
+				  		<itemsType value="13" permissionKey="sales.drafts.list.ordersDocuments"/>
+				  	</filter>
+				</filters>
+</config>

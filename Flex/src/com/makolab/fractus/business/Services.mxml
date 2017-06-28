@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Object
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:business="com.makolab.fractus.business.*">
+
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.AbstractService;
+			import mx.controls.Alert;
+			import com.makolab.components.util.ComponentExportManager;
+			protected static var instance:Services;
+			
+			public static const MODE_WEB_SERVICE:int = 1;
+			public static const MODE_EXTERNAL_INTERFACE:int = 2;
+			
+			public var serviceMode:int = 0;
+			
+			public var wsdlPrinterErrorMessage:String = "Nie udało się połączyć z serwerem wydruku (błąd pobrania wsdl).";
+			
+			
+			public function resetHeaders():void
+			{
+				if (kernelService.httpHeaders) kernelService.httpHeaders = { SessionID : kernelService.httpHeaders.SessionID };
+			}
+			
+			public function set sessionId(value:String):void
+			{
+				var headers:Object = kernelService.httpHeaders;
+				if (!headers) headers = {};
+				headers.SessionID = value;
+				kernelService.httpHeaders = headers;
+			}
+			public function get sessionId():String { return kernelService.httpHeaders ? kernelService.httpHeaders.SessionID : undefined; }
+			
+			public function getKernelService():AbstractService
+			{
+				if (serviceMode == 0)
+				{
+					serviceMode = windowExternalAvailable() ? MODE_EXTERNAL_INTERFACE : MODE_WEB_SERVICE;
+				}
+				if (serviceMode == MODE_WEB_SERVICE) return kernelService;
+				else if (serviceMode == MODE_EXTERNAL_INTERFACE) return externalInterfaceService;
+				return null;
+			}
+
+			private function windowExternalAvailable():Boolean
+			{
+				if (!ExternalInterface.available) return false;
+				var result:String = ExternalInterface.call("eval", "window.external && typeof(window.external.CallMethod) != 'undefined' ? 1 : 0");
+				return Boolean(parseInt(result));
+			}
+
+			public function getService(name:String):AbstractService
+			{
+				return this[name] as AbstractService;
+			}
+			
+			public function getWebService(name:String):WebService
+			{
+				return getService(name) as WebService;
+			}
+			
+			public function getHTTPService(name:String):HTTPService
+			{
+				return this[name] as HTTPService;
+			}
+			
+			public static function getInstance():Services
+			{
+				if (!instance) instance = new Services();
+				return instance;
+			}
+
+		]]>
+	</mx:Script>
+	<!-- http://192.168.1.249:8080/KernelServices/KernelService.svc?wsdl -->
+	<mx:WebService id="kernelService" invoke="resetHeaders()" showBusyCursor="true" fault="if (String(event.fault.faultDetail).match(/WSDL/)) Alert.show(event.fault.faultDetail)">
+		<!--
+			string LogOn(string username, string password, string language)
+			@Returns: zwraca SessionID
+		--> 
+		<mx:operation name="LogOn"/>
+		<!--
+			void LogOff()
+			wylogowywuje sie z sesji ktorej SessionID jest zawarty w naglowku HTTP
+		--> 
+		<mx:operation name="LogOff"/>	
+		<!--
+			string CreateNewBusinessObject(string requestXml)
+			w naglowku HTTP musi byc SessionID albo para naglowkow: Username i Password
+			tworzy nowy BO i zwraca jego XML. request Xml musi byc w formacie: <root><type>Contractor</type></root>
+		-->
+		<mx:operation name="CreateNewBusinessObject"/>
+		<mx:operation name="GetItems"/>
+		<mx:operation name="GetContractors"/>
+		<!--
+			string LoadBusinessObject(string requestXml)
+			format request: <root><type>Contractor</type><id>123123-123123123-5435345-34534535</id></root>
+		-->
+		<mx:operation name="LoadBusinessObject"/>
+		<!--
+			string SaveBusinessObject(string requestXml)
+		-->
+		<mx:operation name="SaveBusinessObject"/>
+		<!--
+			string GetDictionaries();
+		-->
+		<mx:operation name="GetDictionaries"/>
+		<mx:operation name="GetOwnCompanies"/>
+		<mx:operation name="ExecuteCustomProcedure"/>
+	</mx:WebService>
+	
+	<mx:WebService id="commentsWebService" showBusyCursor="true" fault="if (String(event.fault.faultDetail).match(/WSDL/)) Alert.show(wsdlPrinterErrorMessage)">
+		<mx:operation name="GetComment"/>			
+	</mx:WebService>
+	
+	<mx:WebService id="fiscalPrinterWebService" showBusyCursor="true" fault="if (String(event.fault.faultDetail).match(/WSDL/)) Alert.show(wsdlPrinterErrorMessage)">
+		<!--
+			void FiscalPrint(string printXml)
+		--> 
+		<mx:operation name="FiscalPrint"/>
+	</mx:WebService>
+	
+	<mx:WebService id="textualPrinterWebService" showBusyCursor="true" fault="if (String(event.fault.faultDetail).match(/WSDL/)) Alert.show(wsdlPrinterErrorMessage)">
+		<mx:operation name="TextualPrint"/>
+	</mx:WebService>
+	
+	<business:ExternalInterfaceService id="externalInterfaceService" functionName="callMethod" />
+
+	<mx:HTTPService id="printService" resultFormat="xml" method="POST" fault="Alert.show(event.fault.getStackTrace())"/>
+</mx:Object>

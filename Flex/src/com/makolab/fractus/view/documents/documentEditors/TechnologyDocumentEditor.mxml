@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DocumentEditor
+		xmlns="com.makolab.fractus.view.documents.documentEditors.*"
+		xmlns:lineList="com.makolab.components.lineList.*"
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		xmlns:util="com.makolab.components.util.*"
+		xmlns:inputComponents="com.makolab.components.inputComponents.*"
+		xmlns:model="com.makolab.fractus.model.*" xmlns:catalogue="com.makolab.components.catalogue.*"
+		xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*" xmlns:plugins="com.makolab.fractus.view.documents.plugins.*"
+		printProfileName="defaultCommercialDocumentPdf"
+		editorWidth="300"
+		creationComplete="creationComplete()"
+	>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.view.documents.documentControls.DocumentBarcodeVerificationComponent;
+			import mx.events.FlexEvent;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.components.util.Tools;
+			import mx.controls.Alert;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import mx.messaging.management.Attribute;
+			import com.makolab.fractus.view.documents.documentControls.DefaultAttributeComponent;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			[Bindable]
+			private var readOnly:Boolean = false;
+			
+			private function creationComplete():void
+			{
+				if(documentObject.xml.status == "-20")
+					this.readOnly = true;
+					
+				if(documentObject.typeDescriptor.xmlOptions.additionalAttributes.*.length() == 0)
+				{
+					this.tabNavigator.getTabAt(2).visible = false;
+					this.tabNavigator.getTabAt(2).includeInLayout = false;
+				}
+				
+				if(documentObject.typeDescriptor.xmlOptions.issueOptions.*.length() == 0)
+				{
+					this.tabNavigator.getTabAt(3).visible = false;
+					this.tabNavigator.getTabAt(3).includeInLayout = false;
+				}
+				printProfileName = null;
+			
+				ModelLocator.getInstance().configManager.requestList(["system.barcodeVerification"],configurationLoaded);
+			}
+			
+			private function configurationLoaded():void
+			{
+				barcodeVerification = ModelLocator.getInstance().configManager.getBoolean("system.barcodeVerification");
+			}
+			
+			[Bindable] private var barcodeVerification:Boolean;
+			
+			private function verifyByCode():void
+			{
+				DocumentBarcodeVerificationComponent.showWindow(documentObject).addEventListener(FlexEvent.HIDE,verificationComponentHide);
+			}
+			
+			private function verificationComponentHide(event:FlexEvent):void
+			{
+				this.window.setFocus();
+			}
+			
+			[Bindable]
+			public override function set documentObject(value:DocumentObject):void
+			{
+				super.documentObject = value;
+				documentObject.addEventListener(DocumentEvent.DOCUMENT_COMMIT, handleDocumentCommit);
+			}
+			
+			protected function handleDocumentCommit(event:DocumentEvent):void
+			{
+				var errors:Array = [];
+				
+				if (errors.length > 0)
+				{
+					event.preventDefault();
+					Alert.show(errors.join('\n'));
+				}
+			} 
+			
+			override protected function handleKeyDown(event:KeyboardEvent):void
+			{
+				// Przejscie do konkretnej zakadki
+				if (event.ctrlKey && !event.altKey && !event.shiftKey && event.keyCode >= 49 && event.keyCode <= 57)
+				{
+					if (event.keyCode - 49 < tabNavigator.numChildren && tabNavigator.getTabAt(event.keyCode - 49).visible)
+					{
+						tabNavigator.selectedIndex = event.keyCode - 49;
+						tabNavigator.setFocus();
+					}
+				}
+				super.handleKeyDown(event);
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:XML id="contractorSearchParams" xmlns="">
+		<searchParams>
+			<query/>
+			<columns>
+				<column field="shortName" sortOrder="1" sortType="ASC"/>
+				<column field="fullName"/>
+				<column field="code"/>
+				<column field="nip"/>
+				<!--column field="version" sortOrder="3" sortType="ASC"/-->
+			</columns>
+		</searchParams>
+	</mx:XML>
+	
+	<!-- plugins -->
+	<plugins:DocumentValidationPlugin id="validationPlugin" documentObject="{documentObject}"/>
+	<plugins:DocumentNumberPlugin documentObject="{documentObject}"/>
+	<plugins:LineAttributePlugin documentObject="{documentObject}"/>
+	
+	<mx:TabNavigator id="tabNavigator" width="100%" height="100%" historyManagementEnabled="false" backgroundAlpha="0.9" backgroundColor="white">
+		<mx:Canvas label="{LanguageManager.getInstance().labels.common.basicTab}" width="100%" height="100%" verticalScrollPolicy="on" horizontalScrollPolicy="auto">
+		<mx:Form
+				paddingLeft="15"
+				paddingRight="15"
+				paddingTop="0"
+				paddingBottom="15"
+				width="100%"
+				height="100%"
+			>
+	
+			<!-- numer -->
+			<mx:HBox horizontalGap="14">
+				<mx:Label text="{getDocumentType(documentObject.xml).label.@lang.length()?getDocumentType(documentObject.xml).label.(@lang==LanguageManager.getInstance().currentLanguage)[0]:getDocumentType(documentObject.xml).label}" fontSize="18"/>
+				<documentControls:DocumentNumberComponent enabled="{!readOnly}" id="documentNumberComponent" documentObject="{documentObject}"/>
+			</mx:HBox>
+			
+			<documentControls:DocumentGenericSingleAttributeComponent enabled="{!readOnly}" documentObject="{documentObject}" attributeName="Attribute_ProductionTechnologyName" width="550"/>
+
+			<documentControls:TemplateSelector enabled="{!readOnly}" documentObject="{documentObject}"/>
+			
+			<!-- lista pozycji dokumentu -->
+			<documentControls:TechnologyLinesComponent enabled="{!readOnly}"
+					id="lines"
+					width="100%"
+					height="100%"
+					documentObject="{documentObject}"
+					rowCount="9"
+					hideRecalculationButton="true"
+			/>
+			
+			<!-- weryfikacja faktury czytnikiem kodów-->
+			<mx:FormItem label="{LanguageManager.getInstance().labels.documents.verifyPurchaseDocument}" visible="{barcodeVerification}" includeInLayout="{barcodeVerification}">
+				<mx:Button label="{LanguageManager.getInstance().labels.documents.verify}" toolTip="{LanguageManager.getInstance().labels.documents.verifyDocumentTooltip}" click="{verifyByCode();}" />
+			</mx:FormItem>
+			
+		</mx:Form>
+		</mx:Canvas>
+
+		<!-- ZAKLADKA SZCZEGOLOW -->
+		<mx:HBox
+				label="{LanguageManager.getInstance().labels.documents.details}"
+				paddingLeft="15"
+				paddingRight="15"
+				paddingTop="15"
+				width="100%"		
+				height="100%"
+			>
+			
+			<!-- lewa kolumna szczegolow -->
+			<mx:Form
+					width="35%"
+					height="100%"
+					paddingTop="4"
+				>
+				<!-- miejsce wystawienia -->
+				<!--<documentControls:IssuePlaceComponent documentObject="{documentObject}"/>-->
+				
+				<!-- daty -->		
+				<!--<documentControls:DateControl documentObject="{documentObject}" fieldName="issueDate" currentState="editor"/>-->
+		
+				<!-- atrybuty podstawowe -->
+				<mx:Repeater id="basicAttributeRepeater" dataProvider="{documentObject.typeDescriptor.xmlOptions.basicAttributes.attribute}">
+					<documentControls:DocumentGenericSingleAttributeComponent documentObject="{documentObject}" attributeName="{basicAttributeRepeater.currentItem.@name}" enabled="{basicAttributeRepeater.currentItem.@readOnly != 1 &amp;&amp; !readOnly}"/>
+				</mx:Repeater>
+			</mx:Form>
+			
+			<!-- prawa (szersza) kolumna -->
+			<mx:Form
+					width="65%"
+					height="100%"
+					paddingTop="4"
+				>
+				<documentControls:RemarksComponent enabled="{!readOnly}" documentObject="{documentObject}" width="100%" height="100"/>
+			</mx:Form>
+		</mx:HBox>
+		
+		<documentControls:AdditionalAttributesTab id="additionalAttributeTab" documentObject="{documentObject}"/>
+			
+		<mx:VBox id="optionsTab" 
+				label="{LanguageManager.getInstance().labels.common.options}"
+				paddingLeft="15"
+				paddingRight="15"
+				paddingTop="15"
+				width="100%"
+				height="100%"
+			>		
+			<!-- opcje -->
+			<documentControls:DocumentOptionsControl documentObject="{documentObject}" width="100%"/>
+		</mx:VBox>
+	</mx:TabNavigator>
+</DocumentEditor>

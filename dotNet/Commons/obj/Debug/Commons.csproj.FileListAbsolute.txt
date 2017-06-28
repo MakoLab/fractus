@@ -1,0 +1,14 @@
+C:\Projekty\trunk\dotNet\Commons\bin\Debug\Commons.dll
+C:\Projekty\trunk\dotNet\Commons\bin\Debug\Commons.pdb
+C:\Projekty\trunk\dotNet\Commons\bin\Debug\RandomLogHelper.dll
+C:\Projekty\trunk\dotNet\Commons\bin\Debug\log4net.dll
+C:\Projekty\trunk\dotNet\Commons\obj\Debug\Commons.dll
+C:\Projekty\trunk\dotNet\Commons\obj\Debug\Commons.pdb
+C:\Projekty\trunk\dotNet\Commons\obj\Debug\Commons.csprojResolveAssemblyReference.cache
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\Commons\bin\Debug\Commons.dll
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\Commons\bin\Debug\Commons.pdb
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\Commons\bin\Debug\RandomLogHelper.dll
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\Commons\bin\Debug\log4net.dll
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\Commons\obj\Debug\Commons.csprojResolveAssemblyReference.cache
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\Commons\obj\Debug\Commons.dll
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\Commons\obj\Debug\Commons.pdb

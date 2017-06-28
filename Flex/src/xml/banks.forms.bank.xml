@@ -1,0 +1,58 @@
+<form>
+	<windowTitle>{LanguageManager.getInstance().labels.title.banks.panel}</windowTitle>
+  <tab label="\{labels.contractors.forms.contractor.basicData\}">
+    <!-- nazwy -->
+        
+    <component className="com.makolab.components.inputComponents.NameEditor" dataField="dataObject" dataSource="data.contractor"/>
+    
+    <component className="com.makolab.components.inputComponents.NIPEditor" dataField="dataObject" dataSource="data.contractor">
+      <label>\{labels.common.nip\}</label>
+      <countries>\{dictionaryManager.dictionaries.countries\}</countries>
+    </component>
+
+    <!-- adresy -->
+    <component className="com.makolab.components.inputComponents.AttributeEditor" dataField="dataObject" dataSource="data.contractor.addresses">
+      <label>\{labels.contractors.forms.contractor.addresses\}</label>
+      <itemEditor>com.makolab.components.inputComponents.AddressEditor</itemEditor>
+      <editorDataField>dataObject</editorDataField>
+      <attributeIdField>contractorFieldId</attributeIdField>
+      <valueField/>
+      <template>
+        <address>
+          <countryId>8C67F218-903D-4A1D-8D21-E8040E7DCBCC</countryId>
+        </address>
+      </template>
+      <attributes>\{dictionaryManager.dictionaries.contractorAddresses\}</attributes>
+    </component>
+   
+   	<component className="com.makolab.components.inputComponents.LabelValueEditor" dataField="dataObject" dataSource="data.contractor.swiftNumber">
+   		<label>\{labels.banks.swiftNumber\}</label>
+   	</component>
+   	<component className="com.makolab.components.inputComponents.LabelValueEditor" dataField="dataObject" dataSource="data.contractor.bankNumber">
+   		<label>\{labels.banks.bankNumber\}</label>
+   		<restrict>0-9</restrict>
+   		<maxChars>8</maxChars>
+   	</component>
+   	
+            
+  </tab>
+  
+  <tab label="\{labels.contractors.forms.contractor.notes\}">
+    
+    <component className="com.makolab.components.inputComponents.AttributeEditor" dataField="dataObject" dataSource="data.contractor.attributes">
+      <label>\{labels.common.comments\}</label>
+      <itemEditor>com.makolab.components.inputComponents.GenericAttributeEditorComponent</itemEditor>
+      <attributeIdField>contractorFieldId</attributeIdField>
+      <valueField>value</valueField>
+      <template>
+        <attribute>
+          <contractorFieldId/>
+          <value/>
+        </attribute>
+      </template>
+      <attributes>\{dictionaryManager.dictionaries.contractorRemarks\}</attributes>
+    </component>
+    
+  </tab>
+  
+</form>

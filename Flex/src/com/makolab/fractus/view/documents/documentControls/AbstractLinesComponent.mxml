@@ -1,0 +1,704 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		implements="com.makolab.fractus.view.documents.documentControls.IDocumentControl"
+		xmlns:lineList="com.makolab.components.lineList.*" 
+		xmlns:catalogue="com.makolab.components.catalogue.*" 
+		xmlns:inputComponents="com.makolab.components.inputComponents.*"
+		creationComplete="init()" height="100%"
+		xmlns:catalogue1="com.makolab.fractus.view.catalogue.*">
+	<mx:Metadata>
+		[Event(name="selectionChanged", type="com.makolab.components.document.DocumentEvent")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ListEvent;
+			import mx.events.FocusRequestDirection;
+			import org.un.cava.birdeye.ravis.graphLayout.layout.DirectPlacementLayouter;
+			import mx.events.CloseEvent;
+			import assets.IconManager;
+			[Bindable]
+			public var linesObjectName:String = "lines";
+			
+			//public var priceName:String="Brak Cennika";
+			/**
+			 * Wrapper for IconManager.getIcon() (for usage inside mx:Component).
+			*/
+			public function getIcon(name:String):Class
+			{
+				return IconManager.getIcon(name);
+			}
+
+			protected function handleListClick(event:MouseEvent):void
+			{
+				if (!documentLines.enabled || !lineAddEnabled) return;
+				var grid:LineList = documentLines;
+				if (event.localY > grid.dataProvider.length * grid.rowHeight) this.addLine();
+			}
+			
+			protected function addLine():BusinessObject
+			{
+				var newLine:BusinessObject = documentLines.addLine() as BusinessObject;
+				// TODO: prowizorka - wywolanie editLine po dodaniu pierwszej pozycji powodowalo blad
+				if (documentLines.dataProvider.length > 1) documentLines.editLine(newLine, 'itemName');
+				return newLine;
+			}
+			
+			private function confirmLinesRecalculation():void
+			{
+				Alert.show(LanguageManager.getInstance().labels.alert.convertAllItems,LanguageManager.getInstance().labels.alert.warning,Alert.YES | Alert.NO,null,confirmationAlertCloseHandler);
+			}
+			
+			private function confirmationAlertCloseHandler(event:CloseEvent):void
+			{
+				if (event.detail == Alert.YES) recalculateLines();
+			}
+			
+			public function recalculateLines():void
+			{
+				for ( var i:int = 0; i < documentObject.lines.length; i++ )
+				{
+					if (documentObject.lines[i].hasOwnProperty("itemId") && documentObject.lines[i].itemId) _documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_SET_ITEM, 'itemId', documentObject.lines[i], true));
+				}
+			}
+			
+			[Bindable]
+			public var lineAddEnabled:Boolean = true;
+			
+			[Bindable]
+			public var hideRecalculationButton:Boolean = false;
+			
+			[Bindable]
+			public var showPercentLine:Boolean=false;
+			
+			private var lineOldValue:Object;
+			
+			private function selectionChangedHandler(event:ListEvent):void
+			{
+				dispatchEvent(new DocumentEvent("selectionChanged",false,false,null,documentLines.dataProvider[documentLines.itemRendererToIndex(event.itemRenderer)]));
+			}
+			
+		]]>
+	</mx:Script>
+
+	<lineList:LineList
+			id="documentLines"
+			draggableColumns="false"
+			width="100%"
+			minHeight="300"
+			height="100%"
+			dataProvider="{getLinesObject(documentObject, linesObjectName)}"
+			editable="true"
+			autoHeight="{isNaN(rowCount)}"
+			rowCount="{rowCount}"
+			autoAddLines="{lineAddEnabled}"
+			newLineTemplateFunction="{documentObject.newLineTemplateFactory}"
+			rowColorFunction="{getLineColor}"
+			selectable="false"
+			styleName="{gridStyleName}"
+			columns="{columns}"
+			click="handleListClick(event)"
+			alpha="{disableLinesChangeMessage ? 0.5 : 1}" 
+			toolTip="{disableLinesChangeMessage}"
+			change="selectionChangedHandler(event)"
+		/>
+	
+	<!--<mx:HBox width="100%" includeInLayout="{Boolean(disableLinesChangeMessage)}" visible="{Boolean(disableLinesChangeMessage)}" paddingTop="10">-->
+	<mx:HBox width="100%"  paddingTop="10">
+		<mx:LinkButton click="addLine()" enabled="{!disableLinesChangeMessage}" visible="{lineAddEnabled}" label="{LanguageManager.getInstance().labels.common.addItem}" width="100%" textAlign="center" color="#888888" textDecoration="underline" tabEnabled="false"/>
+		<mx:LinkButton click="confirmLinesRecalculation()" enabled="{!disableLinesChangeMessage}" label="{LanguageManager.getInstance().labels.documents.overridePriceNetto}" width="240" textAlign="right" color="#888888" textDecoration="underline" tabEnabled="false" visible="{!hideRecalculationButton}" includeInLayout="{!hideRecalculationButton}"/>
+	</mx:HBox>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import com.makolab.fractus.model.document.FinancialDocumentLine;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.fractus.model.document.BusinessObjectAttribute;
+			import com.makolab.fractus.view.generic.IdSelector;
+			import com.makolab.fractus.model.document.DecisionComplainDocumentLine;
+			import com.makolab.fractus.view.documents.documentEditors.DocumentEditor;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.commands.GetItemsDetailsCommand;
+			import com.makolab.components.inputComponents.FloatRenderer;
+					
+			import com.makolab.components.inputComponents.CurrencyEditor;
+			import mx.validators.ValidationResult;
+			import mx.events.ValidationResultEvent;
+			import com.makolab.fractus.view.documents.plugins.DocumentValidationPlugin;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.document.WarehouseDocumentLine;
+			import com.makolab.fractus.model.document.BusinessObject;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.view.documents.DocumentLineDetails;
+			import com.makolab.fractus.view.documents.DocumentLineAdditionalAttributes;
+			import com.makolab.components.document.DocumentEvent;
+			import mx.core.EventPriority;
+			import com.makolab.components.inputComponents.CurrencyRenderer;
+			import mx.events.DataGridEventReason;
+			import mx.events.DataGridEvent;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.components.lineList.LineOperation;
+			import com.makolab.fractus.model.document.CommercialDocumentLine;
+			import com.makolab.components.lineList.LineOperationEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import mx.controls.Alert;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			[Bindable]
+			public var disableLinesChangeMessage:String = null;
+			
+			[Bindable]
+			public var enableExpirationDate:Boolean = true;
+			
+			// funkcja pozwalajaca uniknac warninga przy uzyciu operatora [] w bindingu
+			private static function getLinesObject(documentObject:DocumentObject, linesObjectName:String):Object
+			{
+				return documentObject[linesObjectName];
+			}
+			
+			private var _documentObject:DocumentObject;
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				if(_documentObject)
+					_documentObject.removeEventListener(ValidationResultEvent.INVALID, handleValidationEvent);
+					
+				_documentObject = value;
+				if (_documentObject.xml.@disableLinesChange.length() > 0)
+				{
+					var spl:Array = String(_documentObject.xml.@disableLinesChange).split(/,/g);
+					var msg:String = '';
+					for (var i:String in spl) msg += LanguageManager.getLabel(spl[i]) + "\n";
+					disableColumns();
+					disableLinesChangeMessage = msg;
+					this.lineAddEnabled = false;
+				}
+				else disableLinesChangeMessage = null;
+				_documentObject.addEventListener(DocumentEvent.DOCUMENT_LINE_SET_ITEM, handleSetItem, false, EventPriority.DEFAULT_HANDLER, true);
+				_documentObject.addEventListener(DocumentEvent.DOCUMENT_LINE_ATTRIBUTE_CHANGE, handleLineAttributeChange, false, EventPriority.DEFAULT, true);
+				
+				if(value)
+					value.addEventListener(ValidationResultEvent.INVALID, handleValidationEvent);
+				
+			}
+			public function get documentObject():DocumentObject { return _documentObject; }
+			
+			private function disableColumns():void
+			{
+				for(var i:int = 0; i < columns.length; i++){
+					columns[i].editable = false;
+				}
+			}
+			
+			[Bindable]
+			public var dictionaryManager:DictionaryManager = DictionaryManager.getInstance();
+			
+			[Bindable]
+			public var columns:Array;
+			
+			[Bindable]
+			public var gridStyleName:Object;
+			
+					
+			private static const LINE_ERROR_COLOR:uint = 0xffaaaa;
+			
+			/**
+			 * The number of visible rows. If no value is assigned (or if reset to NaN), the height is dynamic.
+			 */
+			[Bindable]
+			public var rowCount:Number = NaN;
+			
+			/**
+			 * Assign an item to the specified line
+			 * 
+			 * @item XML node describing the selected item.
+			 * @line Line the item is being assigned to
+			 */
+			public function setLineItem(item:Object, line:BusinessObject):void
+			{
+				if(!line||!item)
+					return;
+				lineOldValue = line.copy();
+				line['itemId'] = item.@id;
+				
+				var comLine:CommercialDocumentLine = line as CommercialDocumentLine;
+				var whLine:WarehouseDocumentLine = line as WarehouseDocumentLine;
+				
+				//przy zmianie towaru czyscimy pewne elementy
+				
+				var a:BusinessObjectAttribute;
+				if(comLine != null)
+				{
+					comLine.id = null;
+					comLine.version = null;
+					comLine.itemVersion = null;
+					comLine.additionalNodes = new XMLList();
+					comLine.shifts = new Array();
+					
+					if(comLine.attributes)
+					{
+						for each(a in comLine.attributes)
+						{
+							a.id = null;
+							a.version = null;
+						}
+					}
+				}
+				else if(whLine != null)
+				{
+					whLine.id = null;
+					whLine.version = null;
+					whLine.itemVersion = null;
+					whLine.additionalNodes = new XMLList();
+					whLine.shifts = new Array();
+					
+					if(whLine.attributes)
+					{
+						for each(a in whLine.attributes)
+						{
+							a.id = null;
+							a.version = null;
+						}
+					}
+				}
+				
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_SET_ITEM, 'itemId', line, true));
+			}
+			
+			private function handleValidationEvent(event:ValidationResultEvent):void
+			{
+				this.documentLines.errorString = "";
+				
+				for each(var valResult:ValidationResult in event.results)
+				{
+					if(valResult.subField == DocumentValidationPlugin.LINES_SUBFIELD)
+					{
+						if(valResult.errorCode == DocumentValidationPlugin.LINES_VALIDATION_ERRORCODE ||
+							valResult.errorCode == DocumentValidationPlugin.NO_LINES_ERRORCODE)
+						{
+							this.documentLines.errorString = valResult.errorMessage;						
+						}
+					}
+				}
+			}
+			
+			private function handleGetLinePrice(event:ResultEvent):void
+			{
+				
+				var result:XML = XML(event.result).item[0];
+				if(result)
+				{
+				var line:BusinessObject = BusinessObject(GetItemsDetailsCommand(event.target).targetObject);
+				
+				line['itemVersion'] = result.@version;
+				line['itemName'] = result.@name;
+				line['unitId'] = result.@unitId;
+				if (line.hasOwnProperty('itemTypeId')) line['itemTypeId'] = result.@itemTypeId;
+				if (line.hasOwnProperty('itemCode')) line['itemCode'] = result.@code;
+				if(result.@priceName)
+				{
+					var priceName:String = result.@priceName!="" ?result.@priceName:"Brak";
+					if (line.hasOwnProperty('priceName')) line['priceName']=priceName;
+				}
+				if(line is CommercialDocumentLine)
+					line['vatRateId'] = result.@vatRateId;
+					
+				if(documentObject.typeDescriptor.isPurchaseDocument || documentObject.typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_WAREHOUSE_ORDER || documentObject.typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_SALES_ORDER_DOCUMENT)
+					line['discountRate'] = 0.00;
+				
+				if (line is CommercialDocumentLine && (documentObject.typeDescriptor.isSalesDocument || documentObject.typeDescriptor.isWarehouseReservation))
+				{
+					var commLine:CommercialDocumentLine = line as CommercialDocumentLine;
+					commLine.discountRate = this.documentObject.defaultLineDiscount;
+				}
+					
+				if(line is CommercialDocumentLine)
+				{
+					line['initialNetPrice'] = parseFloat(result.@initialNetPrice);
+					
+					if(documentObject.typeDescriptor.isSalesDocument 
+						|| documentObject.typeDescriptor.isSalesOrderDocument
+						|| documentObject.typeDescriptor.isServiceDocument
+						|| (documentObject.typeDescriptor.isWarehouseReservation)
+					){
+					
+						if(result.priceList)line['itemPrices'] = result.priceList.*.copy();
+						/* for each (var price:Object in line['itemPrices'])
+						{
+							price.@value = CurrencyManager.systemToDocument(Number(price.@value),documentObject);
+						} */
+						var currentItemPriceId:String = ModelLocator.getInstance().currentItemPriceId;
+						var currentItemPriceName:String = dictionaryManager.dictionaries.itemPrices.(id.toString() == currentItemPriceId).name.toString();
+						if(currentItemPriceId && result.priceList && result.priceList.price.(@name == currentItemPriceName).length() > 0  && result.@priceRuleActive.length() == 0 ){
+							//line['initialNetPrice'] = result.priceList.price.(@name == currentItemPriceName)[0].@value;
+							result.@initialNetPrice = result.priceList.price.(@name == currentItemPriceName)[0].@value;
+						}else if(result.@grossPrice.length() > 0){
+							line['initialNetPrice'] = 0;
+						}
+						else if(result.@initialNetPrice.length() > 0){
+							line['initialNetPrice'] = parseFloat(result.@initialNetPrice);
+						}
+						else if(result.@defaultPrice.length() > 0){
+							line['initialNetPrice'] = parseFloat(result.@defaultPrice);
+						}else{
+							line['initialNetPrice'] = 0;
+						}
+					}
+					// Jesli waluta dokumentu jest inna niż systemowa przeliczamy ceny wg kursu wymiany.
+					line['initialNetPrice'] = CurrencyManager.systemToDocument(line['initialNetPrice'],documentObject);
+					
+					documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_CHANGE, "initialNetPrice", line));
+				
+				}
+				
+				var field:String = null;
+				var fields:Array = ['discountRate', 'initialNetPrice', 'initialGrossPrice', 'netPrice', 'grossPrice'];
+				for each (var currentField:String in fields)
+				{
+					if (result['@' + currentField].length() > 0 && line.hasOwnProperty(currentField))
+					{
+						field = currentField;
+						line[currentField] = parseFloat(result['@' + currentField]);
+						// Jesli waluta dokumentu jest inna niż systemowa przeliczamy ceny wg kursu wymiany.
+						if (currentField == "initialNetPrice") line['initialNetPrice'] = CurrencyManager.systemToDocument(parseFloat(result['@' + currentField]),documentObject);
+					}
+				}
+				if (field) documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_CHANGE, field, line));
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_ITEM_DETAILS_LOAD,null,line));
+				}
+			}
+			
+			public function handleLineAttributeChange(event:DocumentEvent):void
+			{
+				this.documentObject[linesObjectName].itemUpdated(event.line);
+			}
+			
+			/**
+			 * Load and update data of the selected item.
+			 */
+			public function handleSetItem(event:DocumentEvent):void
+			{
+				if (event.preventDefault()) return;
+				var line:Object = event.line;
+				
+				if(line is DecisionComplainDocumentLine) return;
+				if(line is FinancialDocumentLine) return;
+				
+				var cmd:GetItemsDetailsCommand = new GetItemsDetailsCommand(documentObject.typeDescriptor.typeId, 
+						documentObject.xml.contractor.contractor.id, 
+						documentObject.xml.@source.length() > 0 ? XML(String(documentObject.xml.@source)) : null, 
+						[line.itemId]);
+				cmd.targetObject = line;
+				cmd.addEventListener(ResultEvent.RESULT, this.handleGetLinePrice, false, 0, true);
+				cmd.execute();
+				
+				//this.defaultPrice = NaN;
+				//this.lastPurchasePrice = NaN;
+				//this.noLastPurchasePrice = null;
+				
+				/*var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand(LoadBusinessObjectCommand.TYPE_ITEM, line.itemId);
+				cmd.targetObject = line;
+				cmd.addEventListener(ResultEvent.RESULT, handleItemResult);
+				cmd.execute();
+				// load purchase price
+				if (documentObject.typeDescriptor.isPurchaseDocument || documentObject.typeDescriptor.isOrderDocument)
+				{
+					var getPriceCmd:GetLastPurchasePriceCommand = new GetLastPurchasePriceCommand(documentObject.typeDescriptor.typeId, 
+					documentObject.xml.contractor.contractor.id, 
+					documentObject.xml.@source.length() > 0 ? XML(documentObject.xml.@source) : null, 
+					[line.itemId]);
+					getPriceCmd.targetObject = line;
+					getPriceCmd.addEventListener(ResultEvent.RESULT, getPurchasePriceResult);
+					getPriceCmd.execute();
+					if (line is CommercialDocumentLine) CommercialDocumentLine(line).initialNetPrice = 0;
+				}*/
+			}
+			
+			//private var defaultPrice:Number;
+			//private var lastPurchasePrice:Number;
+			//private var noLastPurchasePrice:Object; //true/false/null
+			
+			/*private function setDiscountRateForPurchaseDocuments(line:CommercialDocumentLine):void
+			{
+				if(documentObject.typeDescriptor.isPurchaseDocument || documentObject.typeDescriptor.isOrderDocument)
+				{
+					if(!isNaN(this.defaultPrice) && !isNaN(this.lastPurchasePrice))
+					{
+						trace("lastPurchase");
+						line.discountRate = 0;
+						line.netPrice = this.lastPurchasePrice;
+					}
+					else if (!isNaN(this.defaultPrice) && this.noLastPurchasePrice == true)
+					{
+						trace("noLastPurchase");
+						line.discountRate = 0;
+						line.netPrice = this.defaultPrice;
+					}
+					else
+						trace("brak");
+				}
+			}
+			
+			protected function handleItemResult(event:ResultEvent):void
+			{
+				var itemData:XML = XML(event.result).item[0];
+				var cmd:LoadBusinessObjectCommand = LoadBusinessObjectCommand(event.target);
+				var line:BusinessObject = BusinessObject(cmd.targetObject);
+				
+				this.defaultPrice = parseFloat(itemData.defaultPrice);
+				// set the sales price only for commercial documents
+				if (line is CommercialDocumentLine && (documentObject.typeDescriptor.isSalesDocument || documentObject.typeDescriptor.isWarehouseReservation))
+				{
+					var commLine:CommercialDocumentLine = line as CommercialDocumentLine;
+					commLine.discountRate = this.documentObject.defaultLineDiscount;
+					commLine.initialNetPrice = this.defaultPrice;
+				}
+				
+				if(documentObject.typeDescriptor.isPurchaseDocument || documentObject.typeDescriptor.isOrderDocument)
+				{
+					line['initialNetPrice'] = this.defaultPrice;
+				}
+				
+				line['itemVersion'] = itemData.version;
+				line['itemName'] = itemData.name;
+				line['unitId'] = itemData.unitId;
+				
+				if(line is CommercialDocumentLine)
+					line['vatRateId'] = itemData.vatRateId;
+				
+				this.setDiscountRateForPurchaseDocuments(line as CommercialDocumentLine);
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_CHANGE, "initialNetPrice", line));
+			}
+			
+			protected function getPurchasePriceResult(event:ResultEvent):void
+			{
+				var cmd:GetLastPurchasePriceCommand = GetLastPurchasePriceCommand(event.target);
+				var line:CommercialDocumentLine = BusinessObject(cmd.targetObject) as CommercialDocumentLine;
+				var xml:XML = XML(event.result);
+				
+				if (String(xml.itemId.@netPrice))
+				{
+					trace("cena zaladowana");
+					this.noLastPurchasePrice = false;
+					this.lastPurchasePrice = parseFloat(xml.itemId.@netPrice);
+				}
+				else
+				{
+					trace("cena NIE zaladowana");
+					this.noLastPurchasePrice = true;
+				}
+				
+				this.setDiscountRateForPurchaseDocuments(line);
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_CHANGE, "netPrice", line));
+			}*/
+		
+			protected function init():void
+			{
+				documentLines.addEventListener(DataGridEvent.ITEM_EDIT_END, itemEditListener, false, EventPriority.DEFAULT_HANDLER + 1);
+			}
+			
+			/**
+			 * Event handler for duplicate line operation in <code>lineList</code>.
+			 * 
+			 * @param event Event object containing event data.
+			 */
+			public function lineListDuplicateLine(event:LineOperationEvent):void
+			{
+				var line:BusinessObject = BusinessObject(LineOperation(event.target).line);
+				var newLine:BusinessObject = line.copy(); 
+				newLine['documentObject'] = line['documentObject'];
+				
+				if(newLine is CommercialDocumentLine || newLine is WarehouseDocumentLine)
+					newLine['shifts'] = [];
+				
+				this.documentLines.addLine(newLine, this.documentObject[linesObjectName].getItemIndex(line) + 1);
+				this.documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_LINE_ADD, false, false, null, newLine));
+				this.documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_LINE_SET_ITEM, false, false, null, newLine));
+			}
+			
+			/**
+			 * Event handler for delete line operation in <code>lineList</code>.
+			 * 
+			 * @param event Event object containing event data.
+			 */
+			public function lineListDeleteLine(event:LineOperationEvent):void
+			{
+				var line:BusinessObject = BusinessObject(LineOperation(event.target).line);
+				this.documentObject[linesObjectName].removeItemAt(this.documentObject[linesObjectName].getItemIndex(line));
+				this.documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_DELETE, null, line));
+			}
+			
+			/**
+			 * Event handler for add new line operation in <code>lineList</code>.
+			 * 
+			 * @param event Event object containing event data.
+			 */
+			public function lineListAddNewLine(event:LineOperationEvent):void
+			{
+				var line:BusinessObject = BusinessObject(LineOperation(event.target).line);
+				
+				this.documentLines.addLine(null, this.documentObject[linesObjectName].getItemIndex(line) + 1);
+				this.documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_LINE_ADD, false, false, null, line));
+			}
+			
+			/**
+			 * Event handler for showing details in <code>lineList</code>.
+			 * 
+			 * @param event Event object containing event data.
+			 */
+			public function lineListShowDetails(event:LineOperationEvent):void
+			{
+				var line:CommercialDocumentLine = LineOperation(event.target).line as CommercialDocumentLine;
+				lineListShowDetailsFromLine(line);
+				// TODO: okno szczegolow dla innych dok lub usuniecie tej opcji dla innych niz handlowe
+				/*
+				if (!line) return;
+				var window:ComponentWindow = new ComponentWindow();
+   				var editor:DocumentLineDetails = new DocumentLineDetails();
+   				editor.line = line as CommercialDocumentLine;
+				editor.documentObject = documentObject;
+				editor.index = documentObject[linesObjectName].getItemIndex(line);
+				editor.window = window;
+   				window.innerComponent = editor;
+   				window.buttons = ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL;
+   				window.show(null, new Rectangle(-1, -1, 600, 330));
+   				window.commitFunction = editor.saveDetails;
+   				*/
+			}
+			
+			public function lineListShowDetailsFromLine(line:CommercialDocumentLine):void
+			{
+				// TODO: okno szczegolow dla innych dok lub usuniecie tej opcji dla innych niz handlowe
+				if (!line) return;
+				var window:ComponentWindow = new ComponentWindow();
+   				var editor:DocumentLineDetails = new DocumentLineDetails();
+   				editor.line = line as CommercialDocumentLine;
+				editor.documentObject = documentObject;
+				editor.index = documentObject[linesObjectName].getItemIndex(line);
+				editor.window = window;
+   				window.innerComponent = editor;
+   				window.buttons = ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL;
+   				window.verticalScrollPolicy="auto";
+   				window.show(null, new Rectangle(-1, -1, 600, 330));
+   				window.commitFunction = editor.saveDetails;
+			}
+				
+			
+			/**
+			 * Returns color of the line based on its data. Returning <code>NaN</code> sets the line's
+			 * color to default.
+			 * 
+			 * @item Line's data.
+			 * 
+			 * @return Color code or <code>NaN</code>.
+			 */
+			protected function getLineColor(item:BusinessObject):Number
+			{
+				var result:String = DocumentValidationPlugin.getDocumentLineColor(item);
+				return !result ? NaN : LINE_ERROR_COLOR;
+			}
+			
+			private function updateLine():void
+			{
+				
+			}
+			
+			protected function itemEditListener(event:DataGridEvent):void
+			{
+				if (event.type == DataGridEvent.ITEM_EDIT_END)
+				{
+					if (event.reason != DataGridEventReason.CANCELLED)
+					{
+						
+						var oldVal:Object = null;//event.itemRenderer.data[event.dataField];
+						
+						if(lineOldValue)
+							oldVal = lineOldValue[event.dataField]
+						else
+							oldVal = event.itemRenderer.data[event.dataField];
+						var newVal:Object=null;
+						if(event.target.columns[event.columnIndex].editorDataField)
+							newVal = event.target.itemEditorInstance[event.target.columns[event.columnIndex].editorDataField]; // todo jesli grid ma miec draggableColumns=true to nie mozna uzyc w ten sposob columnIndex
+						var equal:Boolean;
+						if (event.itemRenderer is CurrencyRenderer) equal = (parseFloat(String(oldVal)) == parseFloat(String(newVal)));
+						else equal = (oldVal == newVal);
+						if (!equal)
+						{
+							var line:Object = documentObject[linesObjectName].getItemAt(event.rowIndex);
+//							if(event.dataField=="attributes")
+//								event.itemRenderer.data[event.dataField]= new ArrayCollection([newVal]);
+//							else
+							event.itemRenderer.data[event.dataField] = newVal;
+							var newEvent:DocumentEvent = DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_CHANGE, event.dataField, line);
+							documentObject.dispatchEvent(newEvent);
+							documentObject[linesObjectName].itemUpdated(line);
+						}
+						event.reason = DataGridEventReason.CANCELLED;
+						lineOldValue = null;
+					}
+				}
+			}
+			
+			private function hasChanged(line:Object,dataField:String):void
+			{
+				
+			}
+			
+			/**
+			 * Return an existing line with no item selected.
+			 * If no such line exists, create a new line and set focus.
+			 */
+			public function getEmptyLine():BusinessObject
+			{
+				for each (var line:BusinessObject in this.documentObject[linesObjectName])
+				{
+					if (line.isEmpty()) return line;
+				}
+				return documentLines.addLine() as BusinessObject;
+			}
+			
+			/**
+			 * Add quantity to the existing product line if there is no line with added product adds new line with such product
+			 * 
+			 */
+			public function setLineItemOrChangeQuantity(_item:Object, _line:BusinessObject):void
+			{
+				if(!_line||!_item)
+					return;
+				
+				var addNew:Boolean=true;
+				
+				for each (var line:BusinessObject in this.documentObject[linesObjectName])
+				{
+					var comLine:CommercialDocumentLine = line as CommercialDocumentLine;
+					var whLine:WarehouseDocumentLine = line as WarehouseDocumentLine;
+					if(comLine)
+						if(String(_item.@id)==String(comLine.itemId))
+						{
+							addNew=false;
+							comLine.quantity+=1;
+						}
+					if(whLine)
+						if(String(_item.@id)==String(whLine.itemId))
+						{
+							addNew=false;
+							whLine.quantity+=1;
+						}
+				}
+				if(addNew)
+				{
+					setLineItem(_item,_line);
+				}
+				else
+				{
+					recalculateLines();
+				}
+				
+			}
+		]]>
+	</mx:Script>
+	
+</mx:VBox>

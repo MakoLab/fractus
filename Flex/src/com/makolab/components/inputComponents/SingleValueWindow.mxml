@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="vertical" 
+	width="200" 
+	height="100"
+	keyDown="keyDownHandler(event)"
+	>
+	<mx:Script>
+		<![CDATA[
+			import mx.core.Application;
+			import mx.managers.PopUpManagerChildList;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			
+			public function show(parent:DisplayObject = null):void
+			{
+				PopUpManager.addPopUp(this,parent ? parent : Application.application.stage,true);
+				PopUpManager.centerPopUp(this);
+				textInput.setFocus();
+			}
+			
+			public function close():void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function saveButtonClickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new Event(Event.CHANGE));
+				apply();
+			}
+			
+			private function cancelButtonClickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new Event(Event.CANCEL));
+				close();
+			}
+			
+			private function closeHandler(event:CloseEvent):void
+			{
+				dispatchEvent(new Event(Event.CANCEL));
+				close();
+			}
+			
+			override protected function keyDownHandler(event:KeyboardEvent):void
+			{
+				switch (event.keyCode)
+				{
+					case Keyboard.ENTER :
+						dispatchEvent(new Event(Event.CHANGE));
+						apply();
+						break;
+					case Keyboard.ESCAPE :
+						dispatchEvent(new Event(Event.CANCEL));
+						close();
+						break;
+				}
+				super.keyDownHandler(event);
+			}
+			
+			private function apply():void
+			{
+				if (validateFunction != null)
+				{
+					validationMessage = validateFunction();
+					if (!validationMessage)
+					{
+						this.height = 100;
+						PopUpManager.removePopUp(this);
+						validationInfoTextArea.visible = validationInfoTextArea.includeInLayout = false;
+					}else{
+						this.height = 200;
+						validationInfoTextArea.visible = validationInfoTextArea.includeInLayout = false;
+					}
+				}
+			}
+			
+			/** function validateFunction():String  */
+			public var validateFunction:Function;
+			
+			[Bindable]
+			public var value:String = "";
+			[Bindable]
+			public var validationMessage:String = "";
+		]]>
+	</mx:Script>
+	<mx:TextInput id="textInput" width="100%" text="{value}"/>
+	<mx:TextArea id="validationInfoTextArea" width="100%" height="100" visible="false" includeInLayout="false" text="{validationMessage}"/>
+	<mx:ControlBar height="40" left="4" top="4">
+		<mx:Button id="saveButton" label="Ok" click="saveButtonClickHandler(event)"/>
+		<mx:Button id="cancelButton" label="Anuluj" click="cancelButtonClickHandler(event)"/>
+	</mx:ControlBar>
+</mx:TitleWindow>

@@ -1,0 +1,99 @@
+<config>
+	<columns>
+		<column field="@ordinalNumber" labelKey="common.lp" label="Lp" width="35" dataType="color" dependencyField="@color"/>
+		<column field="@name" labelKey="common.shortName" filter="1"/>
+		<column field="@code" labelKey="common.code" width="100" filter="1"/>
+		<column field="@quantity" labelKey="items.stock" width="45" dataType="float"/>
+		<column field="@reservedQuantity" labelKey="items.reservedShort" width="45" dataType="float"/>
+    	<column field="@orderedQuantity" labelKey="items.orderedShort" width="45" dataType="float"/>
+    	<column field="@availableQuantity" labelKey="items.availableShort" width="45" dataType="availableStock"/>
+	</columns>
+	
+	<searchParams>
+		<query/>
+    <pageSize>200</pageSize>
+    <page>1</page>
+		<columns>
+			<column field="code"/>
+			<column field="name" sortOrder="1" sortType="ASC"/>
+			<column field="quantity"/>
+			<column field="reservedQuantity"/>
+			<column field="orderedQuantity"/>
+			<column field="availableQuantity"/>
+			<column field="color"/>
+		</columns>
+	</searchParams>
+
+	<!--<defaultPriceName>Price_Wholesale</defaultPriceName>-->
+
+	<getItemDataParams>
+		<type>Item</type>
+		<id/>
+	</getItemDataParams>
+	<filterField>@name</filterField>
+	
+	<clipboard>
+    	<quantities>1</quantities>
+	    <columns>
+			<column field="@name" labelKey="common.shortName" label="Nazwa"/>
+			<column field="@quantity" labelKey="common.quantity" label="Ilość" editor="integer"/><!--TODO: label="\{LanguageManager.labels.\}"--><!--TODO: label="\{LanguageManager.labels.common.amount\}"-->
+	    </columns>
+	</clipboard>
+	<equivalents>
+		<columns>
+			<column field="@code" labelKey="common.code" label="Kod" width="50"/>
+			<column field="@name" labelKey="common.shortName" label="Nazwa" width="100"/>
+	    </columns>
+	</equivalents>
+  
+  <filters>
+    <!--
+    <filter type="itemAttributeFilter">
+    	<attributeName>Attribute_ManufacturerCode</attributeName>
+    </filter>
+    <filter type="itemAttributeFilter">
+    	<attributeName>Attribute_VehicleType</attributeName>
+    </filter>
+    <filter type="itemAttributeFilter">
+    	<attributeName>Attribute_Manufacturer</attributeName>
+    </filter>
+    <filter type="itemAttributeFilter">
+    	<attributeName>Attribute_Tread</attributeName>
+    	<type>partial</type>
+    </filter>
+    <filter type="itemAttributeFilter">
+    	<attributeName>Attribute_TyreWidth</attributeName>
+    </filter>
+    <filter type="itemAttributeFilter">
+    	<attributeName>Attribute_Profile</attributeName>
+    </filter>
+    <filter type="itemAttributeFilter">
+    	<attributeName>Attribute_Construction</attributeName>
+    </filter>
+    <filter type="itemAttributeFilter">
+    	<attributeName>Attribute_LoadIndex</attributeName>
+    </filter>
+    <filter type="itemAttributeFilter">
+    	<attributeName>Attribute_SpeedIndex</attributeName>
+    </filter>
+    <filter type="itemAttributeFilter">
+    	<attributeName>Attribute_Gain</attributeName>
+    </filter>
+    <filter type="itemAttributeFilter">
+    	<attributeName>Attribute_NetPrice</attributeName>
+    	<type>range</type>
+    </filter>
+    <filter type="itemAttributeFilter">
+    	<attributeName>Attribute_GrossPrice</attributeName>
+    	<type>range</type>
+    </filter>
+    -->
+    <filter type="currentWarehouseFilter"/>
+    <filter type="itemAvailabilityFilter" label="Stan"/>
+  </filters>
+  <filtersTemplates label="Na podstawie szablonu">
+		<template label="Tylko dostępne">
+			<filter type="itemAvailabilityFilter" value="1"/>
+		</template>
+  </filtersTemplates>
+</config>

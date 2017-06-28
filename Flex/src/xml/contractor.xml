@@ -1,0 +1,236 @@
+<root>
+  <contractor type="Contractor">
+    <isSupplier>0</isSupplier>
+    <isReceiver>0</isReceiver>
+    <isBusinessEntity>1</isBusinessEntity>
+    <isBank>0</isBank>
+    <isEmployee>0</isEmployee>
+    <isOwnCompany>0</isOwnCompany>
+    <isTemplate>0</isTemplate>
+    <fullName>Makolab S.A.</fullName>
+    <shortName>Makolab</shortName>
+    <addresses>
+      <address>
+        <contractorFieldId>07B60EA2-75C5-41E0-A488-7962C550E68E</contractorFieldId>
+        <city>Łódź</city>
+        <postCode>90-361</postCode>
+        <postOffice>Łódź</postOffice>
+        <countryId>8C67F218-903D-4A1D-8D21-E8040E7DCBCC</countryId>
+        <id>6671FF8C-C2ED-4DEE-BE19-5CFE969A4B9B</id>
+        <address>Piotrkowska 270</address>
+        <version>402F7BE6-A748-427A-8130-A3BCA54E9CA7</version>
+      </address>
+      <address>
+        <contractorFieldId>36BF2FB3-9D77-43F1-93B9-519CD389DC14</contractorFieldId>
+        <city>Łódź</city>
+        <postCode>93-430</postCode>
+        <postOffice>Łódź</postOffice>
+        <countryId>8C67F218-903D-4A1D-8D21-E8040E7DCBCC</countryId>
+        <id>6251AF0D-BD89-4D81-9412-E6112AC06F19</id>
+        <address>Demokratyczna 46</address>
+        <version>C4A625D6-A822-4120-A567-A158D14EFDEB</version>
+      </address>
+    </addresses>
+    <relations>
+
+      <relation>
+
+        <contractorRelationTypeId>9197E1CF-C601-483A-A367-B26D5E378ED4</contractorRelationTypeId>
+
+        <relatedContractor>
+
+          <contractor>
+
+            <isSupplier>0</isSupplier>
+
+            <isReceiver>0</isReceiver>
+
+            <isBusinessEntity>0</isBusinessEntity>
+
+            <isBank>0</isBank>
+
+            <isEmployee>0</isEmployee>
+
+            <isOwnCompany>0</isOwnCompany>
+
+            <isTemplate>0</isTemplate>
+
+            <fullName>Jakub Galas</fullName>
+
+            <shortName>Jakub Galas</shortName>
+
+            <id>80915A95-CBC8-4915-B8E0-D822A6E88D05</id>
+
+            <version>D8BCD101-6D99-47CD-9F28-6DD8E15D1D86</version>
+
+          </contractor>
+
+        </relatedContractor>
+
+        <id>B15C6904-2177-4C10-977D-261DFD0313A6</id>
+
+        <version>7C3ED677-008F-4A81-9256-4B67431DB253</version>
+
+      </relation>
+
+      <relation>
+
+        <contractorRelationTypeId>9197E1CF-C601-483A-A367-B26D5E378ED4</contractorRelationTypeId>
+
+        <relatedContractor>
+
+          <contractor>
+
+            <isSupplier>0</isSupplier>
+
+            <isReceiver>0</isReceiver>
+
+            <isBusinessEntity>0</isBusinessEntity>
+
+            <isBank>0</isBank>
+
+            <isEmployee>0</isEmployee>
+
+            <isOwnCompany>0</isOwnCompany>
+
+            <isTemplate>0</isTemplate>
+
+            <fullName>Tomek Kulik</fullName>
+
+            <shortName>Tomek Kulik</shortName>
+
+            <id>7E71489B-5CEF-4B90-9607-A8B69C52D523</id>
+
+            <version>FED8B88E-4C4F-4DAE-A1C5-0F38E399C8CB</version>
+
+          </contractor>
+
+        </relatedContractor>
+
+        <id>0DC0DD41-6BC1-4B80-BFB4-2D51BB06D036</id>
+
+        <version>2DB10C05-B1B0-424C-B8EE-374E722E0603</version>
+
+      </relation>
+
+      <relation>
+
+        <contractorRelationTypeId>9197E1CF-C601-483A-A367-B26D5E378ED4</contractorRelationTypeId>
+
+        <relatedContractor>
+
+          <contractor>
+
+            <isSupplier>0</isSupplier>
+
+            <isReceiver>0</isReceiver>
+
+            <isBusinessEntity>0</isBusinessEntity>
+
+            <isBank>0</isBank>
+
+            <isEmployee>0</isEmployee>
+
+            <isOwnCompany>0</isOwnCompany>
+
+            <isTemplate>0</isTemplate>
+
+            <fullName>Czarek Woźniak</fullName>
+
+            <shortName>Czarek Woźniak</shortName>
+
+            <id>58EE4E77-7E4A-48D0-BDBF-1659D49C4986</id>
+
+            <version>FE39CE7A-D72E-4EAE-B16E-5115ACEC21BC</version>
+
+          </contractor>
+
+        </relatedContractor>
+
+        <id>876E4883-1504-441B-A67E-E684295F8A4B</id>
+
+        <version>EA39CE87-DA02-4B4C-B0DE-3B0632FB3254</version>
+
+      </relation>
+
+    </relations>
+
+    <accounts/>
+
+    <attributes>
+
+      <attribute>
+
+        <contractorFieldId>52CA4D38-FBDA-43E6-81F3-8B19BC9AD996</contractorFieldId>
+
+        <value>+48 (42) 683 74 99</value>
+
+        <id>ED6EBFED-7B8C-45DA-86ED-10AA17888DC0</id>
+
+        <version>AD84777D-2B82-4D43-9F89-FB6E5C8278F7</version>
+
+      </attribute>
+
+      <attribute>
+
+        <contractorFieldId>356AFECD-99E6-4D0B-9F27-D802AE116C1C</contractorFieldId>
+
+        <value>info@makolab.pl</value>
+
+        <id>4D591E96-E80D-4251-8224-19B84C3F6B0D</id>
+
+        <version>84EE680A-A10A-4523-BF54-FAA313DF9DB9</version>
+
+      </attribute>
+
+      <attribute>
+
+        <contractorFieldId>D950E01D-5221-4711-96F2-A84F20435581</contractorFieldId>
+
+        <value>+48 (42) 683 74 60</value>
+
+        <id>5D525899-1DBF-4BB3-A0FE-282DEB304EDB</id>
+
+        <version>FD143136-0892-4829-AF93-6D677AD9B5E0</version>
+
+      </attribute>
+
+      <attribute>
+
+        <contractorFieldId>3D95E450-1A89-4215-8D43-941D33F71592</contractorFieldId>
+
+        <value>471343117</value>
+
+        <id>B8AA4125-18E8-4C04-BEAE-CC500EDC0978</id>
+
+        <version>73109F0F-BA22-462F-B5BF-FBF97A49F531</version>
+
+      </attribute>
+
+      <attribute>
+
+        <contractorFieldId>D950E01D-5221-4711-96F2-A84F20435581</contractorFieldId>
+
+        <value>+48 (42) 683 74 79</value>
+
+        <id>5AAAEA38-4304-45A0-8152-EF95809A0F10</id>
+
+        <version>C7C0BB1A-925C-4DC2-83DB-B6B555A37F86</version>
+
+      </attribute>
+
+    </attributes>
+
+    <groupMemberships/>
+
+    <nipPrefixCountryId>8C67F218-903D-4A1D-8D21-E8040E7DCBCC</nipPrefixCountryId>
+
+    <id>26F958D1-06D7-4CDB-8002-9205F5871BE3</id>
+
+    <nip>725-001-55-26</nip>
+
+    <version>9582346D-635C-4B82-8D96-889CDD055BCA</version>
+
+  </contractor>
+
+</root>

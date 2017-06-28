@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml">
+  <mx:Script>
+    <![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.controls.Alert;
+			import com.makolab.fractus.model.SessionManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.managers.PopUpManager;
+			import mx.core.UIComponent;
+			
+			private static var salesLockWindow:SalesLockWindow;
+			private var okFunction:Function;
+			private var contractorId:String;
+			private var contractorNip:String;
+			
+			[Bindable]
+			private var lblTitle:String;
+			
+			[Bindable]
+			private var lockCode:String;
+			
+			public static function show(parent:UIComponent, okFunction:Function, contractorId:XMLList, label:String, ordinalNumber:String):void
+			{
+				if (!salesLockWindow) salesLockWindow = new SalesLockWindow();
+				salesLockWindow.okFunction = okFunction;
+				// Brak kontrahenta
+	 
+				if (contractorId != null)
+				{
+					salesLockWindow.contractorId = contractorId.id;
+					var t:String = contractorId..nip; 
+					salesLockWindow.contractorNip = t.replace(/[^0-9]/g, '');
+				}
+				salesLockWindow.lblTitle = label;
+				
+				if(ModelLocator.getInstance().challengeCodeLocks)
+				{
+					do {
+						var tempLockCode:String = int((Math.random() * 1000000)%10000).toString();
+					} while (Number(tempLockCode) < 1000 || Number(tempLockCode) > 9999);
+					
+					var tempLockNip:String = (Number(salesLockWindow.contractorNip).toString(36)).toUpperCase();
+					
+					var piseCode1:String = tempLockCode.substr(0, 2)
+					var piseCode2:String = tempLockCode.substr(2, 2);
+					
+					var piseNip1:String = tempLockNip.substr(0, 3);
+					var piseNip2:String = tempLockNip.substr(3, 3);
+					var piseNip3:String = tempLockNip.substr(6, tempLockNip.length - 6);
+					
+					salesLockWindow.lockCode = piseNip1 + " " + piseCode1 + " " + piseNip2 + " " + piseCode2 + "" + piseNip3;
+					
+					//salesLockWindow.lockCode = int((Math.random() * 1000000)%10000).toString();
+					
+					if (salesLockWindow.lblTitle == null) salesLockWindow.lblTitle = "<p align='center'>" + LanguageManager.getInstance().labels.error.lines.toLowPriceOnPosition + " " + ordinalNumber + "</p>";
+					else salesLockWindow.lblTitle += "</p>";
+					
+					//salesLockWindow.lblTitle += "<p align='center'>" +  + ": <b>" + salesLockWindow.lockCode + "</b></p>"; 
+				}
+				
+				PopUpManager.addPopUp(salesLockWindow, parent, true);
+				PopUpManager.centerPopUp(salesLockWindow);
+				salesLockWindow.visible = true;
+			}
+			
+			private function close():void
+			{
+				PopUpManager.removePopUp(salesLockWindow);
+				salesLockWindow.visible = false;
+				salesLockWindow = null;
+			}
+			
+			private function btnOkClick(event:Event):void
+			{
+				this.lockCode
+				
+				var code:String = SalesLockUnlockingCodeGeneratorWindow.generateCode(this.contractorId, ModelLocator.getInstance().branchId, ModelLocator.getInstance().sessionManager.userId, null, (SalesLockUnlockingCodeGeneratorWindow.getCodeFromText(this.lockCode)).code);
+				
+				
+				if(code == this.txtCode.text)
+				{
+					this.close();
+					this.okFunction();
+				}
+				else
+					Alert.show(LanguageManager.getInstance().labels.error.wrongCode);
+			}
+		]]>
+  </mx:Script>
+  <mx:VBox horizontalAlign="center" verticalAlign="middle" width="100%" verticalGap="0">
+    <mx:Text htmlText="{lblTitle}" width="300" textAlign="left" selectable="false" paddingTop="5" paddingBottom="5"/>
+
+    <mx:HBox paddingBottom="5" horizontalGap="10" width="300" horizontalAlign="center">
+      <mx:Text text="{LanguageManager.getInstance().labels.documents.messages.unLockCode}" textAlign="right" selectable="false" />
+      <mx:Text text="{lockCode}" textAlign="left" fontWeight="bold" selectable="true" />
+    </mx:HBox>
+
+    <mx:Form width="300" defaultButton="{btnOk}" paddingTop="0" paddingBottom="5">
+      <mx:FormItem label="{LanguageManager.getInstance().labels.documents.messages.enterUnLockCode}">
+        <mx:TextInput id="txtCode" width="100" maxChars="5" restrict="0-9" />
+      </mx:FormItem>
+      <mx:HBox width="100%" horizontalAlign="center" paddingTop="3">
+        <mx:Button id="btnOk" label="{LanguageManager.getInstance().labels.common.ok}" width="80" click="btnOkClick(event)"/>
+        <mx:Button label="{LanguageManager.getInstance().labels.sales.quick.cancel}" width="80" click="close()"/>
+      </mx:HBox>
+    </mx:Form>
+  </mx:VBox>
+</mx:TitleWindow>

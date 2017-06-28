@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AbstractLinesComponent xmlns:mx="http://www.adobe.com/2006/mxml" xmlns="com.makolab.fractus.view.documents.documentControls.*" xmlns:catalogue="com.makolab.fractus.view.catalogue.*" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:lineList="com.makolab.components.lineList.*" xmlns:generic="com.makolab.fractus.view.generic.*"
+		lineAddEnabled="false"
+	>
+	<columns>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.lp}" minWidth="20" width="20" editable="false" itemRenderer="com.makolab.components.inputComponents.OrdinalNumberRenderer"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.code}" dataField="itemCode" width="100" headerWordWrap="true" editable="false"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.item}" dataField="itemName" width="210" headerWordWrap="true" editorUsesEnterKey="false" editorDataField="dataObject" editable="false" itemRenderer="com.makolab.components.inputComponents.StringCorrectionRenderer"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.quantity}" dataField="quantity" width="50" headerWordWrap="true" editorDataField="dataObject" itemEditor="{quantityEditor}" itemRenderer="com.makolab.components.inputComponents.CorrectionRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.jm}" dataField="unitId" editable="false" width="20" minWidth="20" headerWordWrap="true" editorDataField="selectedId" itemEditor="com.makolab.fractus.view.generic.FractusDictionarySelector" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" headerStyleName="headerRight" />
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.priceNetto}" dataField="initialNetPrice" width="50" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CorrectionEditor" itemRenderer="com.makolab.components.inputComponents.CorrectionRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.priceBrutto}" dataField="initialGrossPrice" width="50" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CorrectionEditor" itemRenderer="com.makolab.components.inputComponents.CorrectionRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.discount}" dataField="discountRate" width="50" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CorrectionEditor" itemRenderer="com.makolab.components.inputComponents.CorrectionRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.priceNettoAfterDiscount}" dataField="netPrice" width="60" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CorrectionEditor" itemRenderer="com.makolab.components.inputComponents.CorrectionRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.priceBruttoAfterDiscount}" dataField="grossPrice" width="60" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CorrectionEditor" itemRenderer="com.makolab.components.inputComponents.CorrectionRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.documents.netValue}" dataField="netValue" width="50" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CorrectionEditor" itemRenderer="com.makolab.components.inputComponents.CorrectionRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.documents.grossValue}" dataField="grossValue" width="50" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CorrectionEditor" itemRenderer="com.makolab.components.inputComponents.CorrectionRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.VAT}" dataField="vatRateId" width="30" minWidth="40" headerWordWrap="true" editorDataField="selectedId" itemEditor="com.makolab.fractus.view.generic.FractusDictionarySelector" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" headerStyleName="headerRight" textAlign="right"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.warehouse}" dataField="warehouseId" width="30" minWidth="40" headerWordWrap="true" editorDataField="selectedId" itemEditor="com.makolab.fractus.view.generic.FractusDictionarySelector" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" headerStyleName="headerRight" textAlign="right" editable="false"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.profit}" width="30" minWidth="30" headerWordWrap="true" headerStyleName="headerRight" textAlign="right" itemRenderer="com.makolab.fractus.view.documents.documentControls.LineMarginRenderer" editable="false"/>
+		<mx:DataGridColumn headerText="" minWidth="20" width="20" editable="false">
+			<mx:itemRenderer>
+				<mx:Component>
+					<lineList:LineMenu enabled="{!outerDocument.disableLinesChangeMessage &amp;&amp; !isCorrectedLine}">
+						<lineList:operations>
+							<lineList:LineOperation label="{LanguageManager.getInstance().labels.common.Delete}" operationInvoke="outerDocument.deleteLine(event)" icon="{outerDocument.getIcon('delete_small')}" textAlign="left" enabled="{isCorrectiveLine}"/>
+							<lineList:LineOperation label="{LanguageManager.getInstance().labels.common.reset}" operationInvoke="outerDocument.zeroLine(LineOperation(event.target).line as CorrectiveCommercialDocumentLine)" icon="{outerDocument.getIcon('delete_small')}" textAlign="left" enabled="{!isCorrectiveLine}"/>
+							<lineList:LineOperation label="{LanguageManager.getInstance().labels.common.restore}" operationInvoke="outerDocument.restoreLine(LineOperation(event.target).line as CorrectiveCommercialDocumentLine)" icon="{outerDocument.getIcon('delete_small')}" textAlign="left" enabled="{!isCorrectiveLine}"/>
+							<lineList:LineOperation label="{LanguageManager.getInstance().labels.documents.createCorrectItem}" operationInvoke="outerDocument.createCorrectiveLine(CorrectiveCommercialDocumentLine(LineOperation(event.target).line))" icon="{outerDocument.getIcon('duplicate_small')}" textAlign="left" enabled="{!isCorrectiveLine}"/>
+							<lineList:LineOperation label="{LanguageManager.getInstance().labels.common.detailsTab}" operationInvoke="outerDocument.lineListShowDetails(event)" icon="{outerDocument.getIcon('add_small')}" textAlign="left"/>
+						</lineList:operations>
+						<mx:Script>
+							<![CDATA[
+								import com.makolab.fractus.model.LanguageManager;
+								import com.makolab.fractus.model.document.CorrectiveCommercialDocumentLine;
+								import com.makolab.fractus.view.documents.documentEditors.CorrectiveSalesDocumentEditor;
+								[Bindable]
+								private var isCorrectedLine:Boolean;
+								[Bindable]
+								private var isCorrectiveLine:Boolean;
+								
+								override public function set data(value:Object):void
+								{
+									super.data = value;
+									if (value != null)
+									{
+										isCorrectedLine = (CorrectiveCommercialDocumentLine(value).correctiveLine != null);
+										isCorrectiveLine = (CorrectiveCommercialDocumentLine(value).correctedLine != null);
+									}
+									else isCorrectedLine = isCorrectiveLine = false;
+									this.invalidateDisplayList();
+								}
+							]]>
+						</mx:Script>
+					</lineList:LineMenu>
+				</mx:Component>
+			</mx:itemRenderer>
+		</mx:DataGridColumn>
+	</columns>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.components.inputComponents.CorrectionEditor;
+			import com.makolab.components.inputComponents.CorrectionRenderer;
+			import com.makolab.components.lineList.LineOperation;
+			import com.makolab.components.lineList.LineOperationEvent;
+			import com.makolab.fractus.view.documents.documentLists.CorrectDocumentOperation;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import com.makolab.components.document.DocumentEvent;
+			import mx.events.DataGridEvent;
+			import com.makolab.fractus.model.document.CorrectiveCommercialDocumentLine;
+			
+			[Bindable]
+			private var quantityEditor:ClassFactory = new ClassFactory(CorrectionEditor);
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+			{
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+				documentLines.autoHeight = false;
+				documentLines.height = 260;		
+			}
+			
+			override protected function init():void
+			{
+				super.init();
+				documentLines.variableRowHeight = true;
+				documentLines.addEventListener(DataGridEvent.ITEM_EDIT_BEGIN, handleItemEditBegin);
+				documentLines.rowTextColorFunction = getRowTextColor;
+				quantityEditor.properties = { amountIncreaseEnabled : false };
+			}
+			
+			public function deleteLine(event:LineOperationEvent):void
+			{
+				var line:CorrectiveCommercialDocumentLine = LineOperation(event.target).line as CorrectiveCommercialDocumentLine;
+				line.correctedLine.correctiveLine = null;
+				lineListDeleteLine(event);
+			}
+			
+			private function getRowTextColor(data:Object):Number
+			{
+				var line:CorrectiveCommercialDocumentLine = data as CorrectiveCommercialDocumentLine;
+				if (line.correctiveLine != null) return 0xaaaaaa;
+				else return NaN;
+			}
+			
+			/**
+			 * Check if the field can be modified. Call preventDefualt if not.
+			 */
+			protected function handleItemEditBegin(event:DataGridEvent):void
+			{
+				var line:CorrectiveCommercialDocumentLine = documentLines.dataProvider[event.rowIndex] as CorrectiveCommercialDocumentLine;
+				var field:String = DataGridColumn(documentLines.columns[event.columnIndex]).dataField;
+				if
+				(
+					// don't change the item
+					field == 'itemName' ||
+					// don't change the vat rate on original lines
+					(field == 'vatRateId' && line.correctedLine == null) ||
+					// can't change a line that has a corresponding corrective line
+					(line && line.correctiveLine != null)
+				)
+				{
+					event.preventDefault();
+				}
+			}
+			
+			public function createCorrectiveLine(line:CorrectiveCommercialDocumentLine):CorrectiveCommercialDocumentLine
+			{
+				restoreLine(line);
+				var newLine:CorrectiveCommercialDocumentLine = line.copy() as CorrectiveCommercialDocumentLine;
+				zeroLine(line);
+				newLine.documentObject = this.documentObject;
+				line.correctiveLine = newLine;
+				newLine.quantity = newLine.quantityBeforeCorrection;
+				newLine.documentObject = this.documentObject;
+				newLine.correctedLine = line;
+				newLine.quantityBeforeCorrection = 0;
+				newLine.initialNetValueBeforeCorrection = newLine.initialGrossValueBeforeCorrection = 0;
+				newLine.netValueBeforeCorrection = newLine.grossValueBeforeCorrection = 0;
+				this.documentLines.addLine(newLine, this.documentObject.lines.getItemIndex(line) + 1);
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_ADD, null, line));
+				return newLine;
+			}
+			
+			public function zeroLine(line:CorrectiveCommercialDocumentLine):void
+			{
+				line.restoreValues();
+				line.quantity = 0;
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_CHANGE, 'quantity', line));
+			}
+			
+			public function restoreLine(line:CorrectiveCommercialDocumentLine):void
+			{
+				line.restoreValues();
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_CHANGE, null, line));
+			}
+			
+		]]>
+	</mx:Script>
+</AbstractLinesComponent>

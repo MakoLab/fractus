@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="400" height="300" show="getDictionary()"
+	verticalScrollPolicy="off" horizontalScrollPolicy="off" xmlns:permission="com.makolab.components.permission.*">
+
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.inputComponents.DictionaryEditor;
+			import com.makolab.components.inputComponents.DictionaryMetadataRenderer;
+			import com.makolab.components.inputComponents.DictionaryXmlEditor;
+			import com.makolab.components.inputComponents.GridXMLRenderer;
+			import com.makolab.components.inputComponents.LabelValueEditor;
+			import com.makolab.components.inputComponents.TestRenderer;
+			import com.makolab.components.layoutComponents.FormBuilder;
+			import com.makolab.fractus.commands.dictionaries.LoadDictionaryCommand;
+			import com.makolab.fractus.model.ConfigManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.PermissionManager;
+			
+			import mx.containers.HBox;
+			import mx.containers.TitleWindow;
+			import mx.containers.VBox;
+			import mx.controls.Alert;
+			import mx.controls.Button;
+			import mx.controls.Label;
+			import mx.controls.Text;
+			import mx.controls.TextInput;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.managers.PopUpManager;
+			
+			[Bindable]
+			public var dictionaryType:String
+			
+			
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+			
+			[Bindable]
+			private var columns:Array;
+			private var dictionaryEditor:DictionaryEditor;
+			private var dictionaryXmlEditor:DictionaryXmlEditor;
+			private var tempData:Object;
+			
+			[Bindable]
+			override public function set data(value:Object):void
+			{
+				//Alert.show(value.toString());
+				super.data = value;
+				this.dataGrid.dataProvider = data.*;
+			}
+			
+			private var _config:XMLList;
+			
+			public function set config(value:XMLList):void
+			{
+				_config = value;
+				if(value) {
+					initializeColumns(_config.*[0].*);
+				}
+			}
+			
+			public function get config():XMLList	{
+				return _config;
+			}
+			
+			private function getDictionary():void	{				
+				if(this.dataGrid.dataProvider.toString()=="")
+				{
+					new LoadDictionaryCommand().execute(dictionaryType);
+				}
+			}
+			
+			private function initializeColumns(cols:XMLList):void
+			{
+				var c:Array = [];
+				var dgc:DataGridColumn;
+				for each (var col:XML in cols)
+				{
+					var cname:String = col.name().toString();
+					if(cname!="id" && cname!="version" && cname!="order")	{
+	 					dgc = new DataGridColumn();		 					
+						if(cname!="xmlLabels" && cname!="xmlMetadata")	{								
+							dgc.headerText = col.name();
+							dgc.dataField = col.name();
+							if(cname=="xmlOptions")	{
+								var lb:GridXMLRenderer = new GridXMLRenderer();
+								lb.data = "XML";					
+								dgc.itemRenderer = lb;
+							}	
+							dgc.visible = true;								
+						}					
+						else	{							
+							var lr:DictionaryMetadataRenderer = new DictionaryMetadataRenderer();
+							lr.type = cname;
+							lr.horizontalScrollPolicy = "off";			
+							dgc.headerText = col.*.name();						
+							dgc.itemRenderer = lr.newInstance();
+							dgc.visible = true;							
+						}
+						c.push(dgc);
+					}	
+				}
+				columns = c;
+			}
+			
+			protected var window:TitleWindow;
+			protected var xmlWindow:TitleWindow;
+			private var xmlOkButton:Button;
+			private var xmlCancelButton:Button;
+			protected var formBuilder:FormBuilder;
+			
+			private var okButton:Button;
+			private var xmlButton:Button;
+			private var cancelButton:Button;
+			private var editXMLButton:Button;
+			
+			
+			private var newItem:Boolean = false;
+			
+			
+			protected function showWindow(action:String):void
+			{
+				if (!window)
+				{
+					var conf:XML = ModelLocator.getInstance().configManager.values.dictionaries_forms_dictionary;
+					window = new TitleWindow();
+					window.width = 600;
+					window.height = 500;
+					var vBox:VBox = new VBox();
+					vBox.percentHeight = 100;
+					vBox.percentWidth = 100;
+					window.addChild(vBox);
+					
+					dictionaryEditor = new DictionaryEditor();
+					dictionaryEditor.percentWidth = 100;
+					dictionaryEditor.percentHeight = 100;
+					dictionaryEditor.dictionaryType = dictionaryType;
+				
+					vBox.addChild(DisplayObject(dictionaryEditor));
+					
+					var hBox:HBox = new HBox();
+					hBox.setStyle("horizontalCenter", 0);
+					okButton = new Button();
+					okButton.label = LanguageManager.getInstance().labels.common.ok;
+					okButton.width = 100;
+					okButton.addEventListener(MouseEvent.CLICK, buttonClickHandler);
+					okButton.enabled = ModelLocator.getInstance().permissionManager.isEnabled('administration.dictionaries.edit');
+					hBox.addChild(okButton);
+					if(model.isDebug())	{
+						xmlButton = new Button();
+						xmlButton.label = "xml";
+						xmlButton.width = 100;
+						xmlButton.addEventListener(MouseEvent.CLICK, buttonClickHandler);
+						hBox.addChild(xmlButton);
+					}
+						editXMLButton = new Button();
+						editXMLButton.label = LanguageManager.getInstance().labels.common.editXML
+						editXMLButton.width = 100;
+						editXMLButton.addEventListener(MouseEvent.CLICK, buttonClickHandler);
+						hBox.addChild(editXMLButton);
+					
+					cancelButton = new Button();
+					cancelButton.label = LanguageManager.getInstance().labels.common.cancel;
+					cancelButton.width = 100;
+					cancelButton.addEventListener(MouseEvent.CLICK, buttonClickHandler);
+					hBox.addChild(cancelButton);
+					vBox.addChild(hBox);
+				}
+				dictionaryEditor.action = action;
+				if(action == DictionaryEditor.EDIT)				
+					dictionaryEditor.data = XML(dataGrid.selectedItem).copy();
+				else if(action == DictionaryEditor.ADD)
+					dictionaryEditor.data = XML(dataGrid.dataProvider[0]).copy();
+				PopUpManager.addPopUp(window, this, true);
+				PopUpManager.centerPopUp(window);
+			}
+			
+			protected function buttonClickHandler(event:MouseEvent):void
+			{
+				if (event.target == okButton)
+				{
+					if(dictionaryEditor.validateForm()) {
+						if (dictionaryEditor.action == DictionaryEditor.ADD)
+						{
+							if(!dictionaryEditor.error)	{
+								XML(data).appendChild(XML(dictionaryEditor.dataObject));
+								this.dataGrid.dataProvider = data.*;
+								modify();
+							}
+							else Alert.show(LanguageManager.getInstance().labels.error.XMLFormat);
+						}
+						else {
+							if(!dictionaryEditor.error)	{
+								data.*.(childIndex() == dataGrid.selectedIndex).* = XML(dictionaryEditor.dataObject).*;
+								 modify();
+							}
+							else Alert.show(LanguageManager.getInstance().labels.error.XMLFormat);						
+						}
+						if(!dictionaryEditor.error) hideWindow();
+					}
+				} 
+				else if (event.target == xmlButton)
+				{
+					Alert.show(dictionaryEditor.dataObject.toString());
+				}
+				else if (event.target == editXMLButton)
+				{
+				//	Alert.show(dictionaryEditor.dataObject.toString());
+					if(!xmlWindow)
+					{	xmlWindow=new TitleWindow();
+						xmlWindow.width = 600;
+						xmlWindow.height = 500;
+						var vBox:VBox = new VBox();
+						vBox.percentHeight = 100;
+						vBox.percentWidth = 100;
+						xmlWindow.addChild(vBox);
+						
+						dictionaryXmlEditor = new DictionaryXmlEditor();
+						dictionaryXmlEditor.percentWidth = 100;
+						dictionaryXmlEditor.percentHeight = 100;
+						dictionaryXmlEditor.dictionaryType = dictionaryType;
+						vBox.addChild(DisplayObject(dictionaryXmlEditor));
+						
+						var hBox:HBox = new HBox();
+						hBox.setStyle("horizontalCenter", 0);
+						xmlOkButton = new Button();
+						xmlOkButton.label = LanguageManager.getInstance().labels.common.ok;
+						xmlOkButton.width = 100;
+						xmlOkButton.addEventListener(MouseEvent.CLICK, buttonClickHandler);
+						xmlOkButton.enabled = ModelLocator.getInstance().permissionManager.isEnabled('administration.dictionaries.edit');
+						hBox.addChild(xmlOkButton);
+						
+						xmlCancelButton = new Button();
+						xmlCancelButton.label = LanguageManager.getInstance().labels.common.cancel;
+						xmlCancelButton.width = 100;
+						xmlCancelButton.addEventListener(MouseEvent.CLICK, buttonClickHandler);
+						hBox.addChild(xmlCancelButton);
+						vBox.addChild(hBox);
+					}
+					if(dataGrid.selectedIndex>-1)
+						dictionaryXmlEditor.data = XML(dataGrid.dataProvider[dataGrid.selectedIndex]).copy();
+					PopUpManager.addPopUp(xmlWindow, this, true);
+					PopUpManager.centerPopUp(xmlWindow);
+				}
+				else if (event.target == xmlCancelButton)
+				{
+					if (xmlWindow) PopUpManager.removePopUp(xmlWindow);
+				}
+				else if (event.target == xmlOkButton)
+				{
+					try
+					{
+						dataGrid.dataProvider[dataGrid.selectedIndex]=dictionaryXmlEditor.dataObject;	
+						dictionaryEditor.data=XML(dataGrid.dataProvider[dataGrid.selectedIndex]).copy();
+						if (xmlWindow) PopUpManager.removePopUp(xmlWindow);
+					}
+					catch(e:TypeError){
+					//	Alert.show(LanguageManager.getInstance().labels.common.xmlerror,);
+						Alert.show(e.message,LanguageManager.getInstance().labels.common.error);
+					}
+				}
+				else hideWindow();
+				
+				newItem = false;
+			}
+			
+			protected function hideWindow():void
+			{
+				if (window) PopUpManager.removePopUp(window);
+			}
+			
+			protected function deleteItem():void
+			{
+				delete data.*[dataGrid.selectedIndex];
+				dataGrid.dataProvider = data.*;
+			}
+			
+			private function modify():void	{
+				model.dictionaryManager.dictionaryModified[data.*[0].name()] = XML(data).copy();
+			}
+			
+			private function moveData():void	{
+				tempData = XML(data).copy();
+				for(var i:int = 0; i < data.*.length(); i++) {
+					tempData.*[i].* = dataGrid.dataProvider[i].*;
+				}
+				data = tempData;
+			}			
+			
+			private function moveUp(index:int):void	{
+				if(index>0)	{
+					var ob:Object = dataGrid.dataProvider[index];
+					dataGrid.dataProvider[index] = dataGrid.dataProvider[index-1];
+					dataGrid.dataProvider[index-1] = ob;
+					moveData();
+					dataGrid.selectedItem = ob;
+					modify();
+				}
+			}
+			
+			private function moveDown(index:int):void	{
+				if(index<(dataGrid.dataProvider.length - 1))	{
+					var ob:Object = dataGrid.dataProvider[index];
+					dataGrid.dataProvider[index] = dataGrid.dataProvider[index+1];
+					dataGrid.dataProvider[index+1] = ob;
+					moveData();
+					dataGrid.selectedItem = ob;
+					modify();
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:DataGrid 
+		horizontalScrollPolicy="off" 
+		id="dataGrid" left="10" top="10" right="130" bottom="10" 
+		columns="{columns}" dataProvider="{data}" 
+		dragEnabled="{ModelLocator.getInstance().permissionManager.isEnabled('administration.dictionaries.edit')}" 
+		dropEnabled="{ModelLocator.getInstance().permissionManager.isEnabled('administration.dictionaries.edit')}" 
+		dragMoveEnabled="{ModelLocator.getInstance().permissionManager.isEnabled('administration.dictionaries.edit')}" 
+		dragComplete="modify()" 
+		itemDoubleClick="showWindow(DictionaryEditor.EDIT)" 
+		doubleClickEnabled="{ModelLocator.getInstance().permissionManager.isEnabled('administration.dictionaries.edit')}" 
+		width="100%" height="100%"/>
+	<mx:VBox top="10" bottom="10" width="100" right="10">
+		<permission:ButtonComponent label="{LanguageManager.getInstance().labels.common.add}" width="100%" click="showWindow(DictionaryEditor.ADD)" permissionKey="administration.dictionaries.add"/>
+		<permission:ButtonComponent label="{LanguageManager.getInstance().labels.common.change}" enabled="{dataGrid.selectedItem != null}" width="100%" click="showWindow(DictionaryEditor.EDIT)" permissionKey="administration.dictionaries.edit"/>
+		<!--
+		<permission:ButtonComponent label="{LanguageManager.getInstance().labels.common.deleteAll}" enabled="{dataGrid.selectedItem != null}" width="100%" click="deleteItem()" permissionKey="administration.dictionaries.delete"/>
+		-->
+		<mx:Button label="XML" width="100%" click="Alert.show(this.dataGrid.dataProvider.toString())" visible="{model.isDebug()}" includeInLayout="{model.isDebug()}"/>
+		
+		<permission:ButtonComponent label="{LanguageManager.getInstance().labels.common.up}" enabled="{dataGrid.selectedItem != null}" width="100%" click="moveUp(dataGrid.selectedIndex)" permissionKey="administration.dictionaries.edit"/>
+		<permission:ButtonComponent label="{LanguageManager.getInstance().labels.common.down}" enabled="{dataGrid.selectedItem != null}" width="100%" click="moveDown(dataGrid.selectedIndex)" permissionKey="administration.dictionaries.edit"/>
+	</mx:VBox>
+</mx:Canvas>

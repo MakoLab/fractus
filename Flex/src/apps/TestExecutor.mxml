@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" xmlns:lineList="com.makolab.components.lineList.*" creationComplete="init()" xmlns:graphics="com.makolab.components.graphics.*">
+	<mx:TabNavigator id="navigator" width="100%" height="100%">
+		<mx:VBox width="100%" height="100%" label="Podsumowanie">
+			<mx:VBox id="testList" paddingTop="10" paddingLeft="10" paddingRight="10" paddingBottom="10" width="100%"/>
+		</mx:VBox>
+	</mx:TabNavigator>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.components.inputComponents.TestRenderer;
+			import org.gif.player.GIFPlayer;
+			import mx.controls.Alert;
+			import com.makolab.components.lineList.ConfigurableGrid;
+			import mx.containers.Box;
+			
+			private static const MSG_EXECUTING:String = "Trwa wykonywanie testu...";
+			private static const MSG_COMPLETE:String = "Wykonano.";
+			private static const MSG_ERROR:String = "Wystąpił błąd podczas próby wykonania testu.";
+			private static const MSG_NOPARAMS:String = "Nie uruchomiono.";
+			
+			
+			private function init():void
+			{
+				//try
+				//{
+					if (!application.parameters.functionName) throw new Error("Brak parametru functionName.");
+					var ret:String = ExternalInterface.call(application.parameters.functionName, '');
+					var configXML:XML = XML(ret);
+					for each (var x:XML in configXML.test) addTest(x);
+				//}
+				//catch (e:Error)
+				//{
+				//	Alert.show("Błąd podczas wczytywania konfiguracji:\n" + e.message);
+				//}
+			}
+			
+			private var tests:Array = [];
+			
+			private function addTest(config:XML):void
+			{
+				var box:Box = new Box();
+				box.percentHeight = 100;
+				box.percentWidth = 100;
+				box.label = config.label;
+				var grid:ConfigurableGrid = new ConfigurableGrid();
+				grid.percentHeight = 100;
+				grid.percentWidth = 100;
+				box.addChild(grid);
+				box.enabled = false;
+				navigator.addChild(box);
+				var hasUrl:Boolean = (config.url != undefined && String(config.url) != '');
+				if (hasUrl) grid.loadUrl(config.url);
+				var testRenderer:TestRenderer = new TestRenderer();
+				testRenderer.label = config.label;
+				if (config.description != undefined) testRenderer.description = config.description;
+				if (hasUrl)
+				{
+					testRenderer.currentIcon = TestRenderer.ICON_EXECUTING;
+					testRenderer.statusText = MSG_EXECUTING;
+				}
+				else
+				{
+					testRenderer.statusText = MSG_NOPARAMS;
+				}
+				
+				testList.addChild(testRenderer);
+				tests.push({ grid : grid, renderer : testRenderer, gridContainer : box });
+				grid.addEventListener(ResultEvent.RESULT, handleResult);
+				grid.addEventListener(FaultEvent.FAULT, handleResult);
+			}
+			
+			private function handleResult(event:Event):void
+			{
+				for (var i:String in tests) if (tests[i].grid == event.target)
+				{
+					var grid:ConfigurableGrid = tests[i].grid;
+					var renderer:TestRenderer = tests[i].renderer;
+					if (event is ResultEvent)
+					{
+						renderer.statusText = grid.data.opis != undefined ? grid.data.opis : MSG_COMPLETE;
+						renderer.currentIcon = grid.data.pozycja.length() > 0 ? TestRenderer.ICON_FAIL : TestRenderer.ICON_OK;
+					}
+					else if (event is FaultEvent)
+					{
+						renderer.statusText = MSG_ERROR + "\n" + FaultEvent(event).fault.faultCode;
+						renderer.currentIcon = TestRenderer.ICON_ERROR;						
+					}
+					tests[i].gridContainer.enabled = true;
+				}
+			}
+			
+			
+		]]>
+	</mx:Script>
+	
+</mx:Application>

@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" verticalGap="0" creationComplete="getRules()" xmlns:lineList="com.makolab.components.lineList.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.lineList.LineImageButton;
+			import mx.controls.Button;
+			import com.makolab.fractus.model.WindowManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.utils.UIDUtil;
+			import mx.controls.CheckBox;
+			import mx.events.CloseEvent;
+			import mx.controls.Alert;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:RulesList = new RulesList();
+				window.innerComponent = component;
+				window.buttons = ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL;
+				window.commitFunction = component.commit;
+				if(component.icon)window.titleIcon = component.icon;
+				window.show(null,new Rectangle(0,0,500,400),LanguageManager.getInstance().labels.title.rulesList);
+				component.addEventListener("commit",function():void{window.hide()});
+				return window;
+			}
+			
+			[Bindable] public var list:XMLList;
+			
+			private var referenceArray:Array = [];
+			
+			private function getRules():void
+			{
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("item.p_getPriceRule",<root/>);
+				cmd.addEventListener(ResultEvent.RESULT,commandResultHandler);
+				cmd.execute();
+			}
+			
+			private function ruleCommited(rule:XML,window:ComponentWindow):void
+			{
+				var ruleObject:Object;
+				for each(ruleObject in referenceArray){
+					if(ruleObject.header.@name == rule.name.toString() && ((ruleObject.header.@id.length() > 0 && ruleObject.header.@id != rule.id.toString()) || (ruleObject.header.@id.length() == 0 && rule.uid.length() > 0 && ruleObject.header.@uid != rule.uid.toString()))){
+						Alert.show("Istnieje już reguła o podanej nazwie");
+						return;
+					}
+				}
+				/* for each(var ruleXML:XML in list){
+					if(ruleXML.@uid == rule.uid.toString()){
+						ruleXML.@name = 
+					}
+				} */
+				
+				window.hide();
+				
+				var editedRule:XML = null;
+				for each(ruleObject in referenceArray){
+					if(
+						ruleObject.header 
+						&& (
+							(ruleObject.header.attribute("id").length() > 0 && ruleObject.header.@id.toString() == rule.id.toString()) 
+							|| (ruleObject.header.attribute("uid").length() > 0 && ruleObject.header.@uid.toString() == rule.uid.toString())
+						)
+					){
+						ruleObject.header.@name = rule.name.toString();
+						editedRule = ruleObject.header;
+						ruleObject.body = rule;
+						break;
+					}
+				}
+
+				if(!editedRule){
+					editedRule = <priceRule status="1"/>;
+					editedRule.@uid = UIDUtil.createUID();
+					rule.uid = editedRule.@uid;
+					editedRule.@name = rule.name.toString();
+					referenceArray.push({header : editedRule, body : rule});
+					list = list + editedRule;
+				}
+			}
+			
+			private function commandResultHandler(event:ResultEvent):void
+			{
+				list = XML(event.result).priceRule;
+				for each(var rule:XML in list){
+					referenceArray.push({header : rule, body : null});
+				}
+			}
+			
+			private var removingIndex:int;
+			public function removeRule(event:MouseEvent):void
+			{
+				
+				removingIndex = grid.itemRendererToIndex(event.target as LineImageButton);
+				var txt:String = "Czy na pewno usunąć regułę '" + list[removingIndex].@name + "'?";
+				Alert.show(txt,"",Alert.YES | Alert.NO,null,deleteConfirmation);
+			}
+			
+			private function deleteConfirmation(event:CloseEvent):void
+			{
+				if (event.detail == Alert.YES){
+					var temp:Array = [];
+					for each(var rule:Object in referenceArray){
+						if(rule.header != list[removingIndex])temp.push(rule);
+					}
+					referenceArray = temp;
+					delete list[removingIndex];
+					grid.dataProvider = list;
+					/* var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("item.p_deletePriceRule",<root>{list[removingIndex].@id}</root>);
+					cmd.addEventListener(ResultEvent.RESULT,deleteResultHandler);
+					cmd.execute(); */
+				}
+			}
+			
+			private function deleteResultHandler(event:ResultEvent):void
+			{
+				list = XML(event.result).priceRule ;
+			}
+			
+			public function setEnabled(event:Event):void
+			{
+				var index:int = grid.itemRendererToIndex(event.target as CheckBox);
+				list[index].@status = (event.target as CheckBox).selected ? 1 : 0;
+			}
+			
+			private function openCreator(ruleId:String = ""):void
+			{
+				var ruleXML:XML = null;
+				for each(var rule:Object in referenceArray){
+					if(rule.header == grid.selectedItem){
+						if(rule.body)ruleXML = rule.body;
+						break;
+					}
+				}
+				var window:ComponentWindow;
+				if(ruleXML)window = RuleCreator.showWindow("",ruleXML);
+				else window = RuleCreator.showWindow(ruleId);
+				window.addEventListener("commited",function (event:Event):void{ruleCommited(((event.target as ComponentWindow).innerComponent as RuleCreator).ruleXML,window)});
+			}
+			
+			private var executingCommands:Array = []; //{command : command, rule : rule object from referenceArray}
+			private var errors:Array = [];
+			
+			public function commit():void
+			{
+				for each (var rule:Object in referenceArray){
+					if(rule.body){
+						rule.body.order = 1;
+						var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("item.p_createPriceRule",rule.body);
+						cmd.addEventListener(ResultEvent.RESULT,handleRuleSaveResult);
+						cmd.addEventListener(FaultEvent.FAULT,handleRuleSaveFault);
+						executingCommands.push({command : cmd, rule : rule});
+						cmd.execute();
+					}
+				}
+				saveList();
+			}
+			
+			private function handleRuleSaveFault(event:FaultEvent):void
+			{
+				var temp:Array = [];
+				for(var i:int = 0; i < executingCommands.length; i++){
+					if(executingCommands[i].command == event.target){
+						errors.push('Reguła "' + executingCommands[i].rule.header.@name + '" nie została zapisana');
+					}else{
+						temp.push(executingCommands[i]);
+					}
+				}
+				executingCommands = temp;
+			}
+			
+			private function handleRuleSaveResult(event:ResultEvent):void
+			{
+				var temp:Array = [];
+				for(var i:int = 0; i < executingCommands.length; i++){
+					if(executingCommands[i].command == event.target){
+						executingCommands[i].rule.header.@id = XML(event.result).id.toString();
+						executingCommands[i].rule.body = null;
+					}else{
+						temp.push(executingCommands[i]);
+					}
+				}
+				executingCommands = temp;
+				/* var allSaved:Boolean = true;
+				for each (var rule:Object in referenceArray){
+					if(XML(rule.header).attribute("id").length() == 0 || rule.body){
+						allSaved = false;
+						break;
+					}
+				} */
+				saveList();
+			}
+			
+			private function saveList():void
+			{
+				if(executingCommands.length == 0){
+					if(errors.length > 0){
+						Alert.show(errors.join("\n\n"));
+					}else{
+						for (var number:int = 0; number < list.length(); number++){
+							list[number].@order = number;
+						}
+						var saveListCommand:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("item.p_savePriceRuleList",<root>{list}</root>);
+						saveListCommand.addEventListener(FaultEvent.FAULT,handleListSaveFault);
+						saveListCommand.addEventListener(ResultEvent.RESULT,handleListSaveResult);
+						saveListCommand.execute();
+					}
+				}
+			}
+			
+			private function handleListSaveFault(event:FaultEvent):void
+			{
+				
+			}
+			
+			private function handleListSaveResult(event:ResultEvent):void
+			{
+				dispatchEvent(new Event("commit"));//list = XML(event.result).priceRule;
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:DataGrid 
+		id="grid" 
+		dataProvider="{list}" 
+		headerHeight="0" 
+		width="100%" 
+		height="100%" 
+		dragEnabled="true" 
+		dropEnabled="true"
+		dragMoveEnabled="true"
+		doubleClickEnabled="true"
+		doubleClick="openCreator(grid.selectedItem.@id)"
+		allowMultipleSelection="true">
+		<mx:columns>
+			<mx:DataGridColumn width="20" rendererIsEditor="true" textAlign="center">
+				<mx:itemRenderer>
+					<mx:Component>
+						<mx:CheckBox selected="{Boolean(Number(data.@status) > 0)}" change="outerDocument.setEnabled(event)"/>
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn dataField="@name"/>
+			<mx:DataGridColumn width="26" sortable="false" editable="false">
+				<mx:itemRenderer>
+					<mx:Component>
+						<lineList:LineImageButton width="100%" height="100%" click="outerDocument.removeRule(event)" iconsName="status_canceled" toolTip="Usuń"/>
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn> 
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:Button label="Nowa reguła" click="grid.selectedItem = null;openCreator()" width="100%"/>
+	
+	<mx:XML id="testXML" xmlns="">
+		<root>
+			<rule enabled="0" label="Reguła 1" id="test"/>
+			<rule enabled="1" label="Reguła 2"/>
+			<rule enabled="0" label="Reguła 3"/>
+			<rule enabled="1" label="Reguła 4"/>
+			<rule enabled="0" label="Reguła 5"/>
+			<rule enabled="1" label="Reguła 6"/>
+			<rule enabled="0" label="Reguła 7"/>
+			<rule enabled="1" label="Reguła 8"/>
+			<rule enabled="0" label="Reguła 9"/>
+			<rule enabled="1" label="Reguła 10"/>
+			<rule enabled="0" label="Reguła 11"/>
+			<rule enabled="1" label="Reguła 12"/>
+		</root>
+	</mx:XML>
+</mx:VBox>

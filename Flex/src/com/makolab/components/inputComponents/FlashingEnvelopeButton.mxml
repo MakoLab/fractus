@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<permission:ButtonComponent xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:permission="com.makolab.components.permission.*" 
+	enabled="false" alpha="0.3" xmlns:utils="flash.utils.*" 
+	click="onClick(event)" icon="{DynamicAssetsInjector.currentIconAssetClassRef.envelope}"
+	creationComplete="creationCompleatHandler()">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.view.documents.documentLists.EnvelopeList;
+			import com.makolab.fraktus2.utils.DynamicAssetsInjector;
+			
+			import mx.containers.TitleWindow;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			private var envelopeTimer:Timer;
+			private var procedureTimer:Timer;
+			
+			private var minAlpha:Number = 0.3;
+			private var maxAlpha:Number = 1.0;
+			
+			public var intervalInSeconds:String;
+			private var window:TitleWindow;
+			
+			public function creationCompleatHandler():void
+			{
+				if(ModelLocator.getInstance().permissionManager.isEnabled(permissionKey)) {
+					if(intervalInSeconds) {
+						this.procedureTimer = new Timer(1000 * Number(intervalInSeconds));
+					} else {
+						this.procedureTimer = new Timer(1000 * 300);
+					}
+					
+					this.procedureTimer.addEventListener(TimerEvent.TIMER, this.procedureTimerTickEvent, false, 0, true);
+					this.procedureTimer.start();
+					
+					this.envelopeTimer = new Timer(1000);
+					this.envelopeTimer.addEventListener(TimerEvent.TIMER, this.envelopeTimerTickEvent, false, 0, true);
+					
+					procedureTimerTickEvent(null);
+				} else {
+					if(this.procedureTimer) {
+						this.procedureTimer.stop();
+					}
+					if(this.envelopeTimer) {
+						this.envelopeTimer.stop();
+					}
+				}
+			}
+									
+			private function procedureTimerTickEvent(event:TimerEvent):void
+			{
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("document.p_checkForEvents", <root/>);
+				cmd.addEventListener(ResultEvent.RESULT, this.handleResult, false, 0, true);
+				cmd.addEventListener(FaultEvent.FAULT, this.handleFault, false, 0, true);	
+				cmd.execute();
+			}
+			
+			private function handleResult(event:ResultEvent):void
+			{
+				
+				var responseXML:XML = XML(event.result);
+				
+				if(responseXML.outcomesWaitingForCancelation.*.length() > 0 ||
+					responseXML.incomesWaitingForCommitting.*.length() > 0 ||
+					responseXML.outcomesWaitingForCommitting.*.length() > 0 )
+				{
+					this.infoXml = responseXML;
+					envelopeTimer.start();
+				} else {
+					this.infoXml = null;
+					envelopeTimer.stop();
+				}
+				
+				if(ModelLocator.getInstance().msg!="")
+				{
+					msg=ModelLocator.getInstance().msg;
+				}
+			}
+			
+			private function handleFault(event:FaultEvent):void
+			{
+			}
+			
+			private var _infoXml:XML;
+			
+			public function set infoXml(value:XML):void
+			{
+				this._infoXml = value;
+				
+				if (value != null) {
+					this.enabled = true;
+				} else {
+					this.enabled = false;
+					if(this.msg!="")
+					{
+						msg=msg;
+					}
+				}
+			}
+			
+			public function get infoXml():XML
+			{
+				return this._infoXml;
+			}
+			
+			private var _msg:String;
+			
+			public function set msg(value:String):void
+			{
+				this._msg = value;
+				
+				if (value != "") {
+					this.enabled = true;
+				} else {
+					this.enabled = false;
+					if(infoXml!=null)
+						infoXml=infoXml;
+				}
+			}
+			
+			public function get msg():String
+			{
+				return this._msg;
+			}
+			
+			private function envelopeTimerTickEvent(event:TimerEvent):void
+			{
+				if(this.alpha != maxAlpha) {
+					this.alpha = maxAlpha;
+				} else {
+					this.alpha = minAlpha;
+				}
+			}
+			
+			public override function set enabled(value:Boolean):void
+			{
+				super.enabled = value;
+				
+				if(this.envelopeTimer != null) {
+					if(value && !this.envelopeTimer.running) {
+						this.envelopeTimer.start();
+					} else if (!value) {
+						this.alpha = minAlpha;
+					}
+				}
+			}
+			
+			private function onClick(event:Event):void
+			{
+				var msg:String = "";
+				if(this.infoXml)
+				{
+					if(window) PopUpManager.removePopUp(window);
+					window=null;
+					
+					window = new TitleWindow();
+					window.title = "";//winCfg.@label;
+					window.width = 500;//winCfg.@width;
+					window.height=400;
+					window.showCloseButton = true;
+					window.addEventListener(CloseEvent.CLOSE, hideWindow);
+					//window.height = winCfg.@height;
+					var list:EnvelopeList=new EnvelopeList()
+					
+					window.addChild(list);
+					PopUpManager.addPopUp(window, this.parent.parent, false);
+					PopUpManager.centerPopUp(window);
+					
+					if(this.infoXml.outcomesWaitingForCancelation.*.length() > 0)
+					{
+						for each(var x:XML in this.infoXml.outcomesWaitingForCancelation.*)
+						{
+							x.@color=0xFF0000;
+							x.@color1=0x000000;
+						}
+					}
+					
+					if(this.infoXml.incomesWaitingForCommitting.*.length() > 0)
+					{
+						for each(var xx:XML in this.infoXml.incomesWaitingForCommitting.*)
+						{
+							xx.@color=0x00FF00;
+							xx.@color1=0x000000;
+						}
+					}
+					
+					if(this.infoXml.outcomesWaitingForCommitting.*.length() > 0)
+					{
+					
+						for each(var xxx:XML in this.infoXml.outcomesWaitingForCommitting.*)
+						{
+							xxx.@color=0x000000;
+							xxx.@color1=0xFFFFFF;
+						}
+					}
+					
+					
+					list.data=this.infoXml;
+					
+					
+					/*if(this.infoXml.outcomesWaitingForCancelation.*.length() > 0)
+					{
+						msg += LanguageManager.getInstance().labels.warehouse.mm.waitingForCancel + ":\n";
+						
+						for each(var x:XML in this.infoXml.outcomesWaitingForCancelation.*)
+						{
+							msg += x.@fullNumber + " ("+ String(x.@issueDate).replace("T", " ") + ")" + "\n";
+						}
+					}
+					
+					if(this.infoXml.incomesWaitingForCommitting.*.length() > 0)
+					{
+						if (msg != "") msg += "\n";
+						
+						msg += LanguageManager.getInstance().labels.warehouse.mm.waitingForCommit + ":\n";
+						
+						for each(var xx:XML in this.infoXml.incomesWaitingForCommitting.*)
+						{
+							msg += xx.@fullNumber + " ("+ String(xx.@issueDate).replace("T", " ") + ")" + "\n";
+						}
+					}
+					
+					if(this.infoXml.outcomesWaitingForCommitting.*.length() > 0)
+					{
+						if (msg != "") msg += "\n";
+						
+						msg += LanguageManager.getInstance().labels.warehouse.mm.mmOrdersWaitingForCommit + ":\n";
+						
+						for each(var xxx:XML in this.infoXml.outcomesWaitingForCommitting.*)
+						{
+							msg += xxx.@fullNumber + " ("+ String(xxx.@issueDate).replace("T", " ") + ")" + "\n";
+						}
+					}
+					if(this.msg!="")
+					{
+						msg+=this.msg;
+					}
+					Alert.show(msg);*/
+				}
+				
+			}
+			private function hideWindow(e:CloseEvent):void
+			{
+				if(window) PopUpManager.removePopUp(window);
+			}
+		]]>
+	</mx:Script>
+</permission:ButtonComponent>

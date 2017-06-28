@@ -1,0 +1,70 @@
+Dokumantacja XmlItemInfoPanel
+-----------------------------
+
+XmlItemInfoPanel dziedziczy po VBox'ie. XMLa przypisujemy do właściwości source.
+XmlItemInfoPanel na podstawie XMLa potrafi wygenerować następujące komponenty:
+
+-CollapsablePanel
+-Panel
+-VBox
+-Label
+-DataGrid
+-Button
+-Text
+
+Żeby stworzyć DataGrid:
+-----------------------
+
+<DataGrid dataProvider="{sciezka.do.danych}" width="100%">
+		<DataGridColumn headerText="Kolumna 1" dataField="pole1"/>
+		<DataGridColumn headerText="Kolumna 2" dataField="pole2"/>
+		<DataGridColumn headerText="Kolumna 3" dataField="pole3"/>
+</DataGrid>
+
+Można od razu dodać wiersze do DataGrid'a:
+------------------------------------------
+
+<DataGrid width="100%">
+	<DataGridRows>
+		<row label="Wiersz 1" value="{sciezka.do.danych}"/>
+		<row label="Wiersz 2" value="{sciezka.do.danych}"/>
+		<row label="Wiersz 3" value="{sciezka.do.danych}"/>
+		<row label="Wiersz 4" value="{sciezka.do.danych}"/>
+		<row label="Wiersz 5" value="{sciezka.do.danych}"/>
+		<row label="Wiersz 6" value="{sciezka.do.danych}"/>
+	</DataGridRows>
+	<DataGridColumn headerText="Atrybut" dataField="@label" fontWeight="bold" textAlign="right"/>
+	<DataGridColumn headerText="Wartość" dataField="@value"/>
+</DataGrid>
+
+Przykładowy XML z konfiguracją:
+-------------------------------
+
+<root>
+	<CollapsablePanel title="Parametry" width="100%" id="parametry" open="false">
+		<DataGrid top="0" left="0" right="0" bottom="0" width="100%">
+				<DataGridRows>
+					<row label="Nazwa" value="{data.towar.nazwa}"/>
+					<row label="Nazwa fiskalna" value="{data.towar.nazwa_fiskalna}"/>
+					<row label="Kod" value="{data.towar.kod}"/>
+					<row label="Kod producenta" value="{data.towar.kod_producenta}"/>
+					<row label="Kod EAN" value="{data.towar.kod_paskowy}"/>
+					<row label="fKod" value="{data.towar.kod_mega}"/>
+				</DataGridRows>
+				<DataGridColumn headerText="Atrybut" dataField="@label" fontWeight="bold" textAlign="right"/>
+				<DataGridColumn headerText="Wartość" dataField="@value"/>
+		</DataGrid>
+	</CollapsablePanel>
+	<Panel title="Magazyny" width="100%">
+		<DataGrid dataProvider="{data.towar.magazyny.magazyn}" height="100%" width="100%">
+				<DataGridColumn headerText="Magazyn" dataField="nazwa"/>
+				<DataGridColumn headerText="Dost." dataField="dostepne" textAlign="right"/>
+				<DataGridColumn headerText="Ilość" dataField="ilosc" textAlign="right"/>
+				<DataGridColumn headerText="Rez." dataField="iloscRez" textAlign="right"/>
+				<DataGridColumn headerText="OCZ" dataField="ostatniaCz" textAlign="right"/>
+		</DataGrid>
+	</Panel>
+	<Label text="{data.towar.nazwa}" width="100%"/>
+	<Button label="OK">
+</root>
+

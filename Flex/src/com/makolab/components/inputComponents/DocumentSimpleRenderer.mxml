@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="100%" xmlns:catalogue="com.makolab.fractus.view.catalogue.*"
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:generic="com.makolab.fractus.view.generic.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.commands.GetRelatedWarehouseDocumentsCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentLabelFunctions;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.ListEvent;
+			
+			private var _data:Object;
+			[Bindable]
+			private var linesCount:int = 0;
+			
+			public static const COMMERCIAL_DOCUMENT:String = "commercialDocument";
+			public static const WAREHOUSE_DOCUMENT:String = "warehouseDocument";
+			public static const FINANCIAL_DOCUMENT:String = "financialDocument";
+			public static const INVENTORY_DOCUMENT:String = "inventoryDocument";
+			public static const FINANCIAL_REPORT:String = "financialReport";
+			public static const SERVICE_DOCUMENT:String = "serviceDocument";
+			public static const COMPLAINT_DOCUMENT:String = "complaintDocument";
+			public static const PRODUCTION_DOCUMENT:String = "productionDocument";
+			
+			public static const CATEGORY_SALES:String = "salesDocument";
+			public static const CATEGORY_PURCHASE:String = "purchaseDocument";
+			public static const CATEGORY_ORDER:String = "orderDocument";
+			public static const CATEGORY_PRODUCTION_ORDER:String = "productionOrder";
+			public static const CATEGORY_TECHNOLOGY:String = "technology";
+			
+			private const INCOME:String = "income";
+			private const OUTCOME:String = "outcome";
+			
+			[Bindable]
+			private var incomeOutcome:String;
+			
+			[Bindable]
+			private var relDocuments:ArrayCollection;
+			
+			[Bindable] 
+			private var viewIndex:int;
+			
+			[Bindable]
+			private var warehouseId:String;
+			private var documentId:String;
+			private var documentTypeId:String;
+			
+			[Bindable]
+			private var financialRegister:XML;
+			
+			/* [Bindable]
+			private var relatedDocuments:XMLList; */
+			
+			[Bindable]
+			private var typeDescriptor:DocumentTypeDescriptor;
+			
+			[Bindable]
+			private var selectedItemDeliveries:Object;
+			
+			[Bindable]
+			public var documentCategory:String = null;
+			
+			private var _documentType:String = null;
+			
+			[Bindable]
+			private var documentGross:Number;
+			
+			[Bindable]
+			private var documentNet:Number;
+			
+			[Bindable] private var oppositeWarehouseDocumentFieldId:String;
+			
+			[Bindable]
+			public function set documentType(value:String):void
+			{
+				_documentType = value;
+				switch(value){
+					case COMMERCIAL_DOCUMENT:
+						if(documentCategory == CATEGORY_PRODUCTION_ORDER || documentCategory == CATEGORY_TECHNOLOGY) viewIndex = 6;
+						else viewIndex = 0;
+						break;
+					case WAREHOUSE_DOCUMENT:
+						viewIndex = 1; break;
+					case FINANCIAL_REPORT:
+						viewIndex = 2; break;
+					case FINANCIAL_DOCUMENT:
+						viewIndex = 3; break;
+					case INVENTORY_DOCUMENT:
+						viewIndex = 5; break;
+					case COMPLAINT_DOCUMENT:
+						viewIndex = 4; break;
+				}
+				
+			}
+			
+			public function get documentType():String
+			{
+				return _documentType;
+			}
+			
+			[Bindable]
+			override public function set data(value:Object):void{
+				_data = value;
+				if(value) {
+					if(value.commercialDocument.length()>0) {
+						if(documentCategory == CATEGORY_PRODUCTION_ORDER || documentCategory == CATEGORY_TECHNOLOGY) viewIndex = 6;
+						else viewIndex = 0;
+						documentType = COMMERCIAL_DOCUMENT;
+						typeDescriptor = new DocumentTypeDescriptor(value.commercialDocument.documentTypeId.*);
+						documentNet = parseFloat(_data.commercialDocument.netValue);
+						documentGross = parseFloat(_data.commercialDocument.grossValue);
+						if (typeDescriptor.isCorrectiveDocument)
+						{
+							documentNet -= parseFloat(_data.commercialDocument.netValueBeforeCorrection);
+							documentGross -= parseFloat(_data.commercialDocument.grossValueBeforeCorrection);
+						}
+						cost = DocumentLabelFunctions.calculateCost.apply(this,[_data]);
+						margin = DocumentLabelFunctions.calculateProfitMargin.apply(this,[_data]);
+						//calculateMargin();
+					}
+					else if(value.warehouseDocument.length()>0) {
+						viewIndex = 1;
+						typeDescriptor = new DocumentTypeDescriptor(value.warehouseDocument.documentTypeId.*);
+						documentType = WAREHOUSE_DOCUMENT;
+						warehouseId = _data[documentType].warehouseId.*;
+						warehouseDocumentHBox.invalidateSize();
+						//getRelatedWarehouseDocuments();
+					}
+					else if (value.financialReport.length() > 0)
+					{
+						viewIndex = 2;
+						documentType = FINANCIAL_REPORT;
+						financialRegister = DictionaryManager.getInstance().getById(value.financialReport.financialRegisterId);
+					}
+					else if (value.financialDocument.length() > 0)
+					{
+						viewIndex = 3;
+						documentType = FINANCIAL_DOCUMENT;
+					}
+					else if (value.inventoryDocument.length() > 0)
+					{
+						viewIndex = 5;
+						documentType = INVENTORY_DOCUMENT;
+					}
+				}
+				status=getStatus();
+				war=getWar();
+				init();
+				commercialDocumentForm.height = NaN;
+				linesCount = data[documentType].lines.line.length();
+				oppositeWarehouseDocumentFieldId = ModelLocator.getInstance().dictionaryManager.dictionaries.documentFields.(name == 'ShiftDocumentAttribute_OppositeWarehouseId').id;
+			}
+		
+			private function getStatus():String
+			{
+				var lab:Object=DictionaryManager.getInstance().dictionaries.documentStatus.(String(valueOf().value) == String(data.*.status)).label;
+		
+				var str:String=lab.@lang.length() >0?	lab.(@lang==LanguageManager.getInstance().currentLanguage)[0]:String(lab);
+				return str;
+			}
+			private function getWar():String
+			{
+				var lab:Object=DictionaryManager.getInstance().dictionaries.warehouses.(valueOf().id == warehouseId).label;
+				var str:String=lab.@lang.length() >0?	lab.(@lang==LanguageManager.getInstance().currentLanguage)[0]:String(lab);
+				str=DictionaryManager.getInstance().dictionaries.warehouses.(valueOf().id == String(warehouseId)).symbol+" - "+str; 
+				return str;
+			}
+			
+			
+			override public function get data(): Object	{
+				return _data;
+			}
+			
+			public function init():void {
+				if (data!=null) this.height=NaN;
+				else this.height=0;			
+			}
+			
+			private function getRemarks(data:Object, documentType:String):String
+			{
+				var attributeId:String = DictionaryManager.getInstance().dictionaries.documentRemarks.(name.* == 'Attribute_Remarks').id.*;
+				var ret:String;
+				switch(documentType)	{
+					case COMMERCIAL_DOCUMENT: ret = data.commercialDocument.attributes.attribute.(documentFieldId.* == attributeId).value; break;
+					case WAREHOUSE_DOCUMENT: ret = data.warehouseDocument.attributes.attribute.(documentFieldId.* == attributeId).value; break;
+					case FINANCIAL_DOCUMENT: ret = data.financialDocument.attributes.attribute.(documentFieldId.* == attributeId).value; break;
+					case COMPLAINT_DOCUMENT: ret = data.complaintDocument.attributes.attribute.(documentFieldId.* == attributeId).value; break;
+					case INVENTORY_DOCUMENT: ret = data.inventoryDocument.attributes.attribute.(documentFieldId.* == attributeId).value; break;
+				}				
+				ret = ret.substr(0,50) + (ret.length > 50 ? "[...]" : "");
+				return ret;
+			}
+			[Bindable]
+			protected var status:String;
+			[Bindable]
+			protected var war:String;
+			[Bindable]
+			protected var cost:String;
+			[Bindable]
+			protected var margin:String;
+			
+			/* protected function calculateMargin():void
+			{
+				var total:Number = 0;
+				var doc:XML = data as XML;
+				var totalNet:Number = 0;
+				if (doc)
+				{
+					for each (var l:XML in doc.commercialDocument.lines.line)
+					{
+						var warehousevaluationsList:XMLList = l.commercialWarehouseValuations.commercialWarehouseValuation;
+						if (warehousevaluationsList.length() == 0) total = NaN;
+						totalNet += parseFloat(l.netValue);
+						for each (var x:XML in l.commercialWarehouseValuations.commercialWarehouseValuation)
+						{
+							total += parseFloat(x.value);
+						}
+					}
+				}
+				cost = total;
+				if (isNaN(cost) || totalNet == 0) margin = "-";
+				else
+				{
+					margin = CurrencyManager.formatCurrency(100 * (totalNet - total) / totalNet, '-', '0', -2) + '%';
+				}
+			} */
+			
+			private function getOppositeDocStatus(itemData:Object):String{
+				var oppositeDocFieldId:String = DictionaryManager.getInstance().dictionaries.documentFields.(name.* == "ShiftDocumentAttribute_OppositeDocumentStatus").id.*;
+				var attribute:XMLList = itemData.*.attributes.attribute.(documentFieldId.* == oppositeDocFieldId);
+				var oppositeDocStatus:String = "";
+				if(attribute.length() > 0)oppositeDocStatus = DictionaryManager.getInstance().dictionaries.documentStatus.(value.* == attribute[0].value.*).label.(@lang == LanguageManager.getInstance().currentLanguage);
+				return oppositeDocStatus;
+			}
+		]]>
+	</mx:Script>
+	<mx:ViewStack selectedIndex="{viewIndex}" width="100%">
+		<!-- dla commercialDocument: --> 
+		<mx:Form id="commercialDocumentForm" width="100%" verticalGap="0" paddingTop="2" paddingBottom="2">
+			<mx:FormItem label="{LanguageManager.getInstance().labels.documents.grossValue}" fontWeight="bold">
+				<inputComponents:CurrencyRenderer currencyId="{data.commercialDocument.documentCurrencyId}" nanText="-"  data="{documentGross}" fontWeight="normal"/>
+			</mx:FormItem>
+			<mx:FormItem label="{LanguageManager.getInstance().labels.documents.netValue}" fontWeight="bold">
+				<inputComponents:CurrencyRenderer currencyId="{data.commercialDocument.documentCurrencyId}" nanText="-"  data="{documentNet}" fontWeight="normal"/>
+			</mx:FormItem>
+			<mx:FormItem label="{LanguageManager.getInstance().labels.documents.linesCount}" fontWeight="bold">
+				<mx:Text text="{linesCount}" fontWeight="normal"/>
+			</mx:FormItem>
+			<mx:FormItem label="{LanguageManager.getInstance().labels.documentRenderer.status}" fontWeight="bold">
+					<mx:Text text="{status}" fontWeight="normal"/>
+				</mx:FormItem>
+			<mx:FormItem label="{LanguageManager.getInstance().labels.common.comments}" fontWeight="bold">
+				<mx:Text text="{getRemarks(data,this.documentType)}" fontWeight="normal"/>
+			</mx:FormItem>
+			<mx:FormItem label="Koszt całkowity" visible="{documentCategory == CATEGORY_SALES}" height="{profitMarginInfo.visible ? NaN : 0}" includeInLayout="{profitMarginInfo.visible}" fontWeight="bold">
+				<!--inputComponents:CurrencyRenderer currencyId="{data.commercialDocument.documentCurrencyId}" nanText="-"  data="{cost}" fontWeight="normal"/-->
+				<mx:Label text="{cost}" fontWeight="normal"/>
+			</mx:FormItem>
+			<mx:FormItem id="profitMarginInfo" visible="{documentCategory == CATEGORY_SALES}" height="{profitMarginInfo.visible ? NaN : 0}" includeInLayout="{profitMarginInfo.visible}" label="Marża dokumentu" fontWeight="bold">
+				<mx:Label text="{margin}" fontWeight="normal"/>
+			</mx:FormItem>
+		</mx:Form>
+		<!-- dla warehouseDocument: -->
+		<mx:HBox width="100%" id="warehouseDocumentHBox">
+			<mx:Form width="60%" verticalGap="0" paddingTop="2" paddingBottom="2">			
+				<mx:FormItem label="{LanguageManager.getInstance().labels.documents.value}" fontWeight="bold">
+					<inputComponents:CurrencyRenderer currencyId="{data.warehouseDocument.documentCurrencyId}" nanText="-"  data="{data.warehouseDocument.value}" fontWeight="normal"/>
+				</mx:FormItem>
+				<mx:FormItem label="{LanguageManager.getInstance().labels.documents.linesCount}" fontWeight="bold">
+					<mx:Text text="{linesCount}" fontWeight="normal"/>
+				</mx:FormItem>
+				<mx:FormItem label="{LanguageManager.getInstance().labels.documentRenderer.warehouse}" fontWeight="bold">
+					<mx:Text text="{war}" fontWeight="normal"/>
+				</mx:FormItem>
+				<mx:FormItem label="{LanguageManager.getInstance().labels.documentRenderer.status}" fontWeight="bold">
+					<mx:Text text="{status}" fontWeight="normal"/>
+				</mx:FormItem>
+				<mx:FormItem label="{LanguageManager.getInstance().labels.documentRenderer.oppositeStatus}" fontWeight="bold">
+					<mx:Text text="{getOppositeDocStatus(data)}" fontWeight="normal"/>
+				</mx:FormItem>
+				<mx:FormItem label="{LanguageManager.getInstance().labels.common.comments}" fontWeight="bold">
+					<mx:Text text="{getRemarks(data,this.documentType)}" fontWeight="normal"/>
+				</mx:FormItem>
+				<mx:FormItem visible="{typeDescriptor.isShiftDocument}" includeInLayout="{typeDescriptor.isShiftDocument}" label="{typeDescriptor.isIncomeShiftDocument ? LanguageManager.getLabel('documents.sourceWarehouse') : LanguageManager.getLabel('documents.targetWarehouse')}" fontWeight="bold">
+					<generic:FractusDictionaryRenderer labelField="label"
+						dataObject="{data.warehouseDocument.attributes.attribute.(valueOf().documentFieldId == oppositeWarehouseDocumentFieldId).value}" fontWeight="normal" />
+				</mx:FormItem>
+			</mx:Form>		
+			<!--mx:VBox width="40%">
+				<mx:Text text="{(incomeOutcome == this.OUTCOME) ? LanguageManager.getInstance().labels.documentRenderer.relatedIncome : LanguageManager.getInstance().labels.documentRenderer.relatedOutcome}" fontWeight="bold"/>
+				<mx:List 
+					width="150"
+					id="relatedDocumentsList"
+					labelField="label"
+					dataProvider="{relDocuments}"
+					doubleClickEnabled="true"
+					doubleClick="{showDocument(relatedDocumentsList.selectedItem.id)}"
+					rowCount="{relDocuments.length}"
+					/>
+			</mx:VBox-->
+		</mx:HBox>
+		<!-- dla financialReport: -->
+		<mx:HBox width="100%">
+			<mx:Form width="60%" verticalGap="0" paddingTop="2" paddingBottom="2">
+				<mx:FormItem label="Numer raportu" fontWeight="bold">
+					<mx:Label text="{data.financialReport.number.fullNumber}" fontWeight="normal"/>
+				</mx:FormItem>
+				<mx:FormItem label="Rejestr" fontWeight="bold">
+					<mx:Label text="{financialRegister.label.(@lang == ModelLocator.getInstance().languageManager.currentLanguage)}" fontWeight="normal"/>
+				</mx:FormItem>
+						
+				<mx:FormItem label="Bilans otwarcia" fontWeight="bold">
+					<inputComponents:CurrencyRenderer value="{data.financialReport.initialBalance}" fontWeight="normal" currencyId="{financialRegister.currencyId}"/>
+				</mx:FormItem>
+				<mx:FormItem label="Sumaryczny przychód" fontWeight="bold">
+					<inputComponents:CurrencyRenderer value="{data.financialReport.incomeAmount}" fontWeight="normal" currencyId="{financialRegister.currencyId}"/>
+				</mx:FormItem>
+				<mx:FormItem label="Sumaryczny rozchód" fontWeight="bold">
+					<inputComponents:CurrencyRenderer value="{data.financialReport.outcomeAmount}" fontWeight="normal" currencyId="{financialRegister.currencyId}"/>
+				</mx:FormItem>
+
+				
+				<mx:FormItem label="Czas utworzenia" fontWeight="bold">
+					<inputComponents:DateRenderer data="{data.financialReport.creationDate}" fontWeight="normal" displayTime="true"/>
+				</mx:FormItem>
+				<mx:FormItem label="Utworzył" fontWeight="bold">
+					<generic:FractusDictionaryRenderer data="{data.financialReport.creatingUser.contractor.id}" fontWeight="normal"/>
+				</mx:FormItem>
+
+				<mx:FormItem label="Czas zamknięcia" fontWeight="bold">
+					<inputComponents:DateRenderer data="{data.financialReport.closureDate}" fontWeight="normal" displayTime="true"/>
+				</mx:FormItem>
+				<mx:FormItem label="Zamknął" fontWeight="bold">
+					<generic:FractusDictionaryRenderer data="{data.financialReport.closingUser.contractor.id}" fontWeight="normal"/>
+				</mx:FormItem>
+
+				<mx:FormItem label="Czas ponownego otwarcia" fontWeight="bold">
+					<inputComponents:DateRenderer data="{data.financialReport.openingDate}" fontWeight="normal" displayTime="true"/>
+				</mx:FormItem>
+				<mx:FormItem label="Otworzył" fontWeight="bold">
+					<generic:FractusDictionaryRenderer data="{data.financialReport.openingUser.contractor.id}" fontWeight="normal"/>
+				</mx:FormItem>
+			</mx:Form>
+		</mx:HBox>
+		<!-- dla financialDocument: -->
+		<mx:HBox width="100%">
+			<mx:Form width="60%" verticalGap="0" paddingTop="2" paddingBottom="2">			
+				<mx:FormItem label="{LanguageManager.getInstance().labels.documents.value}" fontWeight="bold">
+					<mx:HBox>
+						<inputComponents:CurrencyRenderer value="{data.financialDocument.amount}" precision="2" currencyId="{data['financialDocument'].documentCurrencyId.*}" fontWeight="normal"/>
+					</mx:HBox>
+				</mx:FormItem>
+				<mx:FormItem label="{LanguageManager.getInstance().labels.documents.linesCount}" fontWeight="bold">
+					<mx:Text text="{data['financialDocument'].payments.payment.length()/*FIXME*/}" fontWeight="normal"/>
+				</mx:FormItem>
+				<mx:FormItem label="{LanguageManager.getInstance().labels.documentRenderer.status}" fontWeight="bold">
+					<mx:Text text="{status}" fontWeight="normal"/>
+				</mx:FormItem>
+				<mx:FormItem label="{LanguageManager.getInstance().labels.common.comments}" fontWeight="bold">
+					<mx:Text text="{getRemarks(data,this.documentType)}" fontWeight="normal"/>
+				</mx:FormItem>
+			</mx:Form>	
+		</mx:HBox>
+		<!-- dla complaintDocument: -->
+		<mx:HBox width="100%">
+			<mx:Form width="60%" verticalGap="0" paddingTop="2" paddingBottom="2">			
+				<mx:FormItem label="{LanguageManager.getInstance().labels.documents.linesCount}" fontWeight="bold">
+					<mx:Text text="{data['complaintDocument'].lines.line.length()}" fontWeight="normal"/>
+				</mx:FormItem>
+				<mx:FormItem label="{LanguageManager.getInstance().labels.documentRenderer.status}" fontWeight="bold">
+					<mx:Text text="{status}" fontWeight="normal"/>
+				</mx:FormItem>
+				<mx:FormItem label="{LanguageManager.getInstance().labels.common.comments}" fontWeight="bold">
+					<mx:Text text="{getRemarks(data,this.documentType)}" fontWeight="normal"/>
+				</mx:FormItem>
+			</mx:Form>	
+		</mx:HBox>
+		<!-- dla inventoryDocument: -->
+		<mx:HBox width="100%">
+			<mx:Form width="60%" verticalGap="0" paddingTop="2" paddingBottom="2">			
+				<mx:FormItem label="{LanguageManager.getInstance().labels.documents.linesCount}" fontWeight="bold">
+					<mx:Text text="{data['inventoryDocument'].sheets.sheet.length()/*FIXME*/}" fontWeight="normal"/>
+				</mx:FormItem>
+				<mx:FormItem label="{LanguageManager.getInstance().labels.documentRenderer.status}" fontWeight="bold">
+					<mx:Text text="{status}" fontWeight="normal"/>
+				</mx:FormItem>
+				<mx:FormItem label="{LanguageManager.getInstance().labels.documentRenderer.type}" fontWeight="bold">
+					<mx:Text text="{data['inventoryDocument'].type}" fontWeight="normal"/>
+				</mx:FormItem>
+				<mx:FormItem label="Nagłówek" fontWeight="bold">
+					<mx:Text text="{data['inventoryDocument'].header}" fontWeight="normal"/>
+				</mx:FormItem>
+				<mx:FormItem label="Stopka" fontWeight="bold">
+					<mx:Text text="{data['inventoryDocument'].footer}" fontWeight="normal"/>
+				</mx:FormItem>
+			</mx:Form>	
+		</mx:HBox>
+		<!-- dla technology i productionOrder: --> 
+		<mx:Form id="productionForm" width="100%" verticalGap="0" paddingTop="2" paddingBottom="2">
+			<mx:FormItem label="{LanguageManager.getInstance().labels.documents.linesCount}" fontWeight="bold">
+				<mx:Text text="{linesCount}" fontWeight="normal"/>
+			</mx:FormItem>
+			<mx:FormItem label="{LanguageManager.getInstance().labels.documentRenderer.status}" fontWeight="bold">
+					<mx:Text text="{status}" fontWeight="normal"/>
+				</mx:FormItem>
+			<mx:FormItem label="{LanguageManager.getInstance().labels.common.comments}" fontWeight="bold">
+				<mx:Text text="{getRemarks(data,this.documentType)}" fontWeight="normal"/>
+			</mx:FormItem>
+		</mx:Form>	
+	</mx:ViewStack>
+	
+</mx:VBox>

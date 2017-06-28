@@ -1,0 +1,53 @@
+<root version="10">
+	<ContractorField>
+  <xmlMetadata>
+    <metadata>
+	<dataType type="select">
+		<entry><name>string</name></entry>
+		<entry><name>xml</name></entry>
+		<entry><name>integer</name></entry>
+		<entry><name>boolean</name></entry>
+		<entry><name>contractorAddress</name></entry>
+		<entry><name>select</name></entry>
+	</dataType>
+	
+	<subType type="select"></subType>
+	<template></template>
+	<linkProtocol type="select">
+		<entry><name></name></entry>
+		<entry><name>http</name></entry>
+		<entry><name>callto</name></entry>
+	</linkProtocol>
+	<linkRegExp type="textArea"></linkRegExp>
+	<linkTemplate type="textArea"></linkTemplate>
+	<allowMultiple type="select">
+		<entry><name>1</name></entry>
+		<entry><name>0</name></entry>
+	</allowMultiple>
+	<disabled type="select">
+		<entry><name>0</name></entry>
+		<entry><name>1</name></entry>
+	</disabled>
+	<validation type="textArea"></validation>
+	</metadata>
+	</xmlMetadata>
+  </ContractorField>
+  
+	<ContractorRelationType></ContractorRelationType>
+				<Country></Country>
+				<Currency></Currency>
+				<DocumentField></DocumentField>
+				<DocumentFieldRelation></DocumentFieldRelation>
+				<DocumentType></DocumentType>
+				<IssuePlace></IssuePlace>
+				<ItemField></ItemField>
+				<ItemRelationAttrValueType></ItemRelationAttrValueType>
+				<ItemRelationType></ItemRelationType>
+				<ItemType></ItemType>
+				<JobPosition></JobPosition>
+				<PaymentMethod></PaymentMethod>
+				<Unit></Unit>
+				<UnitType></UnitType>
+				<VatRate></VatRate>
+				<DocumentStatus></DocumentStatus>
+</root>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DockPanel 	xmlns="com.makolab.components.layoutComponents.*" 
+			xmlns:mx="http://www.adobe.com/2006/mxml"  
+			headerColors="[0xffde00, 0xff9000]" titleStyleName="bold" 
+			width="100%" height="400" creationComplete="creationCompleteHandler();">
+		 
+	<!--
+	<panelTitleBar>
+		<mx:VBox paddingTop="5">
+			<mx:HBox width="100%" paddingRight="5" id="combo">
+				<mx:ComboBox id="siteCombo" dataProvider="{sites}" labelField="@label" change="chooseSiteFeed(ComboBox(event.target).selectedItem)" width="100%" height="17" />
+				<mx:LinkButton paddingBottom="-4" paddingTop="-4" paddingRight="-1" paddingLeft="-1" icon="{IconManager.getIcon('add_small')}" click="addSite();"/>
+			</mx:HBox>
+		</mx:VBox>
+	</panelTitleBar>
+	-->
+	
+	<mx:Script>
+		<![CDATA[
+			import flash.utils.getDefinitionByName;
+			[Bindable]
+			private var _config:XMLList;
+			
+			[Bindable]
+			public function set config(value:XMLList):void {
+				var dpt:String = value.window.text();
+				var dptClass:Class = getDefinitionByName(dpt) as Class;
+				var classFactory:ClassFactory = new ClassFactory(dptClass); 
+				var dp:* = classFactory.newInstance();
+				
+				
+				addChild(dp);
+				
+				if(value.windowConfig.children().length()) {
+					setParamsInDocPanel(dp, value.windowConfig.children());
+				}
+				
+				_config = value;
+			}
+			
+			public function get config():XMLList {
+				return _config;
+			}
+			
+			private function creationCompleteHandler(event:Event = null):void {
+			   
+			}
+			
+			private function setParamsInDocPanel(dp:*, list:XMLList):void {
+				for each(var x:XML in list) {
+					switch (x.name().toString()) 
+					{
+						case 'set':
+							trace("set");
+							if(x.@nameId != undefined && x.@nameId != '') {
+								dp[x.@nameId] = x;
+							}
+							break;
+						case 'execute':
+							if(x.@nameId != undefined && x.@nameId != '') {
+								var args:Array = new Array();
+								for each(var xx:XML in x.param) {
+									args.push(xx);
+								}
+								dp[x.@nameId].apply(null, args);
+							}
+							break;
+						default:
+							trace("default");
+					}
+				}
+			}
+			
+		]]>
+	</mx:Script>
+</DockPanel>

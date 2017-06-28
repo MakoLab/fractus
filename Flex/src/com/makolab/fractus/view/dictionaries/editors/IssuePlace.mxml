@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*"
+	>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.components.inputComponents.DictionaryEditor;	
+			
+			public var changeFunction:Function;
+			
+			[Bindable]
+			public var action:String;
+			
+		]]>
+	</mx:Script>
+	<mx:Form>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.common.shortName}: ">
+			<inputComponents:ExTextInput 
+				text="{(action==DictionaryEditor.ADD) ? '' : data.name}"
+				level="1"
+			 	nodeName="name"
+				change="changeFunction(event)"
+				creationComplete="changeFunction(event, true)"
+				/>
+		</mx:FormItem>	
+	</mx:Form>
+</mx:VBox>

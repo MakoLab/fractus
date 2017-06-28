@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas creationComplete="init()" xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:generic="com.makolab.fractus.view.generic.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ListCollectionView;
+			import mx.collections.ICollectionView;
+			import mx.collections.XMLListCollection;
+			import com.adobe.utils.ArrayUtil;
+			import com.makolab.fractus.commands.SaveConfigurationCommand;
+			import mx.controls.Alert;
+			import mx.events.DataGridEvent;
+			import com.makolab.fractus.view.ComponentWindow;
+			import mx.events.ListEvent;
+			import com.makolab.fractus.view.catalogue.ContractorsCatalogue;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+
+			[Bindable]
+			private var days:int = 1;
+			
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+			
+			private var dataProvider:XML;
+			
+			public static function showWindow():ComponentWindow
+			{
+				ModelLocator.getInstance().configManager.requestValue("document.discountSlider");
+				var component:DiscountSlider = new DiscountSlider();
+				var window:ComponentWindow = ComponentWindow.showWindow(component,ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL,new Rectangle(-1,-1,400,300),LanguageManager.getInstance().labels.title.discountSlider.panel);
+				window.commitFunction = component.saveFunction;
+				return window;
+			}
+			
+			private function init():void
+			{
+				//if(!thresholdColumn.sortDescending)grid.dispatchEvent(new DataGridEvent(DataGridEvent.HEADER_RELEASE,false,false,0));
+				//grid.dispatchEvent(new DataGridEvent(DataGridEvent.HEADER_RELEASE,false,false,0));
+				//thresholdColumn.sortable = false;
+				//ModelLocator.getInstance().configManager.requestValue("document.discountSlider",true);
+			}
+			
+			public function saveFunction():void
+			{
+				//handleItemEditEnd();
+				dataProvider.discountSlider.* = XMLList(grid.dataProvider);
+				dataProvider.discountSlider.@days = daysText.text;
+				var cmd:SaveConfigurationCommand = new SaveConfigurationCommand();
+				cmd.addEventListener(ResultEvent.RESULT, handleResult);
+				cmd.execute( { requestXml : <root>{dataProvider}</root> } );
+			}
+			
+			private function handleResult(event:ResultEvent):void
+			{
+				ModelLocator.getInstance().configManager.requestValue("document.discountSlider",true);
+				Alert.show(LanguageManager.getInstance().labels.common.changesSaved, LanguageManager.getInstance().labels.common.message);
+			}
+			
+			private function handleItemEditEnd(event:DataGridEvent = null):void
+			{
+				/* thresholdColumn.sortable = true;
+				if(!thresholdColumn.sortDescending)grid.dispatchEvent(new DataGridEvent(DataGridEvent.HEADER_RELEASE,false,false,0));
+				grid.dispatchEvent(new DataGridEvent(DataGridEvent.HEADER_RELEASE,false,false,0));
+				thresholdColumn.sortable = false;
+				var previousThreshold:int = 0;
+				//kompletne przeliczenie przedzialu
+				for each(var entry:XML in grid.dataProvider)
+				{
+					entry.span.* = (previousThreshold + " - " + entry.threshold.*);
+					
+					previousThreshold = parseInt(entry.threshold.*) + 1;
+				}
+				
+				this.dataProvider = this.dataProvider;
+				thresholdColumn.sortable = true;
+				if(!thresholdColumn.sortDescending)grid.dispatchEvent(new DataGridEvent(DataGridEvent.HEADER_RELEASE,false,false,0));
+				grid.dispatchEvent(new DataGridEvent(DataGridEvent.HEADER_RELEASE,false,false,0));
+				thresholdColumn.sortable = false; */
+				event.preventDefault();
+				if(event.dataField == "threshold")grid.editedItemRenderer.data.threshold.* = event.currentTarget.itemEditorInstance.text;
+				if(event.dataField == "discountRate")grid.editedItemRenderer.data.discountRate.* = event.currentTarget.itemEditorInstance.text;
+				grid.destroyItemEditor();
+				grid.dataProvider.notifyItemUpdate(grid.editedItemRenderer);
+				sort();
+			}
+			
+			private function sort():void
+			{
+				var provider:XMLList = new XMLList;
+				var collection:Array = [];
+				for each(var i:XML in grid.dataProvider){
+					collection.push(i);
+				}
+				collection.sort(sortFunction,Array.NUMERIC);
+				var previousThreshold:int = 0;
+				for(var j:int=0;j<collection.length;j++){
+					(collection[j] as XML).span.* = (previousThreshold + " - " + (collection[j] as XML).threshold.*);
+					previousThreshold = parseInt(collection[j].threshold.*) + 1;
+					provider = provider + collection[j];
+				}
+				grid.dataProvider = provider;
+			}
+			
+			private function sortFunction(object1:Object,object2:Object):int
+			{
+				var ret:int = 0;
+					 if	(Number(object1.threshold.*) < Number(object2.threshold.*))ret = -1;
+				else if	(Number(object1.threshold.*) > Number(object2.threshold.*))ret =  1;
+				else ret = 0;
+				return ret;
+			}
+			
+			private function getDataProvider(configValue:Object):Object
+			{
+				dataProvider = XML(configValue.configValue).copy();
+				days = Number(dataProvider.discountSlider.@days);
+				return dataProvider.discountSlider.*;
+			}
+			
+			private function add():void
+			{
+				
+				var item:XML = <entry><threshold>0</threshold><discountRate>0</discountRate><span></span></entry>;
+				grid.dataProvider = XMLList(grid.dataProvider) + item;
+				sort();
+				/* thresholdColumn.sortable = true;
+				grid.dispatchEvent(new DataGridEvent(DataGridEvent.HEADER_RELEASE,false,false,0));
+				thresholdColumn.sortable = false;
+				handleItemEditEnd(); */
+				//grid.dataProvider = getDataProvider(<root>{dataProvider}</root>);
+			}
+			
+			private function remove():void
+			{
+				if(grid.selectedItem){
+					var item:Object = grid.selectedItem;
+					var temp:XMLList = new XMLList();
+					for each(var o:Object in grid.dataProvider){
+						if(o != item)temp += o;
+					}
+					grid.dataProvider = temp;
+					/* thresholdColumn.sortable = true;
+					grid.dispatchEvent(new DataGridEvent(DataGridEvent.HEADER_RELEASE,false,false,0));
+					thresholdColumn.sortable = false;
+					handleItemEditEnd(); */
+					//trace(grid.dataProvider.toString(),grid.selectedItem.childIndex());
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox horizontalAlign="center" height="100%" width="100%">
+		<!-- //permission hard coded -->
+		<mx:DataGrid
+				id="grid"
+				dataProvider="{getDataProvider(ModelLocator.getInstance().configManager.values.document_discountSlider)}"
+				height="100%"
+				width="100%"
+				editable="{model.permissionManager.isEnabled('administration.rebateSlider.edit')}"
+				itemEditEnd="handleItemEditEnd(event)"
+				enabled="{model.permissionManager.isEnabled('administration.rebateSlider.edit')}"
+				sortableColumns="false"
+			>
+			<!--
+			//permission hard coded
+			-->
+			<mx:columns>
+				<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.threshold}" id="thresholdColumn" dataField="threshold" editable="{model.permissionManager.isEnabled('administration.rebateSlider.edit')}" sortDescending="false" sortCompareFunction="sortFunction"/>
+				<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.discount} (%)" dataField="discountRate" editable="{model.permissionManager.isEnabled('administration.rebateSlider.edit')}" sortable="false"/>
+				<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.interval}" dataField="span" editable="false" sortable="false"/>
+			</mx:columns>
+		</mx:DataGrid>
+		<mx:HBox>
+			<mx:Button label="{LanguageManager.getInstance().labels.common.add}" click="add()" enabled="{model.permissionManager.isEnabled('administration.rebateSlider.edit')}"/>
+			<mx:Button label="{LanguageManager.getInstance().labels.common.Delete}" click="remove()" enabled="{model.permissionManager.isEnabled('administration.rebateSlider.edit')}"/>
+			<mx:FormItem label="{LanguageManager.getInstance().labels.documents.dueDays}">
+				<mx:TextInput id="daysText" text="{days}" enabled="{model.permissionManager.isEnabled('administration.rebateSlider.edit')}"/>
+			</mx:FormItem>
+		</mx:HBox>
+	</mx:VBox>
+</mx:Canvas>

@@ -1,0 +1,375 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<DocumentEditor 
+	creationComplete="init()" 
+	xmlns="com.makolab.fractus.view.documents.documentEditors.*"
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:catalogue="com.makolab.components.catalogue.*"
+	xmlns:lineList="com.makolab.components.lineList.*" 
+	xmlns:layoutComponents="com.makolab.components.layoutComponents.*" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	xmlns:documents="com.makolab.fractus.view.documents.*"
+	xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*" 
+	xmlns:filters="com.makolab.fractus.view.documents.reports.filters.*"
+	xmlns:generic="com.makolab.fractus.view.generic.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import assets.IconManager;
+			
+			public function getIcon(name:String):Class
+			{
+				return IconManager.getIcon(name);
+			}		
+		]]>
+	</mx:Script>
+	
+	<mx:XML xmlns="" id="config">
+			<config>
+				<columns>
+					<column field="@ordinalNumber" labelKey="common.lp" label="Lp" width="35" />
+					<column field="@name" labelKey="common.shortName" filter="1" />
+					<column field="@code" labelKey="common.code" width="80"  filter="1" />
+					<column field="@quantity" labelKey="common.quantity" dataType="float" width="40" />
+					<column field="@unitId" labelKey="common.jm" dataType="dictionary" dictionaryName="units" width="30" />
+					<column field="@selected" dataType="boolean" width="30" editable="true" textAlign="center" rendererIsEditor="true" />
+				</columns>
+				
+				<searchParams>
+					<query/>
+			    <pageSize>1000000</pageSize>
+			    <page>1</page>
+					<columns>
+						<column field="code"  sortOrder="1" sortType="ASC"/>
+						<column field="name"/>
+						<column field="quantity"/>
+						<column field="unitId"/>
+					</columns>
+				</searchParams>
+			
+				<getItemDataParams>
+					<type>Item</type>
+					<id/>
+				</getItemDataParams>
+				<filterField>@name</filterField>
+			  
+			  <filters>
+			  	<filter type="itemAvailabilityFilter" label="{LanguageManager.getInstance().labels.items.stock}"/>
+			    <filter type="itemInInventoryFilter" label="{LanguageManager.getInstance().labels.inventory.notInDocument}" inventoryDocumentId="{String(inventorySheet.arkuszSpisowyXML.inventoryDocumentHeaderId)}" />
+			  </filters>
+			  <layout>
+			    <leftP />
+			    <leftPane/>
+			    <rightP>
+			    	<panel name="groupsConfigurator" order="0" movable="false" />
+			    </rightP>
+			  </layout>
+			  <hiddenComponents>
+			    <leftP>true</leftP>
+			  </hiddenComponents>
+			</config>
+	</mx:XML>
+		
+	<mx:Array id="defaultColumns">
+		<mx:DataGridColumn
+			headerText=""
+			itemRenderer="com.makolab.components.inputComponents.CheckBoxEditor"
+			editable="true"
+			rendererIsEditor="true"
+			width="30" 
+			editorDataField="dataObject"
+			dataField="@selected"
+			textAlign="center"
+		/>		
+	</mx:Array>
+
+		<mx:Form
+				label="{LanguageManager.getInstance().labels.common.basicTab}"
+				paddingLeft="15"
+				paddingRight="15" 
+				width="100%"
+				height="100%"
+				paddingTop="0"
+				paddingBottom="0"
+		>
+			<!-- numer i status -->
+			<mx:HBox horizontalGap="14" verticalAlign="middle" paddingTop="5" width="100%">
+				<generic:DocumentStatusRenderer status="{Number(inventorySheet.status)}"/>
+				<mx:Label text="{LanguageManager.getInstance().labels.inventory.sheet}" fontSize="18"/>
+				<mx:Label
+				text="{inventorySheet.inventoryDocumentFullNumber}/{inventorySheet.ordinalNumber}" 
+				fontSize="20"
+				/>
+				<mx:Label text="{LanguageManager.getInstance().labels.documentRenderer.warehouse}" width="100%" textAlign="right"/>
+				<generic:FractusDictionarySelector
+					id="warehouseSelector"
+					dataProvider="{DictionaryManager.getInstance().dictionaries.warehouses.(valueOf().branchId == model.branchId)}"
+					selectedId="{inventorySheet.warehouseId}"
+					change="warehouseChange()" 
+					width="100"
+					enabled="{inventorySheet.lines.length==0}"
+				/>
+			</mx:HBox>
+				
+			<catalogue:CatalogueBrowser paddingTop="0" paddingBottom="0" 
+				id="catalogueBrowser"
+				groupsConfiguration="{model.configManager.values.items_group}"
+				allowGroupsChange="false"
+				itemSearch="searchItem(event.parameters)"
+				itemsType="items"
+				showLeftPanel="true"
+				config="{config}"
+			>		
+			</catalogue:CatalogueBrowser>
+			
+			<mx:FormItem label="{LanguageManager.getInstance().labels.catalogue.select}:">	
+				<mx:HBox>
+					<mx:Button label="{LanguageManager.getInstance().labels.catalogue.all}" click="changeSelection(1)" width="100"/>
+					<mx:Button label="{LanguageManager.getInstance().labels.catalogue.nothing}" click="changeSelection(2)" width="100"/>
+					<mx:Button label="{LanguageManager.getInstance().labels.catalogue.revers}" click="changeSelection(3)" width="100"/>
+				</mx:HBox>
+			</mx:FormItem>
+			<mx:FormItem>
+				<mx:Button label="{LanguageManager.getInstance().labels.inventory.moveToSheet}" click="addLines()" width="317" id="moveToSheetButton"/>
+			</mx:FormItem>
+			<mx:FormItem>
+				<mx:Button label="{LanguageManager.getInstance().labels.inventory.fillCountedQuantities}" click="grid.fillCountedQuantities()" width="317" id="fillCountedQuantitiesButtom"/>
+			</mx:FormItem>
+
+			<InventorySheetLinesComponent
+					id="grid" 
+					dataProvider="{inventorySheet.lines}"
+					width="100%" 
+					height="210"
+					committedInventoryStatus="false"
+				/>
+		</mx:Form>	
+
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.GetDeliveriesValueCommand;
+			import mx.core.MXMLObjectAdapter;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.events.CloseEvent;
+			import mx.collections.ArrayCollection;
+			import mx.controls.DataGrid;
+			import mx.collections.*;
+			import mx.controls.Alert;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.components.inputComponents.CurrencyRenderer;
+			import mx.managers.PopUpManager;
+			import com.makolab.fractus.model.document.InventorySheetLine;
+			import com.makolab.fractus.model.document.InventorySheet;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.view.documents.documentEditors.InventorySheetLinesComponent;
+			import com.makolab.fractus.model.ModelLocator;
+			import assets.IconManager;
+			import com.makolab.fractus.commands.SaveBusinessObjectCommand;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.commands.SearchCommand;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.commands.CreateBusinessObjectCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			
+			[Bindable] 
+			public var languageManager:LanguageManager = LanguageManager.getInstance();	
+			
+			private var win:ComponentWindow; 
+			[Bindable]
+			public var context:int;
+			
+			[Bindable]
+			public var _inventorySheet:InventorySheet;
+			
+			[Bindable]
+			public function set inventorySheet(value:InventorySheet):void {
+				_inventorySheet = value;
+				if(warehouseSelector) {
+					warehouseSelector.selectedId = value.warehouseId;
+				}
+			}
+			
+			public function get inventorySheet():InventorySheet {
+				return _inventorySheet;
+			}
+			
+			private function init():void
+			{
+				catalogueBrowser.grid.editable = true;
+				catalogueBrowser.pageSwitcher.width = 0;
+			}
+			
+			private function warehouseChange():void
+			{
+				inventorySheet.warehouseId = warehouseSelector.selectedId;
+				catalogueBrowser.searchResults = new XMLListCollection();
+			}
+			
+			private var list:XMLListCollection;
+			
+			private function addLines():void
+			{
+				fillCountedQuantitiesButtom.enabled = false;
+				moveToSheetButton.enabled = false;
+				
+				list = new XMLListCollection();
+				var listOfIds:XMLListCollection = new XMLListCollection();
+				
+				var wID:String = warehouseSelector.selectedId;
+				
+				for each (var node:XML in catalogueBrowser.grid.dataProvider) {
+			 		if(node.@selected == 1) {
+			 			list.addItem(node);
+			 			listOfIds.addItem(XML('<delivery itemId="' + node.@id + '" warehouseId="' + wID + '"/>'));
+			 		}
+			 	}
+			 	
+			 	if(listOfIds.length) {
+					extendLines(listOfIds);
+				} else {
+					fillCountedQuantitiesButtom.enabled = true;
+					moveToSheetButton.enabled = true;
+				}
+			}
+			
+			private function extendLines(listOfIds:XMLListCollection):void
+			{
+				var cmd:GetDeliveriesValueCommand = new GetDeliveriesValueCommand(listOfIds);
+				cmd.addEventListener(ResultEvent.RESULT, extendLinesResult);
+				cmd.execute();
+			}
+			
+			private function extendLinesResult(event:ResultEvent):void
+			{				
+				fillCountedQuantitiesButtom.enabled = true;
+				moveToSheetButton.enabled = true;
+				
+				var t:* = list;
+				var result:XMLList = XML(event.result)..item;
+				var tempList:XMLListCollection = new XMLListCollection();
+				
+				var n:int = result.length();
+				for (var i:int = 0; i < n; i++) {
+					var node:XML = list[i];
+					node.@lastPurchaseNetPrice = (result[i].@lastPurchaseNetPrice != undefined) ? result[i].@lastPurchaseNetPrice : 0;
+					for each(var nodes:XML in result[i].children()) {
+						node.appendChild(nodes);
+					}
+			 		tempList.addItem(node);
+			 	}
+			 	
+				this.inventorySheet.addLinesFromXML(tempList);
+			}	
+			
+			
+			
+			
+			private function commitChanges():void
+			{
+				var cmd:SaveBusinessObjectCommand = new SaveBusinessObjectCommand();
+				cmd.addEventListener(ResultEvent.RESULT, handleCommitResult);
+				cmd.execute(<root>{this.inventorySheet.getFullXML()}</root>);
+			}
+			
+			private function handleCommitResult(event:ResultEvent):void
+			{
+				dispatchEvent(new Event('dataCommited'));
+				if (win) win.hide();
+				//InventorySheetEditor.showWindow(this.inventorySheet.id);
+			}
+			
+			public function createInventorySheet(registerId:String):void
+			{
+				var cmd:CreateBusinessObjectCommand = new CreateBusinessObjectCommand("InventorySheet");
+				cmd.addEventListener(ResultEvent.RESULT, handleResult);
+				cmd.execute({ source : <source type="appendToInventoryDocument"><inventoryDocumentId>{registerId}</inventoryDocumentId></source> });
+			}
+			
+			private function handleResult(event:ResultEvent):void
+			{
+				this.inventorySheet = new InventorySheet(XML(event.result).sheet[0]); 
+				catalogueBrowser.config = this.config; /*kiedy w this.config nastepuje binding w filtrze zalezny od inventorySheet, to catalogueBrowser nie widzi zmiany i nie przeladowuje swojego config*/
+			}
+			
+			public static const CONTEXT_CREATE_INVENTORY_SHEET:int = 1;
+			public static const CONTEXT_OPEN_INVENTORY_SHEET:int = 2;
+			
+			public static function showWindow(inventorySheet:InventorySheet = null, inventoryDocumentId:String = null):ComponentWindow
+			{
+				var editor:InventorySheetCreator = new InventorySheetCreator();
+				ModelLocator.getInstance().configManager.requestValue("items.group");
+				if(inventorySheet){
+					editor.context = CONTEXT_OPEN_INVENTORY_SHEET;
+					editor.inventorySheet = inventorySheet;
+				}
+				else {
+					editor.context = CONTEXT_CREATE_INVENTORY_SHEET;
+					editor.createInventorySheet(inventoryDocumentId);
+				}
+				var win:ComponentWindow;
+
+				win = ComponentWindow.showWindow(
+						editor,  
+						ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL,
+						null,
+						LanguageManager.getInstance().labels.inventory.sheetCreator
+				);
+				
+				editor.win = win;
+				win.commitFunction = editor.commitChanges;
+				win.closeFunction = win.hide;
+				win.setStyle("headerColors", [IconManager.INVENTORY_COLOR, IconManager.INVENTORY_COLOR_LIGHT]);
+				win.setStyle("themeColor", IconManager.INVENTORY_COLOR);
+				return win;
+			}		
+			
+/*CZĘŚĆ DLA KREATORA*/
+			
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+			private var old_param:XML=new XML();
+			private function searchItem(parameters:Object):void
+			{
+				//if(old_param.query.toString()!=XML(parameters).query.toString())
+				//{
+				var cmd:SearchCommand = new SearchCommand(SearchCommand.ITEMS);		
+				old_param=XML(parameters);	
+				cmd.searchParams = old_param;
+				
+				cmd.searchParams.currentWarehouse = inventorySheet.warehouseId;
+				cmd.addEventListener(ResultEvent.RESULT,handleSearchResults);
+				cmd.execute();
+				
+				//}
+			}
+			
+			private function handleSearchResults(event:ResultEvent):void
+			{
+				var result:XML = XML(event.result);
+				catalogueBrowser.searchResults = new XMLListCollection(result.*);
+				catalogueBrowser.rowCount = result.@rowCount;
+				catalogueBrowser.pageNumber = result.@page;
+				catalogueBrowser.itemData = result.itemData;
+			}
+			
+			private function changeSelection(arg:int):void
+			{
+				if (catalogueBrowser.grid.dataProvider)
+				{
+					for each (var x:XML in catalogueBrowser.grid.dataProvider)
+					{
+						switch(arg)
+						{
+							case 1: x.@selected = 1; break;
+							case 2: x.@selected = 0; break;
+							case 3: x.@selected = parseInt(x.@selected.toString()) ? 0 : 1; break;
+						}
+					}
+					XMLListCollection(catalogueBrowser.grid.dataProvider).refresh();
+				}
+			}
+		]]>
+	</mx:Script>
+
+</DocumentEditor>

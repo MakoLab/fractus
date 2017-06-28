@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="400" height="50" 
+	paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10"
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	xmlns:layoutComponents="com.makolab.components.layoutComponents.*" minWidth="400" minHeight="50">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.LocalFileLoaderAnsi;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import mx.rpc.events.FaultEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.components.inputComponents.LocationFilter;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.ConfigManager;
+			import mx.managers.PopUpManagerChildList;
+			import mx.managers.PopUpManager;
+			import mx.core.UIComponent;
+			import mx.events.MenuEvent;
+			import mx.controls.List;
+			import com.makolab.components.list.DataGridComboHeader;
+			import com.makolab.components.inputComponents.CheckBoxListItemRenderer;
+			import mx.controls.CheckBox;
+			import mx.events.CloseEvent;
+			import mx.containers.GridItem;
+			import mx.collections.XMLListCollection;
+			import com.makolab.fractus.model.WindowManager;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.items.ItemUpdateCataloguePricesCommand;
+			import mx.events.ListEvent;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.collections.ArrayCollection;
+		
+			import com.makolab.components.util.LocalFileLoader;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.controls.Alert;
+			
+			private const ERROR_COLOR:uint = 0xffcccc;
+			private const IN_COLOR:uint = 0xccffcc;
+			private const DEFAULT_COLOR:uint = 0xffffff;
+			
+			[Bindable]
+			private var dataXML:XML = new XML();
+
+			
+			public var effectiveRows:XMLList;
+			public var window:ComponentWindow;
+			public var userConfiguration:Boolean = false;
+			[Bindable] public var selectedItems:XMLList;
+			[Bindable] private var selectedItemsString:String = "";
+			[Bindable] private var selectedItemsCount:int = 0;
+			[Bindable] private var progressBarVisibility:Boolean = false;
+			[Bindable] private var OkVisibility:Boolean = false;
+			[Bindable] private var filePath:String = "";
+			private var lFLoader:LocalFileLoaderAnsi;
+			public var expectedFileType:String="csv";
+			public var numCollumns:int=7;
+			public var delim:String=";";
+			private var fileTypes:Object = {
+				csv : [new FileFilter("Plik excel","*.csv"),new FileFilter("wszystkie","*.*")],
+				portaOrderCsv : [new FileFilter("Pliki excel","*.csv"),new FileFilter(LanguageManager.getInstance().labels.documentFilters.all, "*.*")]
+				
+			};
+			public static function showWindow():ComponentWindow
+			{
+				var component:CsvToXmlManager=new CsvToXmlManager();
+				var window:ComponentWindow=ComponentWindow.showWindow(component);
+				component.window = window;
+				window.show(null,ComponentWindow.NORMAL,LanguageManager.getInstance().labels.tools.bankImport);
+				
+				return window;
+			}
+			
+					
+			public function closeFunction():void
+			{
+				if (window) window.hide();
+			}
+			private function handleUploadClick(event:MouseEvent):void
+			{
+				
+				if (!this.lFLoader)
+				{
+					this.lFLoader = new LocalFileLoaderAnsi();
+				}
+				try
+				{
+					lFLoader.loadFile(completeHandler,fileTypes[expectedFileType]);
+					progressBarVisibility=false;
+					OkVisibility=false;
+				}
+				catch (error:Error)
+				{
+				Alert.show("Wystąpił błąd podczas wysyłania pliku.");
+				progressBarVisibility=false;
+				}
+			}
+			
+			private function errorHandler(event:Event):void
+			{
+				Alert.show("Wystąpił błąd podczas wysyłania pliku.");
+				progressBarVisibility = false;
+				OkVisibility=false;
+			}
+			private function completeHandler(resultFile:Object, fileName:String):void
+			{
+				try
+				{
+					progressBarVisibility=true;
+					dataXML = new XML('<root userid="'+ModelLocator.getInstance().sessionManager.userId+'"> </root>');
+					var str:String=String(resultFile);
+					var regExp=new RegExp("\r\n","gi");
+					str=str.replace(regExp,delim);
+					var arr:Array=str.split(delim);
+					if(arr.length%numCollumns!=0)
+					Alert.show("Niepoprawny format pliku","Błąd");
+					var j:int=0;
+					var J:int=-1;
+					var node:XML;
+					for(var i:int=numCollumns;i<arr.length;i++)
+					{
+						if(i%numCollumns==0)
+						{
+						node=new XML(<row />);
+						dataXML.appendChild(<row />)
+						J++;
+						}
+						dataXML.row[J].appendChild(<col>{arr[i]}</col>)
+					}
+					var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("custom.p_importBankDocument",dataXML );
+					cmd.addEventListener(ResultEvent.RESULT, resultHandler, false, 0, true);
+					cmd.addEventListener(FaultEvent.FAULT, errorHandler, false, 0, true);
+					cmd.execute();
+					
+				}
+				catch(error:Error)
+				{
+					Alert.show("Wystąpił błąd podczas przetwarzania pliku","Błąd");
+				}
+				finally
+				{
+					progressBarVisibility = false;
+				}			
+			}
+			private function resultHandler(e:ResultEvent):void
+			{
+				trace("poszlo");
+				OkVisibility=true;
+				//tekstK.text="  kjdnqwn  qwdqhw f qhbqwdfqwf  fhjbwqdn qw n  jhbqwfdqw f";
+				tekstK.text=XML(e.result).toString();
+			}
+		
+			
+			
+			
+		
+		]]>
+	</mx:Script>
+	<mx:VBox paddingLeft="5" paddingBottom="5" paddingTop="5">
+		<mx:Button label="Wczytaj plik" click="{handleUploadClick(event)}" width="200" />
+	
+		<mx:Text id="tekstK" width="380" textAlign="left" text="{LanguageManager.getInstance().labels.tools.bankImportOk}" visible="{OkVisibility}" fontSize="14" verticalCenter="0" horizontalCenter="0"/>
+	</mx:VBox >
+	<mx:Canvas id="progressBar" backgroundColor="0x000000" backgroundAlpha="0.2" visible="{progressBarVisibility}" includeInLayout="{progressBarVisibility}">
+		<mx:ProgressBar  label="{LanguageManager.getInstance().labels.tools.bankImportWait}" indeterminate="true" verticalCenter="0" horizontalCenter="0" visible="{progressBarVisibility}" width="100%"/>
+		<!--<mx:Button label="Anuluj" click="cancelCommand()" verticalCenter="30" horizontalCenter="0"/>-->
+	</mx:Canvas>
+</mx:Canvas>

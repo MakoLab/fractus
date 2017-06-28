@@ -1,0 +1,808 @@
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
+		layout="absolute"
+		xmlns:view="com.makolab.fractus.view.*"
+		creationComplete="init2()" 
+		preinitialize="preinit()"
+		xmlns:business="com.makolab.fractus.business.*" xmlns:control="com.makolab.fractus.control.*" 
+		xmlns:control1="com.adobe.cairngorm.control.*" xmlns:menu="com.makolab.components.menu.*"
+		xmlns:documents="com.makolab.fractus.view.documents.*"
+		xmlns:flexmdi="http://flexmdi.googlecode.com/"
+		xmlns:mdi="com.makolab.components.layoutComponents.mdi.*" xmlns:generic="com.makolab.fractus.view.generic.*"
+		pageTitle="Fractus 2.0" historyManagementEnabled="false" 
+	    xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	    xmlns:layoutComponents="com.makolab.components.layoutComponents.*" 
+	    xmlns:diagnostics="com.makolab.fractus.view.diagnostics.*">
+	
+	<!--
+	<mx:Style source="/assets/stylesheets/mainStyle.css"/>
+	-->
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.inputComponents.FlashingEnvelopeButton;
+			import com.makolab.components.layoutComponents.UserProfileInfo;
+			import com.makolab.components.util.IdleTimer;
+			import com.makolab.components.util.Tools;
+			import com.makolab.events.KeyboardShortcutEvent;
+			import com.makolab.fractus.commands.AbstractCommand;
+			import com.makolab.fractus.commands.CheckRegistrationCommand;
+			import com.makolab.fractus.commands.FractusCommand;
+			import com.makolab.fractus.commands.LoadAttributeValuesCommand;
+			import com.makolab.fractus.commands.LoadTemplatesCommand;
+			import com.makolab.fractus.commands.LogInCommand;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import com.makolab.fractus.model.ConfigManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.MenuManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.PermissionManager;
+			import com.makolab.fractus.model.SessionManager;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.view.LogInWindow;
+			import com.makolab.fractus.view.RegistrationWindow;
+			import com.makolab.fractus.view.administration.SpeedTest;
+			import com.makolab.fractus.view.dashboard.DashboardPanel;
+			import com.makolab.fractus.view.diagnostics.CommandExecutionLog;
+			import com.makolab.fractus.view.diagnostics.CommunicationQueueButton;
+			import com.makolab.fractus.view.diagnostics.CommunicationQueueButtonU;
+			import com.makolab.fractus.view.diagnostics.FractusInfoButton;
+			import com.makolab.fractus.view.dictionaries.editors.DocumentType;
+			import com.makolab.fractus.view.documents.documentEditors.PurchaseDocumentEditor;
+			import com.makolab.fractus.view.documents.documentLists.DocumentList;
+			import com.makolab.fractus.view.documents.documentLists.PurchaseDocumentList;
+			import com.makolab.fractus.view.documents.documentLists.SalesDocumentList;
+			import com.makolab.fractus.view.generic.FractusDictionarySelector;
+			import com.makolab.fractus.view.menu.MultiButton;
+			import com.makolab.fractus.view.tools.ItemCodeChangeTool;
+			import com.makolab.fractus.view.tools.JPKExport;
+			import com.makolab.fractus.vo.SessionVO;
+			import com.makolab.fraktus2.modules.warehouse.WarehouseMapManager;
+			import com.makolab.fraktus2.utils.DynamicAssetsInjector;
+			
+			import mx.binding.utils.BindingUtils;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.ComboBox;
+			import mx.controls.List;
+			import mx.controls.PopUpButton;
+			import mx.controls.listClasses.ListBase;
+			import mx.core.UIComponent;
+			import mx.effects.Fade;
+			import mx.events.ListEvent;
+			import mx.managers.BrowserManager;
+			import mx.managers.HistoryManager;
+			import mx.managers.IBrowserManager;
+			import mx.managers.PopUpManager;
+			import mx.managers.ToolTipManager;
+			import mx.rpc.AbstractOperation;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.soap.WebService;
+			import mx.styles.StyleManager;
+			import mx.utils.URLUtil;
+			
+			import assets.IconManager;
+			
+			import flight.utils.getClassName;
+			
+			// ============= include klas =========================== //
+			private var itemCodeChangeTool:ItemCodeChangeTool;
+			private var jpkexport:JPKExport;
+			
+			public static const INITIALIZATION_CONFIG_KEYS:Array =
+			[
+				"services.printService.address",
+				"warehouse.warehouseMap",
+				"warehouse.isWmsEnabled",
+				"document.operations.isImportOperationEnabled",
+				"processes.salesOrder",
+				"salesLock.isSalesLockEnabled",
+				"system.challengeCodeLocks",
+				"document.validation.minimalProfitMargin",
+				"system.startDate",
+				"salesLock.maxDueDays",
+				"document.defaults.systemCurrencyId",
+				"menu.visibleComponents",
+				"communication.databaseId",
+				"menuItemsArray",
+				"showMainLogo",
+				"showConfigurationAlerts",
+				"system.userIdleTimeout",
+				"availableLanguages"
+			];
+			
+			public const NORMAL:String = "normal";
+			public const FULLSCREEN:String = "fullscreen";
+			public const EMPTY:String = "empty";
+			
+			/*
+				klucze dla CRM Pawlik				
+				"showCRMFakeComponents"
+			*/
+
+			[Bindable]
+			private var modelLocator:ModelLocator = ModelLocator.getInstance();
+			
+			private var logInWindow:LogInWindow;
+			
+			[Bindable]
+			private var warehouses:XML;
+			
+			//Aby zablokowac GC przed czyszczeniem (to jest FIX)
+			private var dai:DynamicAssetsInjector;
+			// aby GC nie wyczycil		
+			private var wmm:WarehouseMapManager;
+			
+			[Bindable]
+			private var defaultItemPriceSelectorVisible:Boolean;
+			
+			[Bindable]
+			private var warehouseSelectorVisible:Boolean;
+			
+			[Bindable]
+			private var flashingEnvelopeBtnVisible:Boolean;
+			
+			[Bindable]
+			private var communicationQueueBtnVisible:Boolean;
+			
+			[Bindable]
+			private var windowsPopUpBtnVisible:Boolean;
+			
+			[Bindable]
+			private var userProfileInfoVisible:Boolean;
+			
+			
+			[Bindable]
+			private var showMainLogoVisible:Boolean;
+			
+			/* CRM Pawlik
+			[Bindable]
+			private var showCRMFakeComponentsVisible:Boolean;
+			*/
+			
+			private var dips:FractusDictionarySelector; //na potrzeby zwrotnego bindowania
+			private var ws:FractusDictionarySelector;
+			private var popUpBtn:PopUpButton;
+			
+			private var _layoutMode:String = NORMAL;
+			public function set layoutMode(value:String):void
+			{
+				_layoutMode = value;
+				currentState = _layoutMode;
+			}
+			public function get layoutMode():String
+			{
+				return _layoutMode;
+			}
+			
+			private function prepareVisibilityFlags():void{
+				var model:ModelLocator = ModelLocator.getInstance();
+				
+				if(model.configManager.isAvailable("showMainLogo"))
+				{
+					showMainLogoVisible = ModelLocator.getInstance().configManager.getBoolean('showMainLogo');					
+				}
+				else
+				{
+					showMainLogoVisible = false;
+				}
+				
+				/* CRM Pawlik
+				if(model.configManager.isAvailable("showCRMFakeComponents"))
+				{
+					showCRMFakeComponentsVisible = ModelLocator.getInstance().configManager.getBoolean('showCRMFakeComponents');					
+				}
+				else
+				{
+					showCRMFakeComponentsVisible = false;
+				}*/
+			}
+			
+			
+			
+			private function preinit():void{
+				
+				var sv:String = Application.application.parameters.simpleView;
+				
+				if(sv=='1')this.styleName="simpleView";		  
+				else this.styleName="defaultView";
+				
+				//NIE USUWAC! 
+				//rozwiazanie na przyszlosc, dotyczace przeladowywania dynamicznego skorek 
+				//przetworzonych z css do swf (compile CSS to SWF)
+				//WAZNE! aby przekompilowac css, css musi byc w katalogu glownym!
+				/*
+				if(sv=='1') StyleManager.loadStyleDeclarations("assets/stylesheets/mainStyleSimple.swf");
+				else StyleManager.loadStyleDeclarations("assets/stylesheets/mainStyle.swf");		
+				*/
+			}
+			
+			
+			private function init2():void
+			{
+				StyleManager.loadStyleDeclarations("assets/skins/mainStyle.swf");
+				StyleManager.loadStyleDeclarations("assets/skins/menu.swf");
+				StyleManager.loadStyleDeclarations("assets/skins/documentRenderer.swf");
+				mainMenu.setStyle("themeColor","white");
+				settingsBox.setStyle("themeColor","white");
+				wmm = WarehouseMapManager.getInstance();
+				
+				dai = new DynamicAssetsInjector();					
+				dai.addEventListener("ASSETS_READY", function (e:Event):void {
+					init();
+				})
+				dai.reloadAssetsClass("com/makolab/fraktus2/modules/AssetsModule.swf");
+				//modelLocator.keyboardShortcutManager.systemManager = systemManager;
+				modelLocator.keyboardShortcutManager.addEventListener(KeyboardShortcutEvent.INVOKE,keyboardShortcutHandler);
+				
+			//	addEventListener(MouseEvent.CLICK, mClick);
+			}
+			
+			private function mClick(event:MouseEvent):void {
+				trace(event.target);
+			}
+			
+			private function popUpClickHandler(event:ListEvent):void
+			{
+				mdiCanvas.windowManager.bringToFront(mdiCanvas, event.itemRenderer.data as ComponentWindow);
+			}
+			
+			private function keyboardShortcutHandler(event:KeyboardShortcutEvent):void
+			{
+				//trace(event.shortcut.toString());
+				var cmd:ShowDocumentEditorCommand;
+				
+				if( event.shortcut.equals([Keyboard.F2]) )
+					selectNextItem(ws);
+				if( event.shortcut.equals([Keyboard.SHIFT,Keyboard.F3]) )
+					modelLocator.menuManager.showSalesDocuments();
+				if( event.shortcut.equals([Keyboard.F3]))
+				{
+					cmd = new ShowDocumentEditorCommand(DocumentTypeDescriptor.CATEGORY_SALES);
+					cmd.template = "invoice";
+					cmd.execute();
+				}
+				if( event.shortcut.equals([Keyboard.SHIFT,Keyboard.F4]) )
+					modelLocator.menuManager.showPurchaseDocuments();
+				if( event.shortcut.equals([Keyboard.F4]))
+				{
+					cmd = new ShowDocumentEditorCommand(DocumentTypeDescriptor.CATEGORY_PURCHASE);
+					cmd.template = "purchaseInvoice";
+					cmd.execute();
+				}
+				if( event.shortcut.equals([Keyboard.SHIFT,Keyboard.F5]) )
+					modelLocator.menuManager.showWarehouseDocuments();
+				if( event.shortcut.equals([Keyboard.F5]))
+				{
+					cmd = new ShowDocumentEditorCommand(DocumentTypeDescriptor.CATEGORY_WAREHOUSE);
+					cmd.template = "externalOutcome";
+					cmd.execute();
+				}
+				if( event.shortcut.equals([Keyboard.SHIFT,Keyboard.F6]) )
+					modelLocator.menuManager.showWarehouseDocuments();
+				if( event.shortcut.equals([Keyboard.F6]))
+				{
+					cmd = new ShowDocumentEditorCommand(DocumentTypeDescriptor.CATEGORY_WAREHOUSE);
+					cmd.template = "externalIncome";
+					cmd.execute();
+				}
+				if( event.shortcut.equals([Keyboard.SHIFT,Keyboard.F7]) )
+					modelLocator.menuManager.showWarehouseDocuments();
+				if( event.shortcut.equals([Keyboard.F7]))
+				{
+					cmd = new ShowDocumentEditorCommand(DocumentTypeDescriptor.CATEGORY_WAREHOUSE);
+					cmd.template = "outcomeShift";
+					cmd.execute();
+				}
+				if( event.shortcut.equals([Keyboard.SHIFT,Keyboard.F8]) )
+					modelLocator.menuManager.showFinancialDocuments();
+				if( event.shortcut.equals([Keyboard.F8]))
+				{
+					cmd = new ShowDocumentEditorCommand(DocumentTypeDescriptor.CATEGORY_FINANCIAL_DOCUMENT);
+					cmd.template = "cashIncome";
+					cmd.execute();
+				}
+				if( event.shortcut.equals([Keyboard.SHIFT,Keyboard.F9]) )
+					modelLocator.menuManager.showFinancialDocuments();
+				if( event.shortcut.equals([Keyboard.F9]))
+				{
+					cmd = new ShowDocumentEditorCommand(DocumentTypeDescriptor.CATEGORY_FINANCIAL_DOCUMENT);
+					cmd.template = "cashOutcome";
+					cmd.execute();
+				}
+				if( event.shortcut.equals([Keyboard.F11]) ) modelLocator.menuManager.showItemsCatalogue();
+				if( event.shortcut.equals([Keyboard.F12]) ) modelLocator.menuManager.showContractorsCatalogue();
+				if( event.shortcut.equals([Keyboard.CONTROL, Keyboard.SHIFT, 76]) ) logOut("Wylogowano.");
+				if( event.shortcut.equals([Keyboard.CONTROL, Keyboard.SHIFT, 68]) ) CommandExecutionLog.showWindow();
+				//if( event.shortcut.equals([Keyboard.CONTROL,84]) ) SpeedTest.showWindow();
+			}
+			
+			private function init():void
+			{
+				var s:ClassFactory = null;
+				//s.newInstance()
+				if (application.parameters.col1)
+				{
+					IconManager.CELL_COLOR_1=application.parameters.col1;
+				}
+				if (application.parameters.col2)
+				{
+					IconManager.CELL_COLOR_2=application.parameters.col2;
+				}
+				if (application.parameters.alpha)
+				{
+					IconManager.CELL_ALPHA=application.parameters.alpha;
+				}
+				var model:ModelLocator = ModelLocator.getInstance();
+				model.applicationObject = this;
+				
+				//serviceLocator.wsdl = application.parameters.wsdl;
+				
+				//webService = Services.getInstance().getWebService("kernelService");
+				
+				//model.webService = webService;
+				
+				LanguageManager.getInstance().setLabelsXML(modelLocator.labelsConfig);
+				if (application.parameters.wsdl)
+				{
+					Services.getInstance().getWebService("kernelService").loadWSDL(application.parameters.wsdl);
+				}
+				
+				model.autoLogon = (parseInt(application.parameters.autoLogon) == 1);
+				
+				//HistoryManager.register(model);
+			
+				Services.getInstance().getKernelService(); //do rozpoznania jaki serwis
+				
+				if(Services.getInstance().serviceMode == Services.MODE_WEB_SERVICE)
+				{
+					LogInWindow.show(this);
+					
+					if 	(model.autoLogon)
+					{
+		
+						var logInCmd:LogInCommand = new LogInCommand();
+						logInCmd.execute(new SessionVO("xxx", "CD2EB0837C9B4C962C22D2FF8B5441B7B45805887F051D39BF133B583BAF6860", "pl"));
+					}
+				}
+				else //jestesmy w wersji desktop, sprawdzamy czy mamy zarejestrowana wersje
+				{
+					var regCmd:CheckRegistrationCommand = new CheckRegistrationCommand();
+					regCmd.addEventListener(ResultEvent.RESULT, checkRegistrationHandler, false, 0, true);
+					regCmd.execute();					
+				}
+				
+				ToolTipManager.hideDelay = Infinity; 
+				
+				
+				
+			}
+			
+			private function checkRegistrationHandler(event:ResultEvent):void
+			{
+				var verificationCode:String = XML(event.result).*;
+				if(verificationCode != "")
+				{
+					//wyswietl okno z rejestracja
+					RegistrationWindow.show(this, verificationCode);
+				}
+				else
+				{
+					LogInWindow.show(this);
+					
+					if 	(ModelLocator.getInstance().isDebug())
+					{
+						var logInCmd:LogInCommand = new LogInCommand();
+						logInCmd.addEventListener(ResultEvent.RESULT, initializeApplication);
+						logInCmd.execute(new SessionVO("xxx", "CD2EB0837C9B4C962C22D2FF8B5441B7B45805887F051D39BF133B583BAF6860", "pl"));
+					}
+				}	
+			}
+			
+			public var loggedIn:Boolean = false;
+			
+			private function setLanguage(val:String):void
+			{
+				
+				var labXML:Object = new Object();
+				labXML[String(LanguageManager.getInstance().languagesList[0])] = modelLocator.labelsConfig;
+				labXML[String(LanguageManager.getInstance().languagesList[1])] = modelLocator.labelsConfigEN ;
+				LanguageManager.getInstance().setLabelsXML(labXML[val]);
+				
+			}
+			
+			private function updateWindowsList():void
+			{
+				windows = mdiCanvas.getChildren();
+				
+				if(popUpBtn != null)
+				{
+					popUpBtn.enabled = windows && (windows.length > 0);
+					List(popUpBtn.popUp).dataProvider = windows;
+					List(popUpBtn.popUp).rowCount = windows.length;
+				}
+			}
+			
+			[Bindable]
+			private var windows:Array;
+			/*
+			private function warehouseChangeHandler(event:ListEvent):void
+			{
+				modelLocator.currentWarehouseId = event.target.selectedItem.id;	
+			}
+			*/
+			
+			// kolejka komend do wykonania zanim nastąpi inicjalizacja aplikacji
+			private var initializationCommandQueue:ArrayCollection = new ArrayCollection();
+			
+			public function queueInitCommand(command:FractusCommand):void
+			{
+				this.initializationCommandQueue.addItem(command);
+				command.addEventListener(ResultEvent.RESULT, this.initializationCommandResult);
+			}
+			
+			private function initializationCommandResult(event:ResultEvent = null):void
+			{
+				var obj:Object = event ? event.target : 'configuration';
+				var queue:ArrayCollection = this.initializationCommandQueue;
+				queue.removeItemAt(queue.getItemIndex(obj));
+				if (queue.length == 0) initializiationComplete();
+			}
+			
+			// result listener dla LogInCommand
+			public function initializeApplication(event:ResultEvent):void
+			{
+				LogInWindow.hide();
+				modelLocator.sessionManager.currentState = SessionManager.LOGGED_IN;
+
+				this.queueInitCommand(modelLocator.configManager.loadUiConfig());
+
+				// loading configuration		
+				initializationCommandQueue.addItem('configuration');
+				modelLocator.configManager.requestList(INITIALIZATION_CONFIG_KEYS, initializationCommandResult, null, true);
+				
+				// loading data to managers
+				queueInitCommand(modelLocator.dictionaryManager.loadDictionaries());
+				queueInitCommand(modelLocator.permissionManager.loadProfile(modelLocator.permissionProfile));
+				
+				var loadTemplatesCommand:LoadTemplatesCommand = new LoadTemplatesCommand();
+				this.queueInitCommand(loadTemplatesCommand);
+				loadTemplatesCommand.execute();
+							
+				var loadAttrValuesCommand:LoadAttributeValuesCommand = new LoadAttributeValuesCommand();
+				this.queueInitCommand(loadAttrValuesCommand);
+				loadAttrValuesCommand.execute();
+				
+				modelLocator.cacheDataManager.requestData["salesmen"] = {procedureName : "contractor.p_getSalesmen", parameters: "<root/>"};
+				modelLocator.cacheDataManager.requestData["technology"] = {procedureName : "document.p_getTechnologyByItem", parameters: "<itemId>{itemId}</itemId>", requireParameters : true};
+				
+				/* mainMenu.visible = mainMenu.includeInLayout = true;
+				settingsBox.visible = settingsBox.includeInLayout = true;
+				mdiCanvas.visible = true; */
+			}
+			
+				
+			private function itemPriceIdChangeHandler(id:String):void
+			{
+				if(ModelLocator.getInstance().currentItemPriceId != id)	ModelLocator.getInstance().currentItemPriceId = id;
+			}
+			
+			private function itemPriceIdChangeHandler2(id:String):void
+			{
+				if(this.dips.selectedId != id) this.dips.selectedId = id;
+			}
+			
+			private function currentWarehouseIdChangeHandler(id:String):void
+			{
+				if(ModelLocator.getInstance().currentWarehouseId != id && id != null) ModelLocator.getInstance().currentWarehouseId = id;
+			}
+			
+			private function initializeSideMenuButtons():void{
+				
+				var components:Object = new Object();
+				
+				var modelLocator:ModelLocator = ModelLocator.getInstance();
+					
+					//dodawanie komponentow menu
+					dips = new FractusDictionarySelector();
+					dips.id = "defaultItemPriceSelector";
+					dips.height = 20;
+					dips.width = 150;
+					dips.visible = Boolean(DictionaryManager.getInstance().dictionaries.itemPrices.length() > 0);
+					dips.dictionaryName = "itemPrices";
+										
+					
+					ws = new FractusDictionarySelector();
+					ws.id = "warehouseSelector";
+					ws.height = 20;
+					ws.width = 100;
+					ws.dictionaryName = this.modelLocator.headquarters ? 'allWarehouses' : 'warehouses';
+					ws.labelFunction=function(item:Object):String{
+						return item.label.@lang.length()?item.label.(@lang==LanguageManager.getInstance().currentLanguage)[0]:item.label;
+					}
+					
+					popUpBtn = new PopUpButton();
+					popUpBtn.id = "windowsSelector";
+					popUpBtn.height = 20;
+					popUpBtn.width = 70;
+					popUpBtn.label = LanguageManager.getInstance().labels.title.windows;
+					popUpBtn.openAlways = true;
+					popUpBtn.setStyle("fontWeight", "normal");
+					popUpBtn.setStyle("textAlign", "left");					
+					popUpBtn.enabled = windows && (windows.length > 0);
+					
+					var list:List = new List();
+					list.dataProvider = windows;
+					list.labelField="title";
+					list.rowCount = windows.length;
+					list.addEventListener(ListEvent.ITEM_CLICK, popUpClickHandler);
+					
+					popUpBtn.popUp = list;
+					
+					
+					var feb:FlashingEnvelopeButton = new FlashingEnvelopeButton();
+					feb.id = "flashingEnvelopeBtn";
+					feb.height = 20;
+					feb.width = 30;
+					//feb.start();
+					
+					
+					var cqb:CommunicationQueueButton = new CommunicationQueueButton();
+					cqb.id = "communicationQueueBtn";
+					cqb.height = 20;
+					cqb.width = 60;
+					//cqb.start();
+					
+					var cqbu:CommunicationQueueButtonU = new CommunicationQueueButtonU();
+					cqbu.id = "communicationQueueBtnU";
+					cqbu.height = 20;
+					cqbu.width = 60;
+					
+					var upi:UserProfileInfo = new UserProfileInfo();
+					upi.id = "userProfileInfoComponent";
+					upi.height = 20;
+					upi.logoutFunction = logOut;
+					//upi.setStyle("paddingTop", 5);
+					
+					var fiw:FractusInfoButton = new FractusInfoButton();
+					fiw.id = "fractusInfoButton";
+					fiw.height = 20;
+					fiw.width = 20;
+					//upi.setStyle("paddingTop", 5);
+					
+					
+					BindingUtils.bindSetter(itemPriceIdChangeHandler, dips, "selectedId");
+					BindingUtils.bindSetter(itemPriceIdChangeHandler2, modelLocator, "currentItemPriceId");
+					BindingUtils.bindSetter(currentWarehouseIdChangeHandler, ws, "selectedId");
+					
+				
+					components["defaultItemPriceSelector"] = dips;
+					components["warehouseSelector"] = ws;
+					components["windowsSelector"] = popUpBtn;
+					components["flashingEnvelopeBtn"] = feb;
+					components["communicationQueueBtn"] = cqb;
+					components["communicationQueueBtnU"] = cqbu;
+					components["userProfileInfoComponent"] = upi;
+					components["fractusInfoButton"] = fiw;
+					
+					
+					if(ModelLocator.getInstance().configManager.isAvailable("menu"))
+					{
+						var x:XML = modelLocator.configManager.getXMLValue("menu");
+						
+						for each(var g:XML in x.sideMenu.*)
+						{
+							var component:* = components[g.name().toString()];
+							if(g.@permissionKey != undefined) {
+								component.permissionKey = g.@permissionKey;
+							}
+							if(g.@intervalInSeconds != undefined && g.@intervalInSeconds != null && g.@intervalInSeconds != '') {
+								component.intervalInSeconds = g.@intervalInSeconds;
+							}
+							//permission hard coded
+							if (!modelLocator.permissionManager.isVisible("settingsBox") && g.name().toString() != "userProfileInfoComponent" && g.name().toString() != "windowsSelector") {
+								component.visible = component.includeInLayout = component.enabled = false; 
+							}
+							settingsBox.addChild(component);
+						}
+						
+						component = components['fractusInfoButton'];
+						//permission hard coded
+						if (!modelLocator.permissionManager.isVisible("settingsBox")) {
+							component.visible = component.includeInLayout = component.enabled = false; 
+						}
+						settingsBox.addChild(component);
+					}
+			}
+			
+			private function selectNextItem(selector:ComboBox):void
+			{
+				if (selector)
+				{
+					if (selector.selectedIndex < XMLList(selector.dataProvider).length() - 1) 
+						selector.selectedIndex += 1;
+					else selector.selectedIndex = 0;
+				}
+			}
+
+			private function initializiationComplete():void
+			{
+				initializeSideMenuButtons();
+				
+				modelLocator.sessionManager.stage = stage;
+				modelLocator.sessionManager.logOutFunction = logOut;
+				modelLocator.sessionManager.timeout = int(modelLocator.configManager.getNumber("system.userIdleTimeout"));
+				
+				LanguageManager.getInstance().setLangueges(modelLocator.configManager.values['availableLanguages']);
+				
+				//jesli wyswietlamy magazyny nie tylko aktualnego oddzialu zaznaczamy pierwszy magazyn naszego oddzialu. 
+				//musi by przed inicjalizacja bocznego menu, żeby w warehouseSelectorze pojawil sie odpowiedni magazyn
+				var branchWarehouses:XMLList = modelLocator.dictionaryManager.dictionaries.warehouses.(branchId.toString() == modelLocator.branchId);
+				if (branchWarehouses.length() > 0) modelLocator.currentWarehouseId = branchWarehouses[0].id.toString();
+				ws.selectedId = modelLocator.currentWarehouseId;
+				
+				modelLocator.kernelServiceUrl = getServiceUrl(Services.getInstance().getWebService("kernelService").wsdl);
+				
+				modelLocator.printServiceUrl = getServiceUrl(modelLocator.configManager.getString("services.printService.address"));
+				
+				MODULES::wms {
+					modelLocator.isWmsEnabled = modelLocator.configManager.getBoolean("warehouse.isWmsEnabled");
+				}
+				
+				modelLocator.isSalesLockEnabled = modelLocator.configManager.getBoolean("salesLock.isSalesLockEnabled");
+				
+				var xml:XML = null;
+				if (modelLocator.configManager.getValue("document.validation.minimalProfitMargin"))
+				{
+					xml = modelLocator.configManager.getXMLValue("document.validation.minimalProfitMargin");
+				}
+				
+				if(xml != null && xml && xml.*.length() > 0)
+				{
+					for each(var x:XML in xml.*)
+					{
+						if(x.@id == ModelLocator.getInstance().branchId)
+						{
+							if(x.@value == "true")
+								ModelLocator.getInstance().minimalProfitMarginValidation = true;
+							else
+								ModelLocator.getInstance().minimalProfitMarginValidation = false;
+								
+							break;
+						}
+					}
+				}
+				else
+					ModelLocator.getInstance().minimalProfitMarginValidation = false;
+
+				modelLocator.applicationObject.mainMenu.menuData = ModelLocator.getInstance().configManager.getXMLValue('menu');
+				
+				modelLocator.challengeCodeLocks = modelLocator.configManager.getBoolean("system.challengeCodeLocks");
+				
+				modelLocator.keyboardShortcutManager.stage = application.stage;
+				
+				var itemsConfig:XML = ModelLocator.getInstance().configManager.getXMLValue('items.lists.items');
+				
+				if(itemsConfig && itemsConfig.defaultPriceName.length() > 0)
+				{
+					var priceId:String = DictionaryManager.getInstance().getIdByName(String(itemsConfig.defaultPriceName.*), "itemPrices");
+					if (priceId) ModelLocator.getInstance().currentItemPriceId = priceId;
+				}
+				
+				modelLocator.systemStartDate = Tools.isoToDate(modelLocator.configManager.getString("system.startDate"));
+				modelLocator.systemCurrencyId = modelLocator.configManager.getString("document.defaults.systemCurrencyId");
+				
+				this.currentState = layoutMode;
+				
+				//if(modelLocator.headquarters==true && this.styleName!="simpleView") this.styleName="defaultHeadquartersView";
+				
+				//if(modelLocator.configManager.getXML("dashboard").panel.length()>0&& modelLocator.permissionManager.getPermissionLevel("dashboard")==PermissionManager.LEVEL_ENABLED)
+					modelLocator.menuManager.showDashboardWindow();// DashboardPanel.showWindow("Twój panel");
+				
+			}
+			
+			public function logOut(message:String = null):void
+			{
+				currentState = EMPTY;
+				settingsBox.removeAllChildren();
+				modelLocator.sessionManager.currentState = SessionManager.NOT_LOGGED_IN;
+				LogInWindow.show(this,message);
+			}
+			
+			private function getServiceUrl(wsdl:String):String
+			{
+				var url:String = "";
+				if (wsdl)
+				{
+					var urls:Array = wsdl.split("?");
+					if (urls.length > 0) wsdl = urls[0];
+					urls = wsdl.split(".svc");
+					if (urls.length > 0) url = urls[0];
+					if (url.length > 0 && url.substr(url.length - 1, 1) != "/") url += "/";
+				}
+				return url;
+			}
+
+		]]>
+	</mx:Script>
+	<mx:states>
+		<mx:State name="normal">
+			<!--
+			<mx:SetProperty target="{embededImage}" name="visible" value="true"/>
+			<mx:SetProperty target="{embededImage}" name="includeInLayout" value="true"/>
+			-->
+			<mx:SetProperty target="{settingsBox}" name="visible" value="true"/>
+			<mx:SetProperty target="{settingsBox}" name="includeInLayout" value="true"/>
+			<mx:SetProperty target="{mainMenu}" name="visible" value="true"/>
+			<mx:SetProperty target="{mainMenu}" name="includeInLayout" value="true"/>
+			<mx:SetProperty target="{mdiCanvas}" name="visible" value="true"/>
+		</mx:State>
+		<mx:State name="fullscreen">
+			<!--
+			<mx:SetProperty target="{embededImage}" name="visible" value="false"/>
+			<mx:SetProperty target="{embededImage}" name="includeInLayout" value="false"/>
+			-->
+			<mx:SetProperty target="{settingsBox}" name="visible" value="false"/>
+			<mx:SetProperty target="{settingsBox}" name="includeInLayout" value="false"/>
+			<mx:SetProperty target="{mainMenu}" name="visible" value="false"/>
+			<mx:SetProperty target="{mainMenu}" name="includeInLayout" value="false"/>
+			<mx:SetProperty target="{mdiCanvas}" name="visible" value="true"/>
+		</mx:State>
+		<mx:State name="empty">
+			<!--
+			<mx:SetProperty target="{embededImage}" name="visible" value="false"/>
+			<mx:SetProperty target="{embededImage}" name="includeInLayout" value="false"/>
+			-->
+			<mx:SetProperty target="{settingsBox}" name="visible" value="false"/>
+			<mx:SetProperty target="{settingsBox}" name="includeInLayout" value="false"/>
+			<mx:SetProperty target="{mainMenu}" name="visible" value="false"/>
+			<mx:SetProperty target="{mainMenu}" name="includeInLayout" value="false"/>
+			<mx:SetProperty target="{mdiCanvas}" name="visible" value="false"/>
+		</mx:State>
+	</mx:states>
+	<!--
+	<mx:Image id="embededImage" source="{DynamicAssetsInjector.currentIconAssetClassRef.logo}" visible="{showMainLogoVisible}" includeInLayout="{showMainLogoVisible}" />
+	-->
+	<!--Wersja z menu dla CRM Pawlik -->
+	<!--<mx:VBox width="100%" height="100%">	
+		<mx:VBox width="100%" paddingTop="15" verticalGap="2" paddingBottom="-10">
+				<inputComponents:CRMSearchComponent paddingLeft="90" visible="{showCRMFakeComponentsVisible}" includeInLayout="{showCRMFakeComponentsVisible}"/>
+				<menu:MainMenu id="mainMenu" width="100%" height="100%" />
+			</mx:VBox>	
+		<mdi:DragCanvas id="mdiCanvas" width="100%" height="100%" childAdd="updateWindowsList()" childRemove="updateWindowsList()"/>
+	</mx:VBox>-->
+	
+<!-- sideMenu z selectorami, kopertkami itp -->
+	<mx:HBox width="100%" horizontalAlign="right" top="2" horizontalGap="-1" id="settingsBox" visible="false" includeInLayout="false">
+		<mx:ComboBox paddingRight="2" visible="true" id="cbLang" change="setLanguage(cbLang.selectedItem.toString())" top="2"  height="20">
+			<mx:dataProvider>{ LanguageManager.getInstance().languagesList}</mx:dataProvider>
+		</mx:ComboBox>
+	</mx:HBox>
+	
+	<!--Wersja z menu dla latest build -->
+	<mx:VBox width="100%" height="100%" paddingTop="2" verticalGap="2">				
+		<menu:MainMenu id="mainMenu" width="100%" visible="false" includeInLayout="false"/>
+		<mdi:DragCanvas id="mdiCanvas" width="100%" height="100%" childAdd="updateWindowsList()" childRemove="updateWindowsList()" visible="false"/>
+		
+	</mx:VBox>
+
+	
+	<mx:XML id="menuXML" source="/xml/menu.xml"/>
+	
+
+	
+
+	<business:Services id="serviceLocator"/>
+</mx:Application>
+<!--
+menu.visibleComponents
+
+<root>
+  <defaultItemPriceSelector>false</defaultItemPriceSelector>
+  <warehouseSelector>false</warehouseSelector>
+  <flashingEnvelopeBtn>false</flashingEnvelopeBtn>
+  <windowsPopUpBtn>false</windowsPopUpBtn>
+</root>
+
+-->

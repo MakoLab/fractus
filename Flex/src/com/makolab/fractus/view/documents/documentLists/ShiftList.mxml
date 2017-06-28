@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:generic="com.makolab.fractus.view.generic.*" 
+	xmlns:documents="com.makolab.fractus.view.documents.*" 
+	xmlns:filters="com.makolab.fractus.view.documents.reports.filters.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.view.ComponentWindow;
+
+			[Bindable]
+			public var searchXml:XML = <param></param>;
+			
+			/*
+			<param>
+				<dateFrom/>
+				<dateTo/>
+				<warehouseId/>
+				<userId/>
+				<itemId/>
+			</param>
+			*/
+			
+			private function search():void
+			{
+				var xml:XML = new XML(this.searchXml);
+				
+				if(xml.filters.column.(@field == "ItemId").length() != 0)
+					xml.appendChild(<itemId>{xml.filters.column.(@field == "ItemId").*}</itemId>);
+					
+				delete xml.filters;
+				
+				this.shiftGrid.data = xml;
+			}
+			
+			public static function showWindow(searchXml:XML = null):ComponentWindow
+			{
+				var editor:ShiftList = new ShiftList();
+				
+				if(searchXml != null) editor.searchXml = searchXml;
+					
+				var window:ComponentWindow = ComponentWindow.showWindow(editor, ComponentWindow.BUTTON_CLOSE, new Rectangle(-1, -1, 700, 600));
+				window.title = LanguageManager.getInstance().labels.title.shifts.list;
+				window.closeFunction = window.hide;
+				return window;	
+			}
+			
+			private function warehouseProvider():Object
+			{		
+				var all:XML = <entry><id/><label/></entry>;
+				all.label.@lang = LanguageManager.getInstance().currentLanguage;
+				all.label.(@lang == LanguageManager.getInstance().currentLanguage).* = LanguageManager.getInstance().labels.common.allF;
+				return all + DictionaryManager.getInstance().dictionaries.warehouses;
+			}
+			
+			private function userProvider():Object
+			{		
+				var all:XML = <entry><id/><label/></entry>;
+				all.label.@lang = LanguageManager.getInstance().currentLanguage;
+				all.label.(@lang == LanguageManager.getInstance().currentLanguage).* = LanguageManager.getInstance().labels.common.allF;
+				return all + DictionaryManager.getInstance().dictionariesXML.users.*;
+			}
+			
+			private function warehouseChange(event:Event):void
+			{
+				if(this.searchXml.warehouseId.length() == 0)
+					this.searchXml.appendChild(<warehouseId/>);
+					
+				if(String(cboxWarehouse.selectedItem.id.*) != "")
+					this.searchXml.warehouseId.* = cboxWarehouse.selectedItem.id.*;
+				else
+					delete this.searchXml.warehouseId;
+			}
+			
+			private function cboxUserChange(event:Event):void
+			{
+				if(this.searchXml.userId.length() == 0)
+					this.searchXml.appendChild(<userId/>);
+					
+				if(String(cboxUser.selectedItem.id.*) != "")
+					this.searchXml.userId.* = cboxUser.selectedItem.id.*;
+				else
+					delete this.searchXml.userId;
+			}
+			
+			private function comboLabelFunction(item:Object):String
+			{
+				return item.label.(@lang == LanguageManager.getInstance().currentLanguage).*; 
+			}
+		]]>
+	</mx:Script>
+	<mx:FormItem label="{LanguageManager.getInstance().labels.common.date}" height="80">
+		<filters:DateFilter 
+			id="dateFilter" 
+			dateFieldsDirection="horizontal" 
+			parameters="{searchXml}"
+			dateFromParameterName="dateFrom"
+			dateToParameterName="dateTo"
+			selectedIndex="0"
+			/>
+	</mx:FormItem>
+	<mx:FormItem label="{LanguageManager.getInstance().labels.common.warehouse}">
+		<mx:ComboBox id="cboxWarehouse" width="100%" labelField="@label" dataProvider="{warehouseProvider()}" change="warehouseChange(event)" labelFunction="comboLabelFunction"/>
+	</mx:FormItem>
+	<mx:FormItem label="{LanguageManager.getInstance().labels.common.user}">
+		<mx:ComboBox id="cboxUser" width="100%" labelField="label" dataProvider="{userProvider()}" change="cboxUserChange(event)"/>
+	</mx:FormItem>
+	<mx:FormItem label="{LanguageManager.getInstance().labels.items.item}">
+		<filters:ItemFilter label="" parameters="{searchXml}" width="100%" />
+	</mx:FormItem>
+	<mx:Button label="{LanguageManager.getInstance().labels.common.search2}" click="search()"/>
+	<documents:ShiftGrid id="shiftGrid" width="100%" height="100%" />
+</mx:Form>

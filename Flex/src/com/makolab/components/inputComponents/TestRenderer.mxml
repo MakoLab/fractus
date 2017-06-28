@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" xmlns:graphics="com.makolab.components.graphics.*">
+	<mx:Style>
+		.header {
+			padding-top: 0;
+			font-size: 14pt;
+			font-weight: bold;
+		}
+		
+		.description {
+			font-size: 12pt;
+			font-weight: normal;
+		}
+
+		.status {
+			font-size: 12pt;
+			font-weight: normal;
+			font-style: italic;
+		}
+
+	</mx:Style>
+	
+	<mx:Box paddingTop="3" paddingLeft="5" width="24">
+		<graphics:AnimatedImage id="imgIcon" source="{iconSource}"/>
+	</mx:Box>
+	
+	<mx:VBox width="100%">
+		<mx:Label id="lblHeader" text="{label}" styleName="header" width="100%"/>
+		<mx:Text id="lblDescription" text="{description}" styleName="description" width="100%" height="{description ? undefined : 0}"/>
+		<mx:Text id="lblStatus" text="{statusText}" styleName="status" width="100%"/>
+	</mx:VBox>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.formatters.SwitchSymbolFormatter;
+			public static const ICON_OK:int = 1;
+			public static var ICON_FAIL:int = 2;
+			public static var ICON_EXECUTING:int = 3;
+			public static var ICON_ERROR:int = 4;
+			
+			[Bindable]
+			private var iconSource:Class;
+			
+			private var _currentIcon:int;
+			[Bindable]
+			public function set currentIcon(value:int):void
+			{
+				_currentIcon = value;
+				switch (_currentIcon)
+				{
+					case ICON_OK: iconSource = iconTestOk; break;
+					case ICON_FAIL: iconSource = iconTestFail; break;
+					case ICON_EXECUTING: iconSource = iconTestExecuting; break;
+					case ICON_ERROR: iconSource = iconError; break;
+				}
+			}
+			public function get currentIcon():int { return _currentIcon; }
+			
+			[Bindable]
+			public var description:String;
+			
+			[Bindable]
+			public var statusText:String;
+			
+			[Bindable]
+			[Embed(source="/assets/images/indicator_snake.gif", mimeType="application/octet-stream")]
+			private var iconTestExecuting:Class;
+
+			[Bindable]
+			[Embed(source="/assets/images/ok.gif")]
+			private var iconTestOk:Class;
+
+			[Bindable]
+			[Embed(source="/assets/images/warning.png")]
+			private var iconTestFail:Class;
+
+			[Bindable]
+			[Embed(source="/assets/images/error.gif")]
+			private var iconError:Class;
+		]]>
+	</mx:Script>
+</mx:HBox>

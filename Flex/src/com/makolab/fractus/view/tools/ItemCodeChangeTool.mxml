@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300" xmlns:layoutComponents="com.makolab.components.layoutComponents.*" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:list="com.makolab.components.list.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:ItemCodeChangeTool = new ItemCodeChangeTool();
+				window.innerComponent = component;
+				window.show(null,ComponentWindow.NORMAL,LanguageManager.getInstance().labels.tools.itemCodeChange.title);
+				window.buttons = ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL;
+				window.commitButton.label = LanguageManager.getInstance().labels.common.change;
+				return window;
+			}
+			
+			
+		]]>
+	</mx:Script>
+	<layoutComponents:TileForm direction="horizontal" width="100%">
+		<mx:FormItem label="{LanguageManager.getInstance().labels.tools.itemCodeChange.pattern}" toolTip="{LanguageManager.getInstance().labels.filedDescription.itemCodeChange.pattern}">
+			<mx:TextInput id="patternField"/>
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.tools.itemCodeChange.position}" toolTip="{LanguageManager.getInstance().labels.filedDescription.itemCodeChange.position}">
+			<mx:TextInput id="positionField" restrict="0-9"/>
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.tools.itemCodeChange.replaceString}" toolTip="{LanguageManager.getInstance().labels.filedDescription.itemCodeChange.replaceString}">
+			<mx:TextInput id="replaceField"/>
+		</mx:FormItem>
+		<mx:Button id="searchButton" label="{LanguageManager.getInstance().labels.common.search}"/>
+	</layoutComponents:TileForm>
+	<mx:DataGrid width="100%" height="100%">
+		<mx:columns>
+			<list:CheckBoxColumn id="selectionColumn" dataField="@selected"/>
+			<mx:DataGridColumn id="codeColumn" dataField="@itemCode" headerText="{LanguageManager.getInstance().labels.common.code}"/>
+			<mx:DataGridColumn id="changedCodeColumn" dataField="@changedItemCode" headerText="{LanguageManager.getInstance().labels.common.codeAfterChange}"/>
+			<mx:DataGridColumn id="itemNameColumn" dataField="@itemName" headerText="{LanguageManager.getInstance().labels.common.shortName}"/>
+		</mx:columns>
+	</mx:DataGrid>
+</mx:VBox>

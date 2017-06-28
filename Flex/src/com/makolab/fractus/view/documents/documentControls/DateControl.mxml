@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem
+		implements="com.makolab.fractus.view.documents.documentControls.IDocumentControl"
+		xmlns="com.makolab.components.inputComponents.*"
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+	>
+	<!--<mx:Label text="{label}" fontFamily="Arial" fontSize="16" id="lblIssueDate" width="140"/>-->
+	
+	<mx:states>
+		<mx:State name="rendererEditor">
+			<mx:SetStyle name="labelStyleName" value="simpleDocumentEditorLabel"/>
+			<mx:SetStyle name="labelWidth" value="120"/>
+			<mx:AddChild>
+				<EditorContainer
+						id="editorContainer"
+						fontSize="16"
+						fontFamily="Arial"
+						change="updateDocumentObject(DateEditor(editorContainer.itemEditorInstance).text)"
+					>
+					<itemRenderer>
+						<mx:Component>
+							<DateRenderer data="{outerDocument.documentObject.xml.*.(localName() == outerDocument.fieldName)}" />
+						</mx:Component>
+					</itemRenderer>
+					<itemEditor>
+						<mx:Component>
+							<DateEditor data="{outerDocument.documentObject.xml.*.(localName() == outerDocument.fieldName)}" />
+						</mx:Component>
+					</itemEditor>
+				</EditorContainer>			
+			</mx:AddChild>
+		</mx:State>
+		<mx:State name="editor">
+			<mx:AddChild>
+				<DateEditor
+						id="dateEditor"
+						data="{documentObject.xml.*.(localName() == fieldName)}"
+						change="updateDocumentObject(dateEditor.text)"
+					/>
+			</mx:AddChild>
+		</mx:State>
+	</mx:states>
+
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			
+			public function updateDocumentObject(value:String):void
+			{
+				documentObject.xml[fieldName] = value;
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_FIELD_CHANGE, fieldName));					
+			}
+			
+			[Bindable]
+			public var fieldName:String;
+			
+			private var _documentObject:DocumentObject;
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void 
+			{ 
+				_documentObject = value;
+				label = documentObject.typeDescriptor.getFieldLabel(fieldName); 
+			}
+			public function get documentObject():DocumentObject { return _documentObject; }
+		]]>
+	</mx:Script>
+</mx:FormItem>

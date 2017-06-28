@@ -1,0 +1,567 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" verticalGap="0" 
+	xmlns:lineList="com.makolab.components.lineList.*" creationComplete="init()" 
+	xmlns:catalogue="com.makolab.components.catalogue.*"
+	xmlns:control="com.makolab.fractus.control.*" 
+	enabled="{Boolean(clipboard)}"
+	xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.lineList.LineMenu;
+			import com.makolab.components.lineList.LineOperation;
+			import com.makolab.components.lineList.LineOperationEvent;
+			import com.makolab.components.util.ComponentExportManager;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.commands.CreateBusinessObjectCommand;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.commands.SaveBusinessObjectCommand;
+			import com.makolab.fractus.commands.SaveConfigurationCommand;
+			import com.makolab.fractus.commands.SearchCommand;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import com.makolab.fractus.commands.items.ItemCreateEquivalentCommand;
+			import com.makolab.fractus.model.ConfigManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.view.documents.MassiveBarcodePrintingWindow;
+			
+			import flash.events.Event;
+			
+			import mx.collections.ICollectionView;
+			import mx.containers.ControlBar;
+			import mx.containers.FormItem;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.controls.Button;
+			import mx.controls.LinkButton;
+			import mx.controls.TextInput;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.core.Application;
+			import mx.core.IFlexDisplayObject;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.events.CollectionEvent;
+			import mx.events.CollectionEventKind;
+			import mx.events.DragEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.DragManager;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			import assets.IconManager;
+			
+			[Bindable]
+			public var itemsType:String = "";
+			[Bindable]
+			public var languageManager:LanguageManager = LanguageManager.getInstance();
+			[Bindable]
+			public var model:ModelLocator = ModelLocator.getInstance();
+			
+			private var savedItemsSets:XML;
+			private var newItemsSetName:String;
+			private var currentItemsSet:XML;
+			private var labelPromptWindow:ComponentWindow;
+			private var loadWindowHandler:ItemsSetSelector;
+			
+			/**
+			 * Wrapper for IconManager.getIcon() (for usage inside mx:Component).
+			*/
+			public function getIcon(name:String):Class
+			{
+				return IconManager.getIcon(name);
+			}
+
+			protected var _clipboard:ClipboardProd;
+			
+			
+			[Bindable]
+			public var employee:XMLList;
+			[Bindable]
+			public function set clipboard(value:ClipboardProd):void
+			{
+				_clipboard = value;
+				
+			}
+			public function get clipboard():ClipboardProd
+			{
+				return _clipboard;
+			}
+			
+			private function init():void
+			{
+				var col:DataGridColumn = new DataGridColumn();
+				var renderer:ClassFactory = new ClassFactory(LineMenu);
+				col.itemRenderer = renderer;
+				col.width = 10;
+				ModelLocator.getInstance().configManager.requestList(["itemsSet.set1"],requestListHandler);
+				
+				
+						var cmd:SearchCommand =	new SearchCommand
+							(
+								SearchCommand.CONTRACTORS,
+								<searchParams>
+  <query/>
+  <pageSize>200</pageSize>
+  <page>1</page>
+  <columns>
+	<column field="code"/>
+	<column field="fullName" sortOrder="1" sortType="ASC" visible="0"/>
+	<column field="shortName" sortOrder="2" sortType="ASC"/>
+</columns>
+									<sqlConditions>
+										<condition>isEmployee = 1</condition>
+									  </sqlConditions>
+
+								</searchParams>
+							);
+						cmd.addEventListener(ResultEvent.RESULT, handleSearchResult);
+						cmd.execute();
+			}
+			
+			protected function handleSearchResult(event:ResultEvent):void
+			{
+				employee = XML(event.result)..*;
+				for(var i:int=0;i<employee.length();i++)
+				{
+					employee[i].@ResponsiblePerson=employee[i].@shortName;
+				}
+
+			}
+			
+			
+			private function requestListHandler():void
+			{
+				savedItemsSets = ModelLocator.getInstance().configManager.getXML("itemsSet.set1");
+			}
+			
+			public function handleOperationInvoke(event:LineOperationEvent):void
+			{
+				clipboard.deleteElement(event.currentTarget.line);
+				grid.refresh();
+			}
+			
+			protected function handleDragEnter(event:DragEvent):void
+			{
+				if(!event.dragSource.hasFormat(itemsType))event.preventDefault();
+			}
+			
+			protected function handleDragOver(event:DragEvent):void
+			{
+				DragManager.showFeedback(DragManager.COPY);
+			}
+			
+			protected function handleDragDrop(event:DragEvent):void
+			{
+				if (!clipboard) return;
+				event.clone();
+				if (event.action == DragManager.COPY)
+				{
+					var items:Array = event.dragSource.dataForFormat(itemsType) as Array;
+					if (items) for (var i:String in items) clipboard.addElement(items[i].itemXML, grid.calculateDropIndex(event),1);
+				}
+				grid.hideDropFeedback(event);
+				event.preventDefault();
+			}
+			
+			protected function handleButtonClick(event:MouseEvent):void
+			{
+				operationsButton.close();
+				if (event.target == equivalentButton)
+				{
+					var params: XML = new XML("<params/>");
+					for each (var x:XML in XMLList(this.grid.dataProvider))	{
+						var xl: XML = new XML("<item/>");
+						xl.@id = x.attribute("id").toString();
+						params.appendChild(xl);	
+					}
+					var cmd:ItemCreateEquivalentCommand = new ItemCreateEquivalentCommand();
+					cmd.execute(params.toXMLString());
+				}
+				else if (event.target == clearButton)
+				{
+					Alert.show(LanguageManager.getInstance().labels.cart.alert, "Czyszczenie koszyka", Alert.YES | Alert.NO, this, handleConfirmDialogClose);
+				}
+				else if (event.target == exportButtonPDF)
+				{
+					ComponentExportManager.getInstance().exportData(clipboard.clipboardXML,"defaultTablePdf","content");
+				}
+				else if (event.target == exportButtonXLS)
+				{
+					ComponentExportManager.getInstance().exportData(clipboard.clipboardXML,"defaultTableXls","file");
+				}
+				else if (event.target == exportButtonCSV)
+				{
+					ComponentExportManager.getInstance().exportData(clipboard.clipboardXML,"defaultTableCsv","file");
+				}
+				else if (event.target == printBarcodes)
+				{
+					var mbpw:MassiveBarcodePrintingWindow = new MassiveBarcodePrintingWindow();
+					mbpw.itemsXML = clipboard.clipboardXML.elements;
+					mbpw.showWindow();
+					
+				}
+				else if(event.target == multiEdit)
+				{
+					
+					
+					var itemWindow:CatalogueEditItemWindow;
+					itemWindow = new CatalogueEditItemWindow();
+					itemWindow.setStyle("headerColors",[IconManager.ITEMS_COLOR,IconManager.ITEMS_COLOR_LIGHT]);
+					itemWindow.width = 700;
+					itemWindow.height = 600;
+					itemWindow.itemsXML = clipboard.clipboardXML.elements;
+					itemWindow.addEventListener("accept", itemWindowEventHandler);
+					itemWindow.addEventListener("cancel", itemWindowEventHandler);
+					ModelLocator.getInstance().configManager.requestList(
+						[
+							'items.forms.clipboarditem'
+						],
+						showItemWindowLater,
+						[itemWindow, null, null, model.getDefaultTemplate("item"), false]
+					);
+				}
+				/*
+				else if (event.target == lnkBtnCreateDocument)
+				{
+					var window:ClipboardCreateNewDocumentWindow = ClipboardCreateNewDocumentWindow.show(ModelLocator.getInstance().applicationObject, clipboard.clipboardXML);
+					window.addEventListener("documentCreated",function ():void{clipboard.clear()});
+				}
+				*/
+				else if (event.target == saveItemsSetButton)
+				{
+					if(savedItemsSets)showSaveDialog();
+				}
+				else if (event.target == loadItemsSetButton)
+				{
+					if(!savedItemsSets)return;
+					loadWindowHandler = (PopUpManager.createPopUp(UIComponent(this.parentApplication),ItemsSetSelector,true) as ItemsSetSelector);
+					PopUpManager.centerPopUp(loadWindowHandler as IFlexDisplayObject);
+					loadWindowHandler.setsList = savedItemsSets.configValue.itemsSets.itemsSet;
+					loadWindowHandler.addEventListener(Event.CHANGE,saveConfiguration);
+					loadWindowHandler.addEventListener("select",loadSet);
+				}
+			}
+			
+			private static function showItemWindowLater(itemWindow:CatalogueEditItemWindow, itemId:String = null, formConfig:XML = null, templateId:String = null,duplicate:Boolean = false):CatalogueEditItemWindow
+			{
+				var model:ModelLocator = ModelLocator.getInstance();
+				
+				if (formConfig == null) formConfig = model.configManager.getXML("items.forms.clipboarditem");
+				itemWindow.formConfig = formConfig;
+				itemWindow.setStyle("headerColors",[IconManager.ITEMS_COLOR,IconManager.ITEMS_COLOR_LIGHT]);
+				itemWindow.title = formConfig.windowTitle;
+				itemWindow.show(model.applicationObject as DisplayObject,duplicate);
+				if (itemId && !duplicate)
+				{
+					var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand();
+					cmd.targetObject = itemWindow;
+					cmd.targetField = "data";
+					cmd.execute( { id : itemId, type : 'Item' } );
+				}
+				else if(itemId && duplicate){
+					var duplicateCmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand();
+					duplicateCmd.targetObject = itemWindow;
+					duplicateCmd.targetField = "data";
+					duplicateCmd.execute( { id : itemId, type : 'Item' } );
+				}
+				else
+				{
+					var createCmd:CreateBusinessObjectCommand = new CreateBusinessObjectCommand('Item');
+					createCmd.targetObject = itemWindow;
+					createCmd.targetField = "data";
+					createCmd.execute( { template : templateId } );
+				}
+				return itemWindow;
+			}
+			private function itemWindowEventHandler(event:CatalogueItemWindowEvent):void
+			{
+				var window:CatalogueEditItemWindow = event.target as CatalogueEditItemWindow;
+				if (event.type == CatalogueItemWindowEvent.ACCEPT)
+				{
+					var itemData:XML = XML(window.dataObject).copy();
+					itemData=postProcessItemData(itemData,window);
+					var clipData:XML = XML(clipboard.clipboardXML).copy();
+					delete clipData.elements.item.@name;
+					delete clipData.elements.item.@quantity;
+					
+					itemData.appendChild(clipData.elements);
+					
+					var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand('item.p_updateItems',itemData);
+					cmd.addEventListener(ResultEvent.RESULT,itemSaveResultHandler);
+					cmd.targetObject = window;
+					cmd.execute();
+					window.hide();
+				}
+				else if (event.type == CatalogueItemWindowEvent.CANCEL)
+				{
+					window.hide();
+				}
+			}
+			private function itemSaveResultHandler(event:ResultEvent):void
+			{
+				
+				trace(event.result);
+			}
+			private static function postProcessItemData(data:XML,window:CatalogueEditItemWindow):XML
+			{
+				var myAttributes:XML=<attributes></attributes>;
+				var myParams:XML=<root></root>
+				var cmp=window.formBuilder.components;
+				var cmpd=window.formBuilder.componentsDes;
+				for(var i:int=0;i<cmp.length;i++)
+				{
+					if(cmp[i].cb.selected==true)
+					{
+						var className:String =cmpd[i].@className;
+						var dataType:String = cmpd[i].@dataType;
+						if(className)
+						{
+							var id:String=cmp[i].cmp.attributes.(name==cmp[i].cmp.attributeName).id;
+							var xml:XMLList=data.*.attributes.attribute.(itemFieldId==id);
+							myAttributes.appendChild( xml);
+						}
+						else
+						{
+							var arr:Array=cmpd[i].@dataSource.split(".");
+							var obj:Object=data;
+							for(var j:int=1;j<arr.length;j++)
+							{
+								obj=obj[arr[j]];	
+							}
+							myParams.appendChild(obj);
+						}
+					}
+				}
+				
+				myParams.appendChild(myAttributes);
+				
+				
+				return myParams;
+			}
+			private function saveConfiguration(event:Event):void
+			{
+				savedItemsSets.configValue.itemsSets.* = loadWindowHandler.setsList;
+				save();
+			}
+			
+			private function loadSet(event:Event):void
+			{
+				var ss:XML = loadWindowHandler.selectedSet.copy();
+				var element:XML = <item/>
+				for each(var item:XML in ss.lines.line){
+					element.@id = item.itemId.toString();
+					element.@quantity = item.quantity.toString();
+					element.@name = item.name.toString();
+					clipboard.addElement(element.copy());
+				}
+			}
+			
+			private function showSaveDialog():void
+			{
+				var formItem:FormItem = new FormItem();
+				formItem.label = languageManager.labels.catalogue.clipboard.setName;
+				formItem.percentWidth = 100;
+				var textInput:TextInput = new TextInput();
+				textInput.percentWidth = 100;
+				textInput.addEventListener(FlexEvent.CREATION_COMPLETE,function (event:Event):void{event.target.setFocus();});
+				formItem.addChild(textInput);
+				var window:ComponentWindow = ComponentWindow.showWindow(formItem,ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL,new Rectangle(-1,-1,300,100),"Zapisz zbiór");
+				formItem.addEventListener(KeyboardEvent.KEY_DOWN,function(event:KeyboardEvent):void{if(event.keyCode == Keyboard.ENTER)window.commitButton.dispatchEvent(new MouseEvent(MouseEvent.CLICK))}); //prowizorka troche ale co zrobic...?
+				labelPromptWindow = window;
+				window.commitFunction = function ():void
+					{
+						newItemsSetName = textInput.text;
+						var labelExist:Boolean = false;
+						for each(var xml:XML in savedItemsSets.configValue.itemsSets.itemsSet){
+							if(newItemsSetName == xml.label.toString()){
+								labelExist = true;
+								break;
+							}
+						}
+						if(labelExist){
+							// hard text
+							Alert.show(languageManager.labels.catalogue.clipboard.savingSetExistsReplace,languageManager.labels.catalogue.clipboard.savingSetOfItems,(Alert.YES | Alert.NO),null,saveItemsSet);
+						}else{
+							labelPromptWindow.hide();
+							labelPromptWindow = null;
+							executeSaveCommand();
+						}
+					};
+			}
+			
+			private function saveItemsSet(event:CloseEvent):void
+			{
+				switch(event.detail){
+					case Alert.YES:
+						executeSaveCommand();
+						labelPromptWindow.hide();
+						labelPromptWindow = null;
+						break;
+				}
+			}
+			
+			private function executeSaveCommand():void
+			{
+				currentItemsSet = <itemsSet><label/><lines/></itemsSet>;
+				for(var i:int = 0; i < clipboard.elementCount; i++){
+					var line:XML = <line><name>{clipboard.elements[i].@name}</name><itemId>{clipboard.elements[i].@id}</itemId><quantity>{clipboard.elements[i].@quantity}</quantity></line>;
+					currentItemsSet.lines.appendChild(line);
+				}
+				currentItemsSet.label = newItemsSetName;
+				var sameLabelSets:XMLList = savedItemsSets.configValue.itemsSets.itemsSet.(label.toString() == newItemsSetName);
+				if(sameLabelSets.length() > 0)sameLabelSets[0] = currentItemsSet;
+				else savedItemsSets.configValue.itemsSets[0].appendChild(currentItemsSet);
+				save();
+			}
+			
+			private function save():void
+			{
+				var cmd:SaveConfigurationCommand = new SaveConfigurationCommand();
+				cmd.addEventListener(ResultEvent.RESULT, handleItemsSetSaveResult);
+				cmd.execute( { requestXml : savedItemsSets } );
+			}
+			
+			private function handleItemsSetSaveResult(event:ResultEvent):void
+			{
+				ModelLocator.getInstance().configManager.requestList(["itemsSet.set1"],requestListHandler,null,true);
+			}
+			
+			protected function handleConfirmDialogClose(event:CloseEvent):void
+			{
+				if (event.detail == Alert.YES && clipboard) clipboard.clear();
+			}
+			
+			protected function createDocument(data:Object):void
+			{
+				var templateId:String = data.@id;
+				var documentTypeId:String = data.@documentTypeId;
+				var cmd:ShowDocumentEditorCommand = new ShowDocumentEditorCommand(new DocumentTypeDescriptor(documentTypeId).categoryNumber);
+				cmd.template = templateId;
+				delete this.clipboard.clipboardXML.elements.item.*;
+				cmd.source = <source type="clipboard"><clipboard>{this.clipboard.clipboardXML.elements.item}</clipboard></source>;
+				//cmd.addEventListener(ResultEvent.RESULT, loadDocumentResult);
+				cmd.execute();
+				clipboard.clear();
+			}
+			
+			protected function getDocumentTemplates():XMLList
+			{
+				var result:XMLList = new XMLList();
+				//permission hard coded
+				if (model.permissionManager.isEnabled("service.add")) result += model.serviceDocumentTemplates;
+				if (model.permissionManager.isEnabled("sales.add")) result += model.salesDocumentTemplates;
+				if (model.permissionManager.isEnabled("purchase.add")) result += model.purchaseDocumentTemplates;
+				if (model.permissionManager.isEnabled("warehouse.add")) result += model.warehouseDocumentTemplates;
+				if (model.permissionManager.isEnabled("warehouse.warehouseOrders.add")) result += model.orderDocumentTemplates;
+				return result;
+			}
+			
+			
+			private function lFun(o:Object,o1:DataGridColumn):String{
+				return o.@ResponsiblePerson;
+			};
+		]]>
+	</mx:Script>
+	
+	<mx:HBox width="100%" verticalAlign="middle" horizontalGap="2">
+		<mx:Label text="{languageManager.labels.items.createDocumentFromClipboard}"/>
+		<inputComponents:LastItemDropdown
+			id="newDocumentDropdown"
+			width="100%"
+			dataProvider="{this.clipboard.documentTemplates}"
+			labelField="@label"
+			itemClick="createDocument(newDocumentDropdown.selectedItem)"
+			enabled="{this.clipboard.elementCount > 0}"
+			/>
+	</mx:HBox>
+	<lineList:ConfigurableGrid
+			id="grid"
+			width="100%"
+			height="100%"
+			itemRoot="items"
+			headerNode="columns"
+			useTagName="false"
+			columnDataField="@field"
+			columnHeaderField="@label"
+			dropEnabled="{model.permissionManager.isEnabled('catalogue.items.addToClipboard')}"
+			columnConfig="{clipboard.clipboardXML.columns.*}"
+			dataProvider="{clipboard.elements}"
+			dragEnter="handleDragEnter(event)"
+			dragOver="handleDragOver(event)"
+			dragDrop="handleDragDrop(event)"
+			editable="true"
+		>
+		<lineList:customColumns>
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.employee}" labelFunction="{lFun}" width="200" headerWordWrap="true" editorUsesEnterKey="true" editorDataField="data">
+				<mx:itemEditor>
+					<mx:Component>
+						<inputComponents:DictionarySelector labelFunction="{lFun1}"  dataProvider="{outerDocument.employee}"  labelField="@ResponsiblePerson" change="dictionaryselector1_changeHandler(event,data)">
+							<mx:Script>
+								<![CDATA[
+									import mx.events.FlexEvent;
+									private function lFun1(o:Object):String{
+										return o.@ResponsiblePerson;;
+									}
+									protected function dictionaryselector1_changeHandler(event:Event,data:Object):void
+									{
+										// TODO Auto-generated method stub
+										event.preventDefault();
+										data.@ResponsiblePerson=this.selectedItem.@ResponsiblePerson;
+									
+									}
+									
+									
+								]]>
+							</mx:Script>
+						</inputComponents:DictionarySelector>
+						
+					</mx:Component>
+				</mx:itemEditor>
+			
+			</mx:DataGridColumn>
+			<mx:DataGridColumn editable="false">
+				<mx:itemRenderer>
+					<mx:Component>
+						<lineList:LineMenu>
+							<lineList:operations>
+								<lineList:LineOperation icon="{outerDocument.getIcon('delete_small')}"  label="{outerDocument.languageManager.labels.common.deleteAll}" operationInvoke="outerDocument.handleOperationInvoke(event)"/>
+							</lineList:operations>
+						</lineList:LineMenu>
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+		</lineList:customColumns>
+	</lineList:ConfigurableGrid>
+	<mx:HBox width="100%" horizontalGap="0">
+		<mx:Label text="{LanguageManager.getInstance().labels.common.lines}:"/>
+		<mx:Label text="{clipboard.elementCount}"/>
+		<mx:Label text="{LanguageManager.getInstance().labels.common.amount}:" visible="{clipboard.quantities}"/>
+		<mx:Label text="{clipboard.totalQuantity}" visible="{clipboard.quantities}"/>
+		<!-- //permission hard coded -->
+		<mx:PopUpButton id="operationsButton" label="{LanguageManager.getInstance().labels.lists.operationsTitle}" 
+			openAlways="true"
+			visible="{model.permissionManager.isVisible('catalogue.items.addToClipboard')}"
+			enabled="{model.permissionManager.isEnabled('catalogue.items.addToClipboard')}"
+			width="100%"
+			>
+			<mx:popUp>
+				<mx:VBox backgroundColor="#ffffff" backgroundAlpha="0.8" >
+					<!--<mx:LinkButton id="lnkBtnCreateDocument" enabled="{clipboard.elementCount > 0}" useHandCursor="{lnkBtnCreateDocument.enabled}" label="{LanguageManager.getInstance().labels.cart.issueDocument}" textAlign="left" width="100%" icon="{getIcon('toDocument_small')}" click="handleButtonClick(event)"/>-->
+					<mx:LinkButton id="clearButton" enabled="{clipboard.elementCount > 0}" useHandCursor="{clearButton.enabled}" label="{LanguageManager.getInstance().labels.cart.clear}" textAlign="left" width="100%" icon="{getIcon('delete_small')}" click="handleButtonClick(event)"/>
+					<mx:LinkButton id="equivalentButton" enabled="{clipboard.elementCount > 0}" useHandCursor="{equivalentButton.enabled}" label="{LanguageManager.getInstance().labels.cart.createEquivalent}" textAlign="left" width="100%" icon="{getIcon('duplicate_small')}" click="handleButtonClick(event)"/>
+					<mx:LinkButton id="exportButtonPDF" enabled="{clipboard.elementCount > 0}" useHandCursor="{exportButtonPDF.enabled}" label="{LanguageManager.getInstance().labels.cart.exportPDF}" textAlign="left" width="100%" icon="{getIcon('export_small')}" click="handleButtonClick(event)"/>
+					<mx:LinkButton id="exportButtonXLS" enabled="{clipboard.elementCount > 0}" useHandCursor="{exportButtonXLS.enabled}" label="{LanguageManager.getInstance().labels.cart.exportXSL}" textAlign="left" width="100%" icon="{getIcon('export_small')}" click="handleButtonClick(event)"/>				
+					<mx:LinkButton id="exportButtonCSV" enabled="{clipboard.elementCount > 0}" useHandCursor="{exportButtonCSV.enabled}" label="{LanguageManager.getInstance().labels.cart.exportCVS}" textAlign="left" width="100%" icon="{getIcon('export_small')}" click="handleButtonClick(event)"/>
+					<mx:LinkButton id="saveItemsSetButton" enabled="{clipboard.elementCount > 0}" useHandCursor="{saveItemsSetButton.enabled}" label="{LanguageManager.getInstance().labels.cart.saveItemsSet}" textAlign="left" width="100%" icon="{getIcon('export_small')}" click="handleButtonClick(event)"/>
+					<mx:LinkButton id="loadItemsSetButton" useHandCursor="true" label="{LanguageManager.getInstance().labels.cart.loadItemsSet}" textAlign="left" width="100%" icon="{getIcon('export_small')}" click="handleButtonClick(event)"/>
+					<mx:LinkButton id="printBarcodes" enabled="{clipboard.elementCount > 0}" useHandCursor="{exportButtonXLS.enabled}" label="{LanguageManager.getInstance().labels.documents.printBarcodeLabels}" textAlign="left" width="100%" icon="{getIcon('barcode_label_small')}" click="handleButtonClick(event)"/>				
+					<mx:LinkButton id="multiEdit" useHandCursor="true" label="{LanguageManager.getInstance().labels.cart.edit}" textAlign="left" width="100%" icon="{getIcon('edit_small')}" click="handleButtonClick(event)"/>
+					
+				</mx:VBox>
+			</mx:popUp>
+		</mx:PopUpButton>
+	</mx:HBox>
+</mx:VBox>

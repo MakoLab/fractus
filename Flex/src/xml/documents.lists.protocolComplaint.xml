@@ -1,0 +1,37 @@
+<config title="{LanguageManager.getInstance().labels.complaint.protocolDocumentList}">
+				<headerColor>COMPLAINT_COLOR</headerColor>
+				<headerColorLight>COMPLAINT_COLOR_LIGHT</headerColorLight>
+				<objectType>ComplaintDocument</objectType>
+				<alwaysShowOperationsPanel>true</alwaysShowOperationsPanel>
+				<!--<exportProfile>defaultCommercialDocumentXml</exportProfile>-->
+				<showClipboard>true</showClipboard>
+				<columns>
+					<column field="@status" dataType="documentStatus" width="25"/>
+					<column field="@documentTypeId" labelKey="documents.type" dataType="documentType" width="70"/>
+					<column field="@fullNumber" labelKey="documents.documentNumber"/>
+					<column field="@issueDate" labelKey="documents.issueDate" dataType="date" sortable="false"/> 
+					<column field="@contractor" labelKey="contractors.contractor"/>
+				</columns>
+				<getItemDataParams>
+					<type>Document</type>
+					<id/>
+				</getItemDataParams>
+				<filterField>@fullNumber</filterField>
+				<searchParams type="ComplaintDocument">
+					<pageSize>200</pageSize>
+					<page>1</page>
+					<columns>
+						<column field="status" column="status"/>
+						<column field="documentTypeId" column="documentTypeId"/>
+						<column field="fullNumber" sortOrder="1" sortType="DESC"/>
+						<column field="issueDate"/>
+						<column field="contractor" column="fullName" relatedObject="contractor"/>
+					</columns>
+				</searchParams>
+				<filters>
+				  	<filter label="" type="dateFilter"/>
+				  	<filter label="Numer dokumentu" labelKey="documents.documentNumber" type="docNumberFilter" disableFilterType="dateFilter"/>
+				  	<filter label="Status dokumentu" type="docStatusFilter"/>
+				  	<!--filter label="Ustawienia numerowania" type="docNumSettingsFilter"/-->
+				</filters>
+			</config>

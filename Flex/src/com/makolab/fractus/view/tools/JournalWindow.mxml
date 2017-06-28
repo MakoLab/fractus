@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	width="600" height="300" 
+	paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10"
+	xmlns:layoutComponents="com.makolab.components.layoutComponents.*" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	xmlns:list="com.makolab.components.list.*"
+	xmlns:filters="com.makolab.fractus.view.documents.reports.filters.*"
+	initialize="init()">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			public var model:ModelLocator = ModelLocator.getInstance();
+			
+			private function init():void {
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("journal.p_getJournalActions",<param></param>);
+				cmd.addEventListener(ResultEvent.RESULT, handleJournalActionsResult);
+				cmd.execute();
+			}
+			
+			private function handleJournalActionsResult(event:ResultEvent):void {				
+				var result:XML = XML(event.result);
+	 			result.prependChild('<entry><id></id><name></name></entry>');
+	 			actionComboBox.dataProvider = result.*;
+	 			
+	 			userComboBox.dataProvider = XMLList('<entry><id></id><name></name></entry>'+model.dictionaryManager.dictionaries.users);
+			}
+			
+			public static function showWindow():ComponentWindow	{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:JournalWindow = new JournalWindow();
+				window.innerComponent = component;
+				window.show(null,ComponentWindow.NORMAL,LanguageManager.getInstance().labels.tools.journal);
+				window.buttons = ComponentWindow.BUTTON_CANCEL;
+				return window;
+			}
+			
+			private function searchJournal():void {
+				var fromDate:String = '';
+				var toDate:String = '';
+				
+				if(dF.dateFrom) {
+					fromDate = dF.dateFrom.fullYear+"-"+(dF.dateFrom.month+1)+"-"+dF.dateFrom.date;
+				}
+				if(dF.dateTo) {
+					toDate = dF.dateTo.fullYear+"-"+(dF.dateTo.month+1)+"-"+dF.dateTo.date;
+				}
+				
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("journal.p_getJournalEntries",XML('<root><searchParam fromDate="'+fromDate+'"/><searchParam toDate="'+toDate+'"/><searchParam applicationUserId="'+userComboBox.selectedItem.id+'"/><searchParam journalActionId="'+actionComboBox.selectedItem.id+'"/></root>'));
+				cmd.addEventListener(ResultEvent.RESULT, handleJournalEntriesResult);
+				cmd.execute();
+			}
+			
+			private function handleJournalEntriesResult(event:ResultEvent):void	{				
+				var result:XMLList = XML(event.result).*;
+	 			grid.dataProvider = result;
+			}
+			
+			private function dateLabel(item:Object, column:DataGridColumn):String {
+                return String(String(item.date).replace("T", "  ")).substring(0,20);
+            }
+            
+            private function userNamePlusLogin(item:Object):String {
+            	return (item.shortName != undefined) ? item.shortName + " - " + item.login : '';
+            }
+		]]>
+	</mx:Script>
+	
+	<mx:HBox width="100%" horizontalGap="30" verticalAlign="bottom">
+		<filters:DateFilter id="dF" label="{LanguageManager.getInstance().labels.common.dateRange}" width="220"/>
+		<mx:Form paddingBottom="0" paddingTop="0">
+			<mx:FormItem label="Action">
+				<mx:ComboBox id="actionComboBox" labelField="name" width="200" />
+			</mx:FormItem>
+			<mx:FormItem label="{LanguageManager.getInstance().labels.common.login}">
+				<mx:ComboBox id="userComboBox" labelFunction="userNamePlusLogin" width="200" />
+			</mx:FormItem>
+			<mx:FormItem horizontalAlign="right" width="100%">
+				<mx:HBox width="100%" horizontalAlign="right">
+					<mx:Button label="{LanguageManager.getInstance().labels.common.search}" click="searchJournal()" />
+				</mx:HBox>
+			</mx:FormItem>
+		</mx:Form>
+	</mx:HBox>
+	
+	<mx:DataGrid id="grid" width="100%" height="100%">
+		<mx:columns>
+			<mx:DataGridColumn id="nameColumn" dataField="name" headerText="Action"/>
+			<mx:DataGridColumn id="loginColumn" dataField="login" headerText="{LanguageManager.getInstance().labels.common.login}"/>
+			<mx:DataGridColumn id="dateColumn" dataField="date" labelFunction="dateLabel" headerText="{LanguageManager.getInstance().labels.common.date}"/>
+		</mx:columns>
+	</mx:DataGrid>
+</mx:VBox>

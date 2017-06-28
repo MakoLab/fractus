@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DocumentLineSingleAttributeComponent xmlns="com.makolab.fractus.view.documents.documentControls.*" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:generic="com.makolab.fractus.view.generic.*"
+		width="400"
+	>
+	<generic:GenericEditor
+			id="editor"
+			dictionaryName="{attributeEntry.metadata.dictionaryName}"
+			dataSubType="{attributeEntry.metadata.dataSubType?attributeEntry.metadata.dataSubType:''}"
+			dataType="{editor.dictionaryName ? GenericEditor.DICTIONARY : attributeEntry.metadata.dataType}"
+			regExp="{attributeEntry.metadata.regExp}"
+			values="{attributeEntry.metadata.values.value}"
+			dataSetName="{attributeEntry.metadata.dataSetName}"
+			dataObject="{(BusinessObjectAttribute(this.documentLine.getAttributeByName(this.attributeName))).value}"
+			change="editorChanged = true"
+			focusIn="editorChanged = false"
+			focusOut="handleEditorFocusOut(event)"
+			width="100%"
+		/>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.document.BusinessObjectAttribute;
+			import com.makolab.components.document.DocumentEvent;
+			private var editorChanged:Boolean;
+			
+			/**
+			 * Update attribute value and dispatch documentAttributeChange event if the value has been changed. 
+			 */
+			private function handleEditorFocusOut(event:FocusEvent):void
+			{
+				/*if (editorChanged)
+				{
+					(BusinessObjectAttribute(this.documentLine.getAttributeByName(this.attributeName))).value = editor.dataObject;					
+				}*/
+			}
+		]]>
+	</mx:Script>
+</DocumentLineSingleAttributeComponent>

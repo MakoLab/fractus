@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Accordion xmlns="catalogue.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300" change="selectedChild.width = contentWidth; selectedChild.height = contentHeight">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+		]]>
+	</mx:Script>
+	<mx:XMLList id="infoDataProvider">
+		<item labelKey="common.shortName" label="Nazwa" value="{data.towar.nazwa}"/>
+		<item label="Nazwa fiskalna" value="{data.towar.nazwa_fiskalna}"/>
+		<item labelKey="common.code" label="Kod" value="{data.towar.kod}"/>
+		<item label="Kod producenta" value="{data.towar.kod_producenta}"/>
+		<item label="Kod EAN" value="{data.towar.kod_paskowy}"/>
+		<item labelKey="common.fcode" label="fKod" value="{data.towar.kod_mega}"/>
+	</mx:XMLList>
+	<mx:Canvas id="pp" label="Parametry" width="100%" height="100%">
+		<mx:DataGrid top="0" left="0" right="0" bottom="0" dataProvider="{infoDataProvider}">
+			<mx:columns>
+				<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.attribute')}" dataField="@label" fontWeight="bold" textAlign="right" width="120"/>
+				<mx:DataGridColumn headerText="{LanguageManager.getLabel('documents.value')}" dataField="@value"/>
+			</mx:columns>
+		</mx:DataGrid>
+	</mx:Canvas>
+	<mx:Canvas label="{LanguageManager.getLabel('common.warehouse')}" width="100%" height="100%">
+		<mx:DataGrid dataProvider="{data.towar.magazyny.magazyn}" width="100%" height="100%">
+			<mx:columns>
+				<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.warehouse')}" dataField="nazwa"/>
+				<mx:DataGridColumn headerText="{LanguageManager.getLabel('items.availableShort')}" dataField="dostepne" textAlign="right"/>
+				<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.quantity')}" dataField="ilosc" textAlign="right"/>
+				<mx:DataGridColumn headerText="{LanguageManager.getLabel('items.reservedShort')}" dataField="iloscRez" textAlign="right"/>
+				<mx:DataGridColumn headerText="{LanguageManager.getLabel('shortcut.ocz')}" dataField="ostatniaCz" textAlign="right"/>
+			</mx:columns>
+		</mx:DataGrid>
+	</mx:Canvas>
+	<mx:Canvas id="pricePanel" label="Ceny" width="100%" height="100%">
+		<mx:DataGrid dataProvider="{data.towar.ceny.cena}" top="0" left="0" right="0" bottom="0">
+			<mx:columns>
+				<mx:DataGridColumn headerText="Nazwa" dataField="nazwa" width="130"/>
+				<mx:DataGridColumn headerText="{LanguageManager.getLabel('documents.value')}" dataField="value" textAlign="right"/>
+				<mx:DataGridColumn headerText="Waluta" dataField="symbol" textAlign="left"/>
+			</mx:columns>
+		</mx:DataGrid>
+	</mx:Canvas>
+	<mx:Canvas label="XML">
+		<mx:Text text="{data.toXMLString()}"/>
+	</mx:Canvas>
+</mx:Accordion>

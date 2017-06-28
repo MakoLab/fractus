@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<exceptions>
+  <exception id="UNHANDLED_EXCEPTION">
+    <customMessage lang="pl">Wystąpił nieprzewidziany błąd.</customMessage>
+    <extendedCustomMessage lang="pl">
+      Podczas przetwarzania zapytania wystąpił nieobsłużony wyjątek po stronie serwera. Szczegółowe informacje znajdują się w systemowym rejestrze błędów. Skontaktuj się z działem wsparcia technicznego.
+    </extendedCustomMessage>
+    <message>oryginalny message z wyjatku</message>
+    <className>klasa wyjatku</className>
+    <serverVersion>wersja biblioteki</serverVersion>
+  </exception>
+  <exception id="SIMPLE_EXCEPTION">
+    <customMessage lang="pl" >Wystąpił błąd wydruku.</customMessage>
+    <extendedCustomMessage lang="pl" />
+  </exception>  
+</exceptions>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:PopUpButton
+		xmlns="*"
+		xmlns:mx="http://www.adobe.com/2006/mxml" 
+		arrowButtonWidth="20"
+		paddingLeft="0"
+		paddingRight="0"
+		width="20"
+		height="20"
+		>
+	<mx:Metadata>
+		[Event(name="itemClick", type="mx.events.ListEvent")]
+	</mx:Metadata>
+	<mx:popUp>
+		<mx:List
+				id="list"
+				dataProvider="{dataProvider}"
+				iconField="{iconField}"
+				labelField="{labelField}"
+				iconFunction="{iconFunction}"
+				labelFunction="{labelFunction}"
+				rowCount="{popUp ? List(popUp).dataProvider.length : NaN}"
+				selectable="true"
+				focusEnabled="false"
+				itemClick="itemClickHandler(event)"
+				fontWeight="normal"
+				textAlign="left"
+			/>
+	</mx:popUp>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.List;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.PermissionManager;
+			import mx.controls.Menu;
+			import mx.events.ListEvent;
+
+			public var _dataProvider:Object;
+			/**
+			 * DataProvider for the List dropdown.
+			 */
+			[Bindable]
+			public function set dataProvider(value:Object):void
+			{
+				var operations:XMLList = new XMLList();
+				for each (var element:XML in value)
+				{
+					var permissionKey:String;
+					if (element.@permissionKey.length() > 0) permissionKey = element.@permissionKey;
+					if (element.permissionKey.length() > 0) permissionKey = element.permissionKey.toString();
+					if ((permissionKey && ModelLocator.getInstance().permissionManager.isEnabled(permissionKey) && ModelLocator.getInstance().permissionManager.isVisible(permissionKey)) || !permissionKey)
+						operations = operations + element;
+				}
+				_dataProvider = operations;
+				//menu = Menu.createMenu(this,_dataProvider,false);
+				//menu.labelField = "@label";
+				//this.popUp = menu;
+			}
+			public function get dataProvider():Object
+			{
+				return _dataProvider;
+			}
+
+			/**
+			 * IconField for the List dropdown.
+			 */
+			[Bindable]
+			public var iconField:String = null;
+			
+			/**
+			 * IconFunction for the List dropdown.
+			 */			
+			[Bindable]
+			public var iconFunction:Function = null;
+			
+			/**
+			 * LabelField for the List dropdown.
+			 */
+			[Bindable]
+			public var labelField:String = null;
+			
+			/**
+			 * LabelFunction for the List dropdown.
+			 */
+			[Bindable]
+			public var labelFunction:Function = null;
+			
+			//private var menu:Menu;
+			
+			protected function itemClickHandler(event:ListEvent):void
+			{
+				dispatchEvent(event);
+				List(popUp).selectedItem = null;
+			}
+		]]>
+	</mx:Script>
+</mx:PopUpButton>

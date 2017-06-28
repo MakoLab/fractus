@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DocumentSingleAttributeComponent xmlns="com.makolab.fractus.view.documents.documentControls.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.events.ListEvent;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			protected function updateAttributeValue():void
+			{
+				attribute.value = ta.text;
+				dispatchChangeEvent();
+			}
+			
+			private function listItemClick(event:ListEvent):void
+			{
+				var s:String = ta.text;
+				var content:String = null;
+				var contractor:XML = documentObject.xml.contractor.contractor.length() > 0 ? documentObject.xml.contractor.contractor[0] : null;
+				switch (event.itemRenderer.data.name)
+				{
+					case 'contractorName':
+						content = Tools.trim(contractor.fullName);
+						break;
+					case 'contractorAddress':
+						if (contractor)
+						{
+							var addressId:String = documentObject.xml.contractor.addressId;
+							var address:XMLList = contractor.addresses.address.(id == addressId);
+							content =
+								Tools.trim(address.address) + "\n" +
+								address.postCode + " " + address.city;
+						}
+						break;
+				} 
+				if (s) s += "\n";
+				s += content;
+				ta.text = s;
+				updateAttributeValue();
+			}
+			
+			protected function get contentDp():Array
+			{
+				return [
+					{ name : 'contractorName', label : LanguageManager.getLabel('documents.contractorData') },
+					{ name : 'contractorAddress', label : LanguageManager.getLabel('documents.contractorAddress') }
+				];
+			} 
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%">
+		<mx:PopUpButton 
+				id="insertButton" 
+				label="Wstaw..." 
+				width="100" 
+				openAlways="true"
+			>
+			<mx:popUp>
+				<mx:List 
+					id="contentList" 
+					dataProvider="{contentDp}"
+					itemClick="listItemClick(event)"
+					textAlign="left"
+					rowCount="{contentList.dataProvider.length}"
+					/>
+			</mx:popUp>
+		</mx:PopUpButton>
+		<mx:TextArea id="ta" width="100%" height="150" text="{attribute.value}" focusOut="{updateAttributeValue()}"/>
+	</mx:VBox>
+</DocumentSingleAttributeComponent>

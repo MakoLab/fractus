@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectRoot>
+<url value="http://svn_serv/RemoteInterface/RemoteInterface.svc?wsdl">
+<service name="RemoteInterfaceService">
+<port name="BasicHttpBinding_IRemoteInterfaceService">
+<operations>
+<operation name="GetComment(parameters: GetComment): GetCommentResponse"/>
+<operation name="SetComment(parameters: SetComment): SetCommentResponse"/>
+<operation name="GetChangeList(parameters: GetChangeList): GetChangeListResponse"/>
+<operation name="SetChange(parameters: SetChange): SetChangeResponse"/>
+</operations>
+</port>
+</service>
+<asPackage absPath="C:\Users\wiktor.jagusiak\Documents\Flex Builder 3\Fractus2\src\com\makolab\fractus\remoteInterface" name="com.makolab.fractus.remoteInterface">
+<mainAsClass name="RemoteInterfaceService.as"/>
+<otherAsClass name="Char.as"/>
+<otherAsClass name="GetChangeList_request.as"/>
+<otherAsClass name="Duration0.as"/>
+<otherAsClass name="UnsignedByte.as"/>
+<otherAsClass name="Long.as"/>
+<otherAsClass name="Decimal.as"/>
+<otherAsClass name="DateTime.as"/>
+<otherAsClass name="Boolean.as"/>
+<otherAsClass name="GetComment_request.as"/>
+<otherAsClass name="Byte.as"/>
+<otherAsClass name="SetComment_request.as"/>
+<otherAsClass name="Float.as"/>
+<otherAsClass name="IRemoteInterfaceService.as"/>
+<otherAsClass name="QName0.as"/>
+<otherAsClass name="UnsignedLong.as"/>
+<otherAsClass name="Int.as"/>
+<otherAsClass name="AnyType.as"/>
+<otherAsClass name="Short.as"/>
+<otherAsClass name="Base64Binary.as"/>
+<otherAsClass name="UnsignedInt.as"/>
+<otherAsClass name="SetCommentResultEvent.as"/>
+<otherAsClass name="GetChangeListResultEvent.as"/>
+<otherAsClass name="SetChangeResultEvent.as"/>
+<otherAsClass name="AnyURI.as"/>
+<otherAsClass name="Char0.as"/>
+<otherAsClass name="Guid.as"/>
+<otherAsClass name="SetChange_request.as"/>
+<otherAsClass name="String.as"/>
+<otherAsClass name="Guid0.as"/>
+<otherAsClass name="BaseRemoteInterfaceServiceSchema.as"/>
+<otherAsClass name="UnsignedShort.as"/>
+<otherAsClass name="BaseRemoteInterfaceService.as"/>
+<otherAsClass name="GetCommentResultEvent.as"/>
+<otherAsClass name="Duration.as"/>
+<otherAsClass name="Double.as"/>
+</asPackage>
+</url>
+</projectRoot>

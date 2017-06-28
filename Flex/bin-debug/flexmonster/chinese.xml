@@ -1,0 +1,58 @@
+﻿<config>
+	<dataSource type="CSV">
+		<filename>data/chinese.csv</filename>
+	</dataSource>
+	<defaultSlice name="Default Report">
+		<axes>
+			<axis name="rows">
+				<hierarchy>
+					<dimensionName>[种类]</dimensionName>
+					<hierarchyName>[种类].[种类]</hierarchyName>
+				</hierarchy>
+				<hierarchy>
+					<dimensionName>[Measures]</dimensionName>
+					<hierarchyName>[Measures]</hierarchyName>
+				</hierarchy>
+			</axis>
+			<axis name="columns">
+				<hierarchy>
+					<dimensionName>[目标]</dimensionName>
+					<hierarchyName>[目标].[目标]</hierarchyName>
+				</hierarchy>
+			</axis>
+		</axes>
+		<measures>
+			<measure aggregation="Count">[Measures].[折扣]</measure>
+			<measure>[Measures].[价格]</measure>
+		</measures>
+	</defaultSlice>
+	
+	<style source="styles/skin.css"/>
+
+	<params>
+		<param name="configuratorActive">on</param>
+		<param name="configuratorButton">off</param>
+		<param name="viewType">grid</param>
+		<param name="chartType">line</param>
+		<param name="showChartZeroValues">off</param>
+		<param name="showHeaders">on</param>
+		<param name="fitGridlines">off</param>
+		<param name="showTotals">on</param>
+		<param name="showGrandTotals">on</param>
+		<param name="expandAll">on</param>
+		<param name="saveReportURL"><![CDATA[http://localhost/flex_demos/save.php]]></param>
+		<param name="localSettingsURL">local.chinese.xml</param>
+		<param name="exportHTMLTemplateURL">styles/misc/export.html</param>
+		<param name="emptyDataWarning">off</param>
+	</params>
+	
+ 	<format type="number">
+		<param name="thousandsSeparator"><![CDATA[ ]]></param>
+		<param name="decimalSeparator"><![CDATA[.]]></param>
+		<param name="decimalPlaces">-1</param> <!-- by default is -1. -1 means no formatting -->
+		<param name="maxSymbols">12</param> <!-- max number of symbols in cell. by default is 10. -->
+		<param name="maxDecimalPlaces">2</param>
+		<param name="currencySymbol"></param> <!-- if you want format numbers as currency -->
+		<param name="currencySymbolAlign">left</param> <!-- left or right / by default is left -->
+	</format>	
+</config>

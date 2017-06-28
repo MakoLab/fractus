@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="vertical"
+	width="600"
+	height="500"
+	showCloseButton="true"
+	close="ImageSelector.hide()"
+	>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.GetFileDescriptorsCommand;
+			import mx.managers.PopUpManager;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			private static var instance:ImageSelector;
+			
+			public var targetObject:Object;
+			public var targetField:String;
+			
+			/**
+			 * XML in the following format:
+			 *  <root>
+				 <fileDescriptor id=".." originalFilename=".." />
+				 <fileDescriptor id=".." originalFilename=".." />
+				</root>
+			 */
+			[Bindable]
+			private var dataProvider:XML;
+			
+			private var fileRef:FileReference;
+			
+			public static function show(parent:DisplayObject, targetObject:Object = null, targetField:String = null):ImageSelector
+			{
+				if (!ImageSelector.instance)
+					ImageSelector.instance = new ImageSelector();
+				
+				var cmd:GetFileDescriptorsCommand = new GetFileDescriptorsCommand();
+				cmd.addEventListener(ResultEvent.RESULT, ImageSelector.instance.handleGetFileDescriptorsCommand);
+				cmd.execute({});
+				
+				if (!ImageSelector.instance.targetObject)
+					ImageSelector.instance.targetObject = targetObject;
+					
+				if (!ImageSelector.instance.targetField)
+					ImageSelector.instance.targetField = targetField;
+				
+				PopUpManager.addPopUp(ImageSelector.instance, parent);
+				PopUpManager.centerPopUp(ImageSelector.instance);
+				ImageSelector.instance.visible = true;
+				ModelLocator.getInstance().configManager.requestValue("services.repositoryService.address");
+				
+				return ImageSelector.instance;
+			}
+			
+			public function handleGetFileDescriptorsCommand(event:ResultEvent):void
+			{
+				this.dataProvider = XML(event.result);
+			}
+			
+			public static function hide():void
+			{
+				instance.targetField = null;
+				instance.targetObject = null;
+				instance.visible = false;
+				PopUpManager.removePopUp(instance);
+			}
+			
+			private function handleSelectItem():void
+			{
+				this.targetObject[this.targetField] = String(this.fileList.selectedItem.@id);
+				ImageSelector.hide();
+			}
+			
+			private function selectHandler(event:Event):void
+			{
+				trace( fileRef.name);
+			    var request:URLRequest = new URLRequest(String(ModelLocator.getInstance().configManager.values.services_repositoryService_address.*) + "/PutFile");
+			    //this.fileRef = new FileReference(event.target);
+			   //   trace("selectHandler: name=" + this.fileRef .name + " URL=" + request.url);
+			    //request
+			    try
+			    {
+			        fileRef.upload(request);
+			    }
+			    catch (error:Error)
+			    {
+			        Alert.show("Wysyłanie pliku nie powiodło się.");
+			    }
+			}
+			
+			private function completeHandler(event:DataEvent):void
+			{
+				var response:XML = XML(event.data);
+				/*
+				<response>
+				  <file oldFilename="debica.jpg" newFilename="AB7FF12F-4D12-4EFE-912F-8AE53C2CEE76"/>
+				</response>
+				*/
+				
+				this.dataProvider.appendChild(<fileDescriptor id={response.file[0].@newFilename} originalFilename={response.file[0].@oldFilename} />);
+				
+				this.fileList.selectedItem = this.dataProvider.fileDescriptor.(@id == response.file[0].@newFilename);
+			}
+			
+			private function errorHandler(event:Event):void
+			{
+				Alert.show("Wystąpił błąd podczas wysyłania pliku.", event.target.toString());
+			}
+			
+			private function handleUploadClick(event:MouseEvent):void
+			{
+				var imageTypes:FileFilter = new FileFilter("Obrazy (*.jpg, *.jpeg, *.gif, *.png)", "*.jpg; *.jpeg; *.gif; *.png");
+
+				if (!this.fileRef)
+				{
+					this.fileRef = new FileReference();
+					this.fileRef.addEventListener(Event.SELECT, selectHandler);
+					this.fileRef.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA, completeHandler);
+					this.fileRef.addEventListener(HTTPStatusEvent.HTTP_STATUS, errorHandler);
+					this.fileRef.addEventListener(IOErrorEvent.IO_ERROR, errorHandler);
+				}
+				try
+				{
+				    var success:Boolean = this.fileRef.browse([imageTypes]);
+				}
+				catch (error:Error)
+				{
+				    Alert.show("Brak możliwości otwarcia okienka przeglądania plików. Sprawdź ustawienia zabezpieczeń.");
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:HDividedBox height="100%" width="100%">
+		<mx:List height="100%" id="fileList" doubleClickEnabled="true" doubleClick="handleSelectItem()" dataProvider="{this.dataProvider.fileDescriptor}" labelField="@originalFilename"/>
+		<mx:Image  width="100%" visible="{this.fileList.selectedItem}" source="{ModelLocator.getInstance().configManager.values.services_repositoryService_address.*}/GetFile/{this.fileList.selectedItem.@id}"/>
+	</mx:HDividedBox>
+	<mx:ControlBar>
+		<mx:Button label="Wybierz" enabled="{fileList.selectedItem}" click="handleSelectItem()"/>
+		<mx:Button label="{LanguageManager.getInstance().labels.common.cancel}" click="ImageSelector.hide()"/>
+		<mx:Button label="Wyślij plik..." click="handleUploadClick(event)" />
+	</mx:ControlBar>
+</mx:TitleWindow>

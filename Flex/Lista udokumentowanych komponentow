@@ -1,0 +1,38 @@
+Komponenty udokumentowane w całości:
+------------------------------------
+
+AddressRenderer
+AttributeRenderer
+CatalogueItemWindow
+CatalogueOperation
+CheckBoxEditor
+ContractorRenderer
+CurrencyEditor
+CurrencyRenderer
+DateFilter
+DateRenderer
+DocumentFeatureRenderer
+DocumentFeatureSelector
+DocumentNumberEditor
+EditorContainer
+FormBuilder
+GroupsConfigurationEditor
+GroupSelectionEditor
+SingleAttributeEditor
+EmployeeEditor
+GroupEditWindow
+CommonGrid
+PageSwitcher
+
+Komponenty z niepełną dokumentacją:
+-----------------------------------
+
+AddressEditor
+AttributeEditor
+BankAccountEditor
+CatalogueBrowser (exportXML)
+DateEditor
+GenericAttributeEditorComponent
+GroupTree
+GenericValidator
+LabelListEditor

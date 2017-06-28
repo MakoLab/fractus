@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DockPanel 	xmlns="com.makolab.components.layoutComponents.*" 
+			xmlns:mx="http://www.adobe.com/2006/mxml" 
+			width="100%" height="300" 
+			xmlns:list="com.makolab.components.list.*" 
+			creationComplete="callCommand();grid.contextMenu.customItems=[];" 
+			headerColors="[0xe4ff00, 0x819400]" titleStyleName="bold"
+			title="{LanguageManager.getInstance().labels.dashboard.MostWantedTitle}">
+			
+			<mx:VBox width="100%" height="100%">
+			<list:CommonGrid id="grid" rowCount="10" width="100%" height="100%">		
+				<list:columns>
+					<mx:DataGridColumn dataField="@itemName" headerText="{LanguageManager.getInstance().labels.dashboard.itemName}"/>
+					<mx:DataGridColumn dataField="@monthQuantity" headerText="{LanguageManager.getInstance().labels.dashboard.quantity}" itemRenderer="com.makolab.components.inputComponents.FloatRenderer" width="60"/>
+				</list:columns>
+			</list:CommonGrid>
+			<mx:LinkButton label="{LanguageManager.getInstance().labels.dashboard.more}" click="goToRaport();"/>
+			</mx:VBox>
+			
+			<mx:Script>
+				<![CDATA[
+					import com.makolab.fractus.model.LanguageManager;
+					import com.makolab.fractus.view.documents.reports.salesReports.SalesReport;
+					import mx.controls.Alert;
+					import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+					import mx.rpc.events.ResultEvent;
+					
+					private var cmd:ExecuteCustomProcedureCommand;
+					private var searchParams:XML = <searchParams> 
+												   </searchParams>;
+					
+					
+					private function callCommand():void
+					{
+						cmd = new ExecuteCustomProcedureCommand('reports.p_getTop10PopularItems',searchParams);
+						cmd.addEventListener(ResultEvent.RESULT,generateReportResult);
+						cmd.execute();
+					}		
+					
+					private function generateReportResult(event:ResultEvent):void
+					{
+						grid.dataProvider = XML(event.result).*;
+					}
+				
+					private function goToRaport():void{
+						SalesReport.showWindow();
+					}
+				]]>
+			</mx:Script>
+</DockPanel>

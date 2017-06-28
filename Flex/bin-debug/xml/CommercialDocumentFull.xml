@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <commercialDocument>
+    <documentTypeId/>
+    <contractor>
+      <contractor>...</contractor>
+      <addressId/>
+    </contractor>
+    <receivingPerson>
+      <contractor>...</contractor>
+    </receivingPerson>
+    <responsiblePerson>
+      <contractor>...</contractor>
+    </responsiblePerson>
+    <issuingPerson>
+      <contractor>...</contractor>
+      <addressId/>
+    </issuingPerson>
+    <documentCurrencyId/>
+    <systemCurrencyId/> <!-- uzupelnia kernel -->
+    <exchangeDate/>
+    <exchangeScale/>
+    <exchangeRate/>
+    <number/>
+    <fullNumber/>
+    <issuePlaceId/>
+    <issueDate/>
+    <eventDate/>
+    <netValue/>
+    <grossValue/>
+    <vatValue/>
+    <printDate/>
+    <fiscalizationDate/>
+    <isExportedForAccounting/>
+
+    <lines>
+      <line>
+        <ordinalNumber/>
+        <itemId/>
+        <itemVersion/>
+        <itemName/>
+        <quantity/>
+        <netPrice/>
+        <grossPrice/>
+        <initialNetPrice/>
+        <initialGrossPrice/>
+        <discountRate/>
+        <discountNetValue/>
+        <discountGrossValue/>
+        <initialNetValue/>
+        <initialGrossValue/>
+        <netValue/>
+        <grossValue/>
+        <vatValue/>
+        <vatRateId/>
+      </line>
+      <!--Multiple-->
+    </lines>
+
+    <payments>
+      <payment>
+        <date/>
+        <contractor>
+          <contractor>...</contractor>
+        </contractor>
+        <paymentMethodId/>
+        <amount/>
+        <paymentCurrencyId/>
+        <systemCurrencyId/> <!-- uzupelnia kernel -->
+        <exchangeDate/>
+        <exchangeScale/>
+        <exchangeRate/>
+        <isSettled/>
+      </payment>
+      <!--Multiple-->
+    </payments>
+
+    <attributes>
+      <attribute>
+        <documentFieldId/>
+        <value/>
+      </attribute>
+      <!--Multiple-->
+    </attributes>
+
+    <vatTable>
+      <vtEntry>
+        <vatRateId/>
+        <netValue/>
+        <grossValue/>
+        <vatValue/>
+      </vtEntry>
+      <!--Multiple-->
+    </vatTable>
+  </commercialDocument>
+</root>

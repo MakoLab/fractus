@@ -1,0 +1,503 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="2.0" xmlns:edmx="http://schemas.microsoft.com/ado/2008/10/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+    <Schema Namespace="TrackerEntities.Store" Alias="Self" Provider="System.Data.SqlClient" ProviderManifestToken="2005" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns="http://schemas.microsoft.com/ado/2009/02/edm/ssdl">
+        <EntityContainer Name="TrackerEntitiesStoreContainer">
+          <EntitySet Name="MessageReferences" EntityType="TrackerEntities.Store.MessageReferences" store:Type="Tables" Schema="custom" />
+          <EntitySet Name="Messages" EntityType="TrackerEntities.Store.Messages" store:Type="Tables" Schema="custom" />
+          <EntitySet Name="SalesOrderEvents" EntityType="TrackerEntities.Store.SalesOrderEvents" store:Type="Tables" Schema="custom" />
+          <EntitySet Name="SalesOrderSnapshots" EntityType="TrackerEntities.Store.SalesOrderSnapshots" store:Type="Tables" Schema="custom" />
+          <EntitySet Name="SalesOrderTrackerQueueEntries" EntityType="TrackerEntities.Store.SalesOrderTrackerQueueEntries" store:Type="Tables" Schema="custom" />
+          <AssociationSet Name="FK_MessageReferenceSalesOrderDetails" Association="TrackerEntities.Store.FK_MessageReferenceSalesOrderDetails">
+            <End Role="SalesOrderSnapshots" EntitySet="SalesOrderSnapshots" />
+            <End Role="MessageReferences" EntitySet="MessageReferences" />
+          </AssociationSet>
+          <AssociationSet Name="FK_SalesOrderDetailsSalesOrderEvent" Association="TrackerEntities.Store.FK_SalesOrderDetailsSalesOrderEvent">
+            <End Role="SalesOrderSnapshots" EntitySet="SalesOrderSnapshots" />
+            <End Role="SalesOrderEvents" EntitySet="SalesOrderEvents" />
+          </AssociationSet>
+        </EntityContainer>
+        <EntityType Name="MessageReferences">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="MessageId" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="SalesOrderId" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="SalesOrderDetailsId" Type="uniqueidentifier" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Messages">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="type" Type="varchar" Nullable="false" MaxLength="50" />
+          <Property Name="recipient" Type="nvarchar" Nullable="false" MaxLength="100" />
+          <Property Name="sender" Type="nchar" MaxLength="10" />
+          <Property Name="message" Type="nvarchar" MaxLength="1000" />
+          <Property Name="creationDate" Type="datetime" Nullable="false" StoreGeneratedPattern="Computed" />
+          <Property Name="sendDate" Type="datetime" />
+          <Property Name="errorDate" Type="datetime" />
+          <Property Name="errorMessage" Type="nvarchar" MaxLength="1000" />
+          <Property Name="subject" Type="nvarchar" MaxLength="100" />
+        </EntityType>
+        <EntityType Name="SalesOrderEvents">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="SalesOrderDetailsId" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="Type" Type="int" Nullable="false" />
+          <Property Name="Date" Type="datetime" />
+          <Property Name="Number" Type="nvarchar(max)" />
+          <Property Name="Value" Type="decimal" />
+          <Property Name="ContractNumber" Type="nvarchar(max)" Nullable="false" />
+        </EntityType>
+        <EntityType Name="SalesOrderSnapshots">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="Number" Type="nvarchar(max)" />
+          <Property Name="Status" Type="int" Nullable="false" />
+          <Property Name="RegistrationDate" Type="datetime" Nullable="false" />
+          <Property Name="Value" Type="decimal" Nullable="false" />
+          <Property Name="FittingDate" Type="datetime" />
+          <Property Name="Remarks" Type="nvarchar(max)" />
+          <Property Name="Contractor_FullName" Type="nvarchar(max)" Nullable="false" />
+          <Property Name="Contractor_Address" Type="nvarchar(max)" />
+          <Property Name="Contractor_City" Type="nvarchar(max)" />
+          <Property Name="Contractor_Email" Type="nvarchar(max)" />
+          <Property Name="Contractor_Phone" Type="nvarchar(max)" />
+          <Property Name="Contractor_IsAps" Type="bit" Nullable="false" />
+          <Property Name="Contractor_Login" Type="nvarchar(max)" />
+          <Property Name="Contractor_Password" Type="nvarchar(max)" />
+          <Property Name="Contractor_Type" Type="int" Nullable="false" />
+          <Property Name="SalesType" Type="int" Nullable="false" />
+          <Property Name="ProductionOrderNumber" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="SalesOrderTrackerQueueEntries">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="bigint" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="IsCompleted" Type="bit" Nullable="false" />
+          <Property Name="Date" Type="datetime" Nullable="false" />
+          <Property Name="SalesOrderId" Type="uniqueidentifier" Nullable="false" />
+        </EntityType>
+        <Association Name="FK_MessageReferenceSalesOrderDetails">
+          <End Role="SalesOrderSnapshots" Type="TrackerEntities.Store.SalesOrderSnapshots" Multiplicity="1" />
+          <End Role="MessageReferences" Type="TrackerEntities.Store.MessageReferences" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="SalesOrderSnapshots">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MessageReferences">
+              <PropertyRef Name="SalesOrderDetailsId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_SalesOrderDetailsSalesOrderEvent">
+          <End Role="SalesOrderSnapshots" Type="TrackerEntities.Store.SalesOrderSnapshots" Multiplicity="1" />
+          <End Role="SalesOrderEvents" Type="TrackerEntities.Store.SalesOrderEvents" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="SalesOrderSnapshots">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="SalesOrderEvents">
+              <PropertyRef Name="SalesOrderDetailsId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Function Name="p_SykomatOrdertrackerContractorData" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="custom">
+          <Parameter Name="contractorId" Type="uniqueidentifier" Mode="In" />
+        </Function>
+        <Function Name="p_SykomatOrdertrackerDetails" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="custom">
+          <Parameter Name="orderId" Type="uniqueidentifier" Mode="In" />
+        </Function>
+        <Function Name="p_SykomatOrdertrackerHistory" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="custom">
+          <Parameter Name="orderId" Type="uniqueidentifier" Mode="In" />
+        </Function>
+        <Function Name="p_SykomatOrdertrackerItems" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="custom">
+          <Parameter Name="orderId" Type="uniqueidentifier" Mode="In" />
+        </Function>
+        <Function Name="p_SykomatOrdertrackerList" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="custom">
+          <Parameter Name="contractorId" Type="uniqueidentifier" Mode="In" />
+        </Function>
+      </Schema></edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema xmlns="http://schemas.microsoft.com/ado/2008/09/edm" xmlns:cg="http://schemas.microsoft.com/ado/2006/04/codegeneration" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" Namespace="TrackerEntities" Alias="Self" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation">
+        <EntityContainer Name="TrackerEntitiesContainer" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="MessageReferences" EntityType="TrackerEntities.MessageReference" />
+          <EntitySet Name="SalesOrderSnapshots" EntityType="TrackerEntities.SalesOrderSnapshot" />
+          <EntitySet Name="SalesOrderEvents" EntityType="TrackerEntities.SalesOrderEvent" />
+          <AssociationSet Name="SalesOrderDetailsSalesOrderEvent" Association="TrackerEntities.SalesOrderDetailsSalesOrderEvent">
+            <End Role="SalesOrderDetails" EntitySet="SalesOrderSnapshots" />
+            <End Role="SalesOrderEvent" EntitySet="SalesOrderEvents" />
+          </AssociationSet>
+          <AssociationSet Name="MessageReferenceSalesOrderDetails" Association="TrackerEntities.MessageReferenceSalesOrderDetails">
+            <End Role="MessageReference" EntitySet="MessageReferences" />
+            <End Role="SalesOrderDetails" EntitySet="SalesOrderSnapshots" />
+          </AssociationSet>
+          <FunctionImport Name="GetContractorData" ReturnType="Collection(TrackerEntities.ContractorData)">
+          <Parameter Name="contractorId" Mode="In" Type="Guid" />
+          </FunctionImport>
+          <FunctionImport Name="GetItems" ReturnType="Collection(TrackerEntities.Item)">
+          <Parameter Name="orderId" Mode="In" Type="Guid" />
+          </FunctionImport>
+          <FunctionImport Name="GetSalesOrderDetails" ReturnType="Collection(TrackerEntities.GetSalesOrderDetails_Result)">
+          <Parameter Name="orderId" Mode="In" Type="Guid" />
+          </FunctionImport>
+          <FunctionImport Name="GetSalesOrderHistory" ReturnType="Collection(TrackerEntities.GetSalesOrderHistory_Result)">
+          <Parameter Name="orderId" Mode="In" Type="Guid" />
+          </FunctionImport>
+          <FunctionImport Name="GetSalesOrderList" ReturnType="Collection(TrackerEntities.GetSalesOrderList_Result)">
+          <Parameter Name="contractorId" Mode="In" Type="Guid" />
+          </FunctionImport>
+          <EntitySet Name="SalesOrderTrackerQueueEntries" EntityType="TrackerEntities.SalesOrderTrackerQueueEntry" />
+          <EntitySet Name="Messages" EntityType="TrackerEntities.Message" />
+          </EntityContainer>
+        <EntityType Name="MessageReference">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Type="Guid" Name="Id" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Type="Guid" Name="MessageId" Nullable="false" />
+          <Property Type="Guid" Name="SalesOrderId" Nullable="false" />
+          <NavigationProperty Name="SalesOrderDetails" Relationship="TrackerEntities.MessageReferenceSalesOrderDetails" FromRole="MessageReference" ToRole="SalesOrderDetails" />
+          <Property Type="Guid" Name="SalesOrderDetailsId" Nullable="false" />
+        </EntityType>
+        <EntityType Name="SalesOrderSnapshot">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Type="Guid" Name="Id" Nullable="false" annotation:StoreGeneratedPattern="None" />
+          <Property Type="String" Name="Number" Nullable="true" />
+          <Property Type="Int32" Name="Status" Nullable="false" />
+          <Property Type="DateTime" Name="RegistrationDate" Nullable="false" />
+          <Property Type="Decimal" Name="Value" Nullable="false" />
+          <Property Type="DateTime" Name="FittingDate" Nullable="true" />
+          <Property Type="String" Name="Remarks" Nullable="true" />
+          <Property Name="Contractor" Type="TrackerEntities.Contractor" Nullable="false" />
+          <NavigationProperty Name="SalesOrderEvents" Relationship="TrackerEntities.SalesOrderDetailsSalesOrderEvent" FromRole="SalesOrderDetails" ToRole="SalesOrderEvent" />
+          <NavigationProperty Name="MessageReferences" Relationship="TrackerEntities.MessageReferenceSalesOrderDetails" FromRole="SalesOrderDetails" ToRole="MessageReference" />
+          <Property Type="Int32" Name="SalesType" Nullable="false" />
+          <Property Type="String" Name="ProductionOrderNumber" Nullable="true" />
+        </EntityType>
+        <EntityType Name="SalesOrderEvent">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Type="Guid" Name="Id" Nullable="false" />
+          <Property Type="Guid" Name="SalesOrderDetailsId" Nullable="false" />
+          <Property Type="Int32" Name="Type" Nullable="false" />
+          <Property Type="DateTime" Name="Date" Nullable="true" />
+          <NavigationProperty Name="SalesOrderDetails" Relationship="TrackerEntities.SalesOrderDetailsSalesOrderEvent" FromRole="SalesOrderEvent" ToRole="SalesOrderDetails" />
+          <Property Type="String" Name="Number" Nullable="true" />
+          <Property Type="Decimal" Name="Value" Nullable="true" />
+          <Property Type="String" Name="ContractNumber" Nullable="false" />
+        </EntityType>
+        <Association Name="SalesOrderDetailsSalesOrderEvent">
+          <End Type="TrackerEntities.SalesOrderSnapshot" Role="SalesOrderDetails" Multiplicity="1" />
+          <End Type="TrackerEntities.SalesOrderEvent" Role="SalesOrderEvent" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="SalesOrderDetails">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="SalesOrderEvent">
+              <PropertyRef Name="SalesOrderDetailsId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <ComplexType Name="Contractor">
+          <Property Type="String" Name="FullName" Nullable="false" />
+          <Property Type="String" Name="Address" Nullable="true" />
+          <Property Type="String" Name="City" Nullable="true" />
+          <Property Type="String" Name="Email" Nullable="true" />
+          <Property Type="String" Name="Phone" Nullable="true" />
+          <Property Type="Boolean" Name="IsAps" Nullable="false" />
+          <Property Type="String" Name="Login" Nullable="true" />
+          <Property Type="String" Name="Password" Nullable="true" />
+          <Property Type="Int32" Name="Type" Nullable="false" />
+        </ComplexType>
+        <ComplexType Name="Document">
+          <Property Type="String" Name="Number" Nullable="false" />
+          <Property Type="String" Name="Value" Nullable="false" />
+        </ComplexType>
+        <Association Name="MessageReferenceSalesOrderDetails">
+          <End Type="TrackerEntities.MessageReference" Role="MessageReference" Multiplicity="*" />
+          <End Type="TrackerEntities.SalesOrderSnapshot" Role="SalesOrderDetails" Multiplicity="1" />
+          <ReferentialConstraint>
+            <Principal Role="SalesOrderDetails">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MessageReference">
+              <PropertyRef Name="SalesOrderDetailsId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <ComplexType Name="ContractorData">
+          <Property Type="String" Name="contractorFullName" Nullable="false" MaxLength="300" />
+          <Property Type="String" Name="contractorAddress" Nullable="true" MaxLength="300" />
+          <Property Type="String" Name="contractorCity" Nullable="true" MaxLength="81" />
+          <Property Type="String" Name="contractorEmail" Nullable="true" MaxLength="500" />
+          <Property Type="String" Name="contractorPhone" Nullable="true" MaxLength="500" />
+          <Property Type="String" Name="contractorLogin" Nullable="true" MaxLength="500" />
+          <Property Type="String" Name="contractorPassword" Nullable="true" MaxLength="500" />
+          <Property Type="Boolean" Name="contractorType" Nullable="true" />
+        </ComplexType>
+        <ComplexType Name="GetSalesOrderDetails_Result">
+          <Property Type="String" Name="orderNumber" Nullable="false" MaxLength="500" />
+          <Property Type="Int32" Name="status" Nullable="false" />
+          <Property Type="DateTime" Name="registrationDate" Nullable="false" Precision="23" />
+          <Property Type="Decimal" Name="orderValue" Nullable="false" Precision="18" Scale="2" />
+          <Property Type="DateTime" Name="fittingDate" Nullable="true" Precision="23" />
+          <Property Type="String" Name="orderRemarks" Nullable="true" MaxLength="500" />
+          <Property Type="String" Name="contractorFullName" Nullable="false" MaxLength="300" />
+          <Property Type="String" Name="contractorAddress" Nullable="true" MaxLength="300" />
+          <Property Type="String" Name="contractorCity" Nullable="true" MaxLength="81" />
+          <Property Type="String" Name="contractorEmail" Nullable="true" MaxLength="500" />
+          <Property Type="String" Name="contractorPhone" Nullable="true" MaxLength="500" />
+          <Property Type="Int32" Name="contractorIsAps" Nullable="false" />
+          <Property Type="String" Name="contractorLogin" Nullable="true" MaxLength="500" />
+          <Property Type="String" Name="contractorPassword" Nullable="true" MaxLength="500" />
+          <Property Type="Int32" Name="salesType" Nullable="false" />
+          <Property Type="Boolean" Name="contractorType" Nullable="false" />
+          <Property Type="String" Name="productionOrderNumber" Nullable="true" MaxLength="500" />
+        </ComplexType>
+        <ComplexType Name="GetSalesOrderHistory_Result">
+          <Property Type="Int32" Name="eventType" Nullable="true" />
+          <Property Type="DateTime" Name="eventDate" Nullable="true" Precision="23" />
+          <Property Type="String" Name="documentNumber" Nullable="true" MaxLength="71" />
+          <Property Type="Decimal" Name="documentValue" Nullable="true" Precision="18" Scale="2" />
+        </ComplexType>
+        <ComplexType Name="GetSalesOrderList_Result">
+          <Property Type="String" Name="orderNumber" Nullable="false" MaxLength="500" />
+          <Property Type="DateTime" Name="creationDate" Nullable="false" Precision="23" />
+          <Property Type="Guid" Name="id" Nullable="false" />
+          <Property Type="Int32" Name="status" Nullable="false" />
+          <Property Type="Int32" Name="salesType" Nullable="false" />
+        </ComplexType>
+        <ComplexType Name="Item">
+          <Property Type="String" Name="itemName" Nullable="false" MaxLength="500" />
+          <Property Type="Decimal" Name="quantity" Nullable="false" Precision="18" Scale="6" />
+          <Property Type="Int32" Name="reserved" Nullable="true" />
+          <Property Type="Decimal" Name="price" Nullable="true" Precision="18" Scale="2" />
+          <Property Type="Decimal" Name="value" Nullable="true" Precision="18" Scale="2" />
+        </ComplexType>
+        <EntityType Name="SalesOrderTrackerQueueEntry">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Type="Int64" Name="Id" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Type="Boolean" Name="IsCompleted" Nullable="false" />
+          <Property Type="DateTime" Name="Date" Nullable="false" />
+          <Property Type="Guid" Name="SalesOrderId" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Message">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Type="Guid" Name="Id" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Type="String" Name="Type" Nullable="false" MaxLength="50" FixedLength="false" Unicode="false" />
+          <Property Type="String" Name="Recipient" Nullable="false" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Type="String" Name="Sender" MaxLength="10" FixedLength="true" Unicode="true" />
+          <Property Type="String" Name="MessageText" MaxLength="1000" FixedLength="false" Unicode="true" />
+          <Property Type="DateTime" Name="CreationDate" Nullable="false" annotation:StoreGeneratedPattern="None" />
+          <Property Type="DateTime" Name="SendDate" ConcurrencyMode="Fixed" />
+          <Property Type="DateTime" Name="ErrorDate" />
+          <Property Type="String" Name="ErrorMessage" MaxLength="1000" FixedLength="false" Unicode="true" />
+          <Property Type="String" Name="Subject" MaxLength="100" FixedLength="false" Unicode="true" />
+        </EntityType>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+    <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2008/09/mapping/cs">
+  <EntityContainerMapping StorageEntityContainer="TrackerEntitiesStoreContainer" CdmEntityContainer="TrackerEntitiesContainer">
+    <EntitySetMapping Name="MessageReferences">
+      <EntityTypeMapping TypeName="IsTypeOf(TrackerEntities.MessageReference)">
+        <MappingFragment StoreEntitySet="MessageReferences">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="MessageId" ColumnName="MessageId" />
+          <ScalarProperty Name="SalesOrderId" ColumnName="SalesOrderId" />
+          <ScalarProperty Name="SalesOrderDetailsId" ColumnName="SalesOrderDetailsId" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="SalesOrderSnapshots">
+      <EntityTypeMapping TypeName="IsTypeOf(TrackerEntities.SalesOrderSnapshot)">
+        <MappingFragment StoreEntitySet="SalesOrderSnapshots">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="Number" ColumnName="Number" />
+          <ScalarProperty Name="Status" ColumnName="Status" />
+          <ScalarProperty Name="RegistrationDate" ColumnName="RegistrationDate" />
+          <ScalarProperty Name="Value" ColumnName="Value" />
+          <ScalarProperty Name="FittingDate" ColumnName="FittingDate" />
+          <ScalarProperty Name="Remarks" ColumnName="Remarks" />
+          <ComplexProperty Name="Contractor" TypeName="TrackerEntities.Contractor">
+            <ScalarProperty Name="FullName" ColumnName="Contractor_FullName" />
+            <ScalarProperty Name="Address" ColumnName="Contractor_Address" />
+            <ScalarProperty Name="City" ColumnName="Contractor_City" />
+            <ScalarProperty Name="Email" ColumnName="Contractor_Email" />
+            <ScalarProperty Name="Phone" ColumnName="Contractor_Phone" />
+            <ScalarProperty Name="IsAps" ColumnName="Contractor_IsAps" />
+            <ScalarProperty Name="Login" ColumnName="Contractor_Login" />
+            <ScalarProperty Name="Password" ColumnName="Contractor_Password" />
+            <ScalarProperty Name="Type" ColumnName="Contractor_Type" />
+          </ComplexProperty>
+          <ScalarProperty Name="SalesType" ColumnName="SalesType" />
+          <ScalarProperty Name="ProductionOrderNumber" ColumnName="ProductionOrderNumber" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="SalesOrderEvents">
+      <EntityTypeMapping TypeName="IsTypeOf(TrackerEntities.SalesOrderEvent)">
+        <MappingFragment StoreEntitySet="SalesOrderEvents">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="SalesOrderDetailsId" ColumnName="SalesOrderDetailsId" />
+          <ScalarProperty Name="Type" ColumnName="Type" />
+          <ScalarProperty Name="Date" ColumnName="Date" />
+          <ScalarProperty Name="Number" ColumnName="Number" />
+          <ScalarProperty Name="Value" ColumnName="Value" />
+          <ScalarProperty Name="ContractNumber" ColumnName="ContractNumber" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+          <FunctionImportMapping FunctionImportName="GetContractorData" FunctionName="TrackerEntities.Store.p_SykomatOrdertrackerContractorData">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="TrackerEntities.ContractorData">
+                <ScalarProperty Name="contractorFullName" ColumnName="contractorFullName" />
+                <ScalarProperty Name="contractorAddress" ColumnName="contractorAddress" />
+                <ScalarProperty Name="contractorCity" ColumnName="contractorCity" />
+                <ScalarProperty Name="contractorEmail" ColumnName="contractorEmail" />
+                <ScalarProperty Name="contractorPhone" ColumnName="contractorPhone" />
+                <ScalarProperty Name="contractorLogin" ColumnName="contractorLogin" />
+                <ScalarProperty Name="contractorPassword" ColumnName="contractorPassword" />
+                <ScalarProperty Name="contractorType" ColumnName="contractorType" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
+          <FunctionImportMapping FunctionImportName="GetItems" FunctionName="TrackerEntities.Store.p_SykomatOrdertrackerItems">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="TrackerEntities.Item">
+                <ScalarProperty Name="itemName" ColumnName="itemName" />
+                <ScalarProperty Name="quantity" ColumnName="quantity" />
+                <ScalarProperty Name="reserved" ColumnName="reserved" />
+                <ScalarProperty Name="price" ColumnName="price" />
+                <ScalarProperty Name="value" ColumnName="value" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
+          <FunctionImportMapping FunctionImportName="GetSalesOrderDetails" FunctionName="TrackerEntities.Store.p_SykomatOrdertrackerDetails">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="TrackerEntities.GetSalesOrderDetails_Result">
+                <ScalarProperty Name="orderNumber" ColumnName="orderNumber" />
+                <ScalarProperty Name="status" ColumnName="status" />
+                <ScalarProperty Name="registrationDate" ColumnName="registrationDate" />
+                <ScalarProperty Name="orderValue" ColumnName="orderValue" />
+                <ScalarProperty Name="fittingDate" ColumnName="fittingDate" />
+                <ScalarProperty Name="orderRemarks" ColumnName="orderRemarks" />
+                <ScalarProperty Name="contractorFullName" ColumnName="contractorFullName" />
+                <ScalarProperty Name="contractorAddress" ColumnName="contractorAddress" />
+                <ScalarProperty Name="contractorCity" ColumnName="contractorCity" />
+                <ScalarProperty Name="contractorEmail" ColumnName="contractorEmail" />
+                <ScalarProperty Name="contractorPhone" ColumnName="contractorPhone" />
+                <ScalarProperty Name="contractorIsAps" ColumnName="contractorIsAps" />
+                <ScalarProperty Name="contractorLogin" ColumnName="contractorLogin" />
+                <ScalarProperty Name="contractorPassword" ColumnName="contractorPassword" />
+                <ScalarProperty Name="salesType" ColumnName="salesType" />
+                <ScalarProperty Name="contractorType" ColumnName="contractorType" />
+                <ScalarProperty Name="productionOrderNumber" ColumnName="productionOrderNumber" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
+          <FunctionImportMapping FunctionImportName="GetSalesOrderHistory" FunctionName="TrackerEntities.Store.p_SykomatOrdertrackerHistory" >
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="TrackerEntities.GetSalesOrderHistory_Result">
+                <ScalarProperty Name="eventType" ColumnName="eventType" />
+                <ScalarProperty Name="eventDate" ColumnName="eventDate" />
+                <ScalarProperty Name="documentNumber" ColumnName="documentNumber" />
+                <ScalarProperty Name="documentValue" ColumnName="documentValue" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
+          <FunctionImportMapping FunctionImportName="GetSalesOrderList" FunctionName="TrackerEntities.Store.p_SykomatOrdertrackerList">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="TrackerEntities.GetSalesOrderList_Result">
+                <ScalarProperty Name="orderNumber" ColumnName="orderNumber" />
+                <ScalarProperty Name="creationDate" ColumnName="creationDate" />
+                <ScalarProperty Name="id" ColumnName="id" />
+                <ScalarProperty Name="status" ColumnName="status" />
+                <ScalarProperty Name="salesType" ColumnName="salesType" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
+          <EntitySetMapping Name="SalesOrderTrackerQueueEntries">
+            <EntityTypeMapping TypeName="TrackerEntities.SalesOrderTrackerQueueEntry">
+              <MappingFragment StoreEntitySet="SalesOrderTrackerQueueEntries">
+                <ScalarProperty Name="SalesOrderId" ColumnName="SalesOrderId" />
+                <ScalarProperty Name="Date" ColumnName="Date" />
+                <ScalarProperty Name="IsCompleted" ColumnName="IsCompleted" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Messages">
+            <EntityTypeMapping TypeName="IsTypeOf(TrackerEntities.Message)">
+              <MappingFragment StoreEntitySet="Messages" >
+                <ScalarProperty Name="Subject" ColumnName="subject" />
+                <ScalarProperty Name="ErrorMessage" ColumnName="errorMessage" />
+                <ScalarProperty Name="ErrorDate" ColumnName="errorDate" />
+                <ScalarProperty Name="SendDate" ColumnName="sendDate" />
+                <ScalarProperty Name="CreationDate" ColumnName="creationDate" />
+                <ScalarProperty Name="MessageText" ColumnName="message" />
+                <ScalarProperty Name="Sender" ColumnName="sender" />
+                <ScalarProperty Name="Recipient" ColumnName="recipient" />
+                <ScalarProperty Name="Type" ColumnName="type" />
+                <ScalarProperty Name="Id" ColumnName="id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+  </EntityContainerMapping>
+</Mapping></edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2008/10/edmx">
+    <edmx:Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </edmx:Connection>
+    <edmx:Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="True" />
+        <DesignerProperty Name="DefaultDatabaseSchema" Value="custom" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="True" />
+      </DesignerInfoPropertySet>
+    </edmx:Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram Name="TrackerEntities" ZoomLevel="101" >
+        <EntityTypeShape EntityType="TrackerEntities.MessageReference" Width="2" PointX="1.375" PointY="0.5" Height="1.59568359375" />
+        <EntityTypeShape EntityType="TrackerEntities.SalesOrderSnapshot" Width="1.5" PointX="4.25" PointY="0.5" Height="3.3263964843749996" />
+        <EntityTypeShape EntityType="TrackerEntities.SalesOrderEvent" Width="1.5" PointX="7.125" PointY="0.5" Height="2.5571907552083331" />
+        <AssociationConnector Association="TrackerEntities.SalesOrderDetailsSalesOrderEvent" >
+          <ConnectorPoint PointX="5.75" PointY="1.7785953776041663" />
+          <ConnectorPoint PointX="7.125" PointY="1.7785953776041663" />
+        </AssociationConnector>
+        <AssociationConnector Association="TrackerEntities.MessageReferenceSalesOrderDetails">
+          <ConnectorPoint PointX="3.375" PointY="1.4901432291666668" />
+          <ConnectorPoint PointX="4.25" PointY="1.4901432291666668" />
+        </AssociationConnector>
+        <EntityTypeShape EntityType="TrackerEntities.SalesOrderTrackerQueueEntry" Width="1.5" PointX="0.75" PointY="3.375" Height="1.7879850260416674" />
+        <EntityTypeShape EntityType="TrackerEntities.Message" Width="1.5" PointX="6.375" PointY="3.875" Height="2.9417936197916674" />
+        </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

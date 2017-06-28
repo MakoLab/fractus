@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:LinkButton xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="creationCompleteHandler(event)" >
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.LoadConfigurationCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.events.ListEvent;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.commands.GetRegistersOpenReportsCommand;
+			import mx.controls.Alert;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.components.util.Tools;
+			import com.makolab.components.util.CurrencyManager;
+			import mx.events.FlexEvent;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.view.documents.documentEditors.FinancialDocumentEditor;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.view.documents.documentEditors.DocumentEditor;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import assets.IconManager;
+			
+			private var financialRegisterId:String;
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				if (value)
+				{
+					if (value.@direction == "1")
+					{
+						if (value.@isSettled == "0")
+						{ 
+							this.setStyle("icon",IconManager.getIcon("list_financial_outcome"));
+							this.toolTip = LanguageManager.getLabel("documents.createOutcomeCashDocument");
+							this.enabled = true;
+							this.useHandCursor = true;
+						} else {
+							this.setStyle("icon",null);
+							this.enabled = false;
+							this.useHandCursor = false;
+						}
+					}
+					if (value.@direction == "-1")
+					{
+						if (value.@isSettled == "0")
+						{ 
+							this.setStyle("icon",IconManager.getIcon("list_financial_income"));
+							this.toolTip = LanguageManager.getLabel("documents.createIncomeCashDocument");
+							this.enabled = true;
+							this.useHandCursor = true;
+						} else {
+							this.setStyle("icon",null);
+							this.enabled = false;
+							this.useHandCursor = false;
+						}
+					}
+				}
+			}
+			
+			private function creationCompleteHandler(event:FlexEvent):void
+			{
+				//1
+				//this.addEventListener(MouseEvent.CLICK,createFinancialOutcomeClickHandler);
+				//2
+				//this.addEventListener(MouseEvent.CLICK,createFinancialIncomeClickHandler);
+				
+				this.addEventListener(MouseEvent.CLICK,mClick);
+			}
+			
+				
+			private function mClick(event:MouseEvent):void {
+				var cmd:GetRegistersOpenReportsCommand = new GetRegistersOpenReportsCommand();
+				cmd.execute(getFinancialRegistersResult);
+			}
+			
+			public var regOpen:XMLList;
+			private function getFinancialRegistersResult(result:XML):void {
+				regOpen = result.financialRegister.(hasOwnProperty('@financialReportId'));
+				
+				var cmd:LoadConfigurationCommand = new LoadConfigurationCommand();
+				cmd.addEventListener(ResultEvent.RESULT,handleLoadResult);
+				if(data.@direction == '-1') {
+					cmd.execute({key : "templates.FinancialDocument.cashIncome"});
+				} else if (data.@direction == '1') {
+					cmd.execute({key : "templates.FinancialDocument.cashOutcome"});
+				}
+				
+			}
+			
+			private function handleLoadResult(event:ResultEvent):void
+			{
+				var result:XML = XML(event.result);
+				
+				//var paymentMetod:String = data.@paymentMethodId;
+				var dct:XMLList = getDictionary(DictionaryManager.getInstance().dictionaries, 'financialRegisters') as XMLList;
+				var documentTypes:XMLList = (getDictionary(DictionaryManager.getInstance().dictionaries, 'documentTypes') as XMLList).(id == result..documentTypeId.text()).xmlOptions..paymentMethods.id;
+				
+				var open:Boolean = false;
+	 outerloop: for each (var x:XML in regOpen) {
+					var t:XMLList = dct.(id == x.@financialRegisterId).xmlOptions..paymentMethods;
+					
+					var currencyId:String = DictionaryManager.getInstance().getById(x.@financialRegisterId).currencyId;
+					
+					if(currencyId == data.@currencyId.toString()) {
+						for each (var xx:XML in documentTypes) {
+							var tt:XMLList;
+							tt = t.(id == xx);
+							
+							if(tt){
+								open = true;
+								break outerloop;
+							}
+						}
+					}
+				}
+				
+				
+				if(open) {
+					if(data.@direction == '-1') {
+						createFinancialIncomeClickHandler();
+					} else if (data.@direction == '1') {
+						createFinancialOutcomeClickHandler();
+					}
+				} else {
+					var pm:XMLList = (getDictionary(DictionaryManager.getInstance().dictionaries, 'paymentMethod') as XMLList);
+					var paymentName:String = '';
+					
+					for each (var xxx:XML in documentTypes) {
+						var ttt:XMLList = pm.(id == xxx);
+						if(ttt.length()){
+							if(paymentName == '') {
+								paymentName += ttt.label.(@lang == LanguageManager.getInstance().currentLanguage).text()
+							} else {
+								paymentName += ', ' + ttt.label.(@lang == LanguageManager.getInstance().currentLanguage).text()
+							}
+						}
+					}
+					
+					if(paymentName == '') {
+						paymentName = LanguageManager.getInstance().labels.error.getData;
+					}
+					
+					var curName:String = DictionaryManager.getInstance().dictionaries.currency.(id == data.@currencyId.toString()).symbol;
+					
+					Alert.show(LanguageManager.getInstance().labels.documents.messages.noFinancialRegisterOpened+": "+paymentName + " - " + curName,LanguageManager.getInstance().labels.common.message);
+				}
+			}
+			
+			private function createFinancialOutcomeClickHandler():void
+			{
+				if (data.@direction != "1") return;
+				var cmd:GetRegistersOpenReportsCommand = new GetRegistersOpenReportsCommand();
+				cmd.execute(getFinancialRegistersResultForOutcome);
+			}
+				
+			private function createFinancialIncomeClickHandler():void
+			{
+				if (data.@direction != "-1") return;
+				var cmd:GetRegistersOpenReportsCommand = new GetRegistersOpenReportsCommand();
+				cmd.execute(getFinancialRegistersResultForIncome);
+			}
+			
+			//1
+			private function getFinancialRegistersResultForOutcome(result:XML):void
+			{
+				//if (!isThereAnySuitableFinancialRegisterToSettleMyPayment(result)) return;
+				
+				var cmd:ShowDocumentEditorCommand = new ShowDocumentEditorCommand(DocumentTypeDescriptor.CATEGORY_FINANCIAL_DOCUMENT);
+				cmd.template = "cashOutcome";
+				cmd.addEventListener(ResultEvent.RESULT,commandResult);
+				cmd.execute();
+			}
+			
+			//2
+			private function getFinancialRegistersResultForIncome(result:XML):void
+			{
+				//if (!isThereAnySuitableFinancialRegisterToSettleMyPayment(result)) return;
+				
+				var cmd:ShowDocumentEditorCommand = new ShowDocumentEditorCommand(DocumentTypeDescriptor.CATEGORY_FINANCIAL_DOCUMENT);
+				cmd.template = "cashIncome";
+				cmd.addEventListener(ResultEvent.RESULT,commandResult);
+				cmd.execute();
+			}
+			
+			private function isThereAnySuitableFinancialRegisterToSettleMyPayment(result:XML):String
+			{
+				for each(var x:XML in result.*)
+				{
+					var currencyId:String = DictionaryManager.getInstance().getById(x.@financialRegisterId).currencyId;
+					if (currencyId == data.@currencyId.toString() && x.@financialReportId.length() > 0) financialRegisterId = x.@financialRegisterId;
+				}
+				if (!financialRegisterId) Alert.show(LanguageManager.getInstance().labels.documents.messages.noFinancialRegisterOpened,LanguageManager.getInstance().labels.common.message);
+				return financialRegisterId;
+			}
+			
+			private function commandResult(event:ResultEvent):void {
+				var editor:DocumentEditor
+				if (event.result && data)
+				{
+					editor = (event.result as DocumentObject).editor;
+					editor.addEventListener(FlexEvent.CREATION_COMPLETE,documentLoadHandler);
+				}
+			}
+			
+			private function documentLoadHandler(event:FlexEvent):void
+			{
+				var editor:FinancialDocumentEditor = event.target as FinancialDocumentEditor;
+				editor.lines.addSettlingLine(LanguageManager.getInstance().labels.documents.paymentsSettlement + ": " + data.@documentNumber.toString(), parseFloat(data.@unsettledAmount), data.@id);
+				if (editor.documentObject.xml.@disableContractorChange.length() == 0 
+					&& editor.documentObject.typeDescriptor.xmlOptions.@contractorOptionality != 'forbidden')
+				editor.contractorComponent.setContractorData(data.@contractorId.toString());
+				//if (data.@currencyId.toString() != ModelLocator.getInstance().systemCurrencyId)
+				//	Alert.show("Uwaga! Płatność dokonana została w walucia innej niż systemowa. Zweryfikuj poprawność kwoty na wystawianym dokumencie kasowym pod względem różnicy kursu.","Ostrzeżenie");
+				if (financialRegisterId) 
+				{
+					editor.financialRegisterSelector.selectedId = financialRegisterId;
+					if ( editor.financialRegisterSelector.selectedIndex != -1 ) {
+						editor.financialRegisterSelector.dispatchEvent(new ListEvent(ListEvent.CHANGE));
+					}
+				}
+			}
+			
+			protected function getDictionary(dictionaries:Object, dictionaryName:String, showAll:Boolean = false):Object
+			{
+				var result:Object = dictionaries && dictionaryName ? dictionaries[dictionaryName] : null;
+				if (showAll) result = XMLList(<entry><label>{LanguageManager.getLabel('documentFilters.all')}</label></entry>) + result;
+				return result;
+			}
+		]]>
+	</mx:Script>
+</mx:LinkButton>

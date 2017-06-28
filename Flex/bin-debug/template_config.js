@@ -1,0 +1,1 @@
+var flashvars = "wsdl=KernelServices/KernelService.svc?wsdl";

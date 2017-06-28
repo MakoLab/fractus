@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" textAlign="center" keyUp="{handleKey(event)}" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:util="com.makolab.components.util.*" xmlns:plugins="com.makolab.fractus.view.documents.plugins.*" xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.document.BusinessObjectAttribute;
+			import com.makolab.fractus.view.documents.documentControls.DocumentLineGenericSingleAttributeComponent;
+			import com.makolab.fractus.model.document.BusinessObject;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.document.CommercialDocumentLine;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.view.documents.plugins.CommercialDocumentCalculationPlugin;
+			import com.makolab.components.document.DocumentEvent;
+			import mx.controls.Alert;
+			
+			[Bindable] public var dictionaryManager:DictionaryManager = DictionaryManager.getInstance();	
+			[Bindable] public var line:CommercialDocumentLine;
+			[Bindable] public var documentObject: DocumentObject;
+			private var calcPlugin:CommercialDocumentCalculationPlugin = new CommercialDocumentCalculationPlugin();
+			public var index:int;
+			public var window:ComponentWindow;
+			
+			public function saveDetails(): void	
+			{
+				if(this.lineAttributeComponent.genSingleAttributeComponent != null)
+				{
+					var attributesArray:Array = new Array(this.lineAttributeComponent.genSingleAttributeComponent)[0]; 
+					var attributesCount:int = attributesArray.length;
+				
+					for (var i:int = 0; i<attributesCount; i++)
+					{
+						var tempAttrComponent:DocumentLineGenericSingleAttributeComponent = attributesArray[i];
+						if(tempAttrComponent.editor.dataObject != "")
+						{
+							(BusinessObjectAttribute(this.line.getAttributeByName(tempAttrComponent.attributeName))).value = tempAttrComponent.editor.dataObject;						
+						}										
+					}
+				}
+				
+				
+				//documentObject.lines.setItemAt(line,index);
+				line.itemName = nameInput.text;
+				var newEvent:DocumentEvent = DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_CHANGE, 'itemDescription', line);
+				documentObject.dispatchEvent(newEvent);
+				window.hide();
+			} 
+						
+			public function lineChange(field:String):void
+			{
+				calcPlugin.calculationType = documentObject.xml.netCalculationType.*;
+				calcPlugin.calculateLine(line, field);
+			}	
+			
+			public function handleKey(event:KeyboardEvent):void
+			{
+				/*
+				if(event.keyCode == Keyboard.ENTER)
+				{
+					saveDetails();
+				}
+				else */
+				if (event.keyCode == Keyboard.ESCAPE)
+				{
+					window.hide();
+				}
+			}		
+		]]>
+	</mx:Script>
+	
+	<plugins:CommercialDocumentCalculationPlugin id="cdcp" documentObject="{documentObject}"/>
+	
+	<mx:VBox width="100%" height="100%" textAlign="left" paddingLeft="4" paddingRight="20">
+		<mx:Label text="Nazwa towaru/usługi:" fontSize="12" fontWeight="bold"/>
+		<mx:TextArea id="nameInput" text="{line.itemName}" width="100%" height="52" wordWrap="true" paddingBottom="10"/>	
+		<mx:Label text="Atrybuty pozycji" fontSize="12" fontWeight="bold" visible="{this.lineAttributeComponent.genSingleAttributeComponent}"/>
+		<documentControls:DefaultLineAttributeComponent id="lineAttributeComponent" documentLine="{line}" documentObject="{documentObject}"  attributeListNode="lineAttributes"/>	
+	</mx:VBox>
+	
+	
+	 <!--
+	<mx:HBox width="100%" textAlign="center">
+		<mx:VBox>
+			<mx:Label text="Ilość" width="50"/>
+			<inputComponents:BindingContainer dataProvider="{line}" width="60" editorDataField="value" editorIsRenderer="true"
+			 	dataField="quantity" 
+			 	change="lineChange('quantity')" 
+			 	>
+			 	<inputComponents:itemEditor>
+					<mx:Component>
+						<inputComponents:CurrencyInput value="{outerDocument.line.quantity}" text="{outerDocument.line.quantity}" width="60"/>
+					</mx:Component>
+				</inputComponents:itemEditor>		
+			</inputComponents:BindingContainer>
+		</mx:VBox>
+		<mx:VBox>
+			<mx:Label text="Cena przed rabatem: "/>
+			<mx:HBox>
+				<mx:Label text="Netto" width="50"/>
+				<inputComponents:BindingContainer dataProvider="{line}"  width="60" editorDataField="value" editorIsRenderer="true"
+					dataField="initialNetPrice"
+					change="lineChange('initialNetPrice')" 
+				 	>
+				 	<inputComponents:itemEditor>
+						<mx:Component>
+							<inputComponents:CurrencyInput value="{outerDocument.line.initialNetPrice}" text="{outerDocument.line.initialNetPrice}" width="60"/>
+						</mx:Component>
+					</inputComponents:itemEditor>		
+				</inputComponents:BindingContainer>
+			</mx:HBox>
+			<mx:HBox>
+				<mx:Label text="Brutto" width="50"/>
+				<inputComponents:BindingContainer dataProvider="{line}"  width="60" editorDataField="value" editorIsRenderer="true"
+					dataField="initialGrossPrice"
+					change="lineChange('initialGrossPrice')" 
+				 	>
+				 	<inputComponents:itemEditor>
+						<mx:Component>
+							<inputComponents:CurrencyInput value="{outerDocument.line.initialGrossPrice}" text="{outerDocument.line.initialGrossPrice}" width="60"/>
+						</mx:Component>
+					</inputComponents:itemEditor>
+				</inputComponents:BindingContainer>
+			</mx:HBox>
+		</mx:VBox>
+		<mx:VBox>
+			<mx:Label text="Rabat: "/>
+			<inputComponents:BindingContainer dataProvider="{line}"  width="60" editorIsRenderer="true" editorDataField="value"
+				dataField="discountRate"
+				change="lineChange('discountRate')" 
+			 	>
+			 	<inputComponents:itemEditor>
+					<mx:Component>
+						<inputComponents:CurrencyInput value="{outerDocument.line.discountRate}" text="{outerDocument.line.discountRate}" width="60"/>
+					</mx:Component>
+				</inputComponents:itemEditor>			
+			</inputComponents:BindingContainer>
+		</mx:VBox>
+		<mx:VBox>
+			<mx:Label text="Cena po rabacie: "/>
+			<mx:HBox>
+				<mx:Label text="Netto" width="50"/>
+				<inputComponents:BindingContainer dataProvider="{line}"  width="60" editorDataField="value" editorIsRenderer="true"
+					dataField="netPrice"
+					change="lineChange('netPrice')" 
+				 	>
+				 	<inputComponents:itemEditor>
+						<mx:Component>
+							<inputComponents:CurrencyInput value="{outerDocument.line.netPrice}" text="{outerDocument.line.netPrice}" width="60"/>
+						</mx:Component>
+					</inputComponents:itemEditor>			
+				</inputComponents:BindingContainer>
+			</mx:HBox>
+			<mx:HBox>
+				<mx:Label text="Brutto" width="50"/>
+				<inputComponents:BindingContainer dataProvider="{line}"  width="60" editorDataField="value" editorIsRenderer="true"
+					dataField="grossPrice"
+					change="lineChange('grossPrice')" 
+				 	>
+				 	<inputComponents:itemEditor>
+						<mx:Component>
+							<inputComponents:CurrencyInput value="{outerDocument.line.grossPrice}" text="{outerDocument.line.grossPrice}" width="60"/>
+						</mx:Component>
+					</inputComponents:itemEditor>		
+				</inputComponents:BindingContainer>
+			</mx:HBox>			
+		</mx:VBox>
+		<mx:VBox>
+			<mx:Label text="VAT"/>
+			<inputComponents:BindingContainer dataProvider="{line}" width="100" editorDataField="dataObject"				
+				dataField="vatRateId"			
+			 	change="lineChange('vatRateId')"
+			 	>
+				<inputComponents:itemEditor>
+					<mx:Component>
+						<inputComponents:DictionarySelector dataProvider="{outerDocument.dictionaryManager.dictionaries.vatRates}" valueMapping="{{ id : '*' }}" labelField="symbol" listLabelField="label"/>
+					</mx:Component>
+				</inputComponents:itemEditor>
+				<inputComponents:itemRenderer>	
+					<mx:Component>
+						<inputComponents:DictionaryRenderer dataProvider="{outerDocument.dictionaryManager.dictionaries.vatRates}" labelField="symbol" valueMapping="{{ id : '*' }}"/>
+					</mx:Component>						
+				</inputComponents:itemRenderer>
+			</inputComponents:BindingContainer>
+		</mx:VBox>
+		<mx:VBox>
+			<mx:Label text="Wartość przed rabatem"/>
+			<mx:HBox>
+				<mx:Label text="Netto" width="50"/>
+				<inputComponents:CurrencyRenderer data="{line.initialNetValue}" width="60"/>
+			</mx:HBox>
+			<mx:HBox>
+				<mx:Label text="Brutto" width="50"/>
+				<inputComponents:CurrencyRenderer data="{line.initialGrossValue}" width="60"/>	
+			</mx:HBox>
+		</mx:VBox>
+		<mx:VBox>
+			<mx:Label text="Wartość rabatu"/>
+			<mx:HBox>
+				<mx:Label text="Netto" width="50"/>
+				<inputComponents:CurrencyRenderer data="{line.discountNetValue}" width="60"/>
+			</mx:HBox>
+			<mx:HBox>
+				<mx:Label text="Brutto" width="50"/>
+				<inputComponents:CurrencyRenderer data="{line.discountGrossValue}" width="60"/>	
+			</mx:HBox>
+		</mx:VBox>
+		<mx:VBox>
+			<mx:Label text="Wartość po rabacie"/>
+			<mx:HBox>
+				<mx:Label text="Netto" width="50"/>
+				<inputComponents:BindingContainer dataProvider="{line}"  width="60" editorDataField="value" editorIsRenderer="true"
+					dataField="netValue"
+					change="lineChange('netValue')" 
+				 	>
+				 	<inputComponents:itemEditor>
+						<mx:Component>
+							<inputComponents:CurrencyInput value="{outerDocument.line.netValue}" text="{outerDocument.line.netValue}" width="60"/>
+						</mx:Component>
+					</inputComponents:itemEditor>			
+				</inputComponents:BindingContainer>
+			</mx:HBox>
+			<mx:HBox>
+				<mx:Label text="Brutto" width="50"/>
+				<inputComponents:BindingContainer dataProvider="{line}"  width="60" editorDataField="value" editorIsRenderer="true"
+					dataField="grossValue"
+					change="lineChange('grossValue')" 
+				 	>
+				 	<inputComponents:itemEditor>
+						<mx:Component>
+							<inputComponents:CurrencyInput value="{outerDocument.line.grossValue}" text="{outerDocument.line.grossValue}" width="60"/>
+						</mx:Component>
+					</inputComponents:itemEditor>	
+				</inputComponents:BindingContainer>
+			</mx:HBox>
+		</mx:VBox>
+	</mx:HBox>
+	-->
+</mx:VBox>

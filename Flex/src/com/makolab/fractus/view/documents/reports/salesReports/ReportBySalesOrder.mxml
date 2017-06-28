@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReportBase
+	xmlns="com.makolab.fractus.view.documents.reports.*"
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:layoutComponents="com.makolab.components.layoutComponents.*"
+	xmlns:salesReports="com.makolab.fractus.view.documents.reports.salesReports.*"
+	timeout="300"
+	>
+
+  <config>
+    <mx:XML xmlns="">
+      <config>
+        <columns>
+          <column number="6" dataField="@netValue" dataType="currency"/>
+          <column number="7" dataField="@grossValue" dataType="currency"/>
+          <column number="8" dataField="@z_netValue" dataType="currency"/>
+          <column number="9" dataField="@z_grossValue" dataType="currency"/>
+          <column number="10" dataField="@r_netValue" dataType="currency"/>
+          <column number="11" dataField="@r_grossValue" dataType="currency"/>
+          <column number="12" dataField="@warehouseValue" dataType="currency"/>
+          <column number="13" dataField="@m_grossValue" dataType="currency"/>
+          <column number="14" dataField="@profitMargin" dataType="currencyHide0"/>
+        </columns>
+      </config>
+    </mx:XML>
+  </config>
+
+  <mx:Script>
+    <![CDATA[
+			import com.makolab.components.layoutComponents.SummaryColumn;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			import com.makolab.fractus.view.finance.PaymentSettlementEditor;
+			import com.makolab.fractus.view.generic.DocumentTypePrefixRenderer;
+			import com.makolab.fractus.view.payments.PaymentList;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.HierarchicalCollectionView;
+			import mx.collections.HierarchicalData;
+			import mx.collections.ICollectionView;
+			import mx.collections.XMLListCollection;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.formatters.CurrencyFormatter;
+			import mx.graphics.RoundedRectangle;
+			
+			import assets.IconManager;
+
+			[Bindable] 
+			public var languageManager:LanguageManager = LanguageManager.getInstance();
+			
+			
+			private function showSalesOrder(event:ListEvent):void
+			{
+				var item:Object = event.itemRenderer.data;
+				var docCategory:uint = 13;
+				if (!item) return;
+				if (item.localName() == 'relatedDocument') docCategory = item.@documentCategory;
+				DocumentRenderer.showWindow(DocumentTypeDescriptor.getDocumentCategory(docCategory), item.@id.toString());		
+			}
+			
+			private function getRowLabel(item:Object, column:Object):String
+			{
+				if (item.localName() == 'relatedDocument') return '  \u2022 '+ item.@category;//DictionaryManager.getInstance().dictionaries.documentTypes.(documentCategory.toString() == item.@documentCategory).(id == item.@documentTypeId).label.*
+				
+				else return item.@contractorName;
+			}
+			
+			private function getIcon(item:Object):Class
+			{
+				return null;
+			}
+
+			private function formatMoney(value:Object, column:Object):String
+			{
+				
+				/*Zaliczka, Wydanie, Rozliczenie*/
+				if (value.localName() == 'relatedDocument'){
+					if(value.@category == 'Zaliczka'){
+						if(column.dataField == '@z_netValue') return CurrencyManager.formatCurrency(parseFloat(value.@netValue), '');	
+						else if(column.dataField == '@z_grossValue') return CurrencyManager.formatCurrency(parseFloat(value.@grossValue), '');
+						else return '';
+					}
+					else if(value.@category == 'Wydanie'){
+						if(column.dataField == '@warehouseValue') return CurrencyManager.formatCurrency(parseFloat(value.@warehouseValue), '');
+						else return '';
+					}
+					else if(value.@category == 'Rozliczenie'){
+						if(column.dataField == '@r_netValue') return CurrencyManager.formatCurrency(parseFloat(value.@r_netValue), '');	
+						else if(column.dataField == '@r_grossValue') return CurrencyManager.formatCurrency(parseFloat(value.@r_grossValue), '');
+						else return '';
+					}
+					else if(value.@category == 'Wypłata'){
+						if(column.dataField == '@m_grossValue') return CurrencyManager.formatCurrency(parseFloat(value.@m_grossValue), '');
+						else return '';
+					}
+					else return '';
+				}
+				else return CurrencyManager.formatCurrency(parseFloat(value[column.dataField]), '');
+			}
+			/*
+			private function ordinalNumber(value:Object, column:Object):String
+			{
+				var counter:int = 1;
+				var text:String = "";
+				//for each (var i:XML in AdvancedDataGrid(column.owner).dataProvider.source.source){
+				if (grid.dataProvider.source && grid.dataProvider.source.source)
+				{
+					for each (var i:XML in grid.dataProvider.source.source)
+					{
+						if (XML(value)==i) text=counter.toString();
+						counter++;
+					}
+				}
+				value.@lp=text;
+				return text;
+			}
+			*/
+			
+			private const REQUIRED_FIELDS:Array = ['@z_netValue', '@z_grossValue', '@r_netValue', '@r_grossValue', '@warehouseValue', '@m_grossValue', '@profitMargin' ,'@realizationTime'];
+			
+			[Bindable]
+			override public function set dataProvider(value:XMLList):void
+			{
+				super.dataProvider = null;
+				var counter:int = 1;
+				if(value){
+					for each (var i:XML in value)
+					{
+						i.@lp=counter.toString();
+						counter++;
+						//usunięcie pustych powiązań zwracanych przez procedure. coolik
+						if (i.relatedDocument.length() == 1 && i.relatedDocument.attributes().length() == 0)
+						{
+							delete i.relatedDocument[0];
+						}
+						
+						for each (var field:Object in REQUIRED_FIELDS)
+						{
+							if (i[field].length() == 0) i[field] = '';
+						}
+					}
+					super.dataProvider = value;
+				}
+			}
+			
+			private function calculateProfitMargin(source:XMLList,dataField:String,childDataField:String = null):String{
+				var dataFieldName:String = dataField;
+				var warehouseDocSum:Number = 0;
+				var prepaymentSum:Number = 0;
+				var settlementSum:Number = 0;
+				var KWSum:Number = 0;
+				for(var i:int=0;i<source.length();i++){
+					if(source[i].@profitMargin.length() > 0 && source[i].@profitMargin != ""){
+						var orderPrepaymentNet:Number = 0;
+						var orderSettlementNet:Number = 0;
+						for (var j:int = 0; j < source[i].relatedDocument.length(); j++)
+						{
+							if (source[i].relatedDocument[j].@z_netValue.length() > 0) orderPrepaymentNet += Number(source[i].relatedDocument[j].@z_netValue);
+							if (source[i].relatedDocument[j].@r_netValue.length() > 0) orderSettlementNet += Number(source[i].relatedDocument[j].@r_netValue);
+						}
+						KWSum += Number(source[i].@m_netValue);
+						prepaymentSum += orderPrepaymentNet;
+						settlementSum += orderSettlementNet;
+						warehouseDocSum += Number(source[i].@warehouseValue);
+					}
+				}
+				var sales:Number = prepaymentSum + settlementSum - KWSum;
+				return ((sales - warehouseDocSum)/sales).toString();
+			}
+			/* 
+			private function calculateSummary(gridDataProvider:Object):Object
+			{
+				var
+					netTotal:Number = 0,
+					grossTotal:Number = 0,
+					z_netTotal:Number = 0,
+					z_grossTotal:Number = 0,
+					r_netTotal:Number = 0,
+					r_grossTotal:Number = 0,
+					m_netTotal:Number = 0,
+					m_grossTotal:Number = 0,
+					m_Total:Number = 0
+					
+					
+				var x:XML;
+				
+				if (gridDataProvider.source && gridDataProvider.source.source)
+				{
+					for each (x in gridDataProvider.source.source)
+					{
+						if(!isNaN(parseFloat(x.@netValue))) netTotal += parseFloat(x.@netValue);
+						if(!isNaN(parseFloat(x.@grossValue)))grossTotal += parseFloat(x.@grossValue);
+						if(!isNaN(parseFloat(x.@z_netValue)))z_netTotal += parseFloat(x.@z_netValue);
+						if(!isNaN(parseFloat(x.@z_grossValue)))z_grossTotal += parseFloat(x.@z_grossValue);
+						if(!isNaN(parseFloat(x.@r_netValue)))r_netTotal += parseFloat(x.@r_netValue);
+						if(!isNaN(parseFloat(x.@r_grossValue)))r_grossTotal += parseFloat(x.@r_grossValue);
+						if(!isNaN(parseFloat(x.@m_netValue)))m_netTotal += parseFloat(x.@m_netValue);
+						if(!isNaN(parseFloat(x.@warehouseValue)))m_Total += parseFloat(x.@warehouseValue);
+
+					}
+					for each (x in gridDataProvider.source.source.employee)
+					{
+					}
+				}
+				
+				return XMLList(<summary
+						netValue={parseFloat(netTotal.toString())}
+						grossValue={parseFloat(grossTotal.toString())}
+						z_netValue={parseFloat(z_netTotal.toString())}
+						z_grossValue={parseFloat(z_grossTotal.toString())}
+						r_netValue={parseFloat(r_netTotal.toString())}
+						r_grossValue={parseFloat(r_grossTotal.toString())}
+						m_netValue={parseFloat(m_netTotal.toString())}
+						warehouseValue={parseFloat(m_Total.toString())}
+					/>);
+			}
+			 */
+			public function myStyleFunc(value:Object, col:AdvancedDataGridColumn):Object{
+				if (value && value.localName() == 'relatedDocument')
+					return {color:0x4977e0};
+				return null;
+			}
+			
+			override protected function onGenerateReportResult():void
+			{
+				//wywolanie funkcji potrzebne do odrysowania summary ze wzgledu na mozliwe ukrycie kolumn
+				
+				/*ponowne ustawienie szerokosci kolumn 
+				  potrzebne ze wzgledu na problem gridow z poprawna interpretacja szerokosci kolumn
+				  w przypadku ukrywania niektorych z nich*/
+				treeTable.width = summary.width = this.tableContainer.width;
+				treeTable.percentWidth = summary.percentWidth = 100;
+				
+				//wymuszenie przebudowy tabeli summary w celu ukrycia odpowiednich kolumn 
+				treeTable.dispatchEvent(new FlexEvent(FlexEvent.CREATION_COMPLETE));
+			}
+			
+			/* [Bindable] private function isColumnVisible(column:String):Boolean{
+				var result:Boolean = true;
+				if(custFilters.comboView!=null){
+					result = false;
+					for(var i:int=0;i<custFilters.comboView.selectedItems.length;i++){
+							if(	(custFilters.comboView.selectedItems[i].value.* == "warehouse" && column == "warehouseColumn") ||
+								(custFilters.comboView.selectedItems[i].value.* == "monter" && column == "monterColumn") ||
+								(custFilters.comboView.selectedItems[i].value.* == "advance" && column == "advanceColumn") ||
+								(custFilters.comboView.selectedItems[i].value.* == "settlement" && column == "settelmentColumn") ||
+								(custFilters.comboView.selectedItems[i].value.* == "reservation" && column == "reservationColumn")
+							)result = true;		
+					}
+				}
+				return result;
+			} */
+			
+			/* private function ordinaryNumberFunction(item:Object,column:AdvancedDataGridColumn):String
+			{
+				var ret:String = "";
+				if(grid.dataProvider){
+					var collection:XMLList = (grid.hierarchicalCollectionView.source as HierarchicalData).source as XMLList;
+					for (var i:int = 0; i < collection.length(); i++){
+						if(item == collection[i]){ret = String(i); break} 
+					}
+				}
+				return ret;
+			} */
+			
+			private function setTypeRenderer():void{	
+				var factory:ClassFactory = new ClassFactory(DocumentTypePrefixRenderer);
+				factory.properties = {dataProvider:this.dataProvider, prefix:''};
+				typeColumn.itemRenderer = factory;
+			}
+			
+			private function typeLabelFunction(value:Object, col:Object):Object
+			{
+				var symbol:String = "";
+				var id:String = "";
+				if(value[col.dataField].length() > 0)
+				{
+					id = value[col.dataField].toString(); 
+					var descriptor:DocumentTypeDescriptor = new DocumentTypeDescriptor(id);
+					symbol = descriptor.symbol;
+				}
+				return symbol;
+			}
+			
+			private function realizationTimesLabelFunction(value:Object,column:Object):Object
+			{
+				var string:String = "";
+				var realizationTime:String = String(CurrencyManager.parseCurrency(value.@realizationTime,0));
+				var serviceRealizationTime:String = String(CurrencyManager.parseCurrency(value.@serviceRealizationTime,0));
+				if (realizationTime != "NaN" && serviceRealizationTime != "NaN") string = realizationTime + "/" + serviceRealizationTime;
+				if (value.name() == "summaryRow")return value.@realizationTime; // proteza, jako że funkcja licząca podsumowanie czasów realizacji nie usupełnia dataProvidera podsumowania o obliczone średnie, tylko wstawia gotowy string w dataField. 
+				return string;
+			}
+			
+			private function realizationTimesSummaryFunction(source:XMLList,dataField:String,childDataField:String = null,a:*=null):String
+			{
+				var realizationTimeSum:Number = 0;
+				var serviceRealizationTimeSum:Number = 0;
+				var realizationTimeQuantity:int = 0;
+				var serviceRealizationTimeQuantity:int = 0;
+				for(var i:int=0;i<source.length();i++){
+					if (source[i].@realizationTime.length() > 0 && source[i].@realizationTime != "")
+					{
+						realizationTimeSum += Number(source[i].@realizationTime);
+						realizationTimeQuantity++;
+					}
+					if (source[i].@serviceRealizationTime.length() > 0 && source[i].@serviceRealizationTime != "")
+					{
+						serviceRealizationTimeSum += Number(source[i].@serviceRealizationTime);
+						serviceRealizationTimeQuantity++;
+					}
+				}
+				var realizationTimeAvg:String = String(Tools.round(realizationTimeSum/realizationTimeQuantity,2));
+				var serviceRealizationTimeAvg:String = String(Tools.round(serviceRealizationTimeSum/serviceRealizationTimeQuantity,2));
+				if (realizationTimeAvg == "NaN")realizationTimeAvg = "-";
+				if (serviceRealizationTimeAvg == "NaN")serviceRealizationTimeAvg = "-";
+				var result:String = realizationTimeAvg + "/" + serviceRealizationTimeAvg;
+				return result;
+			}
+			
+		]]>
+  </mx:Script>
+  <!--
+	<treeTable>
+	<mx:AdvancedDataGrid doubleClick="{showSalesOrder()}" doubleClickEnabled="true" styleFunction="myStyleFunc" id="grid" width="100%" height="100%" iconFunction="{getIcon}" >
+			<mx:groupedColumns>
+				<mx:AdvancedDataGridColumn headerText="" width="22" resizable="false"/>
+				<mx:AdvancedDataGridColumn id="lp" headerText="{LanguageManager.getLabel('common.lp')}" minWidth="60" width="60" editable="false" dataField="@lp" sortCompareFunction="{Tools.getSortFunction('@lp')}"/>
+				<mx:AdvancedDataGridColumnGroup headerText="Zamówienia">
+					<mx:AdvancedDataGridColumn id="contractorName" headerText="Kontrahent" dataField="@contractorName" width="190" labelFunction="getRowLabel"/>
+					<mx:AdvancedDataGridColumn width="85" headerText="Numer" dataField="@fullNumber" />
+					<mx:AdvancedDataGridColumn headerText="{LanguageManager.getLabel('common.date')}" itemRenderer="com.makolab.components.inputComponents.DateRenderer" width="75" dataField="@issueDate"/>
+					<mx:AdvancedDataGridColumn width="70" id="netValue" headerText="Netto" dataField="@netValue" textAlign="right" labelFunction="formatMoney"/>	
+					<mx:AdvancedDataGridColumn width="70" id="grossValue" headerText="Brutto" dataField="@grossValue" textAlign="right" labelFunction="formatMoney"/>	
+				</mx:AdvancedDataGridColumnGroup>
+			</mx:groupedColumns>
+		</mx:AdvancedDataGrid>
+	</treeTable>
+	-->
+  <treeTable>
+    <mx:AdvancedDataGrid creationComplete="setTypeRenderer()" itemDoubleClick="showSalesOrder(event)" doubleClickEnabled="true" styleFunction="myStyleFunc" id="grid" width="100%" height="100%" iconFunction="{getIcon}" horizontalScrollPolicy="on" lockedColumnCount="2">
+      <mx:groupedColumns>
+        <!--<mx:AdvancedDataGridColumn headerText="" width="22" resizable="false"/>-->
+        <mx:AdvancedDataGridColumn id="lp" headerText="{LanguageManager.getLabel('common.lp')}" minWidth="40" editable="false" dataField="@lp" width="40" sortCompareFunction="{Tools.getSortFunction('@lp')}"/>
+        <mx:AdvancedDataGridColumn headerText="Numer zam." dataField="@privNumber" width="85"/>
+        <mx:AdvancedDataGridColumn id="typeColumn" headerText="{LanguageManager.getLabel('common.type')}" width="90" labelFunction="typeLabelFunction" dataField="@documentTypeId"/>
+        <mx:AdvancedDataGridColumnGroup headerText="Zamówienia">
+          <mx:AdvancedDataGridColumn id="contractorName" headerText="Kontrahent" dataField="@contractorName" width="220" labelFunction="getRowLabel" sortCompareFunction="{ReportBase.stringCompareFunction('@contractorName')}"/>
+          <mx:AdvancedDataGridColumn width="85" headerText="Numer" dataField="@fullNumber" textAlign="right"/>
+          <mx:AdvancedDataGridColumn headerText="{LanguageManager.getLabel('common.date')}" itemRenderer="com.makolab.components.inputComponents.DateRenderer" width="75" dataField="@issueDate"/>
+          <mx:AdvancedDataGridColumn width="90" id="netValue" headerText="Netto" dataField="@netValue" textAlign="right" labelFunction="formatMoney" sortCompareFunction="{Tools.getSortFunction('@netValue')}"/>
+          <mx:AdvancedDataGridColumn width="90" id="grossValue" headerText="Brutto" dataField="@grossValue" textAlign="right" labelFunction="formatMoney" sortCompareFunction="{Tools.getSortFunction('@grossValue')}"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumnGroup id="advanceColumn" headerText="Zaliczki">
+          <mx:AdvancedDataGridColumn width="80" id="z_netValue" headerText="Netto" dataField="@z_netValue" textAlign="right" labelFunction="formatMoney" sortCompareFunction="{Tools.getSortFunction('@z_netValue')}"/>
+          <mx:AdvancedDataGridColumn width="80" id="z_grossValue" headerText="Brutto" dataField="@z_grossValue" textAlign="right" labelFunction="formatMoney" sortCompareFunction="{Tools.getSortFunction('@z_grossValue')}"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumnGroup id="settelmentColumn" headerText="Rozliczenie">
+          <mx:AdvancedDataGridColumn width="70" minWidth="50" id="r_netValue" headerText="Netto" dataField="@r_netValue" textAlign="right" labelFunction="formatMoney" sortCompareFunction="{Tools.getSortFunction('@r_netValue')}"/>
+          <mx:AdvancedDataGridColumn width="70" minWidth="50" id="r_grossValue" headerText="Brutto" dataField="@r_grossValue" textAlign="right" labelFunction="formatMoney" sortCompareFunction="{Tools.getSortFunction('@r_grossValue')}"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumnGroup id="warehouseColumn" headerText="{LanguageManager.getLabel('common.warehouse')}">
+          <mx:AdvancedDataGridColumn width="80" minWidth="60" id="m_value" headerText="Koszt" dataField="@warehouseValue" textAlign="right" labelFunction="formatMoney" sortCompareFunction="{Tools.getSortFunction('@warehouseValue')}"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <!--
+				<mx:AdvancedDataGridColumnGroup id="reservationColumn" headerText="Rezerwacje" visible="{isColumnVisible('reservationColumn')}">
+					<mx:AdvancedDataGridColumn id="r_value" minWidth="50" width="70" headerText="Numer" dataField="@reservationNumber" visible="{isColumnVisible('reservationColumn')}" sortCompareFunction="{Tools.getSortFunction('@reservationNumber')}"/>	
+				</mx:AdvancedDataGridColumnGroup>
+				-->
+        <mx:AdvancedDataGridColumnGroup id="monterColumn" headerText="Prowizja">
+          <mx:AdvancedDataGridColumn width="100" minWidth="60" id="m_grossValue" headerText="Netto" dataField="@m_grossValue" textAlign="right" labelFunction="formatMoney" sortCompareFunction="{Tools.getSortFunction('@m_grossValue')}"/>
+        </mx:AdvancedDataGridColumnGroup>
+
+        <mx:AdvancedDataGridColumn id="profitMargin" headerText="{LanguageManager.getLabel('common.profit')}" dataField="@profitMargin" width="100" textAlign="right" labelFunction="percentLabelFunction" sortCompareFunction="{Tools.getSortFunction('@profitMargin')}"/>
+        <mx:AdvancedDataGridColumn id="realizationTime" headerText="Czas realizacji / czas realizacji usługi" dataField="@realizationTime" textAlign="right" labelFunction="realizationTimesLabelFunction"/>
+        <!--<mx:AdvancedDataGridColumn id="serviceRealizationTime" headerText="Czas realizacji usługi" dataField="@serviceRealizationTime" width="60" textAlign="right" labelFunction="quantityLabelFunction"/>-->
+      </mx:groupedColumns>
+    </mx:AdvancedDataGrid>
+  </treeTable>
+
+  <summary>
+    <layoutComponents:AdvancedDataGridSummary2 id="summaryTable" source="{grid}">
+      <layoutComponents:summaryColumns>
+        <layoutComponents:SummaryColumn sourceColumn="{netValue}" operations="{[SummaryColumn.SUM]}"/>
+        <layoutComponents:SummaryColumn sourceColumn="{grossValue}" operations="{[SummaryColumn.SUM]}"/>
+        <layoutComponents:SummaryColumn sourceColumn="{z_netValue}" operations="{[SummaryColumn.SUM]}"/>
+        <layoutComponents:SummaryColumn sourceColumn="{z_grossValue}" operations="{[SummaryColumn.SUM]}"/>
+        <layoutComponents:SummaryColumn sourceColumn="{r_netValue}" operations="{[SummaryColumn.SUM]}"/>
+        <layoutComponents:SummaryColumn sourceColumn="{r_grossValue}" operations="{[SummaryColumn.SUM]}"/>
+        <layoutComponents:SummaryColumn sourceColumn="{m_value}" operations="{[SummaryColumn.SUM]}"/>
+        <layoutComponents:SummaryColumn sourceColumn="{m_grossValue}" operations="{[SummaryColumn.SUM]}"/>
+        <layoutComponents:SummaryColumn sourceColumn="{profitMargin}" operations="{[calculateProfitMargin]}"/>
+        <layoutComponents:SummaryColumn sourceColumn="{realizationTime}" operations="{[realizationTimesSummaryFunction]}"/>
+        <!--<layoutComponents:SummaryColumn sourceColumn="{serviceRealizationTime}" operations="{[SummaryColumn.AVARAGE]}"/>-->
+      </layoutComponents:summaryColumns>
+    </layoutComponents:AdvancedDataGridSummary2>
+  </summary>
+
+  <!--<customFilters>
+		<salesReports:ReportBySalesOrderCustomFilters id="custFilters" visible="false"/>
+	</customFilters>-->
+
+</ReportBase>

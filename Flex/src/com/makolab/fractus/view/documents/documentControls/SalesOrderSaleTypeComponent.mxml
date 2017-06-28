@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="salesTypeChange(event)"
+		borderStyle="solid"
+		borderThickness="1"
+		borderColor="white"
+		visible="{documentObject.typeDescriptor.dictionaryTypeDescriptor.xmlOptions.root.commercialDocument.@saleTypeSelector}"
+    enabled="{documentObject.typeDescriptor.dictionaryTypeDescriptor.xmlOptions.root.commercialDocument.@allowReservationChange}"
+	>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.events.CollectionEvent;
+			import com.makolab.components.document.DocumentEvent;
+			import mx.events.ItemClickEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			
+			private var _documentObject:DocumentObject;
+			
+			private var _value:String = null;
+			
+			[Bindable]
+			public function set value(val:String):void
+			{
+				_value = val;
+			}
+			public function get value():String
+			{
+				return _value;
+			}
+			
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				_documentObject = value;
+				if(!value)return;
+				
+				var attribute:XML = getAttribute();
+				this.value = attribute.value.toString();
+				if(attribute){
+					switch(attribute.value.toString()){
+						case DocumentObject.ITEM_SALE: 
+							itemSales.selected = true;
+							reservation.selected = false;
+							break;
+						case DocumentObject.ITEM_SALE_RESERVATION:
+							itemSales.selected = true;
+							reservation.selected = true;
+							break;
+						case DocumentObject.SERVICE_SALE:
+							serviceSales.selected = true;
+							reservation.selected = false;
+							break;
+						case DocumentObject.SERVICE_SALE_RESERVATION:
+							serviceSales.selected = true;
+							reservation.selected = true;
+							break;
+						default:
+							itemSales.selected = false;
+							serviceSales.selected = false;
+							reservation.selected = false;
+							this.value = null;
+					}
+				}
+			}
+			
+			public function get documentObject():DocumentObject
+			{
+				return _documentObject;
+			}
+			
+			private function getAttribute():XML
+			{
+				var fieldId:String = DictionaryManager.getInstance().dictionaries.documentFields.(name.toString() == "Attribute_SalesOrderSalesType").id.toString();
+				var attribute:XML;
+				for(var i:int = 0; i < _documentObject.attributes.length; i++){
+					if(_documentObject.attributes[i].documentFieldId.toString() == fieldId){
+						attribute = _documentObject.attributes[i];
+						break;
+					}
+				}
+				return attribute;
+			}
+			
+			private function salesTypeChange(event:Event):void
+			{
+				var value:String;
+				if(itemSales.selected && !reservation.selected)value = DocumentObject.ITEM_SALE;
+				if(itemSales.selected && reservation.selected)value = DocumentObject.ITEM_SALE_RESERVATION;
+				if(serviceSales.selected && !reservation.selected)value = DocumentObject.SERVICE_SALE;
+				if(serviceSales.selected && reservation.selected)value = DocumentObject.SERVICE_SALE_RESERVATION;
+				var attribute:XML = getAttribute();
+				var fieldId:String = DictionaryManager.getInstance().dictionaries.documentFields.(name.toString() == "Attribute_SalesOrderSalesType").id.toString();
+				if(attribute == null){
+					attribute = <attribute/>;
+					attribute.documentFieldId = fieldId;
+					documentObject.attributes.addItem(attribute);
+				}
+				attribute.value = value;
+				this.value = value;
+				
+				var e:DocumentEvent = new DocumentEvent(DocumentEvent.DOCUMENT_ATTRIBUTE_CHANGE);
+				e.fieldName = "Attribute_SalesOrderSalesType";
+				documentObject.dispatchEvent(e);
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:HBox>
+	<mx:Label text="{LanguageManager.getInstance().labels.documents.saleType}"/>
+	
+		<mx:VBox verticalGap="0">
+			<mx:RadioButtonGroup id="group" itemClick="salesTypeChange(event)"/>
+			<mx:RadioButton id="itemSales" groupName="group" label="{LanguageManager.getInstance().labels.documents.itemSales}" value="itemSales"/>
+			<mx:RadioButton id="serviceSales" groupName="group" label="{LanguageManager.getInstance().labels.documents.serviceSales}" value="serviceSales"/>
+		</mx:VBox>
+		<mx:CheckBox id="reservation" label="{LanguageManager.getInstance().labels.documents.reservation}" change="salesTypeChange(event)"/>
+	</mx:HBox>
+	
+</mx:FormItem>

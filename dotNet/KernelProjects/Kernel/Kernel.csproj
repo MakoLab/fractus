@@ -1,0 +1,446 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{EAADBF1D-FD8A-4258-A43A-83ED9F65E80B}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Makolab.Fractus.Kernel</RootNamespace>
+    <AssemblyName>Kernel</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Kernel.snk</AssemblyOriginatorKeyFile>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <UpgradeBackupLocation />
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>
+    </DocumentationFile>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="LumenWorks.Framework.IO">
+      <HintPath>..\..\ThirdPartyLibraries\LumenWorks.Framework.IO.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Microsoft.IdentityModel, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\ThirdPartyLibraries\Microsoft.IdentityModel.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Ninject.Core, Version=1.0.0.95, Culture=neutral, PublicKeyToken=c7192dc5380945e7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\ThirdPartyLibraries\Ninject.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="RandomLogHelper">
+      <HintPath>..\..\ThirdPartyLibraries\RandomLogHelper.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.configuration" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.IdentityModel" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Attributes\ComparableAttribute.cs" />
+    <Compile Include="Attributes\DatabaseMappingAttribute.cs" />
+    <Compile Include="Attributes\XmlSerializableAttribute.cs" />
+    <Compile Include="BusinessObjects\Documents\ComplaintDocument.cs" />
+    <Compile Include="BusinessObjects\Documents\InventoryDocument.cs" />
+    <Compile Include="BusinessObjects\Documents\ComplaintDocumentLine.cs" />
+    <Compile Include="BusinessObjects\Documents\ComplaintDecision.cs" />
+    <Compile Include="BusinessObjects\Documents\InventorySheet.cs" />
+    <Compile Include="BusinessObjects\Documents\InventorySheetLines.cs" />
+    <Compile Include="BusinessObjects\Documents\InventorySheetLine.cs" />
+    <Compile Include="BusinessObjects\Documents\ComplaintDocumentLines.cs" />
+    <Compile Include="BusinessObjects\Documents\ComplaintDecisions.cs" />
+    <Compile Include="BusinessObjects\Documents\InventorySheets.cs" />
+    <Compile Include="BusinessObjects\Documents\Options\CloseProcessOption.cs" />
+    <Compile Include="BusinessObjects\Documents\Options\DocumentOptionName.cs" />
+    <Compile Include="BusinessObjects\Documents\Options\UpdateItemsDefaultPriceOption.cs" />
+    <Compile Include="BusinessObjects\Documents\SalesOrderSalesType.cs" />
+    <Compile Include="BusinessObjects\DocumentTypeOptions.cs" />
+    <Compile Include="BusinessObjects\InventoryDocumentTypeOptions.cs" />
+    <Compile Include="Constants\ConvertersConfigKey.cs" />
+    <Compile Include="Constants\EcXmlName.cs" />
+    <Compile Include="Constants\PortaXmlName.cs" />
+    <Compile Include="Converters\Dictionaries\SymbolConverter.cs" />
+    <Compile Include="Coordinators\Logic\DocumentLogic.cs" />
+    <Compile Include="Coordinators\Logic\ProductionLogic.cs" />
+    <Compile Include="Coordinators\Logic\SalesOrderLogic.cs" />
+    <Compile Include="Coordinators\Logic\ComplaintDocumentLogic.cs" />
+    <Compile Include="Coordinators\Logic\InventoryDocumentLogic.cs" />
+    <Compile Include="Coordinators\Logic\InventorySheetLogic.cs" />
+    <Compile Include="Coordinators\Plugins\ItemEquivalentRemovalPlugin.cs" />
+    <Compile Include="Coordinators\TypedCoordinator.cs" />
+    <Compile Include="FastTest.cs" />
+    <Compile Include="FractusAuthorizationManager.cs" />
+    <Compile Include="FractusClaimsTransformer.cs" />
+    <Compile Include="Interfaces\IContractorContainingDocument.cs" />
+    <Compile Include="Interfaces\IMetadataContainingBusinessObject.cs" />
+    <Compile Include="Interfaces\IPaymentsContainingDocument.cs" />
+    <Compile Include="MethodInputParameters\CustomXmlOrderLine.cs" />
+    <Compile Include="ObjectFactories\EcIntegrationFactory.cs" />
+    <Compile Include="PostHelper.cs" />
+    <Compile Include="Repository\DocumentInfo.cs" />
+    <Compile Include="Repository\DocumentRepository.cs" />
+    <Compile Include="Repository\DocumentRepositoryFactory.cs" />
+    <Compile Include="Enums\DataType.cs" />
+    <Compile Include="Enums\DecisionType.cs" />
+    <Compile Include="Enums\ErrorLevel.cs" />
+    <Compile Include="Enums\ExportToAccountingStatus.cs" />
+    <Compile Include="Enums\OfferStatusName.cs" />
+    <Compile Include="Enums\ProcessObjectName.cs" />
+    <Compile Include="Enums\RealizationStage.cs" />
+    <Compile Include="Enums\RelatedLinesChangePolicy.cs" />
+    <Compile Include="Enums\SalesOrderGenerateDocumentOption.cs" />
+    <Compile Include="Enums\SourceType.cs" />
+    <Compile Include="Enums\VariableColumnName.cs" />
+    <Compile Include="Enums\XmlName.cs" />
+    <Compile Include="HelperObjects\AllocationShift.cs" />
+    <Compile Include="HelperObjects\AllocationCollection.cs" />
+    <Compile Include="HelperObjects\Allocation.cs" />
+    <Compile Include="HelperObjects\ItemComparerByCode.cs" />
+    <Compile Include="HelperObjects\SalesOrderBalanceValidator.cs" />
+    <Compile Include="HelperObjects\SalesOrderSettlement.cs" />
+    <Compile Include="HelperObjects\SalesOrderSettlements.cs" />
+    <Compile Include="HelperObjects\SalesPriceBelowPurchasePriceValidation.cs" />
+    <Compile Include="HelperObjects\User.cs" />
+    <Compile Include="HelperObjects\WarehouseItemUnitQuantityDictionary.cs" />
+    <Compile Include="HelperObjects\WarehouseItemQuantityInventoryDocumentDictionary.cs" />
+    <Compile Include="Repository\HybridDocumentRepository.cs" />
+    <Compile Include="Interfaces\IDocumentRepository.cs" />
+    <Compile Include="Interfaces\IAllocationOwner.cs" />
+    <Compile Include="HelperObjects\WarehouseItemQuantityDictionary.cs" />
+    <Compile Include="BusinessObjects\BusinessObjectHelper.cs" />
+    <Compile Include="BusinessObjects\BusinessObjectsContainer.cs" />
+    <Compile Include="BusinessObjects\BusinessObject.cs" />
+    <Compile Include="BusinessObjects\CommercialDocumentTypeOptions.cs" />
+    <Compile Include="BusinessObjects\Documents\AbstractAttrValue.cs" />
+    <Compile Include="BusinessObjects\Documents\DocumentLineAttrValues.cs" />
+    <Compile Include="BusinessObjects\Documents\DocumentLineAttrValue.cs" />
+    <Compile Include="BusinessObjects\Relations\DocumentRelations.cs" />
+    <Compile Include="BusinessObjects\Relations\DocumentRelation.cs" />
+    <Compile Include="BusinessObjects\ServiceDocumentTypeOptions.cs" />
+    <Compile Include="BusinessObjects\Contractors\ApplicationUser.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\Branch.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\ContainerType.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\Company.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\AccountingJournal.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\AccountingRule.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\ShiftField.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\VatRegister.cs" />
+    <Compile Include="BusinessObjects\Documents\CommercialDocumentBase.cs" />
+    <Compile Include="BusinessObjects\Documents\Options\RealizeOrderOption.cs" />
+    <Compile Include="BusinessObjects\Documents\Options\DisableRemoteOrderSendingOption.cs" />
+    <Compile Include="BusinessObjects\Documents\SimpleDocument.cs" />
+    <Compile Include="BusinessObjects\Documents\FinancialDocument.cs" />
+    <Compile Include="BusinessObjects\Documents\Options\GenerateDocumentOption.cs" />
+    <Compile Include="BusinessObjects\Finances\FinancialReport.cs" />
+    <Compile Include="BusinessObjects\Finances\PaymentSettlements.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\FinancialRegister.cs" />
+    <Compile Include="BusinessObjects\Finances\PaymentSettlement.cs" />
+    <Compile Include="BusinessObjects\ReflectionCache\ComparableCache.cs" />
+    <Compile Include="BusinessObjects\ReflectionCache\DatabaseMappingCache.cs" />
+    <Compile Include="BusinessObjects\Relations\CommercialWarehouseValuation.cs" />
+    <Compile Include="BusinessObjects\Relations\CommercialWarehouseRelation.cs" />
+    <Compile Include="BusinessObjects\Relations\CommercialWarehouseValuations.cs" />
+    <Compile Include="BusinessObjects\Relations\CommercialWarehouseRelations.cs" />
+    <Compile Include="BusinessObjects\Service\ServiceDocumentEmployee.cs" />
+    <Compile Include="BusinessObjects\Service\ServiceDocument.cs" />
+    <Compile Include="BusinessObjects\Service\ServiceDocumentServicePlace.cs" />
+    <Compile Include="BusinessObjects\Service\ServiceDocumentEmployees.cs" />
+    <Compile Include="BusinessObjects\Service\ServiceDocumentServicedObject.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\ServicePlace.cs" />
+    <Compile Include="BusinessObjects\Service\ServiceDocumentServicePlaces.cs" />
+    <Compile Include="BusinessObjects\Service\ServiceDocumentServicedObjects.cs" />
+    <Compile Include="BusinessObjects\Service\ServicedObject.cs" />
+    <Compile Include="BusinessObjects\WarehouseDocumentTypeOptions.cs" />
+    <Compile Include="BusinessObjects\Contractors\Bank.cs" />
+    <Compile Include="BusinessObjects\Contractors\Contractor.cs" />
+    <Compile Include="BusinessObjects\Contractors\ContractorAccount.cs" />
+    <Compile Include="BusinessObjects\Contractors\ContractorAccounts.cs" />
+    <Compile Include="BusinessObjects\Contractors\ContractorAddress.cs" />
+    <Compile Include="BusinessObjects\Contractors\ContractorAddresses.cs" />
+    <Compile Include="BusinessObjects\Contractors\ContractorAttrValue.cs" />
+    <Compile Include="BusinessObjects\Configuration\Configuration.cs" />
+    <Compile Include="BusinessObjects\Contractors\ContractorAttrValues.cs" />
+    <Compile Include="BusinessObjects\CustomBusinessObject.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\Warehouse.cs" />
+    <Compile Include="BusinessObjects\Documents\WarehouseDocumentLines.cs" />
+    <Compile Include="BusinessObjects\Documents\WarehouseDocumentLine.cs" />
+    <Compile Include="BusinessObjects\Documents\WarehouseDocument.cs" />
+    <Compile Include="BusinessObjects\Documents\DocumentNumber.cs" />
+    <Compile Include="BusinessObjects\MassiveBusinessObjectCollection.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\NumberSetting.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\DocumentNumberComponent.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\DocumentFieldRelation.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\DocumentType.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\PaymentMethod.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\IssuePlace.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\Currency.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\DocumentField.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\VatRate.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\MimeType.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\Repository.cs" />
+    <Compile Include="BusinessObjects\Documents\CommercialDocument.cs" />
+    <Compile Include="BusinessObjects\Documents\CommercialDocumentVatTableEntries.cs" />
+    <Compile Include="BusinessObjects\Documents\Document.cs" />
+    <Compile Include="BusinessObjects\Documents\CommercialDocumentLine.cs" />
+    <Compile Include="BusinessObjects\Documents\CommercialDocumentLines.cs" />
+    <Compile Include="BusinessObjects\Documents\CommercialDocumentVatTableEntry.cs" />
+    <Compile Include="BusinessObjects\Documents\DocumentAttrValues.cs" />
+    <Compile Include="BusinessObjects\Documents\DocumentAttrValue.cs" />
+    <Compile Include="BusinessObjects\Finances\Payments.cs" />
+    <Compile Include="BusinessObjects\Finances\Payment.cs" />
+    <Compile Include="BusinessObjects\Relations\IncomeOutcomeRelations.cs" />
+    <Compile Include="BusinessObjects\Relations\IncomeOutcomeRelation.cs" />
+    <Compile Include="BusinessObjects\Relations\ItemGroupMembership.cs" />
+    <Compile Include="BusinessObjects\Relations\ItemGroupMemberships.cs" />
+    <Compile Include="BusinessObjects\Repository\FileDescriptor.cs" />
+    <Compile Include="BusinessObjects\ReflectionCache\XmlSerializationCache.cs" />
+    <Compile Include="BusinessObjects\FinancialDocumentTypeOptions.cs" />
+    <Compile Include="BusinessObjects\WarehouseManagamentSystem\ContainerShift.cs" />
+    <Compile Include="BusinessObjects\WarehouseManagamentSystem\ContainerShifts.cs" />
+    <Compile Include="BusinessObjects\WarehouseManagamentSystem\ShiftAttrValues.cs" />
+    <Compile Include="BusinessObjects\WarehouseManagamentSystem\ShiftAttrValue.cs" />
+    <Compile Include="BusinessObjects\WarehouseManagamentSystem\ShiftTransaction.cs" />
+    <Compile Include="BusinessObjects\WarehouseManagamentSystem\Shifts.cs" />
+    <Compile Include="BusinessObjects\WarehouseManagamentSystem\Shift.cs" />
+    <Compile Include="BusinessObjects\WarehouseManagamentSystem\Container.cs" />
+    <Compile Include="Coordinators\DictionaryCoordinator.cs" />
+    <Compile Include="Coordinators\DocumentCoordinator.cs" />
+    <Compile Include="Coordinators\Logic\ServiceDocumentLogic.cs" />
+    <Compile Include="Coordinators\ServiceCoordinator.cs" />
+    <Compile Include="Coordinators\Logic\FinancialDocumentLogic.cs" />
+    <Compile Include="Coordinators\Logic\CorrectiveWarehouseDocumentLogic.cs" />
+    <Compile Include="Coordinators\Logic\DocumentLogicHelper.cs" />
+    <Compile Include="Coordinators\Logic\DocumentStatusChangeLogic.cs" />
+    <Compile Include="Coordinators\Logic\PaymentLogic.cs" />
+    <Compile Include="Coordinators\Logic\FinancialReportLogic.cs" />
+    <Compile Include="Coordinators\Logic\IncomeShiftWarehouseDocumentLogic.cs" />
+    <Compile Include="Coordinators\Logic\IncomeWarehouseDocumentLogic.cs" />
+    <Compile Include="Coordinators\Logic\CommercialDocumentLogic.cs" />
+    <Compile Include="Coordinators\Logic\CorrectiveIncomeWarehouseDocumentLogic.cs" />
+    <Compile Include="Coordinators\Logic\OutcomeShiftWarehouseDocumentLogic.cs" />
+    <Compile Include="Coordinators\Logic\OutcomeWarehouseDocumentLogic.cs" />
+    <Compile Include="Coordinators\Logic\CorrectiveOutcomeWarehouseDocumentLogic.cs" />
+    <Compile Include="Coordinators\Logic\WarehouseDocumentLogic.cs" />
+    <Compile Include="Coordinators\Plugins\ApplicationUserPlugin.cs" />
+    <Compile Include="Coordinators\Plugins\ContractorsGroupDefinitionPlugin.cs" />
+    <Compile Include="Coordinators\Plugins\ContractiorCodeExistenceCheckPlugin.cs" />
+    <Compile Include="Coordinators\Plugins\ItemCodeExistenceCheckPlugin.cs" />
+    <Compile Include="Coordinators\Plugins\ItemEquivalentGroupRemovalPlugin.cs" />
+    <Compile Include="Coordinators\Plugins\FileDescriptorPlugin.cs" />
+    <Compile Include="Coordinators\Plugins\ConfigurationRefreshPlugin.cs" />
+    <Compile Include="Coordinators\RepositoryCoordinator.cs" />
+    <Compile Include="Coordinators\WarehouseCoordinator.cs" />
+    <Compile Include="Enums\CalculationType.cs" />
+    <Compile Include="Enums\CoordinatorPluginPhase.cs" />
+    <Compile Include="Enums\DisableDocumentChangeReason.cs" />
+    <Compile Include="Enums\DocumentCategory.cs" />
+    <Compile Include="Enums\DocumentRelationType.cs" />
+    <Compile Include="Enums\DocumentStatus.cs" />
+    <Compile Include="Enums\DuplicatedAttributeAction.cs" />
+    <Compile Include="Enums\FinancialDirection.cs" />
+    <Compile Include="Enums\Optionality.cs" />
+    <Compile Include="Enums\RegisterCategory.cs" />
+    <Compile Include="Enums\ShiftFieldName.cs" />
+    <Compile Include="Enums\SummationType.cs" />
+    <Compile Include="Enums\ValuationMethod.cs" />
+    <Compile Include="Enums\WarehouseDirection.cs" />
+    <Compile Include="Enums\WarehouseDocumentLineType.cs" />
+    <Compile Include="Exceptions\RawClientException.cs" />
+    <Compile Include="Interfaces\ICurrencyDocument.cs" />
+    <Compile Include="Interfaces\IDefaultsHolder.cs" />
+    <Compile Include="Interfaces\IDocumentOption.cs" />
+    <Compile Include="Interfaces\IOrderable.cs" />
+    <Compile Include="Interfaces\IOutcomeStrategy.cs" />
+    <Compile Include="Interfaces\ISerializableBusinessObjectContainer.cs" />
+    <Compile Include="MethodInputParameters\UpdateStockRequestEntry.cs" />
+    <Compile Include="Managers\DependencyContainerManager.cs" />
+    <Compile Include="DependencyInjection\KernelDependencyContainer.cs" />
+    <Compile Include="Enums\ConfigurationLevel.cs" />
+    <Compile Include="Enums\DocumentFieldName.cs" />
+    <Compile Include="Enums\JournalAction.cs" />
+    <Compile Include="FractusKernelSectionHandler.cs" />
+    <Compile Include="Interfaces\ILabeledDictionaryBusinessObject.cs" />
+    <Compile Include="BusinessObjects\Relations\ContractorGroupMembership.cs" />
+    <Compile Include="BusinessObjects\Relations\ContractorGroupMemberships.cs" />
+    <Compile Include="BusinessObjects\Contractors\Employee.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\ContractorField.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\Unit.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\ItemType.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\ItemRelationType.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\ItemRelationAttrValueType.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\ItemField.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\ContractorRelationType.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\Country.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\JobPosition.cs" />
+    <Compile Include="BusinessObjects\Dictionaries\UnitType.cs" />
+    <Compile Include="BusinessObjects\Items\ItemAttrValues.cs" />
+    <Compile Include="BusinessObjects\Items\ItemAttrValue.cs" />
+    <Compile Include="BusinessObjects\Items\Item.cs" />
+    <Compile Include="BusinessObjects\Relations\ContractorRelation.cs" />
+    <Compile Include="BusinessObjects\Relations\ItemRelations.cs" />
+    <Compile Include="BusinessObjects\Relations\ItemRelationAttrValues.cs" />
+    <Compile Include="BusinessObjects\Relations\ItemUnitRelations.cs" />
+    <Compile Include="BusinessObjects\Relations\ItemRelationAttrValue.cs" />
+    <Compile Include="BusinessObjects\Relations\ItemUnitRelation.cs" />
+    <Compile Include="BusinessObjects\Relations\ContractorRelations.cs" />
+    <Compile Include="BusinessObjects\Relations\ItemRelation.cs" />
+    <Compile Include="Coordinators\ItemCoordinator.cs" />
+    <Compile Include="Coordinators\ConfigurationCoordinator.cs" />
+    <Compile Include="Coordinators\ListCoordinator.cs" />
+    <Compile Include="Coordinators\Coordinator.cs" />
+    <Compile Include="Enums\BusinessObjectStatus.cs" />
+    <Compile Include="Enums\BusinessObjectType.cs" />
+    <Compile Include="Enums\ClientExceptionId.cs" />
+    <Compile Include="Enums\ContractorFieldName.cs" />
+    <Compile Include="Enums\ContractorRelationTypeName.cs" />
+    <Compile Include="Enums\ItemFieldName.cs" />
+    <Compile Include="Enums\ItemRelationAttrValueTypeName.cs" />
+    <Compile Include="Enums\ItemRelationTypeName.cs" />
+    <Compile Include="Enums\ItemTypeName.cs" />
+    <Compile Include="Enums\PluginPriority.cs" />
+    <Compile Include="Enums\UnitTypeName.cs" />
+    <Compile Include="Exceptions\ClientException.cs" />
+    <Compile Include="Interfaces\IBusinessObject.cs" />
+    <Compile Include="Interfaces\IBusinessObjectDictionaryRelation.cs" />
+    <Compile Include="Interfaces\IBusinessObjectRelation.cs" />
+    <Compile Include="Interfaces\IVersionedBusinessObject.cs" />
+    <Compile Include="DependencyInjection\KernelContainerProvider.cs" />
+    <Compile Include="Managers\DocumentOptionsManager.cs" />
+    <Compile Include="Managers\DocumentRelationManager.cs" />
+    <Compile Include="Managers\Logging\ExceptionLogger.cs" />
+    <Compile Include="Managers\JournalManager.cs" />
+    <Compile Include="Managers\Logging\LoggerBase.cs" />
+    <Compile Include="Managers\Logging\TestRecorderExceptionLogger.cs" />
+    <Compile Include="Managers\LogManager.cs" />
+    <Compile Include="Managers\OutcomeStrategyManager.cs" />
+    <Compile Include="Managers\ProcessManager.cs" />
+    <Compile Include="Managers\TestRecorderManager.cs" />
+    <Compile Include="Mappers\ConfigurationMapper.cs" />
+    <Compile Include="Mappers\DocumentMapper.cs" />
+    <Compile Include="Mappers\ItemMapper.cs" />
+    <Compile Include="Mappers\ListMapper.cs" />
+    <Compile Include="Mappers\DictionaryMapper.cs" />
+    <Compile Include="Mappers\MapperLogger.cs" />
+    <Compile Include="Mappers\RepositoryMapper.cs" />
+    <Compile Include="Mappers\SecurityMapper.cs" />
+    <Compile Include="Mappers\JournalMapper.cs" />
+    <Compile Include="Mappers\ServiceMapper.cs" />
+    <Compile Include="Mappers\WarehouseMapper.cs" />
+    <Compile Include="MethodInputParameters\CalculateReportBalanceResponse.cs" />
+    <Compile Include="MethodInputParameters\DeliveryRequest.cs" />
+    <Compile Include="MethodInputParameters\DeliveryResponse.cs" />
+    <Compile Include="MethodInputParameters\GetDocumentCostResponse.cs" />
+    <Compile Include="MethodInputParameters\GetFinancialReportValidationDatesResponse.cs" />
+    <Compile Include="MethodInputParameters\GetHeadersIdForWarehouseLinesResponse.cs" />
+    <Compile Include="MethodInputParameters\ItemInfo.cs" />
+    <Compile Include="MethodInputParameters\SalesOrderRealizationInfo.cs" />
+    <Compile Include="MethodInputParameters\UpdateLastPurchasePriceRequest.cs" />
+    <Compile Include="MethodInputParameters\UpdateStockRequest.cs" />
+    <Compile Include="MethodInputParameters\DocumentLineSimpleInfo.cs" />
+    <Compile Include="ObjectFactories\DuplicableAttributeFactory.cs" />
+    <Compile Include="ObjectFactories\FinancialDocumentFactory.cs" />
+    <Compile Include="ObjectFactories\InventoryDocumentFactory.cs" />
+    <Compile Include="ObjectFactories\PortaIntegrationFactory.cs" />
+    <Compile Include="ObjectFactories\SalesOrderFactory.cs" />
+    <Compile Include="ObjectFactories\WarehouseCorrectiveDocumentFactory.cs" />
+    <Compile Include="ObjectFactories\CommercialDocumentFactory.cs" />
+    <Compile Include="ObjectFactories\CommercialWarehouseDocumentFactory.cs" />
+    <Compile Include="ObjectFactories\CommercialCorrectiveDocumentFactory.cs" />
+    <Compile Include="ObjectFactories\WarehouseShiftDocumentFactory.cs" />
+    <Compile Include="Repository\LocalDocumentRepository.cs" />
+    <Compile Include="OutcomeStrategies\FifoStrategy.cs" />
+    <Compile Include="OutcomeStrategies\DeliverySelectionStrategy.cs" />
+    <Compile Include="Coordinators\ContractorCoordinator.cs" />
+    <Compile Include="Coordinators\Plugins\Plugin.cs" />
+    <Compile Include="Managers\SessionManager.cs" />
+    <Compile Include="Mappers\ContractorMapper.cs" />
+    <Compile Include="Mappers\Mapper.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Managers\SecurityManager.cs" />
+    <Compile Include="Managers\SqlConnectionManager.cs" />
+    <Compile Include="HelperObjects\VolatileContainer.cs" />
+    <Compile Include="Repository\RemoteDocumentRepository.cs" />
+    <Compile Include="SendMailHelper.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\Exceptions.xml">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Content Include="Templates\CommercialDocumentFull.xml" />
+    <Content Include="Templates\ContractorFull.xml" />
+    <Content Include="Templates\FinancialDocumentFull.xml" />
+    <Content Include="Templates\ItemFull.xml" />
+    <Content Include="Templates\ShiftTransactionFull.xml" />
+    <Content Include="Templates\WarehouseDocumentFull.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Kernel.snk" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Commons\Commons.csproj">
+      <Project>{3B6F1CD9-0C49-4713-9FE9-A457B048FF5C}</Project>
+      <Name>Commons</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Commons\SecurityProvider\SecurityProvider.csproj">
+      <Project>{46E457ED-229C-4F0A-97C5-6216CB45267C}</Project>
+      <Name>SecurityProvider</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\RepositoryProjects\RestUpload\RestUpload.csproj">
+      <Project>{B75AE10F-7AB6-4564-B12D-5C50C0D7150A}</Project>
+      <Name>RestUpload</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ClassDiagrams\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

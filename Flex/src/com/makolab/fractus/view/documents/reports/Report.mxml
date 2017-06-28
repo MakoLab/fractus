@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="init()">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.view.ComponentWindow;
+			import flight.binding.Bind;
+			import com.makolab.fractus.view.documents.reports.filters.IReportFilter;
+			import flash.utils.getDefinitionByName;
+			import flash.utils.getQualifiedClassName;
+			import flight.utils.getType;
+			import flight.utils.getClassName;
+			import com.makolab.fractus.model.ConfigManager;
+			import flight.utils.Type;
+			import com.makolab.components.util.Tools;
+			import com.makolab.components.catalogue.FilterClassMapper;
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import com.makolab.fractus.model.ModelLocator;
+			[Bindable]
+			public var objectId:String;
+			[Bindable]
+			public var reportXML:XML;
+			
+			
+			/**
+			 * Specifies report name set in reports definition in configuration.
+			 */
+			public var configurationName:String;
+			[Bindable]
+			public var reportsName:String;
+			
+			[Bindable]
+			public var defaultSearchParams:XML;
+			
+			private var _filtersComponent:DisplayObject;
+			
+			public function set filtersComponent(component:DisplayObject):void
+			{
+				if (_filtersComponent) this.removeChild(_filtersComponent);
+				if (component is IReportFiltersComponent) _filtersComponent = component;
+				else throw new Error("filtersComponent must implement IReportFiltersComponent.");
+				if (_filtersComponent) this.addChildAt(_filtersComponent,0);
+			}
+			public static function showWindow(id:String,rp:XML,sp:XML):ComponentWindow	{
+					
+				var window:ComponentWindow = new ComponentWindow();
+				
+				var component:Report= new Report();
+				component.objectId = id;
+				component.reportXML=rp;
+				component.defaultSearchParams=sp;
+				window.innerComponent = component;
+				window.show(null,ComponentWindow.MAXIMIZED,LanguageManager.getInstance().labels.finance.reportShort);
+				return window;
+			}
+			public function get filtersComponent():DisplayObject
+			{
+				return _filtersComponent;
+			}
+			
+			private function init():void
+			{
+				//var model:ModelLocator = ModelLocator.getInstance();
+				//model.configManager.requestValue("reports.definition");
+				//var configuration:XML = model.configManager.getXMLValue("reports.definition");
+				//if (configuration && configurationName)
+				{
+
+					// tworzenie raportow.
+					for each(var x:XML in reportXML.subreport)
+					{
+						var rg:ReportGenerator = new ReportGenerator();
+						rg.procedure = x.@procedure;
+						rg.label = x.@label;
+						rg.reportXML = x;
+						rg.doubleClick=false;
+						if(x.attribute("horizontalScrollPolicy").length() > 0)
+						{
+							rg.table.horizontalScrollPolicy = x.@horizontalScrollPolicy;
+						}
+						if(x.attribute("lockedColumnCount").length() > 0)
+						{
+							rg.table.lockedColumnCount = x.@lockedColumnCount;
+						}
+						if (this.hasOwnProperty("filtersInfo"))
+							Bind.addBinding(rg,"filtersInfo",this,"filtersInfo");
+							//rg.filtersInfo = this["filtersInfo"];
+						this.addChild(rg);
+						defaultSearchParams.ItemId=objectId;
+						rg.generateReport(defaultSearchParams)
+					}
+					/*if (configuration[configurationName].length() > 0 && configuration[configurationName].@showFiltersInfo.length() > 0)
+					{
+						var showFiltersInfo:Boolean = Tools.parseBoolean(configuration[configurationName].@showFiltersInfo);
+						for (var i:int = 0; i < this.getChildren().length; i++)
+						{
+							if (this.getChildAt(i) is ReportBase)
+							{
+								(this.getChildAt(i) as ReportBase).showFiltersInfo = showFiltersInfo;
+							}
+						}
+					}
+					if (configuration[configurationName].length() > 0 && configuration[configurationName].filterSettings.length() > 0)
+					{
+						for each (var filterXml:XML in configuration[configurationName].filterSettings.filter)
+						{
+							var control:DisplayObject;
+							
+							// dla filtrow niedynamicznych:
+							if (filtersComponent.hasOwnProperty(filterXml.@id.toString()))
+							{
+								control = filtersComponent[filterXml.@id];
+								setFilterValue(control,filterXml);
+							}
+							
+							// dla filtrow dynamicznych:
+							var customFilters:Array = (filtersComponent as IReportFiltersComponent).customFilters;
+							for (var j:int = 0; j < customFilters.length; j++)
+							{
+								var filter:DisplayObject = customFilters[j];
+								if (filter["config"].@id.length() > 0 && filter["config"].@id.toString() == filterXml.@id.toString())
+								{
+									control = filter;
+									setFilterValue(control,filterXml);
+									break;
+								}
+							}
+							
+							if (!control)
+							{
+								ConfigManager.reportConfigurationError("Błąd w konfiguracji pod kluczem reports.definition.\n Filtr " + filterXml.@id.toString() + " nie istnieje w zestawieniu " + reportsName,"Błąd konfiguracji");
+							}
+						}
+						
+						
+					}*/
+				}
+			}
+
+		
+			
+			
+		
+			
+		]]>
+	</mx:Script>
+</mx:VBox>

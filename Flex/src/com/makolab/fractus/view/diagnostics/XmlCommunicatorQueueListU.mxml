@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	xmlns:layoutComponents="com.makolab.components.layoutComponents.*" 
+	xmlns:list="com.makolab.components.list.*" creationComplete="init()">
+		<mx:Script>
+		<![CDATA[
+			import com.makolab.components.list.CommonGrid;
+			import com.makolab.fractus.commands.GetOutgoingQueueCommand;
+			import com.makolab.fractus.commands.GetOutgoingQueueListCommand;
+			import com.makolab.fractus.commands.GetgetIncomingQueueListCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.ICollectionView;
+			import mx.events.DataGridEvent;
+			import mx.events.ListEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			private function init():void
+			{
+				date.tile.direction = "horizontal";
+				status.selectedIndex=2;
+				grid.removeHandleHeaderRelease();
+				searchData()
+			}
+			private var selectedId:String="";
+			//list packet	
+			public function xmlincomingList(value:XML):void
+			{
+				grid.dataProvider = value.outgoingXml;
+			} 
+			public function xmlOutgoingSource(value:XML):void
+			{
+				xmlView.xmlSource = value;
+			}	
+						
+			private function handleItemClick(event:MouseEvent):void
+			{
+				if(grid.selectedItem  && grid.selectedItem.@id.toString() != selectedId) 
+				{
+					selectedId = grid.selectedItem.@id.toString();
+					var cmd :GetOutgoingQueueCommand = new GetOutgoingQueueCommand(grid.selectedItem.@id ,grid.selectedItem.@databaseId);
+					cmd.execute(xmlOutgoingSource);
+				}
+			}
+			//window
+			public static function showWindow():ComponentWindow
+			{
+				var editor:XmlCommunicatorQueueListU = new XmlCommunicatorQueueListU();
+				var window:ComponentWindow = ComponentWindow.showWindow(editor,  ComponentWindow.BUTTON_CLOSE, new Rectangle(-1, -1, 700, 500));
+				window.title =LanguageManager.getInstance().labels.diagnostics.communication.xmlCommunicatorTitle
+				window.closeFunction = window.hide;
+				return window;	
+			}
+			
+			private function statusFilterDataProvider():Object
+			{
+				var all:XML =     <entry>  
+									<item label="" id="" />
+						   	  		<item label="" id="1" />
+				              		<item label="" id="0" />
+				              	  </entry>;
+				all.item[0].@label = LanguageManager.getInstance().labels.common.allF;              	  
+				all.item[1].@label = LanguageManager.getInstance().labels.diagnostics.communication.execute; 
+				all.item[2].@label = LanguageManager.getInstance().labels.diagnostics.communication.nonExecute;             	  
+				return all.*;
+			}
+			private function searchData():void
+			{
+				var cmd: GetgetIncomingQueueListCommand= new GetgetIncomingQueueListCommand(status.selectedItem.@id,date.dateFrom, date.dateTo);
+				cmd.execute(xmlincomingList);
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox width="100%">
+		<mx:Button label="{LanguageManager.getInstance().labels.common.search2}" click="searchData()"/>
+		<mx:ComboBox id="status" labelField="@label" dataProvider="{statusFilterDataProvider()}"  />	 		
+		<inputComponents:DateFilter id="date"/>
+	</mx:HBox>
+	<mx:HDividedBox height="100%" width="100%">
+		<mx:VBox width="350" height="100%">
+		<list:CommonGrid showGroupingField="@localTransactionId" id="grid" click="handleItemClick(event)" width="100%" height="100%" >
+				<list:columns>
+					<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.diagnostics.communication.type}" dataField="@type"/>
+					<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.diagnostics.communication.reciveDate}" dataField="@receiveDate" itemRenderer="com.makolab.components.inputComponents.DateRenderer" width="80" />
+					<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.diagnostics.communication.executionDate}" dataField="@executionDate" itemRenderer="com.makolab.components.inputComponents.DateRenderer" width="80"/>
+				</list:columns>
+			</list:CommonGrid >
+		</mx:VBox>
+		<mx:VDividedBox width="45%" height="100%">
+			<inputComponents:XmlViewer width="100%" height="100%" editable="false" id="xmlView"  />
+		</mx:VDividedBox>
+	</mx:HDividedBox>
+</mx:VBox>

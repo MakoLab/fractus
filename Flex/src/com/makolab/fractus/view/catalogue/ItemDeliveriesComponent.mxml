@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:catalogue="com.makolab.fractus.view.catalogue.*" horizontalGap="0" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:HBox>
+		<mx:Label text="{LanguageManager.getInstance().labels.common.warehouse}"/>
+		<mx:ComboBox id="warehouse" width="100%" labelField="@label" dataProvider="{warehouseProvider()}" change="warehouseChange(event)" labelFunction="comboLabelFunction"/>
+	</mx:HBox>
+	<mx:DataGrid
+			id="grid"
+			height="100%"
+			width="100%"
+			itemDoubleClick="{gridDbClickHandler(event)}"
+		 	doubleClickEnabled="true"
+		>
+		<mx:columns>
+			<mx:DataGridColumn headerText="" dataField="@status" itemRenderer="com.makolab.fractus.view.generic.DocumentStatusRenderer" width="20"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.document}" dataField="@documentTypeId" itemRenderer="com.makolab.fractus.view.generic.DocumentTypeRenderer" />
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.number}" dataField="@fullNumber"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.date}" dataField="@incomeDate" itemRenderer="com.makolab.components.inputComponents.DateRenderer"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.quantity}" dataField="@lineQuantity" itemRenderer="com.makolab.components.inputComponents.FloatRenderer"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.amountleft}" dataField="@quantity" itemRenderer="com.makolab.components.inputComponents.FloatRenderer"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.price}" dataField="@price" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer"/>
+			<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.common.warehouse}" dataField="@warehouseId" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer"/>
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.view.generic.DocumentStatusRenderer;
+			import com.makolab.fractus.view.generic.DocumentTypeRenderer;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			import com.makolab.fractus.commands.GetDeliveriesCommand;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.components.inputComponents.CurrencyRenderer;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			import com.makolab.fractus.commands.GetRelatedWarehouseDocumentsCommand;
+			import mx.events.ListEvent;
+			import com.makolab.fractus.commands.GetItemStockHistoryCommand;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			
+			private var _itemId:String;
+			
+			public function showDeliveries(itemId:String,warehouseId:String=null):void
+			{
+				_itemId = itemId;
+				new GetDeliveriesCommand(itemId, warehouseId).execute(setResult);
+			}
+			
+			private function setResult(result:XML):void
+			{
+				grid.dataProvider = result.*;
+			}
+			
+			[Bindable]
+			private var selectedDocuments:Array;
+			
+			[Bindable]
+			private var selectedItemDeliveries:Object;
+			
+			public static function showWindow(itemId:String):ComponentWindow
+			{
+				var grid:ItemDeliveriesComponent = new ItemDeliveriesComponent();
+				grid.showDeliveries(itemId);
+				return ComponentWindow.showWindow(grid, 0, new Rectangle(-1, -1, 800, 600));
+			}
+			
+			private function gridDbClickHandler(event:ListEvent):void
+			{
+				var id:String;
+				if (grid.selectedItem) id = grid.selectedItem.@id;
+				if (!id) return;
+				var typeDescriptor:DocumentTypeDescriptor = new DocumentTypeDescriptor(String(grid.selectedItem.@documentTypeId));
+	        	DocumentRenderer.showWindow(typeDescriptor.documentCategory, id);	
+			}
+
+			private function warehouseChange(event:Event):void
+			{
+				new GetDeliveriesCommand(_itemId,warehouse.selectedItem.id.*).execute(setResult);
+			}
+			private function comboLabelFunction(item:Object):String
+			{
+				return item.label.(@lang == LanguageManager.getInstance().currentLanguage).*; 
+			}
+			private function warehouseProvider():Object
+			{		
+				var all:XML = <entry><id/><label/></entry>;
+				all.label.@lang = LanguageManager.getInstance().currentLanguage;
+				all.label.(@lang == LanguageManager.getInstance().currentLanguage).* = LanguageManager.getInstance().labels.common.allF;
+				return all + DictionaryManager.getInstance().dictionaries.allActiveFilteredWarehouses;
+			}
+			private function showDocument(id:String):void
+			{
+				DocumentRenderer.showWindow(DocumentTypeDescriptor.WAREHOUSE_DOCUMENT, id);
+			}
+		]]>
+	</mx:Script>
+</mx:Form>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:SWFLoader xmlns:mx="http://www.adobe.com/2006/mxml" implements="com.makolab.fractus.view.warehouse.IWarehouseStructureRenderer" init="attachInit()">
+	<mx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			import mx.managers.SystemManager;
+			import mx.core.Application;
+			private function attachInit():void
+			{
+				SystemManager(this.content).addEventListener(FlexEvent.APPLICATION_COMPLETE, initializeContent);
+			}
+			
+			private function initializeContent(event:FlexEvent):void
+			{
+				innerApplication = SystemManager(this.content).application;
+				innerApplication.addEventListener(WarehouseSlotEvent.SLOT_CLICK, this.handleSlotClick);
+				if (this.warehouseStructure) innerApplication.warehouseStructure = this.warehouseStructure;
+				if (this.availableSlots) innerApplication.availableSlots = this.availableSlots;
+				if (this.highlightedSlots) innerApplication.highlightedSlots = this.highlightedSlots;
+			}
+			
+			private function handleSlotClick(event:Event):void
+			{
+				this.dispatchEvent(new WarehouseSlotEvent(WarehouseSlotEvent.SLOT_CLICK, event['slotId']));
+			}
+
+			private var innerApplication:Object;
+			
+			private var _warehouseStructure:XML;			
+			public function set warehouseStructure(value:XML):void
+			{
+				this._warehouseStructure = value;
+				if (this.innerApplication) this.innerApplication.warehouseStructure = value;
+			}
+			public function get warehouseStructure():XML
+			{
+				return this._warehouseStructure;
+			}
+			
+			private var _availableSlots:XMLList;
+			public function set availableSlots(value:XMLList):void
+			{
+				this._availableSlots = value;
+				if (this.innerApplication) this.innerApplication.availableSlots = value;
+			}
+			public function get availableSlots():XMLList
+			{
+				return this._availableSlots;
+			}
+			
+			private var _highlightedSlots:Array;
+			public function set highlightedSlots(value:Array):void
+			{
+				this._highlightedSlots = value;
+				if (this.innerApplication) this.innerApplication.highlightedSlots = value;
+			}
+			public function get highlightedSlots():Array
+			{
+				return _highlightedSlots;
+			}
+		]]>
+	</mx:Script>
+</mx:SWFLoader>

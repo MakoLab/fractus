@@ -1,0 +1,446 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:generic="com.makolab.fractus.view.generic.*" 
+	xmlns:documents="com.makolab.fractus.view.documents.*" 
+	initialize="init()"
+	creationComplete="creationComplete()"
+	xmlns:filters="com.makolab.fractus.view.documents.reports.filters.*" xmlns:warehouse="com.makolab.fractus.view.warehouse.*" xmlns:layoutComponents="com.makolab.components.layoutComponents.*">
+	<mx:Metadata>
+		[Event(name="saveComplete", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.commands.LoadShiftTransactionByShiftIdCommand;
+			import com.makolab.fractus.commands.SaveBusinessObjectCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.ShiftObject;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fraktus2.modules.warehouse.WarehouseMapManager;
+			
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+
+			[Bindable]
+			public var searchXml:XML = <param></param>;
+			
+			[Bindable]
+			private var shiftTransaction:XML;
+			
+			public var skipStartupSearch:Boolean = false;
+			public var lm:LanguageManager=LanguageManager.getInstance();
+			/*
+			<param>
+				<dateFrom/>
+				<dateTo/>
+				<warehouseId/>
+				<containerId/>
+				<itemId/>
+			</param>
+			*/
+			
+			private function init():void
+			{
+				this.shiftTransaction = this.getEmptyShiftTransactionXml();
+				this.loadSettingsFromXml();
+			}
+			
+			private function creationComplete():void
+			{
+				this.warehouseChange(null);
+				
+				if(!this.skipStartupSearch)
+					search();
+			}
+			
+			private function getEmptyShiftTransactionXml():XML
+			{
+				return <root><shiftTransaction type="ShiftTransaction"><shifts/></shiftTransaction></root>;
+			}
+			
+			public function search():void
+			{
+				var xml:XML = new XML(this.searchXml);
+				
+				if(xml.filters.column.(@field == "ItemId").length() != 0)
+					xml.appendChild(<itemId>{xml.filters.column.(@field == "ItemId").*}</itemId>);
+					
+				delete xml.filters;
+				
+				if(xml != null && this.searchXml != null)
+					this.lotGrid.data = xml;
+			}
+			
+			private function loadSettingsFromXml():void
+			{
+				var settings:XML = new XML(this.searchXml);
+				this.searchXml = <param/>;
+				
+				//towar
+				if(settings.itemId.length() > 0)
+				{
+					//this.searchXml.itemId.* = settings.itemId.*;
+					
+					this.searchXml.appendChild(<filters>
+					    							<column field="ItemId">{settings.itemId.*}</column>
+					  						   </filters>);
+					this.itemFilter.useThisFilter.selected = true;
+					this.itemFilter.text = settings.itemId.@label;
+					this.itemFilter.itemSearch.itemId = settings.itemId.*;
+					this.itemFilter.parameters = this.searchXml;
+				}
+				
+				//magazyn
+				if(settings.warehouseId.length() > 0)
+				{
+					this.searchXml.warehouseId.* = settings.warehouseId.*;
+					
+					for each(var entry:XML in cboxWarehouse.dataProvider)
+					{
+						if(entry.id.* == settings.warehouseId.*)
+						{
+							this.cboxWarehouse.selectedItem = entry;
+							break;
+						}
+					}
+				}
+				
+				var e:XML = null;
+				
+				//kontener
+				if(settings.unassigned.length() > 0)
+				{
+					for each(e in cboxContainer.dataProvider)
+					{
+						if(e.* == "unassigned")
+						{
+							this.searchXml.unassigned.* = "1";
+							cboxContainer.selectedItem = e;
+							cboxContainer.dispatchEvent(new ListEvent(Event.CHANGE));
+						}
+					}
+				}
+				else if(settings.containerId.length() > 0)
+				{
+					for each(e in cboxContainer.dataProvider)
+					{
+						if(e.* == "selected")
+						{
+							this.searchXml.containerId.* = settings.containerId.*;
+							cboxContainer.selectedItem = e;
+							cboxContainer.dispatchEvent(new ListEvent(Event.CHANGE));
+							this.containerSelector.selectedSlotId = settings.containerId.*;
+						}
+					}
+				}
+				
+				//daty
+				if(settings.dateFrom.length() > 0 && settings.dateTo.length() > 0)
+				{
+					this.searchXml.dateFrom.* = settings.dateFrom.*;
+					this.searchXml.dateTo.* = settings.dateTo.*;
+					this.dateFilter.dateFrom = Tools.isoToDate(settings.dateFrom.*);
+					this.dateFilter.dateTo = Tools.isoToDate(settings.dateTo.*);
+					this.dateFilter.parameters = this.searchXml;
+					
+					var i:int=0;
+					for each(var x:Object in this.dateFilter.dateCombo.dataProvider)
+					{
+						if(x.value == "custom")
+						{
+							this.dateFilter.selectedIndex = i;
+							break;
+						}
+						
+						i++;
+					}
+				}
+			}
+			
+			private var window:ComponentWindow;
+			
+			public static function showWindow(searchXml:XML = null):ComponentWindow
+			{
+				var editor:ShiftTransactionEditor = new ShiftTransactionEditor();
+				
+				if(searchXml != null) editor.searchXml = searchXml;
+				else editor.skipStartupSearch = true;
+				
+				var window:ComponentWindow = ComponentWindow.showWindow(editor, ComponentWindow.BUTTON_CLOSE, new Rectangle(-1, -1, 860, 600));
+				window.title = LanguageManager.getInstance().labels.title.shiftTransactions.list;
+				window.closeFunction = window.hide;
+				window.showXmlFunction = editor.showXml;
+				editor.window = window;
+				return window;	
+			}
+			
+			private function warehouseProvider():Object
+			{	
+				//wyciagamy wszystkie te, ktore maja wybor dostaw
+				var properWarehouses:XMLList = DictionaryManager.getInstance().dictionaries.warehouses.(String(isActive) == "1" && String(valuationMethod) == "1");
+				return properWarehouses;
+				/*var all:XML = <entry><id/><label/></entry>;
+				all.label.@lang = LanguageManager.getInstance().currentLanguage;
+				all.label.(@lang == LanguageManager.getInstance().currentLanguage).* = LanguageManager.getInstance().labels.common.allF;
+				return all + DictionaryManager.getInstance().dictionaries.warehouses;*/
+			}
+			
+			public function showXml():void
+			{
+				Alert.show(this.searchXml.toString());
+				Alert.show(this.shiftTransaction.toString());
+			}
+			
+			private function addShift(row:XML):void
+			{
+				//obj: <shifts shiftId="E377AF9E-AE6D-486C-A7B9-0FAB110D95BE" quantity="3.000000" containerId="A770635E-CCCA-4DE9-83F0-DF519AD25217" containerLabel="Z23" slotContainerLabel="Z23" incomeDate="2009-07-08T14:01:33" fullNumber="86/O1/2009" price="300.00" incomeWarehouseDocumentLineId="A855F0D9-B568-4B35-8735-57CA162355AD" status="40" version="47BAFA31-B6A3-4A48-B24C-BC4F601330E9" itemId="25025FEE-FF28-49E8-817D-03E7A89A6A7D" itemCode="czarkumulator_1" itemName="czarkumulator_1"/>
+				var shift:XML = <shift/>;
+				XML(this.shiftTransaction.*.shifts).appendChild(shift);
+				shift.quantity.* = row.@quantity;
+				if(row.@shiftId.length() > 0) shift.sourceShiftId.* = row.@shiftId;
+				shift.incomeWarehouseDocumentLineId.* = row.@incomeWarehouseDocumentLineId;
+				shift.sourceContainerLabel.* = row.@containerLabel;
+				shift.warehouseId.* = row.@warehouseId;
+				shift.status.* = "40";
+				this.shiftGrid.dataProvider = this.shiftTransaction.*.shifts.*;
+				this.collapsablePanel.open = true;
+			}
+			
+			private function warehouseChange(event:Event):void
+			{
+				if(this.searchXml.warehouseId.length() == 0)
+					this.searchXml.appendChild(<warehouseId/>);
+					
+				if(cboxWarehouse.selectedItem != null && String(cboxWarehouse.selectedItem.id.*) != "") {
+					this.searchXml.warehouseId.* = cboxWarehouse.selectedItem.id.*;
+				} else {
+					delete this.searchXml.warehouseId;
+				}
+			}
+			
+			private function containerChange(event:Event):void
+			{
+				switch(String(this.cboxContainer.selectedItem.*))
+				{
+					case "all":
+						delete this.searchXml.unassigned;
+						delete this.searchXml.containerId;
+						this.containerSelector.visible = false;
+						this.containerSelector.selectedSlotId = null;
+						break;
+					case "unassigned":
+						delete this.searchXml.containerId;
+						this.searchXml.unassigned.* = "1";
+						this.containerSelector.visible = false;
+						this.containerSelector.selectedSlotId = null;
+						break;
+					case "selected":
+						delete this.searchXml.unassigned;
+						this.containerSelector.visible = true;
+						break;
+				}
+			}
+			
+			private function containerProvider():Object
+			{		
+				var all:XML =	<containers>
+									<option label="Wszystkie">all</option>
+									<option label="Tylko nieprzypisane">unassigned</option>
+									<option label="Wybrany">selected</option>
+								</containers>;
+				return all.*;
+			}
+
+			private function comboLabelFunction(item:Object):String
+			{
+				return item.label.(@lang == LanguageManager.getInstance().currentLanguage).*; 
+			}
+			
+			private function onBtnCommitSTClick(event:Event):void
+			{
+				for each(var shift:XML in this.shiftTransaction.shiftTransaction.shifts.shift)
+				{
+					if(shift.containerId.* == "null" || String(shift.containerId) == "")
+						delete shift.containerId;
+					
+					if(shift.containerId.length() == 0)
+					{
+						Alert.show("Nie wybrano kontenera docelowego na przesunięciu wewnątrzmagazynowym");
+						return;
+					}
+				}
+
+				var command:SaveBusinessObjectCommand = new SaveBusinessObjectCommand();
+				command.addEventListener(ResultEvent.RESULT, handleSaveResult);
+				command.addEventListener(FaultEvent.FAULT, handleSaveFault);
+				
+				if(this.window)
+					window.buttonsEnabled = false;
+				
+				command.execute(this.shiftTransaction);
+			}
+			
+			protected function handleSaveResult(event:ResultEvent):void
+			{		
+				if(this.window)
+					window.buttonsEnabled = true;
+				this.collapsablePanel.open = false;
+				this.shiftTransaction = this.getEmptyShiftTransactionXml();
+				this.shiftGrid.dataProvider = this.shiftTransaction.*.shifts.*;
+				this.search();
+			}
+	
+			protected function handleSaveFault(event:FaultEvent):void
+			{
+				if(this.window)
+					window.buttonsEnabled = true;
+			}
+			
+			public function deleteShift(shift:XML):void
+			{
+				delete this.shiftTransaction.*.shifts.*[shift.childIndex()];
+				this.shiftGrid.dataProvider = this.shiftTransaction.*.shifts.*;
+			}
+			
+			public function shiftGridDblClickHandler(containerId:String):void
+			{
+				LabelPrintingWindow.showWindow(shiftAttributeWindowParent == null ? this : shiftAttributeWindowParent, containerId);
+			}
+			
+			private function showMap():void
+			{
+				MODULES::wms {
+					//WarehouseStructureWindow.show();
+					
+					var dataProvider:XMLList = new XMLList();
+					var container:XML = <container/>; 
+					for (var i:int=0;i<lotGrid.lots.length;i++){
+						if(lotGrid.lots[i].valueOf().@containerId.length() > 0){
+							container.@id = lotGrid.lots[i].@containerId;
+							container.@quantity = lotGrid.lots[i].@quantity;
+							container.@available = 3;
+							dataProvider = dataProvider + container.copy();
+						}
+					}
+								
+					var wmm:WarehouseMapManager =  WarehouseMapManager.getInstance()
+						wmm.showMap( null, false, 2, "", dataProvider, true )
+				}
+			}
+			
+			private function setMapEnable():void
+			{
+				showMapButton.enabled = (lotGrid.lots.length > 0);
+			}
+			
+			public function editAttributes(position:XML):void
+			{
+				//ShiftAttributeEditor.showWindow(null);
+				var cmd:LoadShiftTransactionByShiftIdCommand = new LoadShiftTransactionByShiftIdCommand(position.@shiftId);
+				cmd.targetObject = position;
+				cmd.addEventListener(ResultEvent.RESULT, this.handleLoadShiftTransactionByShiftIdResult, false, 0, true);
+				cmd.execute();
+			} 
+			
+			private var shiftTransactionXml:XML;
+			private var shiftAttributeEditorWindow:TitleWindow;
+			
+			[Bindable] public var shiftAttributeWindowParent:DisplayObject;
+			
+			private function handleLoadShiftTransactionByShiftIdResult(event:ResultEvent):void
+			{
+				var position:XML = XML(LoadShiftTransactionByShiftIdCommand(event.target).targetObject);
+				this.shiftTransactionXml = XML(event.result);
+				
+				this.shiftAttributeEditorWindow = ShiftAttributeEditor.showWindow(shiftAttributeWindowParent == null ? this : shiftAttributeWindowParent, XML(shiftTransactionXml.*.shifts.shift.(String(id) == String(position.@shiftId))[0].attributes), this.onSaveAttributesFunction, position.@fullNumber, position.@incomeDate, position.@shiftDate);
+			}
+			
+			private function onSaveAttributesFunction():void
+			{
+				var cmd:SaveBusinessObjectCommand = new SaveBusinessObjectCommand();
+				cmd.addEventListener(ResultEvent.RESULT, this.handleSaveBusinessObjectResult, false, 0, true);
+				cmd.execute(this.shiftTransactionXml);
+			}
+			
+			private function handleSaveBusinessObjectResult(event:ResultEvent):void
+			{
+				PopUpManager.removePopUp(shiftAttributeEditorWindow);
+				this.search();
+			}
+			
+			[Bindable] public var showFilters:Boolean = true; 
+		]]>
+	</mx:Script>
+	<mx:Form id="filtersForm" visible="{showFilters}" includeInLayout="{showFilters}">
+		<mx:FormItem label="Data dostawy" height="80">
+			<filters:DateFilter 
+				id="dateFilter" 
+				dateFieldsDirection="horizontal" 
+				parameters="{searchXml}"
+				dateFromParameterName="dateFrom"
+				dateToParameterName="dateTo"
+				selectedIndex="0"
+				/>
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.common.warehouse}">
+			<mx:ComboBox id="cboxWarehouse" width="100%" labelField="@label" dataProvider="{warehouseProvider()}" change="warehouseChange(event)" labelFunction="comboLabelFunction"/>
+		</mx:FormItem>
+		<mx:FormItem label="Kontener">
+			<mx:HBox>
+				<mx:ComboBox id="cboxContainer" width="100%" labelField="@label" dataProvider="{containerProvider()}" change="containerChange(event)" />
+				<warehouse:WarehouseSlotSelector id="containerSelector" visible="false" selectedSlotId="{this.searchXml.containerId}" slotClick="this.searchXml.containerId.* = containerSelector.selectedSlotId" />
+			</mx:HBox>
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.items.item}">
+			<filters:ItemFilter id="itemFilter" label="" parameters="{searchXml}" width="100%" />
+		</mx:FormItem>
+		<mx:HBox>
+			<mx:Button label="{LanguageManager.getInstance().labels.common.search2}" click="search()"/>
+			<mx:Button id="showMapButton" label="Pokaż wyniki na mapie" click="showMap()" enabled="false"/>
+		</mx:HBox>
+	</mx:Form>
+	<warehouse:LotGrid 
+		id="lotGrid"
+		searchComplete="setMapEnable()"
+		addShiftFunction="{this.addShift}" 
+		editAttributesFunction="{this.editAttributes}"
+		width="100%" 
+		height="100%" 			
+		doubleClick="if (lotGrid.selectedItem) shiftGridDblClickHandler(lotGrid.selectedItem.@containerId)" 
+		doubleClickEnabled="true"/>
+	<layoutComponents:CollapsablePanel id="collapsablePanel" title="" open="false" width="100%" horizontalAlign="center">
+		<mx:DataGrid id="shiftGrid" 
+			width="100%" 
+			editable="true" 
+			height="105">
+			<mx:columns>
+				<mx:DataGridColumn editable="true" headerText="{LanguageManager.getInstance().labels.common.amount}" width="70" dataField="quantity" itemRenderer="com.makolab.components.inputComponents.FloatRenderer" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" editorDataField="dataObject" />
+				<mx:DataGridColumn editable="false" headerText="{LanguageManager.getInstance().labels.common.from}" width="70" dataField="sourceContainerLabel" />
+				<mx:DataGridColumn editable="true" headerText="{LanguageManager.getInstance().labels.common.to}" width="70" dataField="containerId" editorDataField="selectedSlotId" itemRenderer="com.makolab.fractus.view.warehouse.WarehouseContainerRenderer" >
+					<mx:itemEditor>
+						<mx:Component>
+							<warehouse:WarehouseSlotSelector selectedSlotId="{data.containerId}" />
+						</mx:Component>
+					</mx:itemEditor>
+				</mx:DataGridColumn>
+				<mx:DataGridColumn headerText="" resizable="false" minWidth="30" width="30" editable="false" paddingLeft="1" paddingRight="1" sortable="false">
+					
+					<mx:itemRenderer>
+						<mx:Component>
+							<mx:Button paddingLeft="1" paddingRight="1" height="22" label="{outerDocument.lm.getLabel('common.Delete')}" click="outerDocument.deleteShift(XML(data))" />
+						</mx:Component>
+					</mx:itemRenderer>
+				</mx:DataGridColumn>
+			</mx:columns>
+		</mx:DataGrid>
+		<mx:Button id="btnCommitST" label="{LanguageManager.getInstance().labels.documents.commit}" click="onBtnCommitSTClick(event)"/>
+	</layoutComponents:CollapsablePanel>
+</mx:VBox>

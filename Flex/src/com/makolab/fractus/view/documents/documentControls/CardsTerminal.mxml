@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form visible="false" xmlns:mx="http://www.adobe.com/2006/mxml" implements="com.makolab.fractus.view.documents.documentControls.IDocumentControl" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.GlobalEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.business.Services;
+			import mx.events.MetadataEvent;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			private var _documentObject:DocumentObject
+			[Bindable]
+			private var _change:Number = 0;
+			[Bindable]
+			public var total:Number = 0;
+			[Bindable]
+			public var paidAmount:Number = 0;
+			
+			[Bindable]
+			private var currency:String;// = DictionaryManager.getInstance().getById(ModelLocator.getInstance().systemCurrencyId).symbol.toString();
+			
+			public function get change():Number
+			{
+				return _change;
+			}
+			private var type:String;
+			private var method:String;
+			private var payments:Array;
+			
+			[Bindable]
+			public var useJavaScript:Boolean=true;
+			
+			private function sendPayementRequest(event:GlobalEvent=null):void
+			{
+				 calculate();
+				if(Services.getInstance().serviceMode == Services.MODE_WEB_SERVICE)
+					{
+						var id:String="null"
+						if(event)
+						id=event.objectId;
+				var url:String = ModelLocator.getInstance().configManager.values.services_printService_address.* + "/"+method+ "/"+id+"/" +total;
+				
+				var urlVariables:URLVariables = new URLVariables();
+				if (ModelLocator.getInstance().userProfileId != null) urlVariables.userProfileId = ModelLocator.getInstance().userProfileId;
+				//if (params) for (var i:String in params) urlVariables[i] = String(params[i]);
+				
+				url += '?' + urlVariables.toString().replace(/%2D/g, '-');
+				
+				if (!useJavaScript)
+				{
+					var u:URLRequest = new URLRequest(url);
+					u.method = URLRequestMethod.GET;
+					navigateToURL(u,"_blank");
+				}
+				else ExternalInterface.call("openUrl", url);
+			}
+			}
+			private function calculate(event:Event = null):void
+			{
+				total = 0;
+				currency = DictionaryManager.getInstance().getById(documentObject.documentCurrencyId).symbol.toString();
+				var cardPayments:XMLList = new XMLList();
+				for each (var payment:XML in documentObject.paymentsXML.payment){
+					for each (var method:String in payments)
+						if(payment.paymentMethodId.toString() == method.toString() ){
+							cardPayments = cardPayments + payment;
+							
+						}
+				}
+				for(var i:int=0; i < cardPayments.length(); i++){
+					total += Number(cardPayments[i].amount.toString());
+				}
+				if(cardPayments.length() > 0&&type=="default")this.visible = true;
+				else this.visible = false;
+				
+				
+			}
+			
+			
+			
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void {
+				
+				if(value)
+				{
+					_documentObject = value;
+					var xmll:XML=value.typeDescriptor.xmlOptions.terminalPayment[0];
+					if(xmll)
+					{
+						type=xmll.attribute("paymentType");
+					 	method=xmll.attribute("method");
+						var node:XMLList= xmll.paymentMethod;
+						payments=new Array();
+						for(var i:int=0;i<node.length();i++)
+						{
+							payments.push(node[i]);
+						}
+					 
+						if(type=="default"){
+							calculate();
+							_documentObject.addEventListener(DocumentEvent.DOCUMENT_PAYMENT_CHANGE,calculate);
+							_documentObject.addEventListener(DocumentEvent.DOCUMENT_LINE_CHANGE,calculate);
+							_documentObject.addEventListener(DocumentEvent.DOCUMENT_RECALCULATE,calculate);
+						}
+						else if(type=="simple")
+						{
+							ModelLocator.getInstance().eventManager.addEventListener(GlobalEvent.SEND_TO_TERMINAL, sendPayementRequest);
+			
+						}
+					}
+				}
+				
+			}
+			public function get documentObject():DocumentObject { return _documentObject; }
+		]]>
+	</mx:Script>
+	
+	<mx:FormItem>
+		<mx:Button label="{LanguageManager.getInstance().labels.sales.generateCardPayment}" toolTip="{LanguageManager.getInstance().labels.sales.generateCardPayment}" click="{sendPayementRequest();}" />
+	</mx:FormItem>	
+</mx:Form>

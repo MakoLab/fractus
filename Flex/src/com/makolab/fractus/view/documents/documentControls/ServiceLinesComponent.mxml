@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AbstractLinesComponent creationComplete="init()" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns="com.makolab.fractus.view.documents.documentControls.*" xmlns:catalogue="com.makolab.fractus.view.catalogue.*" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:lineList="com.makolab.components.lineList.*" xmlns:generic="com.makolab.fractus.view.generic.*" xmlns:warehouse="com.makolab.fractus.view.warehouse.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+		]]>
+	</mx:Script>
+	<columns>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.lp')}" minWidth="20" width="30" editable="false" itemRenderer="com.makolab.components.inputComponents.OrdinalNumberRenderer"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.code')}" dataField="itemCode" width="100" headerWordWrap="true" editable="false"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.item')}" dataField="itemName" headerWordWrap="true" editorUsesEnterKey="true" editorDataField="dataObject">
+			<mx:itemEditor>
+				<mx:Component>
+					<catalogue:ItemSearchEditor
+							setFunction="{outerDocument.setLineItem}"
+							itemId="{data.itemId}"
+							itemReload="outerDocument.documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_SET_ITEM, 'itemId', data, true))"
+						>
+						<mx:Script>
+							<![CDATA[
+								import com.makolab.components.document.DocumentEvent;
+							]]>
+						</mx:Script>
+					</catalogue:ItemSearchEditor>
+				</mx:Component>
+			</mx:itemEditor>
+		</mx:DataGridColumn>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.quantity')}" dataField="quantity" width="50" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('dictionaries.unitIdShort')}" dataField="unitId" editable="false" width="40" minWidth="20" headerWordWrap="true" editorDataField="selectedId" itemEditor="com.makolab.fractus.view.generic.FractusDictionarySelector" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" headerStyleName="headerRight" />
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.priceNetto')}" dataField="initialNetPrice" width="70" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.priceBrutto')}" dataField="initialGrossPrice" width="70" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.discount')}" dataField="discountRate" width="70" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('documents.netValue')}" dataField="netValue" width="70" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('documents.grossValue')}" dataField="grossValue" width="70" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.VAT')}" dataField="vatRateId" width="30" minWidth="50" headerWordWrap="true" editorDataField="selectedId" itemEditor="com.makolab.fractus.view.generic.FractusDictionarySelector" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" headerStyleName="headerRight" textAlign="right"/>
+		<LineAttributeColumn width="90" attributeName="LineAttribute_GenerateDocumentOption"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.warehouse')}" dataField="warehouseId" width="60" minWidth="40" headerWordWrap="true" editorDataField="selectedId" itemEditor="com.makolab.fractus.view.generic.FractusDictionarySelector" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" headerStyleName="headerRight" textAlign="right"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.profit')}" editable="false" width="50" minWidth="30" headerWordWrap="true" headerStyleName="headerRight" textAlign="right" itemRenderer="com.makolab.fractus.view.documents.documentControls.LineMarginRenderer"/>
+		<mx:DataGridColumn headerText="" minWidth="20" width="20" editable="false">
+			<mx:itemRenderer>
+				<mx:Component>
+					<lineList:LineMenu enabled="{!outerDocument.disableLinesChangeMessage}">
+						<mx:Script>
+							<![CDATA[
+								import com.makolab.fractus.model.LanguageManager;
+							]]>
+						</mx:Script>
+						<lineList:operations>
+							<lineList:LineOperation label="{LanguageManager.getLabel('common.Delete')}" operationInvoke="outerDocument.lineListDeleteLine(event)" icon="{outerDocument.getIcon('delete_small')}" textAlign="left"/>
+							<lineList:LineOperation label="{LanguageManager.getLabel('common.duplicate')}" operationInvoke="outerDocument.lineListDuplicateLine(event)" icon="{outerDocument.getIcon('duplicate_small')}" textAlign="left"/>
+							<lineList:LineOperation label="{LanguageManager.getLabel('common.addNewF')}" operationInvoke="outerDocument.lineListAddNewLine(event)" icon="{outerDocument.getIcon('add_small')}" textAlign="left"/>
+							<lineList:LineOperation label="{LanguageManager.getLabel('common.detailsTab')}" operationInvoke="outerDocument.lineListShowDetails(event)" icon="{outerDocument.getIcon('add_small')}" textAlign="left"/>
+						</lineList:operations>
+					</lineList:LineMenu>
+				</mx:Component>
+			</mx:itemRenderer>
+		</mx:DataGridColumn>
+	</columns>
+</AbstractLinesComponent>

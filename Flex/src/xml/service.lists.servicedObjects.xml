@@ -1,0 +1,45 @@
+<config>
+	<columns>
+		<column field="@ordinalNumber" labelKey="common.lp" label="Lp" width="35"/>
+		<column field="@identifier" labelKey="service.servicedObjectIdentifier" width="150" filter="1"/>
+		<column field="@shortName" labelKey="contractors.contractor" width="200" filter="1"/>
+		<column field="@description" labelKey="service.servicedObjectDescription" filter="1"/>
+	</columns>
+	
+	<searchParams>
+		<query/>
+    <pageSize>200</pageSize>
+    <page>1</page>
+		<columns>
+			<column field="identifier" sortOrder="1" sortType="ASC"/>
+			<column field="description"/>
+			<column field="shortName"/>
+		</columns>
+	</searchParams>
+
+	<getItemDataParams>
+		<type>ServicedObject</type>
+		<id/>
+	</getItemDataParams>
+	<filterField>@identifier</filterField>
+	
+	<!--
+	<clipboard>
+    	<quantities>1</quantities>
+	    <columns>
+			<column field="@name" labelKey="common.shortName" label="Nazwa"/><!- -TODO: label="\{LanguageManager.labels.\}"- ->
+			<column field="@quantity" labelKey="common.quantity" label="Ilość" editor="integer"/><!- -TODO: label="\{LanguageManager.labels.common.amount\}"- ->
+	    </columns>
+	</clipboard>
+	<equivalents>
+		<columns>
+			<column field="@code" labelKey="common.code" label="Kod" width="50"/><!- -TODO: label="\{LanguageManager.labels.common.code\}"- ->
+			<column field="@name" labelKey="common.shortName" label="Nazwa" width="100"/><!- -TODO: label="\{LanguageManager.labels.common.shortName\}"- ->
+	    </columns>
+	</equivalents>
+    -->
+    
+  <filters>
+
+  </filters>
+</config>

@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HDividedBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="100%" height="100%" backgroundAlpha="1" 
+	xmlns:layoutComponents="com.makolab.components.layoutComponents.*" 
+	creationComplete="initializePanels();"
+	removedFromStage="stopTimer();"
+	 verticalScrollPolicy="auto">
+	<!--
+	<layoutComponents:DockingVBox height="100%" width="30%" id="dockingPanel1">
+		
+	</layoutComponents:DockingVBox>
+	<layoutComponents:DockingVBox height="100%" width="40%" id="dockingPanel2">
+		
+	</layoutComponents:DockingVBox>
+	<layoutComponents:DockingVBox height="100%" width="30%" id="dockingPanel3">
+		
+	</layoutComponents:DockingVBox>
+	
+	-->
+	<!--
+	<layoutComponents1:DockingVBox creationComplete="initializeRightPanel()" paddingTop="10" width="70%" minWidth="250" height="100%" minHeight="10" paddingLeft="2" verticalAlign="top" id="rightP">
+		<catalogue:OperationsPanel id="operationsPanel" documentList="{documentList}" title="{LanguageManager.getInstance().labels.lists.operationsTitle}" width="100%" height="0" visible="false" clearSelectionFunction="{this.clearSelection}" />
+		<mx:VBox id="rightPane" left="0" top="0" width="100%" verticalAlign="top"/>
+	</layoutComponents1:DockingVBox>
+	-->
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.layoutComponents.DockPanel;
+			import com.makolab.components.layoutComponents.DockingVBox;
+			import com.makolab.components.list.CommonGrid;
+			import com.makolab.fractus.commands.AbstractCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.PermissionManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.view.dashboard.DashboardDockPanelClean;
+			import com.makolab.fractus.view.dashboard.DashboardDockPanelMostWanted;
+			import com.makolab.fractus.view.dashboard.DashboardDockPanelWZ;
+			
+			import flash.utils.getDefinitionByName;
+			
+			import mx.core.IDataRenderer;
+			
+			import assets.IconManager;
+			
+			
+			private static const forceReference:DashboardDockPanelMostWanted = null;
+			private static const forceReference2:DashboardDockPanelCurrency = null;
+			private static const forceReference3:DashboardDockPanelByBranches = null;
+			private static const forceReference4:DashboardDockPanelClean = null;
+			private static const forceReference5:DashboardDockPanelWZ = null;
+			private static const forceReference6:DashboardDockPanelFZ = null;
+			private static const forceReference7:DashboardDockPanelTurnOver = null;
+			private static const forceReference8:DashboardDockPanelChat = null;
+			private static const forceReference9:DashboardDockPanelFZK = null;
+			private static const forceReference10:DashboardDockPanelReg = null;
+			private static const forceReference11:DashboardDockPanelProd = null;
+			private static const forceReference12:DashboardDockPanelOverDueItem = null;
+			private static const forceReference13:DashboardDockPanelMinStates = null;
+			private static const forceReference14:DashboardDockPanelDelivery = null;
+			private static const forceReference15:DashboardDockPanelCurrentOrders = null;
+			private static const forceReference16:DashboardDockPanelCurrentStock = null;
+			private static const forceReference17:DashboardDockPanelPrestaContractors = null;
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+			
+			[Bindable]
+			private var config:XML = model.configManager.getXML("dashboard");
+			
+			
+			private var stopTimerPanel:DashboardDockPanelChat;
+			/*
+			[Bindable]
+			public function set config(value:XML):void
+			{
+				trace("now")
+				
+				_config = value;
+			}
+			
+			public function get config():XML
+			{
+				return _config;
+			}
+			*/
+
+			
+			public static function showWindow(title:String = null):ComponentWindow
+			{
+				var panel:DashboardPanel = new DashboardPanel();
+				
+				var window:ComponentWindow = ComponentWindow.showWindow(panel,0,null,LanguageManager.getInstance().labels.title.dashboard);
+				
+				//window.setStyle("headerColors", [IconManager[String(panel.config.headerColor)], IconManager[String(panel.config.headerColorLight)]]); 
+				//if(panel.icon)window.titleIcon = list.icon;
+				//window.setStyle("backgroundAlpha", '0.5');
+				return window;
+			}
+		
+			public function stopTimer():void
+			{
+				if(stopTimerPanel)
+					stopTimerPanel.stopTimer();
+			}
+			
+			private function initializePanels():void
+			{
+				for each(var dock:XML in config.dashboardConfig.dashboard)
+				{
+					var d:DockingVBox = new DockingVBox();
+					
+					if (dock.@width != undefined && dock.@width != '') d.width = dock.@width;
+					if (dock.@percentWidth != undefined && dock.@percentWidth != '') d.percentWidth = dock.@percentWidth;
+					d.height=this.height;
+//					d.percentHeight = 100;
+					d.name = "dockingPanel" + dock.@positionNumber;
+					addChild(d);
+				}
+				
+				for each(var panel:XML in config.panel)
+				{
+					for each(var dockPanel:XML in panel.*)
+					{
+						if(model.permissionManager.getPermissionLevel(dockPanel.@permission)==PermissionManager.LEVEL_ENABLED)
+						{
+							var dpt:String = "com.makolab.fractus.view.dashboard." + dockPanel.@type;
+							var dptClass:Class = getDefinitionByName(dpt) as Class;
+							var classFactory:ClassFactory = new ClassFactory(dptClass); 
+							var dp:DockPanel = classFactory.newInstance();
+							if(dockPanel.@open=="false")dp.open = false;
+							switch (String(dockPanel.@type))	
+							{	
+								case "DashboardDockPanelTurnOver":
+									(dp as DashboardDockPanelTurnOver).config = dockPanel.config;
+								break;
+								case "DashboardDockPanelRSS":
+									(dp as DashboardDockPanelRSS).config = dockPanel.config;
+									(dp as DashboardDockPanelRSS).proxyUrl = config.@url;
+									break;
+								case "DashboardDockPanelCurrency":
+									(dp as DashboardDockPanelCurrency).config = dockPanel.config;
+									(dp as DashboardDockPanelCurrency).proxyUrl = config.@url;
+									break;
+								case "DashboardDockPanelClean":
+									(dp as DashboardDockPanelClean).config = dockPanel.config;
+									break;
+								case "DashboardDockPanelChat":
+									stopTimerPanel=dp as DashboardDockPanelChat;
+									(dp as DashboardDockPanelChat).config = dockPanel.config;
+									break;
+							}
+							if (dockPanel.@width != undefined && dockPanel.@width != '') dp.width = dockPanel.@width;
+							if (dockPanel.@height != undefined && dockPanel.@height != '') dp.height = dockPanel.@height;
+							if (dockPanel.@percentWidth != undefined && dockPanel.@percentWidth != '') dp.percentWidth = dockPanel.@percentWidth;
+							if (dockPanel.@percentHeight != undefined && dockPanel.@percentHeight != '') dp.percentHeight = dockPanel.@percentHeight;
+							
+							if (!dp is IDataRenderer) throw new Error("rightPanel element must implement IDataRenderer interface.");
+							if(this.numChildren)
+							{
+					
+								var r:* = getChildByName("dockingPanel"+panel.@position);
+								r.addChild(dp);
+							}
+						}
+						
+					}
+				}
+			}
+			
+		]]>
+	</mx:Script>
+</mx:HDividedBox>

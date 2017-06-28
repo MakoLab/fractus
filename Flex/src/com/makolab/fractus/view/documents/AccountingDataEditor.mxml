@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		xmlns:generic="com.makolab.fractus.view.generic.*"
+		xmlns:inputComponents="com.makolab.components.inputComponents.*"
+		creationComplete="init()"
+		xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*"
+	>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.ComponentBinder;
+			import com.makolab.fractus.commands.GetAccountingDataCommand;
+			import com.makolab.fractus.commands.GetAccountingEntriesCommand;
+			import com.makolab.fractus.commands.SetAccountingDataCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			
+			import mx.rpc.events.ResultEvent;
+			
+			public var documentId:String;
+			[Bindable] public var documentCategory:String;
+			
+			private var binder:ComponentBinder = new ComponentBinder();
+			
+			public function loadData():void
+			{
+				if (!documentId) return;
+				var cmd:GetAccountingDataCommand = new GetAccountingDataCommand(documentId, this.documentCategory);
+				cmd.addEventListener(ResultEvent.RESULT, handleGetResult);
+				cmd.execute();
+			}
+			
+			public function saveAccountingData(handler:Function = null):void
+			{
+				var cmd:SetAccountingDataCommand = new SetAccountingDataCommand(<root>{xml}</root>);
+				if (handler != null) cmd.addEventListener(ResultEvent.RESULT, handler);
+				cmd.execute();
+			}
+			
+			private function handleGetResult(event:ResultEvent):void
+			{
+				var l:XMLList = XML(event.result).*;
+				this.xml = l.length() > 0 ? l[0] : getNewXML();
+		
+				if(this.xml.applicationUserId.length() == 0)
+					this.xml.applicationUserId.* = ModelLocator.getInstance().sessionManager.userId;
+					
+				this.binder.dataProvider = this.xml;
+			}
+			
+			private function getNewXML():XML
+			{
+				var x:XML = <documentData><entriesCreated>0</entriesCreated></documentData>;
+				x.entriesCreated = 0;
+				x.year = new Date().getFullYear();
+				x.month = new Date().getMonth() + 1;
+				var idProperty:String;
+				switch (this.documentCategory)
+				{
+					case DocumentTypeDescriptor.COMMERCIAL_DOCUMENT:
+						idProperty = "commercialDocumentId";
+						break;
+					case DocumentTypeDescriptor.WAREHOUSE_DOCUMENT:
+						idProperty = "warehouseDocumentId";
+						break;
+					case DocumentTypeDescriptor.FINANCIAL_DOCUMENT:
+						idProperty = "financialDocumentId";
+						break;
+				}
+				x[idProperty] = this.documentId;
+				return x;
+			}
+			
+			private function updateValue(event:Event, field:String, sourceField:String = 'text'):void
+			{
+				var value:String = event.target[sourceField];
+				if (value) xml[field] = value;
+				else delete xml[field];
+			}
+			
+			[Bindable]
+			public var xml:XML;
+			
+			
+			[Bindable]
+			public var _documentXML:XML;
+			public function set documentXML(value:XML):void
+			{
+				_documentXML = value;
+				currencyInfo.documentObject = new DocumentObject(value);
+			} 
+			public function get documentXML():XML
+			{
+				return _documentXML;
+			}
+			
+			
+			private function init():void
+			{
+				binder.addComponent(vatRegisterId, 'selectedId');
+				binder.addComponent(year, 'value');
+				binder.addComponent(month, 'value');
+				binder.addComponent(vat7, 'selected');
+				binder.addComponent(vatUe, 'selected');
+				binder.addComponent(accountingRuleId, 'selectedId');
+				binder.addComponent(accountingJournalId, 'selectedId');
+				binder.addComponent(date, 'dataObject');
+				binder.addComponent(applicationUserId, 'selectedId');
+				binder.addComponent(transactionType, 'selectedValue');
+				binder.addComponent(oppositionAccounting, 'text');
+				binder.addComponent(externalName, 'text');
+			}
+
+		]]>
+	</mx:Script>
+	<mx:Form paddingLeft="0" paddingRight="2" paddingTop="10" paddingBottom="10">		
+		<mx:FormItem label="Rejestr VAT" visible="{this.documentCategory == DocumentTypeDescriptor.COMMERCIAL_DOCUMENT}" includeInLayout="{this.documentCategory == DocumentTypeDescriptor.COMMERCIAL_DOCUMENT}">
+			<generic:FractusDictionarySelector id="vatRegisterId" dictionaryName="vatRegisters"/>
+		</mx:FormItem>
+		<mx:FormItem label="Schemat księgowy">
+			<generic:FractusDictionarySelector id="accountingRuleId" dictionaryName="accountingRules"/>
+		</mx:FormItem>
+		<mx:FormItem label="Dziennik księgowy">
+			<generic:FractusDictionarySelector id="accountingJournalId" dictionaryName="accountingJournals"/>
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getLabel('common.user')}">
+			<generic:FractusDictionarySelector id="applicationUserId" dictionaryName="users" enabled="false"/>
+		</mx:FormItem>
+		<mx:FormItem label="Typ transakcji" visible="{this.documentCategory == DocumentTypeDescriptor.COMMERCIAL_DOCUMENT}" includeInLayout="{this.documentCategory == DocumentTypeDescriptor.COMMERCIAL_DOCUMENT}">
+			<inputComponents:ValueComboBox id="transactionType" labelField="@label" valueField="@value" dataProvider="{transactionTypes.*}"/>
+		</mx:FormItem>
+		<mx:FormItem label="Konto przeciwstawne" visible="{this.documentCategory == DocumentTypeDescriptor.FINANCIAL_DOCUMENT}" includeInLayout="{this.documentCategory == DocumentTypeDescriptor.FINANCIAL_DOCUMENT}">
+			<mx:TextInput id="oppositionAccounting" maxChars="50" />
+		</mx:FormItem>
+		<mx:FormItem label="Typ operacji" visible="{this.documentCategory == DocumentTypeDescriptor.FINANCIAL_DOCUMENT}" includeInLayout="{this.documentCategory == DocumentTypeDescriptor.FINANCIAL_DOCUMENT}">
+			<mx:TextInput id="externalName" maxChars="20" />
+		</mx:FormItem>
+	</mx:Form>
+	<mx:Form paddingLeft="2" paddingRight="0" paddingTop="10" paddingBottom="10">
+		<mx:FormItem label="Rok/miesiąc">
+			<mx:HBox horizontalGap="0">
+				<mx:NumericStepper id="year" minimum="2000" maximum="2050" width="65"/>
+				<mx:Label text="/" width="15" textAlign="center"/>
+				<mx:NumericStepper id="month" minimum="1" maximum="12" width="50"/>
+			</mx:HBox>
+		</mx:FormItem>
+		<mx:FormItem label="Data dekretacji">
+			<inputComponents:DateEditor id="date"/>
+		</mx:FormItem>
+		<mx:FormItem label="Liczyć do VAT-7" visible="{this.documentCategory == DocumentTypeDescriptor.COMMERCIAL_DOCUMENT}" includeInLayout="{this.documentCategory == DocumentTypeDescriptor.COMMERCIAL_DOCUMENT}">
+			<mx:CheckBox id="vat7"/>
+		</mx:FormItem>
+		<mx:FormItem label="Liczyć do VAT-UE" visible="{this.documentCategory == DocumentTypeDescriptor.COMMERCIAL_DOCUMENT}" includeInLayout="{this.documentCategory == DocumentTypeDescriptor.COMMERCIAL_DOCUMENT}">
+			<mx:CheckBox id="vatUe"/>
+		</mx:FormItem>
+		
+		<!--informacje o walucie-->
+		<documentControls:DocumentCurrencySelector id="currencyInfo"/>
+		
+				
+	</mx:Form>	
+	<!--<documentControls:CurrencyItemRenderer documentObject="{new DocumentObject(documentXML)}"/>-->
+	<mx:XML id="transactionTypes" xmlns="">
+		<transactionTypes>
+			<transactionType label="Kraj" value="domestic"/>
+			<transactionType label="Wewnątrzwspólnotowa dostawa" value="euSupply"/>
+			<transactionType label="Wewnątrzwspólnotowa dostawa, trójstronna" value="trilateralEuSupply"/>
+			<transactionType label="Dostawa opodatkowana poza terytorium kraju" value="foreignTaxSupply"/>
+			<transactionType label="Wewnątrzwspólnotowe nabycie" value="euPurchase"/>
+			<transactionType label="Wewnątrzwspólnotowe nabycie, trójstronne" value="trilateralEuPurchase"/>
+			<transactionType label="Import" value="import"/>
+		</transactionTypes>
+	</mx:XML>
+</mx:HBox>

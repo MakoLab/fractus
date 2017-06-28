@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:ComboBox xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="init()"
+	 labelField="label" close="closeHandler(event)" keyDown="handleKeyDown(event)"
+	 enabled="{!disableLinesChangeMessage}">
+	
+	<mx:Metadata>
+		[Event(name="selectTemplate", type="flash.events.Event")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import mx.events.DropdownEvent;
+			import flash.events.KeyboardEvent;
+			import flash.events.Event;
+			
+			private var _selectedTemplate:XML;
+			private var _documentObject:DocumentObject;
+			
+			[Bindable]
+			private var disableLinesChangeMessage:Boolean;
+			
+			public function get selectedTemplate():XML
+			{
+				return _selectedTemplate;
+			}
+			
+			private function getDataProvider(xml:XML):XMLList
+			{
+				var neutral:XML = <itemsSet><label>-- dodaj z szablonu --</label></itemsSet>; // todo use languageManager
+				return neutral + xml.itemsSets.itemsSet;
+			}
+			
+			private function closeHandler(event:DropdownEvent):void
+			{
+				handleSelection();
+			}
+			
+			private function handleKeyDown(event:KeyboardEvent):void
+			{
+				if(event.keyCode == 13 && this.selectedIndex != 0){
+					handleSelection();
+				}
+			}
+			
+			private function handleSelection():void
+			{
+				_selectedTemplate = XML(this.selectedItem);
+				this.selectedIndex = 0;
+				this.dispatchEvent(new Event("selectTemplate"));
+				useTemplate();
+			}
+			
+			public function set documentObject(value:DocumentObject):void
+			{
+				_documentObject = value;
+				
+				if (_documentObject && _documentObject.xml.@disableLinesChange.length() > 0)
+					disableLinesChangeMessage = true;
+				else
+					disableLinesChangeMessage = false;
+			} 
+			public function get documentObject():DocumentObject
+			{
+				return _documentObject;
+			}
+			
+			protected function useTemplate():void
+			{
+				if(_documentObject){
+					var templateLines:XMLList = selectedTemplate.lines.line;
+					for(var i:int = 0; i < templateLines.length(); i++){
+						var line:Object = documentObject.newLineTemplateFactory();
+						if(line.hasOwnProperty("shifts"))line.shifts = [];
+						for each(var node:XML in templateLines[i].*){
+							if(line.hasOwnProperty(node.name())){
+								line[node.name()] = node.toString();
+							}
+						}
+						_documentObject.lines.addItem(line);
+						_documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_LINE_ADD, false, false, null, line));
+						_documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_SET_ITEM, 'itemId', line, true));
+					}
+				}
+			}
+			
+			private function init():void
+			{
+				ModelLocator.getInstance().configManager.requestList(["itemsSet.set1"],resultHandler);
+			}
+			
+			private function resultHandler():void
+			{
+				this.dataProvider = <itemsSet><label>-- wybierz szablon --</label></itemsSet> + ModelLocator.getInstance().configManager.getXML("itemsSet.set1").configValue.itemsSets.*;
+			}
+		]]>
+	</mx:Script>
+	
+</mx:ComboBox>

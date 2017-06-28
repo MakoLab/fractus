@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AbstractLinesComponent creationComplete="init()" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns="com.makolab.fractus.view.documents.documentControls.*" xmlns:catalogue="com.makolab.fractus.view.catalogue.*" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:lineList="com.makolab.components.lineList.*" xmlns:generic="com.makolab.fractus.view.generic.*" xmlns:warehouse="com.makolab.fractus.view.warehouse.*">
+	<columns>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.lp')}" minWidth="20" width="25" editable="false" itemRenderer="com.makolab.components.inputComponents.OrdinalNumberRenderer"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.code')}" dataField="itemCode" width="100" headerWordWrap="true" editable="false"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.item')}" dataField="itemName" headerWordWrap="true" editorUsesEnterKey="true" editorDataField="dataObject">
+			<mx:itemEditor>
+				<mx:Component>
+					<catalogue:ItemSearchEditor
+							setFunction="{outerDocument.setLineItem}"
+							itemId="{data.itemId}"
+							itemReload="outerDocument.documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_SET_ITEM, 'itemId', data, true))"
+						>
+						<mx:Script>
+							<![CDATA[
+								import com.makolab.components.document.DocumentEvent;
+							]]>
+						</mx:Script>
+					</catalogue:ItemSearchEditor>
+				</mx:Component>
+			</mx:itemEditor>
+		</mx:DataGridColumn>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.quantity')}" dataField="quantity" width="50" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('dictionaries.unitIdShort')}" dataField="unitId" editable="false" width="40" minWidth="20" headerWordWrap="true" editorDataField="selectedId" itemEditor="com.makolab.fractus.view.generic.FractusDictionarySelector" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" headerStyleName="headerRight" />
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.priceNettoPurchase')}" dataField="netPrice" width="60" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.priceGrossPurchase')}" dataField="grossPrice" width="60" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.profit')}" dataField="discountRate" width="50" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.priceNettoSelling')}" dataField="initialNetPrice" width="60" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.fractus.view.documents.documentControls.PriceEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.priceGrossSelling')}" dataField="initialGrossPrice" width="60" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('documents.netValue')}" dataField="netValue" width="70" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('documents.grossValue')}" dataField="grossValue" width="70" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.VAT')}" dataField="vatRateId" width="50" headerWordWrap="true" editorDataField="selectedId" itemEditor="com.makolab.fractus.view.generic.FractusDictionarySelector" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" headerStyleName="headerRight" textAlign="right"/>
+		<LineAttributeColumn visible="{enableExpirationDate}" width="90" attributeName="LineAttribute_expirationDate" />
+		<mx:DataGridColumn id="shiftColumn" itemRenderer="com.makolab.fractus.view.warehouse.ShiftsItemRenderer" headerText="Alokacje" width="80" dataField="shifts" visible="{isWmsAvailable(documentObject)}" editable="{isWmsAvailable(documentObject)}" editorUsesEnterKey="true" editorDataField="selectedItems">
+			<mx:itemEditor>
+				<mx:Component>
+					<warehouse:AllocationSelector2/>
+				</mx:Component>
+			</mx:itemEditor>
+		</mx:DataGridColumn>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.warehouseShort')}" id="warehouseSelectorColumn" dataField="warehouseId" width="50" headerWordWrap="true" editorDataField="selectedId" itemEditor="com.makolab.fractus.view.generic.FractusDictionarySelector" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" headerStyleName="headerRight" textAlign="right"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.profit')}" editable="false" visible="{this.documentObject.typeDescriptor.isSalesDocument}" width="50" minWidth="30" headerWordWrap="true" headerStyleName="headerRight" textAlign="right" itemRenderer="com.makolab.fractus.view.documents.documentControls.LineMarginRenderer"/>
+		<mx:DataGridColumn headerText="" minWidth="20" width="20" editable="false">
+			<mx:itemRenderer>
+				<mx:Component>
+					<lineList:LineMenu enabled="{!outerDocument.disableLinesChangeMessage}">
+						<mx:Script>
+							<![CDATA[
+								import com.makolab.fractus.model.LanguageManager;
+							]]>
+						</mx:Script>
+						<lineList:operations>
+							<lineList:LineOperation label="{LanguageManager.getLabel('common.Delete')}" operationInvoke="outerDocument.lineListDeleteLine(event)" icon="{outerDocument.getIcon('delete_small')}" textAlign="left"/>
+							<lineList:LineOperation label="{LanguageManager.getLabel('common.duplicate')}" operationInvoke="outerDocument.lineListDuplicateLine(event)" icon="{outerDocument.getIcon('duplicate_small')}" textAlign="left"/>
+							<lineList:LineOperation label="{LanguageManager.getLabel('common.addNewF')}" operationInvoke="outerDocument.lineListAddNewLine(event)" icon="{outerDocument.getIcon('add_small')}" textAlign="left"/>
+							<lineList:LineOperation label="{LanguageManager.getLabel('common.detailsTab')}" operationInvoke="outerDocument.lineListShowDetails(event)" icon="{outerDocument.getIcon('add_small')}" textAlign="left"/>
+							</lineList:operations>
+					</lineList:LineMenu>
+				</mx:Component>
+			</mx:itemRenderer>
+		</mx:DataGridColumn>
+	</columns>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.view.warehouse.SlotItemEditor;
+			import com.makolab.fractus.view.warehouse.SlotItemRenderer;
+			
+			import mx.events.DataGridEvent;
+			
+			private function codeLabelFunction(data:Object, listData:Object):String
+			{
+				return data.itemCode;
+			}
+			
+			[Bindable]
+			override public function set documentObject(value:DocumentObject):void
+			{
+				super.documentObject = value;
+				if(documentObject.typeDescriptor.isPurchaseDocument){
+					shiftColumn.rendererIsEditor = false;
+					var factory:ClassFactory = new ClassFactory(SlotItemEditor);
+					factory.properties = {lineComponent : this.documentLines};
+					shiftColumn.itemEditor = factory; 
+					shiftColumn.itemRenderer = new ClassFactory(SlotItemRenderer);
+				}
+			}
+			
+			override public function get documentObject():DocumentObject
+			{
+				return super.documentObject;
+			}
+			
+			private function isWmsAvailable(documentObject:DocumentObject):Boolean
+			{
+				return ModelLocator.getInstance().isWmsEnabled && documentObject.typeDescriptor.isCommercialDocument;
+			}
+			
+			
+			override protected function init():void
+			{
+				super.init();
+				this.documentLines.addEventListener(DataGridEvent.ITEM_EDIT_BEGIN,itemEditBegin);
+				(this.warehouseSelectorColumn.itemEditor as ClassFactory).properties  = { leftSidedDropDown : true };
+			}
+			
+			private function itemEditBegin(event:DataGridEvent):void
+			{
+				var colIndex:int = 10;
+				for(var i:int=0;i<columns.length;i++){
+					if(columns[i].dataField == "shifts"){
+						colIndex = i;
+						break;
+					}
+				}
+				if((documentObject as DocumentObject).typeDescriptor.isCommercialDocument && event.columnIndex == colIndex && ModelLocator.getInstance().dictionaryManager.dictionaries.allWarehouses.(id.toString() ==  documentLines.dataProvider[event.rowIndex].warehouseId).valuationMethod.toString() == "0")
+					event.preventDefault();
+			}
+		]]>
+	</mx:Script>
+</AbstractLinesComponent>

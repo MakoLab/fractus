@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" horizontalAlign="center" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:filters="com.makolab.fractus.view.documents.reports.filters.*" xmlns:layoutComponents="com.makolab.components.layoutComponents.*"
+	implements="com.makolab.fractus.view.documents.reports.IReportFiltersComponent">
+	<mx:Metadata>
+		[Event(name="filterInfoChanged", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.view.documents.reports.filters.IReportFilter;
+			import com.makolab.fractus.model.DictionaryManager;
+			[Bindable]
+			public var searchParams:XML;
+			
+			[Bindable]
+			public var filtersInfo:Object;
+			
+			private function setFiltersInfo(event:Event):void
+			{
+				if(filtersInfo && event && event.target is IReportFilter)
+				{
+					var filtersInfoCopy:Object = {};
+					for (var name:String in filtersInfo)
+					{
+						filtersInfoCopy[name] = filtersInfo[name];
+					}
+					var filter:IReportFilter = (event.target as IReportFilter);
+					filtersInfoCopy[event.target.uid] = {label : event.target.label, value : filter.stringValue};
+					filtersInfo = filtersInfoCopy;
+					dispatchEvent(new Event("filterInfoChanged"));
+				}
+			}
+		
+			public function get errors():Array
+			{
+				var errors:Array = [];
+				var children:Array = this.column1.getChildren().concat(this.column2.getChildren()).concat(this.column3.getChildren());
+				for(var i:int=0;i<children.length;i++){
+					if(children[i] is IReportFilter && (children[i] as IReportFilter).validationError != null){
+						errors.push(children[i].validationError);
+					}
+				}
+				return errors;
+			}
+			
+			/**
+			 * Document category numbers separated with coma.
+			 */
+			[Bindable]
+			public var documentCategories:String;
+			
+			private function getDocumentTypeList(categories:String):XMLList
+			{
+				var list:Array = categories.split(",");
+				var xmlList:XMLList = new XMLList();
+				for(var i:int=0;i<list.length;i++){
+					if(!isNaN(Number(list[i])))xmlList = xmlList + DictionaryManager.getInstance().dictionaries.documentTypes.(documentCategory.toString() == list[i]);
+				}
+				return xmlList;
+			}
+			
+			[Bindable]
+			private var showCustomFiltersPanel:Boolean;
+			
+			private var _customFilters:Array = [];
+			
+			public function set customFilters(filters:Array):void
+			{
+				_customFilters = filters;
+				customFiltersForm.removeAllChildren();
+				if (_customFilters && _customFilters.length > 0)
+				{
+					for each (var filter:Object in _customFilters)
+					{
+						if (!(filter is IReportFilter)) 
+						{
+							throw new Error("Report filters must implement IReportFilter interface.");
+							break;
+						}
+						(filter as IReportFilter).parameters = searchParams;
+						customFiltersForm.addChild(filter as DisplayObject);
+					}
+					showCustomFiltersPanel = true;
+				}else{
+					showCustomFiltersPanel = false;
+				}
+			}
+			public function get customFilters():Array
+			{
+				return _customFilters;
+			}
+		]]>
+	</mx:Script>
+	<layoutComponents:CollapsablePanel title="{LanguageManager.getInstance().labels.reports.filters.documentsFilters}" width="600">		
+		<mx:Form id="column1" width="100%">
+			<!--<mx:FormHeading label="Cechy dokumentów"/>-->
+			<mx:FormItem label="{LanguageManager.getInstance().labels.common.dateRange}"><filters:DateFilter label="{LanguageManager.getInstance().labels.common.dateRange}" parameters="{searchParams}" width="100%" change="setFiltersInfo(event)"/></mx:FormItem>
+			<filters:RealizationStatusFilter label="{LanguageManager.getInstance().labels.reports.filters.realizationStatusFilter}" change="setFiltersInfo(event)" parameters="{searchParams}" width="100%"/>
+			<filters:BranchFilter label="{LanguageManager.getInstance().labels.common.branch}" parameters="{searchParams}" change="setFiltersInfo(event)" width="100%"/>
+			<!--<filters:CompanyFilter label="Firma" parameters="{searchParams}" change="setFiltersInfo(event)" width="100%"/>
+			<filters:WarehouseFilter showAllWarehouses="{ModelLocator.getInstance().headquarters}" label="{LanguageManager.getLabel('common.warehouse')}" parameters="{searchParams}" change="setFiltersInfo(event)" width="100%"/>
+			<filters:DocumentTypeFilter label="Typ dokumentu" parameters="{searchParams}" itemsList="{getDocumentTypeList(documentCategories)}" change="setFiltersInfo(event)" width="100%"/>
+			<filters:PaymentMethodFilter label="Forma płatności" parameters="{searchParams}" change="setFiltersInfo(event)" width="100%"/>
+			<filters:NumberSettingsFilter label="Ustawienie numeracji" parameters="{searchParams}" change="setFiltersInfo(event)" width="100%"/>-->
+		</mx:Form>
+	</layoutComponents:CollapsablePanel>
+	<layoutComponents:CollapsablePanel title="{LanguageManager.getInstance().labels.reports.filters.itemAndService}" width="600">
+		<mx:Form id="column2" width="100%">
+			<filters:QueryFilter label="{LanguageManager.getInstance().labels.reports.filters.codeOrNameFilter}" parameters="{searchParams}" change="setFiltersInfo(event)" width="100%"/>
+			<filters:QueryFilter label="{LanguageManager.getInstance().labels.reports.filters.manufacturer}" parameters="{searchParams}" change="setFiltersInfo(event)" width="100%" fieldName="manufacturer"/>
+			<!--<mx:FormHeading label="Cechy towarów i usług na pozycjach"/>-->
+			<filters:ItemsTypeFilter label="{LanguageManager.getInstance().labels.reports.filters.itemsTypeFilter}" parameters="{searchParams}" change="setFiltersInfo(event)" width="100%"/>
+			<filters:ItemFilter label="{LanguageManager.getInstance().labels.reports.filters.item}" parameters="{searchParams}" change="setFiltersInfo(event)" width="100%" enabled="false" toolTip="Opcja chwilowo wyłączona"/>
+			<filters:ItemsGroupFilter id="itemGroupFilter" label="{LanguageManager.getInstance().labels.reports.filters.contractorsGroup}" parameters="{searchParams}" change="setFiltersInfo(event)" width="100%"/>
+		</mx:Form>
+	</layoutComponents:CollapsablePanel>
+	<layoutComponents:CollapsablePanel title="{LanguageManager.getInstance().labels.reports.filters.contractorFilters}" width="600">
+		<mx:Form id="column3" width="100%">
+			<!--<mx:FormHeading label="Cechy kontrahentów"/>-->
+			<!--<filters:ContractorTypeFilter id="contractorTypeFilter" parameters="{searchParams}" change="setFiltersInfo(event)" width="100%" toolTip="Opcja chwilowo wyłączona" enabled="false"/>-->
+			<filters:ContractorFilter label="{LanguageManager.getInstance().labels.documentRenderer.contractor2}" parameters="{searchParams}" change="setFiltersInfo(event)" width="100%"/>
+			<!--<filters:ContractorsGroupFilter id="contractorGroupTree" label="Przynależność do grup" direction="vertical" parameters="{searchParams}" change="setFiltersInfo(event)" width="100%"/>-->
+		</mx:Form>
+	</layoutComponents:CollapsablePanel>
+	<mx:Form id="customFiltersForm" width="100%" verticalGap="0" visible="{showCustomFiltersPanel}" includeInLayout="{showCustomFiltersPanel}">
+		<mx:FormHeading label="Dodatkowe filtry"/>
+	</mx:Form>
+</mx:VBox>

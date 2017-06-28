@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox horizontalAlign="right"
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	fontSize="16"
+	width="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			
+			[Bindable] private var totalAmount:Number;
+			[Bindable] private var amountSumValidationInfo:String = "";
+			[Bindable] private var currencySymbol:String = DictionaryManager.getInstance().getById(ModelLocator.getInstance().systemCurrencyId).symbol.toString();
+			
+			private var documentObjectChanged:Boolean;
+			private var _documentObject:DocumentObject;
+			[Bindable("documentObjectChanged")]
+			public function set documentObject(value:DocumentObject):void
+			{
+				if (value != _documentObject)
+				{
+					_documentObject = value;
+					documentObjectChanged = true;
+					invalidateProperties();
+					dispatchEvent(new Event("documentObjectChanged"));
+				}
+			}
+			public function get documentObject():DocumentObject
+			{
+				return _documentObject;
+			}
+			
+			override protected function commitProperties():void
+			{
+				super.commitProperties();
+				if (documentObjectChanged)
+				{
+					documentObjectChanged = false;
+					documentObject.addEventListener(DocumentEvent.DOCUMENT_PAYMENT_CHANGE, paymentChangeHandler);
+					documentObject.addEventListener(DocumentEvent.DOCUMENT_FIELD_CHANGE, documentFieldChangeHandler);
+				}
+			}
+			
+			private function paymentChangeHandler(event:DocumentEvent):void
+			{
+				calculateTotalAmount();
+				updateDueAmountColor();
+			}
+			
+			private function documentFieldChangeHandler(event:DocumentEvent):void
+			{
+				if (event.fieldName == "totalForPayment")
+					updateDueAmountColor();
+			}
+			
+			private function updateDueAmountColor():void
+			{ 
+				if (Number(documentObject.totalForPayment.toFixed(2))-Number(Number(totalAmount).toFixed(2)) != 0 )
+					dueAmountRenderer.setStyle("color",0xff0000);
+				else
+					dueAmountRenderer.setStyle("color",0x000000);
+			}
+			
+			private function calculateTotalAmount():void
+			{
+				totalAmount = 0;
+				var pm:XML;
+				for each(var payment:XML in documentObject.paymentsXML.payment){
+					pm = DictionaryManager.getInstance().getById(payment.paymentMethodId.toString());
+					if(pm && !(pm.isIncrementingDueAmount.toString() == "1")){
+						if (payment.paymentCurrencyId.toString() == documentObject.xml.documentCurrencyId.toString())
+						{
+							totalAmount += Number(payment.amount.toString());
+						}
+						else
+						{
+							totalAmount += CurrencyManager.paymentToDocument(payment,documentObject);
+						}
+					}
+				}
+			}
+		]]>
+	</mx:Script>
+	<!--
+	<mx:Label text="{LanguageManager.getInstance().labels.documents.received}: "/>
+	<inputComponents:CurrencyRenderer value="{totalAmount}" nanText="0,00"/>
+	<mx:Label text="{currencySymbol}"/>
+	<mx:Label text="{LanguageManager.getInstance().labels.documents.totalDue}: "/>
+	<inputComponents:CurrencyRenderer id="totalForPaymentRenderer" value="{documentObject.totalForPayment}" nanText="0,00" toolTip="{amountSumValidationInfo}"/>
+	<mx:Label text="{currencySymbol}"/>
+	-->
+	<mx:Label text="{LanguageManager.getInstance().labels.documents.dueAmount}: "/>
+	<inputComponents:CurrencyRenderer id="dueAmountRenderer" fontWeight="bold" value="{Number(documentObject.totalForPayment.toFixed(2))-Number(Number(totalAmount).toFixed(2))}" nanText="0,00"/>
+	<mx:Label text="{currencySymbol}"/>
+</mx:HBox>

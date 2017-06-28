@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:LinkButton xmlns:mx="http://www.adobe.com/2006/mxml" click="handleClick(event)" label="{this.data.textValue}">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.FocusRequestDirection;
+			import mx.managers.IFocusManagerComponent;
+			import com.makolab.components.inputComponents.IFormBuilderComponent;
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			import mx.controls.NumericStepper;
+			import mx.controls.Tree;
+			import mx.containers.ControlBar;
+			import mx.controls.Alert;
+			import mx.controls.Button;
+			import mx.managers.PopUpManager;
+			import mx.events.FlexMouseEvent;
+			import mx.containers.TitleWindow;
+			import com.makolab.components.util.FPopUpManager;
+			public var classMapper:Object = {
+				itemGroupSelector : { editor : ItemGroupSelector, dataField : "groupIds", labelField : "groupNames" },
+				contractorGroupSelector : { editor : ContractorGroupSelector, dataField : "groupIds", labelField : "groupNames" },
+				dateRangeChooser : { editor : DateRangeChooser, dataField : "range", labelField : "rangeText"},
+				numericStepper : { editor : NumericStepper, dataField : "value", labelField : "value"},
+				branchSelector : { editor : BranchSelector, dataField : "branchIds", labelField : "branchNames"},
+				documentCategorySelector : { editor : DocumentCategorySelector, dataField : "ids", labelField : "names"},
+				contractorDealingEditor : { editor : ContractorDealingEditor, dataField : "value", labelField : "valueText"},
+				contractorSelector : { editor : ContractorSelector, dataField : "value", labelField : "valueText", xmlData : "xmlValue"}
+			};
+			
+			override public function set visible(value:Boolean):void
+			{
+				if(!data || !classMapper[data.@editor]) super.visible = false;
+				else super.visible = value;
+			}
+			
+			private function handleClick(event:MouseEvent):void
+			{
+				if(!classMapper[data.@editor])return;
+				var window:TitleWindow = new TitleWindow();
+				window.layout = "vertical";
+				
+				var okButton:Button = new Button();
+				okButton.label = "OK (ctrl + ENTER)";
+				okButton.percentWidth = 100;
+				okButton.addEventListener(MouseEvent.CLICK,function ():void{PopUpManager.removePopUp(window)});
+				
+				var controlBar:ControlBar = new ControlBar();
+				controlBar.setStyle("paddingTop",0);
+				controlBar.setStyle("paddingBottom",0);
+				
+				var component:UIComponent = new (classMapper[data.@editor].editor)(); 
+				component.addEventListener("change",updateData);
+				component[classMapper[data.@editor.toString()].dataField] = data.value[0];
+				component.setFocus();
+				if(classMapper[data.@editor.toString()].xmlData)component[classMapper[data.@editor.toString()].xmlData] = data.xmlData.*;
+				
+				window.addChild(component);
+				window.addChild(controlBar);
+				window.addEventListener(KeyboardEvent.KEY_DOWN,function (event:KeyboardEvent):void{if(event.keyCode == Keyboard.ENTER && event.ctrlKey)okButton.dispatchEvent(new MouseEvent(MouseEvent.CLICK));});
+				controlBar.addChild(okButton);
+				
+				window.setStyle("headerHeight",0);
+				FPopUpManager.addPopUp(window,this);
+				window.addEventListener(FlexMouseEvent.MOUSE_DOWN_OUTSIDE,function ():void{PopUpManager.removePopUp(window)});
+				window.addEventListener(Event.ADDED_TO_STAGE,function():void{window.focusManager.getNextFocusManagerComponent(false).setFocus()});
+			}
+			
+			private function updateData(event:Event):void
+			{
+				this.data.value = event.target[classMapper[data.@editor].dataField];
+				this.label = event.target[classMapper[data.@editor].labelField];
+				if(classMapper[data.@editor.toString()].xmlData)this.data.xmlData.* = event.target[classMapper[data.@editor].xmlData];
+				this.data.textValue.* = event.target[classMapper[data.@editor].labelField];
+				if(this.data.value.toString() != "")this.data.@enabled = "1";
+			}
+			
+			private function handleKeyDown(event:KeyboardEvent):void
+			{
+				
+			}
+		]]>
+	</mx:Script>
+	
+</mx:LinkButton>

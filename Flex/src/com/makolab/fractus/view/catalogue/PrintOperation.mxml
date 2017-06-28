@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CatalogueOperation xmlns="com.makolab.components.catalogue.*" xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			
+			private var configurationKey:String = "printing.printProfiles";
+			
+			private function init():void
+			{
+				ModelLocator.getInstance().configManager.requestValue(configurationKey);
+			}
+		]]>
+	</mx:Script>
+</CatalogueOperation>

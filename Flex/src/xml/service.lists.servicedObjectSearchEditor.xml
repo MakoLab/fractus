@@ -1,0 +1,24 @@
+<!-- konfiguracja wyszukiwarki obiektow serwisowych na dokumencie -->
+<config>
+	<searchParams>
+		<query/>
+		<columns>
+			<column field="identifier" sortOrder="1" sortType="ASC"/>
+			<column field="shortName" />
+			<column field="description" />
+		</columns>
+		<filters/> 
+	</searchParams>
+	<operations>
+		<item name="newItem" global="1">Stwórz nowy przedmiot...</item>
+		<item name="editItem">Edytuj wybrany przedmiot...</item>
+	</operations>
+	<searchModes>
+		<column label="Ogólne" field=""/>
+	</searchModes>
+	<columns>
+		<column field="@identifier" labelKey="service.servicedObjectIdentifier" width="150" filter="1"/>
+		<column field="@shortName" labelKey="contractors.contractor" width="200" filter="1"/>
+		<column field="@description" labelKey="service.servicedObjectDescription" filter="1"/>
+	</columns>
+</config>

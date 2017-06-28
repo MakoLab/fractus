@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DocumentEditor
+		xmlns="com.makolab.fractus.view.documents.documentEditors.*"
+		xmlns:lineList="com.makolab.components.lineList.*"
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		xmlns:util="com.makolab.components.util.*"
+		xmlns:inputComponents="com.makolab.components.inputComponents.*"
+		xmlns:model="com.makolab.fractus.model.*" xmlns:catalogue="com.makolab.components.catalogue.*"
+		xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*" xmlns:plugins="com.makolab.fractus.view.documents.plugins.*"
+		printProfileName="defaultCommercialDocumentPdf"
+		creationComplete="creationComplete()"
+		
+	xmlns:generic="com.makolab.fractus.view.generic.*" xmlns:commands="com.makolab.fractus.commands.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.commands.SearchCommand;
+			import com.makolab.fractus.model.CacheDataManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.view.generic.FractusDictionarySelector;
+			
+			import mx.collections.XMLListCollection;
+			[Bindable]
+			public var recipientVis:Boolean=false;
+			private function creationComplete():void
+			{
+				if(documentObject.typeDescriptor.xmlOptions.@recipientActive=="true")
+					recipientVis=true;
+				else
+					recipientVis=false;
+				if(documentObject.typeDescriptor.xmlOptions.additionalAttributes.*.length() == 0)
+				{
+					this.tabNavigator.getTabAt(2).visible = false;
+					this.tabNavigator.getTabAt(2).includeInLayout = false;
+				}
+				
+				if(documentObject.typeDescriptor.xmlOptions.issueOptions.*.length() == 0)
+				{
+					this.tabNavigator.getTabAt(3).visible = false;
+					this.tabNavigator.getTabAt(3).includeInLayout = false;
+				}
+				setDefaultTargetBranch();
+			}
+			
+			private function setDefaultTargetBranch():void
+			{
+				if (documentObject && targetBranchSelector && documentObject.typeDescriptor.isIncomeShiftOrder)
+				{
+					var attributeId:String = dictionaryManager.getIdByName('Attribute_TargetBranchId','documentFields');
+					var branchId:String; 
+					if (attributeId) branchId = documentObject.attributes.source.(documentFieldId.toString() == attributeId).value.toString();
+					var provider:XMLList = dictionaryManager.dictionaries.branches;
+					if (!branchId) branchId = provider.length() > 0 ? provider[0].id.toString() : null;
+					targetBranchSelector.editor.dataObject = branchId;
+					if (branchId) 
+					{
+						targetBranchSelector.editor.dispatchEvent(new Event(Event.CHANGE));
+						targetBranchSelector.editor.dispatchEvent(new FocusEvent(FocusEvent.FOCUS_OUT));
+					}
+				}
+			}
+			
+			[Bindable]
+			private var salesmanAttribute:XML;
+			
+			[Bindable]
+			private var basicAttributes:XMLList = new XMLList();
+			
+			[Bindable]
+			override public function set documentObject(value:DocumentObject):void
+			{
+				if(value && value.attributes){
+					var attribute:XML;
+					var documentFieldId:String = dictionaryManager.dictionaries.documentFields.(name.toString() == "Attribute_SalesmanId").id.toString();
+					for each (var element:XML in value.attributes){
+						if(element.documentFieldId == documentFieldId)attribute = element.value[0];
+					}
+					if(!attribute){
+						value.attributes.addItem(<attribute><documentFieldId>{documentFieldId}</documentFieldId><value></value></attribute>)
+						salesmanAttribute = value.attributes[value.attributes.length-1];
+					}
+				}
+				
+				if (value)
+				{
+					if (value.typeDescriptor.isIncomeShiftOrder)
+						basicAttributes = value.typeDescriptor.xmlOptions.basicAttributes.attribute.(@name.toString() != "Attribute_TargetBranchId");
+					else
+						basicAttributes = value.typeDescriptor.xmlOptions.basicAttributes.attribute;
+				}
+				
+				super.documentObject = value;
+				setDefaultTargetBranch();
+			}
+			
+			override protected function handleKeyDown(event:KeyboardEvent):void
+			{
+				// Przejscie do konkretnej zakadki
+				if (event.ctrlKey && !event.altKey && !event.shiftKey && event.keyCode >= 49 && event.keyCode <= 57)
+				{
+					if (event.keyCode - 49 < tabNavigator.numChildren && tabNavigator.getTabAt(event.keyCode - 49).visible)
+					{
+						tabNavigator.selectedIndex = event.keyCode - 49;
+						tabNavigator.setFocus();
+					}
+				}
+				super.handleKeyDown(event);
+			}
+			
+			private function branchSelectorLabelFunction(item:Object):String
+			{
+				return item.symbol.toString() + " " + item.label.(@lang == LanguageManager.getInstance().currentLanguage);
+			}
+		]]>
+	</mx:Script>
+	
+	<!-- plugins -->
+	<plugins:DocumentValidationPlugin id="validationPlugin" documentObject="{documentObject}"/>
+	<plugins:CommercialDocumentCalculationPlugin documentObject="{documentObject}"/>
+	<plugins:ContractorPlugin documentObject="{documentObject}"/>
+	<plugins:DocumentNumberPlugin documentObject="{documentObject}"/>
+	<plugins:PaymentCalculationPlugin documentObject="{documentObject}"/>
+	
+	<mx:TabNavigator id="tabNavigator" width="100%" height="100%" historyManagementEnabled="false" backgroundAlpha="0.9" backgroundColor="white">
+
+		<mx:Form
+				label="{LanguageManager.getInstance().labels.common.basicTab}"
+				paddingLeft="15"
+				paddingRight="15"
+				width="100%"
+				height="100%"
+				paddingTop="0"
+				paddingBottom="0"
+			>
+	
+			<!-- numer -->
+			<mx:HBox>
+				<mx:Label text="{getDocumentType(documentObject.xml).label.@lang.length()?getDocumentType(documentObject.xml).label.(@lang==LanguageManager.getInstance().currentLanguage)[0]:getDocumentType(documentObject.xml).label}" fontSize="18"/>
+				<documentControls:DocumentNumberComponent id="documentNumberComponent" documentObject="{documentObject}"/>
+			</mx:HBox>
+			
+			<!-- nabywca -->
+			<mx:FormItem label="{LanguageManager.getInstance().labels.documents.contractorData}" visible="{!documentObject.typeDescriptor.isIncomeShiftOrder}" includeInLayout="{!documentObject.typeDescriptor.isIncomeShiftOrder}" width="100%">
+				<mx:HBox width="100%">
+					<documentControls:ContractorComponent
+							id="contractorComponent"
+							currentState="editor"
+							width="40%"
+							documentObject="{documentObject}"
+							contractorId="{documentObject.xml.contractor.contractor.id}"
+							enableAddressSelection="{documentObject.enableAddressSelection}"
+						/>
+					<!-- dane nabywcy -->
+					<documentControls:ContractorDataComponent
+							width="60%"
+							documentObject="{documentObject}"
+						/>
+				</mx:HBox>
+			</mx:FormItem>
+			<!-- odbiorca -->
+			<mx:FormItem label="{ModelLocator.getInstance().dictionaryManager.dictionaries.documentAttributes.(name == 'Attribute_RecipientId').label.(@lang==LanguageManager.getInstance().currentLanguage).toString()}" width="100%" enabled="{recipientVis}" includeInLayout="{recipientVis}" visible="{recipientVis}">
+				<mx:HBox width="100%">
+					<mx:VBox>
+						<documentControls:RecipientComponent
+							id="recipientComponent"
+							currentState="editor"
+							width="40%"
+							documentObject="{recipientVis?documentObject:null}"
+							enableAddressSelection="{true}"
+							/>
+					</mx:VBox>
+					
+					<!-- dane odbiorcy -->
+					<documentControls:RecipientDataComponent
+						width="60%"
+						documentObject="{documentObject}"
+						/>
+				</mx:HBox>
+			</mx:FormItem>
+			
+			<documentControls:DocumentGenericSingleAttributeComponent id="targetBranchSelector" labelFunction="branchSelectorLabelFunction" documentObject="{documentObject}" attributeName="Attribute_TargetBranchId" enabled="{documentObject.typeDescriptor.xmlOptions.basicAttributes.attribute.(@name.toString() == 'Attribute_TargetBranchId').@readOnly != 1}" visible="{documentObject.typeDescriptor.isIncomeShiftOrder}" includeInLayout="{documentObject.typeDescriptor.isIncomeShiftOrder}"/>
+			
+			<!-- lista pozycji dokumentu -->
+			<documentControls:AdvancedSalesLinesComponent
+					id="lines"
+					width="100%"
+					documentObject="{documentObject}"
+					rowCount="10"
+				/>
+			
+			<!-- platnosci -->
+			<mx:FormItem label="{LanguageManager.getInstance().labels.documents.payments}">
+				<mx:HBox width="100%" horizontalGap="20">
+					<inputComponents:PaymentSimpleEditor2 id="spc" documentObject="{documentObject}" width="70%" editMode="1"/>
+					<!--<documentControls:ChangeCalc documentObject="{documentObject}" width="30%"/>-->
+				</mx:HBox>
+			</mx:FormItem>
+
+		</mx:Form>
+		
+		
+		<!-- ZAKLADKA SZCZEGOLOW -->
+		<mx:HBox
+				label="{LanguageManager.getInstance().labels.common.detailsTab}"
+				paddingLeft="15"
+				paddingRight="15"
+				paddingTop="15"
+				width="100%"		
+				height="100%"
+			>
+			
+			<!-- lewa kolumna szczegolow -->
+			<mx:Form
+					width="35%"
+					height="100%"
+					paddingTop="4"
+				>
+				<!-- waluta dokumentu -->
+				<documentControls:DocumentCurrencySelector documentObject="{documentObject}" width="100%" visible="{documentObject.typeDescriptor.allowOtherCurrencies}" includeInLayout="{documentObject.typeDescriptor.allowOtherCurrencies}"/>
+				<!-- daty -->		
+				<documentControls:DateControl documentObject="{documentObject}" fieldName="issueDate" currentState="editor"/>
+				<documentControls:DateControl documentObject="{documentObject}" fieldName="eventDate" currentState="editor"/>
+				
+				<!-- cechy dokumentu -->
+				<documentControls:DocumentFeatureComponent documentObject="{this.documentObject}" currentState="editor" />
+				
+				<!-- netto/brutto -->
+				<documentControls:CalculationTypeComponent documentObject="{documentObject}"/>
+				
+				<!-- osoba odbierajaca -->
+				<documentControls:ReceivingPersonComponent documentObject="{documentObject}" currentState="editor" />
+		
+				<!-- atrybuty podstawowe -->
+				<mx:Repeater id="basicAttributeRepeater" dataProvider="{basicAttributes}">
+					<documentControls:DocumentGenericSingleAttributeComponent documentObject="{documentObject}" attributeName="{basicAttributeRepeater.currentItem.@name}" enabled="{basicAttributeRepeater.currentItem.@readOnly != 1}"/>
+				</mx:Repeater>
+			</mx:Form>
+			
+			<!-- prawa (szersza) kolumna -->
+			<mx:Form
+					width="65%"
+					height="100%"
+					paddingTop="4"
+				>
+				<!-- uwagi -->
+				<documentControls:RemarksComponent documentObject="{documentObject}" width="100%" height="100"/>
+				
+				<!-- tabela VAT -->
+				<mx:FormItem label="Tabela VAT" width="100%">
+					<documentControls:VatTableComponent id="vatTable" documentObject="{documentObject}" width="100%"/>
+				</mx:FormItem>
+				
+				<!-- płatności -->
+				<inputComponents:PaymentEditor2 documentObject="{documentObject}" width="100%"/>
+			</mx:Form>
+		</mx:HBox>
+		
+		<documentControls:AdditionalAttributesTab documentObject="{documentObject}" width="100%"/>
+
+		
+		<mx:VBox label="Opcje"
+				paddingLeft="15"
+				paddingRight="15"
+				paddingTop="15"
+				paddingBottom="15"
+				width="100%"
+				left="20"
+				right="20"
+				top="20"
+				bottom="20"
+				verticalGap="0"
+			>		
+			<!-- opcje -->
+			<documentControls:DocumentOptionsControl documentObject="{documentObject}" width="100%"/>
+		</mx:VBox>
+		
+	</mx:TabNavigator>
+</DocumentEditor>

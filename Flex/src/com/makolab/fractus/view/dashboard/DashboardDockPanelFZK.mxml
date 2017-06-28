@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DockPanel 	xmlns="com.makolab.components.layoutComponents.*" 
+			xmlns:mx="http://www.adobe.com/2006/mxml" 
+			width="100%" maxHeight="300" height="300"
+			xmlns:list="com.makolab.components.list.*" 
+			creationComplete="callCommand();grid.contextMenu.customItems=[];" 
+			headerColors="[0xe4ff00, 0x819400]" titleStyleName="bold"
+			title="{LanguageManager.getInstance().labels.dashboard.FZKTitle}" xmlns:lineList="com.makolab.components.lineList.*">
+			<mx:Script>
+				<![CDATA[
+					import com.makolab.components.lineList.LineOperationEvent;
+					import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+					import com.makolab.components.inputComponents.ObjectTypeFilter;
+					import com.makolab.fractus.view.documents.DocumentRenderer;
+					import mx.controls.dataGridClasses.DataGridColumn;
+					import com.makolab.fractus.model.ModelLocator;
+					import com.makolab.fractus.commands.AbstractCommand;
+					import com.makolab.components.util.Tools;
+					import com.makolab.fractus.view.documents.reports.salesReports.SalesReport;
+					import mx.controls.Alert;
+					import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+					import mx.rpc.events.ResultEvent;
+				]]>
+			</mx:Script>
+			
+			
+			<mx:VBox width="100%" height="100%" id="box">
+			<list:CommonGrid id="grid" rowCount="{grid.dataProvider.length>10?10:grid.dataProvider.length}" width="100%" height="100%" doubleClick="gridDoubleClickHandler(event)" doubleClickEnabled="true">		
+				<list:columns >
+					<mx:DataGridColumn dataField="@documentTypeId" headerText="{LanguageManager.getInstance().labels.dashboard.type}" itemRenderer="com.makolab.fractus.view.generic.DocumentTypeRenderer"/>
+					<mx:DataGridColumn dataField="@status" headerText="{LanguageManager.getInstance().labels.dashboard.state}" itemRenderer="com.makolab.fractus.view.generic.DocumentStatusRenderer" width="20"/>
+					<mx:DataGridColumn dataField="@fullNumber" headerText="{LanguageManager.getInstance().labels.dashboard.documentNumber}" width="160"/>
+					<mx:DataGridColumn dataField="@issueDate" headerText="{LanguageManager.getInstance().labels.dashboard.date}" itemRenderer="com.makolab.components.inputComponents.DateRenderer" width="100"/>
+					<mx:DataGridColumn dataField="@fullName" headerText="{LanguageManager.getInstance().labels.dashboard.contractor}" />
+					<mx:DataGridColumn dataField="@grossValue" sortable="true" rendererIsEditor="true" headerText="{LanguageManager.getInstance().labels.dashboard.grossValue}" sortCompareFunction="{Tools.getSortFunction('@grossValue')}" sortDescending="false" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" width="100"/>
+					<mx:DataGridColumn headerText="{LanguageManager.getInstance().labels.dashboard.confirmCosts}" minWidth="80" width="100" editable="false">
+			<mx:itemRenderer>
+		
+				<mx:Component>
+					
+							<mx:Button label="{outerDocument.mod.languageManager.labels.common.accept}" click="outerDocument.lineListDeleteLine(event)" icon="{outerDocument.getIcon('add_small')}" textAlign="left" height="20" />
+					
+					
+					</mx:Component>
+			</mx:itemRenderer>
+				<mx:Script>
+				<![CDATA[
+					import com.makolab.fractus.model.LanguageManager;
+					import assets.IconManager;
+					]]>
+					</mx:Script>
+		</mx:DataGridColumn>
+				</list:columns>
+			</list:CommonGrid>
+			<mx:LinkButton label="{LanguageManager.getInstance().labels.dashboard.refresh}" click="callCommand();"/>
+			</mx:VBox>
+			
+			<mx:Script>
+				<![CDATA[
+				
+					import mx.messaging.channels.StreamingAMFChannel;
+					
+					
+					private var cmd:ExecuteCustomProcedureCommand;
+					public var mod:ModelLocator=ModelLocator.getInstance();
+				private var curRowId:int=-1;
+					
+					private var searchParams:XML = <searchParams> 
+														<dateFrom/>
+  														<dateTo/>
+  														<dateFrom1/>
+  														<dateTo1/>
+  														<report>akceptacja</report>
+  														<filters/>
+												   </searchParams>;
+					
+					public function lineListDeleteLine(event:MouseEvent ):void
+			{
+				var documentId:String=grid.selectedItem.@id;
+				curRowId=grid.selectedIndex;
+			cmd = new ExecuteCustomProcedureCommand('custom.p_setDocumentAcceptation',<root >{documentId}</root>);
+						cmd.addEventListener(ResultEvent.RESULT,checkResult);
+						cmd.execute();}
+			public function getIcon(s:String):Class
+			{
+				return IconManager.getIcon(s);
+			}
+					private function callCommand():void
+					{
+						var today:Date = new Date();
+						cmd = new ExecuteCustomProcedureCommand('reports.p_getDashboard',<searchParams >
+  <pageSize>200</pageSize>
+  <page>1</page>
+  <dateFrom></dateFrom>
+  <dateTo></dateTo>
+  <dateFrom1></dateFrom1>
+  <dateTo1></dateTo1>
+  <report>akceptacja</report>
+</searchParams>);
+						cmd.addEventListener(ResultEvent.RESULT,generateReportResult);
+						cmd.execute();
+					}		
+					private function checkResult(event:ResultEvent):void
+					{
+						trace("poszlo",event.result);
+						if(curRowId!=-1)
+							grid.dataProvider.removeItemAt(curRowId);
+						curRowId=-1;
+					}
+					private function generateReportResult(event:ResultEvent):void
+					{
+						grid.dataProvider = XML(event.result).children()[0].children();
+					}
+					
+					protected function getPayement(id_:String):String
+					{
+						return ModelLocator.getInstance().dictionaryManager.dictionaries.paymentMethod.(id.toString() == id_).label;
+					}
+					protected function getBranch(id_:String):String
+					{
+						return ModelLocator.getInstance().dictionaryManager.dictionaries.branches.(id.toString() == id_).label;
+					}
+					private function hasCell(a:Array,val:String):Boolean
+					{
+						for(var i:int=0;i<a.length;i++)
+						{
+							if(a[i]==val) return true;
+						}
+						return false;
+					}
+				
+//					private function goToRaport():void{
+//						SalesReport.showWindow();
+//					}
+					function gridDoubleClickHandler(event:MouseEvent):void
+					{
+						var documentId:String=grid.selectedItem.@id;
+						//trace(grid.selectedItem.@id);
+						DocumentRenderer.showWindow(DocumentTypeDescriptor.COMMERCIAL_DOCUMENT, documentId);
+					}
+				]]>
+			</mx:Script>
+</DockPanel>

@@ -1,0 +1,7 @@
+<form>
+	<tab label="\{labels.items.forms.item.basicData\}">
+	    <component className="com.makolab.components.inputComponents.DictionaryEditor" dataField="dataObject" dataSource="data">
+	      
+	    </component>       
+  	</tab>
+</form>

@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:NumericStepper xmlns="com.makolab.components.inputComponents.*" xmlns:mx="http://www.adobe.com/2006/mxml"
+	 minimum="0" maximum="1000000">
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.IFocusManager;
+			import mx.core.UITextField;
+			import mx.controls.Button;
+			import mx.controls.TextInput;
+			import mx.events.FlexEvent;
+			import mx.events.NumericStepperEvent;
+			private var _value:Number;
+			private var lastValue:Number = NaN;
+			private var _nextValue:Number = 0;
+			private var _imeMode:String = null;
+			private var _maxChars:int = 0;
+			private var valueChanged:Boolean = false;
+			private var enabledChanged:Boolean = false;
+			private var tabIndexChanged:Boolean = false;
+			private var maxCharsChanged:Boolean = false;
+			private var _tabIndex:int = -1;
+			private var proposedValue:Number = 0;
+			private var valueSet:Boolean;
+			
+			mx_internal var inputField:TextInput;    
+    		mx_internal var nextButton:Button;    
+   			mx_internal var prevButton:Button;
+   			
+   			use namespace mx_internal;
+
+			override public function get nextValue():Number
+			{
+				if (checkRange(value + stepSize))
+				_nextValue = value + stepSize;
+				
+				return _nextValue;
+			}
+			
+			override public function get value():Number
+		    {
+		        return valueChanged ? proposedValue : _value;
+		    }
+		
+		    override public function set value(value:Number):void
+		    {
+		        valueSet = true;
+		
+		        proposedValue = value;
+		        valueChanged = true;
+		
+		        invalidateProperties();
+		        invalidateSize();
+		    }
+			
+			override protected function createChildren():void
+		    {
+		        if (!inputField)
+		        {
+		            inputField = new TextInput();
+		
+		            inputField.styleName = new StyleProxy(this, inputFieldStyleFilters);
+		            inputField.focusEnabled = false;
+		
+		            // restrict to numbers - dashes - commas - decimals
+		            inputField.restrict = "0-9\\-\\.\\,";
+		
+		            inputField.maxChars = _maxChars;
+		            inputField.text = String(_value);
+		            inputField.parentDrawsFocus = true;
+		            inputField.imeMode = _imeMode;
+		
+		            inputField.addEventListener(FocusEvent.FOCUS_IN, inputField_focusInHandler);
+		            inputField.addEventListener(FocusEvent.FOCUS_OUT, inputField_focusOutHandler);
+		            inputField.addEventListener(KeyboardEvent.KEY_DOWN, inputField_keyDownHandler);
+		            inputField.addEventListener(Event.CHANGE, inputField_changeHandler);
+		
+		            addChild(inputField);
+		        }
+		
+		        if (!nextButton)
+		        {       
+		            nextButton = new Button();
+		            nextButton.styleName = new StyleProxy(this, upArrowStyleFilters);
+		            nextButton.upSkinName = "upArrowUpSkin";
+		            nextButton.overSkinName = "upArrowOverSkin";
+		            nextButton.downSkinName = "upArrowDownSkin";
+		            nextButton.disabledSkinName = "upArrowDisabledSkin";
+		            nextButton.skinName = "upArrowSkin";
+		            nextButton.upIconName = "";
+		            nextButton.overIconName = "";
+		            nextButton.downIconName = "";
+		            nextButton.disabledIconName = "";
+		
+		            nextButton.focusEnabled = false;
+		            nextButton.autoRepeat = true;
+		
+		            nextButton.addEventListener(MouseEvent.CLICK, buttonClickHandler);
+		            nextButton.addEventListener(FlexEvent.BUTTON_DOWN, buttonDownHandler);
+		
+		            addChild(nextButton);
+		        }
+		
+		        if (!prevButton)
+		        {
+		            prevButton = new Button();
+		            prevButton.styleName = new StyleProxy(this, downArrowStyleFilters);
+		            prevButton.upSkinName = "downArrowUpSkin";
+		            prevButton.overSkinName = "downArrowOverSkin";
+		            prevButton.downSkinName = "downArrowDownSkin";
+		            prevButton.disabledSkinName = "downArrowDisabledSkin";
+		            prevButton.skinName = "downArrowSkin";
+		            prevButton.upIconName = "";
+		            prevButton.overIconName = "";
+		            prevButton.downIconName = "";
+		            prevButton.disabledIconName = "";
+		
+		            prevButton.focusEnabled = false;
+		            prevButton.autoRepeat = true;
+		
+		            prevButton.addEventListener(MouseEvent.CLICK, buttonClickHandler);
+		            prevButton.addEventListener(FlexEvent.BUTTON_DOWN, buttonDownHandler);
+		
+		            addChild(prevButton);
+		        }
+		    }
+		    
+		    override protected function commitProperties():void
+		    {
+		        //super.commitProperties();
+		        
+		        if (maxCharsChanged)
+		        {
+		            maxCharsChanged = false;
+		            inputField.maxChars = _maxChars;
+		        }
+		        
+		        if (valueChanged)
+		        {
+		            valueChanged = false;
+		
+		            setValue(isNaN(proposedValue) ? 0 : proposedValue, false);
+		        }
+		
+		        if (enabledChanged)
+		        {
+		            enabledChanged = false;
+		
+		            prevButton.enabled = enabled;
+		            nextButton.enabled = enabled;
+		            inputField.enabled = enabled;
+		        }
+		
+		        if (tabIndexChanged)
+		        {
+		            inputField.tabIndex = _tabIndex;
+		
+		            tabIndexChanged = false;
+		        }		
+		    }
+		    
+		    override protected function measure():void
+		    {
+		        //super.measure();
+		
+		        var widestNumber:Number = minimum.toString().length >
+		                                  maximum.toString().length ?
+		                                  minimum :
+		                                  maximum;
+		        widestNumber += stepSize;
+		
+		        var lineMetrics:TextLineMetrics = measureText(widestNumber.toString());
+		        
+		        var textHeight:Number = inputField.getExplicitOrMeasuredHeight();
+		        var buttonHeight:Number = prevButton.getExplicitOrMeasuredHeight() +
+		                                  nextButton.getExplicitOrMeasuredHeight();
+		
+		        var h:Number = Math.max(textHeight, buttonHeight);
+		        h = Math.max(DEFAULT_MEASURED_MIN_HEIGHT, h);
+		
+		        var textWidth:Number = lineMetrics.width + UITextField.TEXT_WIDTH_PADDING;
+		        var buttonWidth:Number = Math.max(prevButton.getExplicitOrMeasuredWidth(),
+		                                          nextButton.getExplicitOrMeasuredWidth());
+		
+		        var w:Number = textWidth + buttonWidth + 20;
+		        w = Math.max(DEFAULT_MEASURED_MIN_WIDTH, w);
+		
+		        measuredMinWidth = DEFAULT_MEASURED_MIN_WIDTH;
+		        measuredMinHeight = DEFAULT_MEASURED_MIN_HEIGHT;
+		
+		        measuredWidth = w;
+		        measuredHeight = h;
+		    }
+		    
+		    override protected function updateDisplayList(unscaledWidth:Number,
+                                                  unscaledHeight:Number):void
+		    {
+		        //super.updateDisplayList(unscaledWidth, unscaledHeight);
+		
+		        var w:Number = nextButton.getExplicitOrMeasuredWidth();
+		        var h:Number = Math.round(unscaledHeight / 2);
+		        var h2:Number = unscaledHeight - h;
+		
+		        nextButton.x = unscaledWidth - w;
+		        nextButton.y = 0;
+		        nextButton.setActualSize(w, h2);
+		        
+		        prevButton.x = unscaledWidth - w;
+		        prevButton.y = unscaledHeight - h;
+		        prevButton.setActualSize(w, h);
+		
+		        inputField.setActualSize(unscaledWidth - w, unscaledHeight);
+		    }
+		
+		    override public function setFocus():void
+		    {
+		        if (stage)
+		            stage.focus = TextField(inputField.getTextField());
+		    }
+		
+		    override protected function isOurFocus(target:DisplayObject):Boolean
+		    {
+		        return target == inputField || super.isOurFocus(target);
+		    }
+		    
+		    override protected function focusInHandler(event:FocusEvent):void
+		    {
+		        super.focusInHandler(event);		
+		        var fm:IFocusManager = focusManager;
+		        if (fm)
+		            fm.defaultButtonEnabled = false;
+		    }
+	
+		    override protected function focusOutHandler(event:FocusEvent):void
+		    {
+		        var fm:IFocusManager = focusManager;
+		        if (fm)
+		            fm.defaultButtonEnabled = true;
+		        takeValueFromTextField(event);
+		    }
+				    
+		    private function takeValueFromTextField(trigger:Event = null):void
+		    {
+		        var inputValue:Number = Number(inputField.text);
+		        if ((inputValue != lastValue &&
+		            (Math.abs(inputValue - lastValue) >= 0.000001 || isNaN(inputValue))) || 
+		            inputField.text == "")
+		        {
+		            var newValue:Number = checkValidValue(Number(inputField.text));
+		            inputField.text = newValue.toString();
+		            setValue(newValue, trigger != null, trigger);
+		        }
+		    }
+		
+		   
+		    private function buttonPress(button:Button, trigger:Event = null):void
+		    {
+		        if (enabled)
+		        {
+		            takeValueFromTextField();
+		            var oldValue:Number = lastValue;
+		            setValue(button == nextButton ?
+		                     lastValue + stepSize :
+		                     lastValue - stepSize, true, trigger);
+		
+		            if (oldValue != lastValue)
+		                inputField.getTextField().setSelection(0,0);
+		        }
+		    }
+
+			private function checkRange(v:Number):Boolean
+			{
+				return v >= minimum && v <= maximum;
+			}
+			
+			private function checkValidValue(value:Number):Number
+			{
+				if (isNaN(value))
+					return this.value;
+				var closest:Number = value;//stepSize * Math.round(value / stepSize);
+				
+				if (closest > maximum)
+					return maximum;
+				else if (closest < minimum)
+					return minimum;
+				else
+					return closest;
+			}
+			
+			private function setValue(value:Number,
+			  			sendEvent:Boolean = true,
+			  			trigger:Event = null):void
+			{			
+				var v:Number = checkValidValue(value);
+				if (v == lastValue)
+					return;
+				
+				lastValue = _value = v;
+				inputField.text = v.toFixed(2).toString();
+				
+				if (sendEvent)
+				{
+					var event:NumericStepperEvent =
+					new NumericStepperEvent(NumericStepperEvent.CHANGE);
+					event.value = _value;
+					event.triggerEvent = trigger;
+					
+					dispatchEvent(event);
+				}
+				dispatchEvent(new FlexEvent(FlexEvent.VALUE_COMMIT));
+			}
+			
+			private function buttonDownHandler(event:FlexEvent):void
+		    {
+		        buttonPress(Button(event.currentTarget), event);
+		    }
+		
+		    private function buttonClickHandler(event:MouseEvent):void
+		    {
+		        inputField.setFocus();
+		        inputField.getTextField().setSelection(0, 0);
+		    }
+		
+		    private function inputField_focusInHandler(event:FocusEvent):void
+		    {
+		        focusInHandler(event);
+		        dispatchEvent(new FocusEvent(event.type, false, false,
+		                                     event.relatedObject,
+		                                     event.shiftKey, event.keyCode));
+		    }
+		
+		    private function inputField_focusOutHandler(event:FocusEvent):void
+		    {
+		        focusOutHandler(event);
+		        
+		        dispatchEvent(new FocusEvent(event.type, false, false,
+		                                     event.relatedObject,
+		                                     event.shiftKey,event.keyCode));
+		    }
+		
+		    private function inputField_keyDownHandler(event:KeyboardEvent):void
+		    {
+		        var tmpV:Number;
+		
+		        switch (event.keyCode)
+		        {
+		            case Keyboard.DOWN:
+		            {
+		                tmpV = value - stepSize;
+		                setValue(tmpV, true);
+		                break;
+		            }
+		
+		            case Keyboard.UP:
+		            {
+		                tmpV = stepSize + value;
+		                setValue(tmpV, true);
+		                break;
+		            }
+		
+		            case Keyboard.HOME:
+		            {
+		                inputField.text = minimum.toString();
+		                setValue(minimum, true);
+		                break;
+		            }
+		
+		            case Keyboard.END:
+		            {
+		                inputField.text = maximum.toString();
+		                setValue(maximum, true);
+		                break;
+		            }
+		
+		            case Keyboard.ENTER:
+		            case Keyboard.TAB:
+		            {
+		                var inputValue:Number = Number(inputField.text);
+		                if (inputValue != lastValue &&
+		                    (Math.abs(inputValue - lastValue) >= 0.000001 ||
+		                     isNaN(inputValue)))
+		                {
+		                    var newValue:Number = checkValidValue(Number(inputField.text));
+		                    inputField.text = newValue.toString();
+		                    setValue(newValue, true);
+		                }
+		
+		                event.stopImmediatePropagation();
+		                break;
+		            }
+		        }
+		
+		        dispatchEvent(event);
+		    }
+		
+		    private function inputField_changeHandler(event:Event):void
+		    {
+		        event.stopImmediatePropagation();
+		
+		        var inputValue:Number = Number(inputField.text.replace(",","."));
+		        if ((inputValue != value &&
+		            (Math.abs(inputValue - value) >= 0.000001 || isNaN(inputValue))) || 
+		            inputField.text == "")
+		        {
+		            _value = checkValidValue(inputValue);
+		        }
+		    }
+
+		]]>
+	</mx:Script>
+</mx:NumericStepper>

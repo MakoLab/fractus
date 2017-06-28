@@ -1,0 +1,104 @@
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="google" value="notranslate" />
+<meta http-equiv="Vary" content="Content-language">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<!--  BEGIN Browser History required section -->
+<link rel="stylesheet" type="text/css" href="history/history.css" />
+<!--  END Browser History required section -->
+
+<title>Fractus 2.0</title>
+<script type="text/javascript" src="AC_OETags.js" language="javascript"></script>
+
+<!--  BEGIN Browser History required section -->
+<script type="text/javascript" src="history/history.js" language="javascript"></script>
+<!--  END Browser History required section -->
+
+<style type="text/css">
+	body { margin: 0px; overflow:hidden }
+</style>
+
+<script language="JavaScript" type="text/javascript" src="config.js"></script>
+<script language="JavaScript" type="text/javascript" src="script.js"></script>
+
+<script language="JavaScript" type="text/javascript">
+<!--
+// =============================================================================
+// Globals
+// Major version of Flash required
+var requiredMajorVersion = 9;
+// Minor version of Flash required
+var requiredMinorVersion = 0;
+// Minor version of Flash required
+var requiredRevision = 28;
+// =============================================================================
+// -->
+</script>
+
+</head>
+
+<body scroll="no" onload="init()">
+<script language="JavaScript" type="text/javascript">
+<!--
+// Version check for the Flash Player that has the ability to start Player Product Install (6.0r65)
+var hasProductInstall = DetectFlashVer(6, 0, 65);
+
+// Version check based upon the values defined in globals
+var hasRequestedVersion = DetectFlashVer(requiredMajorVersion, requiredMinorVersion, requiredRevision);
+
+if ( hasProductInstall && !hasRequestedVersion ) {
+	// DO NOT MODIFY THE FOLLOWING FOUR LINES
+	// Location visited after installation is complete if installation is required
+	var MMPlayerType = (isIE == true) ? "ActiveX" : "PlugIn";
+	var MMredirectURL = window.location;
+    document.title = document.title.slice(0, 47) + " - Flash Player Installation";
+    var MMdoctitle = document.title;
+
+	AC_FL_RunContent(
+		"src", "playerProductInstall",
+		"FlashVars", "MMredirectURL="+MMredirectURL+'&MMplayerType='+MMPlayerType+'&MMdoctitle='+MMdoctitle+"",
+		"width", "100%",
+		"height", "100%",
+		"align", "middle",
+		"id", "Main",
+		"quality", "high",
+		"bgcolor", "#869ca7",
+		"name", "Main",
+		"allowScriptAccess","sameDomain",
+		"type", "application/x-shockwave-flash",
+		"pluginspage", "http://www.adobe.com/go/getflashplayer"
+	);
+} else if (hasRequestedVersion) {
+	// if we've detected an acceptable version
+	// embed the Flash Content SWF when all tests are passed
+	AC_FL_RunContent(
+			"src", "Main",
+			"width", "100%",
+			"height", "100%",
+			"align", "middle",
+			"id", "Main",
+			"quality", "high",
+			"bgcolor", "#869ca7",
+			"name", "Main",
+			"allowScriptAccess","sameDomain",
+			"type", "application/x-shockwave-flash",
+			"pluginspage", "http://www.adobe.com/go/getflashplayer",
+			"flashvars", flashvars,
+			"menu","true"
+	);
+  } else {  // flash is too old or we can't detect the plugin
+    var alternateContent = 'Aplikacja wymaga wtyczki Adobe Flash Player. '
+   	+ '<a href=http://www.adobe.com/go/getflash/>Kliknij by pobrac wtyczke</a>';
+    document.write(alternateContent);  // insert non-flash content
+  }
+// -->
+</script>
+
+<noscript>
+	<p>Do dzialania aplikacji konieczne jest wlaczenie wykonywania skryptow przegladarki.</p>
+</noscript>
+
+</body>
+</html>

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*"
+	implements="mx.controls.listClasses.IListItemRenderer">
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</mx:Metadata>
+<mx:Script>
+	<![CDATA[
+		import com.makolab.fractus.commands.AbstractCommand;
+		import mx.validators.RegExpValidator;
+		import mx.controls.listClasses.BaseListData;
+		import com.makolab.components.util.Tools;
+		private var _dataObject:Object;
+		[Bindable] private var _selectedDate:Date;
+		private var _data:Object;
+		
+		[Bindable] private var hours:int;
+		[Bindable] private var minutes:int;
+		[Bindable] private var seconds:int;
+		[Bindable] public var listData:Object;
+		
+		[Bindable]
+		public function set dataObject(value:Object):void
+		{
+			_dataObject = value;
+			if (_dataObject)
+			{
+				var d:Date = Tools.isoToDate(String(_dataObject));
+				selectedDate = d;
+			}
+			else
+				selectedDate = null;			
+		}
+		
+		public function get dataObject():Object
+		{
+			return _dataObject;
+		}
+	
+		[Bindable]
+		public function set selectedDate(value:Date):void
+		{
+			if(value)
+			{
+				this._selectedDate = new Date(value.getFullYear(), value.getMonth(), value.getDate(), 0, 0, 0, 0);
+				this.hours = value.getHours();
+				this.minutes = value.getMinutes();
+				this.seconds = value.getSeconds();
+			}
+			else
+			{
+				this._selectedDate = null;
+				this.hours = 0;
+				this.minutes = 0;
+				this.seconds = 0;
+			}
+		}
+		
+		public function get selectedDate():Date
+		{
+			if(this._selectedDate)
+				return new Date(_selectedDate.getFullYear(), _selectedDate.getMonth(), _selectedDate.getDate(), hours, minutes, seconds, 0);
+			else return null;
+		}
+		
+		public override function set data(value:Object):void
+		{
+			_data = value;
+			dataObject = DataObjectManager.getDataObject(data, listData);
+		}
+
+		public override function get data():Object
+		{
+			return _data;
+		}
+		
+		private function textInputShowFunction(hours:Number, minutes:Number, seconds:Number):String
+		{
+			if(!this._selectedDate)
+				return "";
+			
+			var strMinutes:String = "";
+			var strSeconds:String = "";
+			
+			if(minutes <= 9) strMinutes += "0";
+			strMinutes += minutes.toString();
+			
+			if(seconds <= 9) strSeconds += "0";
+			strSeconds += seconds.toString();
+			
+			return hours.toString() + ":" + strMinutes + ":" + strSeconds;
+		}
+		
+		private function handleTextBoxFocusOut(event:Event):void
+		{
+			var result:Boolean = Boolean(this.txtInput.text.match(/^\d{1,2}:\d{1,2}(:\d{1,2})?$/));
+			
+			if(!result)
+				this.txtInput.text = this.textInputShowFunction(hours, minutes, seconds); //restore last value
+			else
+			{
+				var split:Array = this.txtInput.text.split(':');
+				var hours:int = parseInt(split[0]), minutes:int = parseInt(split[1]), seconds:int = 0;
+				
+				if(split.length == 3)
+					seconds = parseInt(split[2]);
+				
+				if(hours > 23 || hours < 0 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59)
+					this.txtInput.text = this.textInputShowFunction(this.hours, this.minutes, this.seconds); //restore last value	
+				else
+				{
+					if(this.hours == hours && this.minutes == minutes && this.seconds == seconds)
+						this.txtInput.text = this.textInputShowFunction(hours, minutes, seconds);
+					else
+					{
+						this.hours = hours;
+						this.minutes = minutes;
+						this.seconds = seconds;
+						this.dispatchEvent(new Event(Event.CHANGE));
+					}
+				}
+			}			
+		}
+		
+		private function handleDateEditorChange(event:Event):void
+		{
+			this._selectedDate = Tools.isoToDate(this.dateEditor.text);
+			this.dispatchEvent(new Event(Event.CHANGE));
+		}
+	]]>
+</mx:Script>
+	<inputComponents:DateEditor id="dateEditor" selectedDate="{this._selectedDate}" change="handleDateEditorChange(event)" />
+	<mx:TextInput id="txtInput" restrict="0-9:" width="65" maxChars="8" text="{textInputShowFunction(hours, minutes, seconds)}" focusOut="handleTextBoxFocusOut(event)" />
+</mx:HBox>

@@ -1,0 +1,150 @@
+<mainMenu width="1000" offset="20" logoOffset="100" statusBarHeight="40" menuHeight="25" submenuHeight="90" serchOffset="460"
+		rootPackage="com.makolab.fractus.view.menu">
+  <sideMenu>
+    <warehouseSelector />
+    <windowsSelector />
+  </sideMenu>
+  <menuItem label="Kartoteki" selected="1" permissionKey="catalogue">
+    <panel label="Lista kontrahentów" class="MenuItemsGroup">
+      <panelItem id="contractorsList"/>
+      <panelItem id="newContractor"/>
+    </panel>
+    <panel label="Lista towarów" class="MenuItemsGroup">
+      <panelItem id="itemsList"/>
+      <panelItem id="newItem"/>
+    </panel>
+    <panel label="Lista banków" class="MenuItemsGroup">
+      <panelItem id="banksList"/>
+      <panelItem id="newBank"/>
+    </panel>
+    <panel label="Cenniki" class="MenuItemsGroup">
+      <panelItem id="priceLists"/>
+    </panel>
+  </menuItem>
+  <menuItem label="Sprzedaż" selected="0" permissionKey="sales">
+    <panel label="Sprzedaż" class="MenuItemsGroup">
+      <panelItem id="salesDocList"/>
+      <panelItem id="salesSimple"/>
+      <panelItem id="salesAdvanced"/>
+      <panelItem id="quickSale"/>
+      <panelItem id="salesReports"/>
+      <panelItem id="salesOrderDocList"/>
+      <panelItem id="salesOrder"/>
+      <panelItem id="salesDraftList"/>
+      <panelItem id="salesOrderReports"/>
+    </panel>
+  </menuItem>
+  <menuItem label="Zakup" selected="0" permissionKey="purchase">
+    <panel label="Zakup" class="MenuItemsGroup">
+      <panelItem id="purchaseDocList"/>
+      <panelItem id="purchaseDocument"/>
+      <panelItem id="purchaseReports"/>
+      <panelItem id="purchaseDraftList"/>
+    </panel>
+  </menuItem>
+  <menuItem label="Magazyn" labelKey="common.warehouse" selected="0" permissionKey="warehouse">
+    <panel label="Magazyn" class="MenuItemsGroup">
+      <panelItem id="warehouseDocList"/>
+      <panelItem id="warehouseDocument"/>
+      <panelItem id="orderDocList"/>
+      <panelItem id="orderDocument"/>
+      <panelItem id="warehouseReports"/>
+      <panelItem id="shiftTransaction" permissionKey="warehouse.wms"/>
+      <panelItem id="shiftsList" permissionKey="warehouse.wms"/>
+      <panelItem id="warehouseContent" permissionKey="warehouse.wms"/>
+      <panelItem id="inventoryDocumentList" permissionKey="warehouse.inventory.list"/>
+      <panelItem id="inventoryDocument" permissionKey="warehouse.inventory.document"/>
+      <panelItem id="warehouseDraftList"/>
+    </panel>
+  </menuItem>
+  <menuItem label="Produkcja" selected="0">
+    <panel label="Produkcja" class="MenuItemsGroup">
+      <panelItem id="technologyDocList"/>
+      <panelItem id="technologyDocument"/>
+      <panelItem id="productionOrderDocList"/>
+      <panelItem id="productionOrderDocument"/>
+    </panel>
+  </menuItem>
+  <menuItem label="Serwis" selected="0">
+    <panel label="Serwis" class="MenuItemsGroup">
+      <panelItem id="serviceDocList"/>
+      <panelItem id="serviceOrder"/>
+      <panelItem id="servicedObjectsList"/>
+      <panelItem id="serviceReports" />
+    </panel>
+  </menuItem>
+  <menuItem label="Finanse" selected="0" permissionKey="finance">
+    <panel label="Finanse" class="MenuItemsGroup">
+      <panelItem id="financialDocList"/>
+      <panelItem id="financialRepList"/>
+      <panelItem id="financialRegisters"/>
+      <panelItem id="financialDocument"/>
+      <panelItem id="financialRelatedDocuments"/>
+      <panelItem id="financialReports"/>
+    </panel>
+  </menuItem>
+  <menuItem label="Administracja" selected="0" permissionKey="administration">
+    <panel label="Administracja" class="MenuItemsGroup">
+      <panelItem id="companies"/>
+      <panelItem id="dictionaries"/>
+      <panelItem id="discountSlider"/>
+      <panelItem id="permissions"/>
+      <panelItem id="versionInfo"/>
+      <panelItem id="warehouseStructure"/>
+      <panelItem id="rules"/>
+      <panelItem id="salesLockUnlockingCodeGeneration" />
+      <panelItem id="profileChange" />
+      <panelItem id="minimalMargin" />
+      <panelItem id="databaseBackup" />
+      <!--panelItem id="postSalesProfitMargin"/-->
+    </panel>
+  </menuItem>
+  <menuItem label="Narzędzia" selected="0" permissionKey="tools">
+    <panel label="Narzędzia" class="MenuItemsGroup">
+      <panelItem id="contractorAccounting"/>
+      <panelItem id="documentAccounting"/>
+      <panelItem id="paymentSynchronization"/>
+      <panelItem id="exportToAccountingFile"/>
+      <panelItem id="changePassword"/>
+    </panel>
+  </menuItem>
+  <menuItem label="Reklamacje" selected="0" permissionKey="complaint">
+    <panel label="Reklamacje" class="MenuItemsGroup">
+      <panelItem id="complaintDocList"/>
+    </panel>
+    <panel label="Reklamacje" class="MenuItemsGroup">
+      <panelItem id="newProtocolComplaint"/>
+    </panel>
+    <panel label="Reklamacje" class="MenuItemsGroup">
+      <panelItem id="complaintReports"/>
+    </panel>
+  </menuItem>
+  <menuItem label="Diagnostyka" selected="0" permissionKey="diagnostics" debug="1">
+    <panel label="Diagnostyka" class="MenuItemsGroup">
+      <panelItem id="documentCommittingPerformanceTest"/>
+      <panelItem id="searchPerformanceTest"/>
+      <panelItem id="showDictionariesXML"/>
+      <panelItem id="showConfigurationEditor"/>
+      <panelItem id="searchUnitTest"/>
+      <panelItem id="showCommandLog"/>
+      <panelItem id="showCommunicatorXMLList"/>
+      <panelItem id="showDocumentIssueTest"/>
+    </panel>
+  </menuItem>
+  <!--
+	<menuItem label="Kartoteki" selected="1">
+		<panel label="Lista kontrahentów" class="SmContractorsList" width="150"/>
+		<panel label="Lista towarów" class="SmItemsList" width="200"/>
+	</menuItem>
+	<menuItem label="Dokumenty" selected="0">
+		<panel label="Dokumenty" class="SmDocuments" width="300"/>
+	</menuItem>
+	<menuItem label="Ustawienia" selected="0">
+		<panel label="Lista kontrahentów" class="SmSettings" width="180"/>
+	</menuItem>
+	<menuItem label="Diagnostyka" selected="0">
+		<panel label="Diagnostyka" class="SmDiagnostics" width="180"/>
+	</menuItem>
+	
+	-->
+</mainMenu>

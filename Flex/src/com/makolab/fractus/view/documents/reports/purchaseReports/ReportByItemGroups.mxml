@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReportBase xmlns="com.makolab.fractus.view.documents.reports.*" xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import mx.charts.series.PieSeries;
+			import mx.formatters.CurrencyFormatter;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.collections.ArrayCollection;
+			import com.makolab.fractus.model.ModelLocator;
+			[Bindable]
+			private var tree:XMLList = null;
+			private var _dataProvider:XMLList = new XMLList();
+			private var unassigned:XML = <group/>;
+		
+			override public function set dataProvider(value:XMLList):void
+			{
+				_dataProvider = value;
+				var structure:XML = ModelLocator.getInstance().configManager.values.items_group;
+				tree = XMLList(createTree(structure.configValue.group[0]));
+				var unassignedLines:XMLList = value.(valueOf().@itemGroupId == undefined);
+				if(unassignedLines.length() > 0){
+					var unassignedLine:XML = value.(valueOf().@itemGroupId == undefined)[0];
+				}
+				unassigned.@quantity = unassignedLines.length() > 0 ? unassignedLine.@quantity : 0;
+				unassigned.@cost = unassignedLines.length() > 0 ? unassignedLine.@cost : 0;
+				unassigned.@netValue = unassignedLines.length() > 0 ? unassignedLine.@netValue : 0;
+				unassigned.@grossValue = unassignedLines.length() > 0 ? unassignedLine.@grossValue : 0;
+				unassigned.@profit = unassignedLines.length() > 0 ? unassignedLine.@profit : 0;
+				unassigned.@profitMargin = unassignedLines.length() > 0 ? unassignedLine.@profitMargin : "";
+				unassigned.@name = LanguageManager.getInstance().labels.catalogue.notInAnyGroup;
+				tree += unassigned;
+				tree = tree.copy();
+				super.dataProvider = tree;
+			}
+			
+			private function createTree(value:XML):XML
+			{
+				var provider:XML = <group/>;
+				var line:XML = <line/>;
+				var lines:XMLList = _dataProvider.(valueOf().@itemGroupId == String(value.@id));
+				provider.@id = value.@id;
+				provider.@name = value.labels.label.(@lang == LanguageManager.getInstance().currentLanguage);
+				if(lines.length() > 0){
+					line = lines[0];
+					provider.@quantity = line.@quantity;
+					provider.@cost = line.@cost;
+					provider.@netValue = line.@netValue;
+					provider.@grossValue = line.@grossValue;
+					provider.@profit = line.@profit;
+					provider.@profitMargin = line.@profitMargin;
+				}
+				if(value.subgroups){
+					var children:XMLList = value.subgroups.group;
+					for each(var child:XML in children)provider.* += createTree(child);
+					var quantity:Number = (provider.valueOf().@quantity != undefined) ? Number(provider.@quantity) : 0;
+					var cost:Number = (provider.valueOf().@cost != undefined) ? Number(provider.@cost) : 0;
+					var netValue:Number = (provider.valueOf().@netValue != undefined) ? Number(provider.@netValue) : 0;
+					var grossValue:Number = (provider.valueOf().@grossValue != undefined) ? Number(provider.@grossValue) : 0;
+					var profit:Number = (provider.valueOf().@profit != undefined) ? Number(provider.@profit) : 0;
+					var profitMargin:Number = (provider.valueOf().@profitMargin != undefined) ? Number(provider.@profitMargin) : 0;
+					for each(var o:XML in provider.*){
+						quantity += ((o.valueOf().@quantity != undefined) ? Number(o.@quantity) : 0);
+						cost += ((o.valueOf().@cost != undefined) ? Number(o.@cost) : 0);
+						netValue += ((o.valueOf().@netValue != undefined) ? Number(o.@netValue) : 0);
+						grossValue += ((o.valueOf().@grossValue != undefined) ? Number(o.@grossValue) : 0);
+						profit += ((o.valueOf().@profit != undefined) ? Number(o.@profit) : 0);
+					}
+					provider.@quantity = quantity;
+					provider.@cost = cost;
+					provider.@netValue = netValue;
+					provider.@grossValue = grossValue;
+					provider.@profit = profit;
+					profitMargin = profit/netValue;
+					provider.@profitMargin = isNaN(profitMargin) ? "" : profitMargin;
+				}
+				return provider;
+			}
+			
+			private function getChartDataProvider(depth:int,source:XMLList):XMLList
+			{
+				var o:XMLList = new XMLList();
+				//var source:XMLList = tree;
+				for(var i:int = 0; i<depth; i++){
+					if(i<depth-1)o = o + source.group.(valueOf().group == undefined);
+					else o = o + source.group;
+					source = source.*;
+				}
+				o = o + unassigned;
+				return o;
+			}
+			
+			private function getDepthArray(object:XMLList):Array
+			{
+				var o:XMLList = object;
+				var depth:Array = [{label : "1",value : 1}];
+				while(o.length()>0){
+					o = o.group.(valueOf().group == undefined);
+					depth.push({label : (depth.length + 1),value : (depth.length + 1)});
+				}
+				return depth;
+			}
+			
+			private function getLabel(data:Object, field:String, index:Number, percentValue:Number):String
+			{
+				var string:String = data.@name;
+				for(var i:int=0;i<treeTable.columns.length;i++){
+					if(treeTable.columns[i].dataField == field){
+						string = string + " - " +(treeTable.columns[i] as AdvancedDataGridColumn).labelFunction.call(this,data,treeTable.columns[i]);
+						break;
+					}
+				}
+				return  string;
+			}
+			private function getSeriesObjects(columnList:Array):Array
+			{
+				var array:Array = [];
+				for(var i:int=0;i<columnList.length;i++){
+					array.push({label : columnList[i].headerText, series : new PieSeries()});
+					(array[i].series as PieSeries).field = columnList[i].dataField;
+					(array[i].series as PieSeries).nameField = columnList[i].headerText;
+					(array[i].series as PieSeries).setStyle("labelPosition","callout");
+					(array[i].series as PieSeries).labelFunction = getLabel;
+				}
+				return array;
+			}
+		]]>
+	</mx:Script>
+	<treeTable>
+		<mx:AdvancedDataGrid width="100%" height="100%">
+			<mx:columns>
+				<mx:AdvancedDataGridColumn headerText="Grupa asortymentowa" dataField="@name"/>
+				<mx:AdvancedDataGridColumn id="quantityColumn" sortCompareFunction="{Tools.getSortFunction('@quantity')}" headerText="{LanguageManager.getLabel('common.quantity')}" dataField="@quantity" textAlign="right" labelFunction="quantityLabelFunction" width="100"/>
+				<mx:AdvancedDataGridColumn id="netValueColumn" sortCompareFunction="{Tools.getSortFunction('@netValue')}" headerText="{LanguageManager.getLabel('reports.headers.netPurchaseValue')}" dataField="@netValue" textAlign="right" labelFunction="currencyLabelFunction" width="120"/>
+				<mx:AdvancedDataGridColumn id="grossValueColumn" sortCompareFunction="{Tools.getSortFunction('@grossValue')}" headerText="{LanguageManager.getLabel('reports.headers.grossPurchaseValue')}" dataField="@grossValue" textAlign="right" labelFunction="currencyLabelFunction" width="120"/>
+			</mx:columns>
+		</mx:AdvancedDataGrid>
+	</treeTable>
+	<graph>
+		<mx:VBox width="100%" height="100%">
+			<mx:FormItem label="Poziom zagnieżdżenia"><mx:ComboBox id="level" dataProvider="{getDepthArray(tree)}"/></mx:FormItem>
+			<mx:FormItem label="Seria wg. kolumny"><mx:ComboBox id="seriesColumns" dataProvider="{getSeriesObjects([quantityColumn,netValueColumn,grossValueColumn])}"/></mx:FormItem>
+			<mx:PieChart dataProvider="{getChartDataProvider(level.selectedItem.value,tree)}" width="100%" height="100%">
+				<mx:series>
+					{[seriesColumns.selectedItem.series]}
+				</mx:series>
+			</mx:PieChart>
+		</mx:VBox>
+	</graph>
+</ReportBase>

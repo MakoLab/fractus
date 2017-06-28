@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReportBase creationComplete="updateHeaders()" doubleClickEnabled="true" doubleClick="doubleClickHandler(event)" xmlns="com.makolab.fractus.view.documents.reports.*" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:layoutComponents="com.makolab.components.layoutComponents.*" xmlns:warehouseReports="com.makolab.fractus.view.documents.reports.warehouseReports.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.catalogue.ItemsCatalogue;
+			import assets.IconManager;
+			import com.makolab.components.catalogue.CatalogueItemWindow;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.view.warehouse.ShiftTransactionEditor;
+			import com.makolab.fractus.view.warehouse.LotSelector;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.formatters.CurrencyFormatter;
+			import com.makolab.components.util.Tools;
+			
+			[Bindable] private var grp1Header:String;
+			[Bindable] private var grp2Header:String;
+			[Bindable] private var grp3Header:String;
+						
+			private function updateHeaders():void
+			{
+				this.grp1Header = "poniżej " + this.custFilters.getFirstNumber() + " dni";
+				this.grp2Header = this.custFilters.getFirstNumber() + " - " + this.custFilters.getSecondNumber() + " dni";
+				this.grp3Header = this.custFilters.getSecondNumber() + " dni lub więcej";
+			}
+			
+			protected override function onGenerateReportResult():void
+			{
+				this.updateHeaders();
+			}
+			
+			private function doubleClickHandler(event:MouseEvent):void
+			{
+				if (!ModelLocator.getInstance().isWmsEnabled)showRelatedDocuments();
+				else showLots();
+			}
+			
+			private function showLots():void
+			{
+				ShiftTransactionEditor.showWindow(<param><itemId label={grid.selectedItem.@itemName}>{grid.selectedItem.@itemId}</itemId></param>);
+			}
+			
+			private function showRelatedDocuments():void
+			{
+				ItemsCatalogue.showRelatedDocumentsItemWindow(grid.selectedItem.@itemId,grid.selectedItem.@itemName);
+			}
+		]]>
+	</mx:Script>
+	<table>
+		<mx:AdvancedDataGrid id="grid" width="100%" height="100%">
+			<mx:groupedColumns>
+				<mx:AdvancedDataGridColumn id="nameColumn" headerText="{LanguageManager.getInstance().labels.common.itemName}" dataField="@itemName" sortCompareFunction="{ReportBase.stringCompareFunction('@itemName')}"/>
+				<mx:AdvancedDataGridColumn headerText="{LanguageManager.getInstance().labels.common.itemCode}" dataField="@itemCode"/>
+				<mx:AdvancedDataGridColumn headerText="Producent" dataField="@manufacturer"/>
+				
+				<mx:AdvancedDataGridColumn headerText="Kod Producenta" dataField="@manufacturerCode"/>
+				
+				<mx:AdvancedDataGridColumnGroup headerText="{grp1Header}">
+					<mx:AdvancedDataGridColumn id="period1QtyColumn" headerText="{LanguageManager.getInstance().labels.common.amount}" dataField="@period_1_qty" sortCompareFunction="{Tools.getSortFunction('@period_1_qty')}" textAlign="right" labelFunction="quantityLabelFunction"/>
+					<mx:AdvancedDataGridColumn id="period1ValColumn" headerText="{LanguageManager.getInstance().labels.common.value}" dataField="@period_1_val" sortCompareFunction="{Tools.getSortFunction('@period_1_val')}" textAlign="right" labelFunction="currencyLabelFunction"/>	
+				</mx:AdvancedDataGridColumnGroup>
+				<mx:AdvancedDataGridColumnGroup headerText="{grp2Header}">
+					<mx:AdvancedDataGridColumn id="period2QtyColumn" headerText="{LanguageManager.getInstance().labels.common.amount}" dataField="@period_2_qty" sortCompareFunction="{Tools.getSortFunction('@period_2_qty')}" textAlign="right" labelFunction="quantityLabelFunction"/>
+					<mx:AdvancedDataGridColumn id="period2ValColumn" headerText="{LanguageManager.getInstance().labels.common.value}" dataField="@period_2_val" sortCompareFunction="{Tools.getSortFunction('@period_2_val')}" textAlign="right" labelFunction="currencyLabelFunction"/>	
+				</mx:AdvancedDataGridColumnGroup>
+				<mx:AdvancedDataGridColumnGroup headerText="{grp3Header}">
+					<mx:AdvancedDataGridColumn id="period3QtyColumn" headerText="{LanguageManager.getInstance().labels.common.amount}" dataField="@period_3_qty" sortCompareFunction="{Tools.getSortFunction('@period_3_qty')}" textAlign="right" labelFunction="quantityLabelFunction"/>
+					<mx:AdvancedDataGridColumn id="period3ValColumn" headerText="{LanguageManager.getInstance().labels.common.value}" dataField="@period_3_val" sortCompareFunction="{Tools.getSortFunction('@period_3_val')}" textAlign="right" labelFunction="currencyLabelFunction"/>	
+				</mx:AdvancedDataGridColumnGroup>
+				<mx:AdvancedDataGridColumn id="totalQtyColumn" headerText="{LanguageManager.getInstance().labels.common.totalQuantity}" dataField="@totalQuantity" sortCompareFunction="{Tools.getSortFunction('@totalQuantity')}" textAlign="right" labelFunction="quantityLabelFunction"/>
+				<mx:AdvancedDataGridColumn id="totalValColumn" headerText="{LanguageManager.getInstance().labels.common.totalValue}" dataField="@totalValue" sortCompareFunction="{Tools.getSortFunction('@totalValue')}" textAlign="right" labelFunction="currencyLabelFunction"/>
+			</mx:groupedColumns>
+		</mx:AdvancedDataGrid>
+	</table>
+	<summary>
+		<layoutComponents:AdvancedDataGridSummary2 source="{grid}">
+			<layoutComponents:summaryColumns>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.ROW_COUNT]}" sourceColumn="{nameColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{period1QtyColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{period1ValColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{period2QtyColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{period2ValColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{period3QtyColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{period3ValColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{totalQtyColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{totalValColumn}"/>
+			</layoutComponents:summaryColumns>
+		</layoutComponents:AdvancedDataGridSummary2>
+	</summary>
+
+	<customFilters>
+		<warehouseReports:ReportByWarehouseStockStructureCustomFilters id="custFilters" />
+	</customFilters>
+</ReportBase>

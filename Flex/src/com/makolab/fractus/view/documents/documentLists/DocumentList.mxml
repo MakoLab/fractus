@@ -1,0 +1,737 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox creationComplete="init()" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:catalogue="com.makolab.components.catalogue.*" xmlns:layoutComponents="com.makolab.components.layoutComponents.*" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:documents="com.makolab.fractus.view.documents.*" xmlns:catalogue1="com.makolab.fractus.view.catalogue.*">
+
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.CatalogueEvent;
+			import com.makolab.components.catalogue.CatalogueOperation;
+			import com.makolab.components.catalogue.Clipboard;
+			import com.makolab.components.catalogue.GroupTreeEditorEvent;
+			import com.makolab.components.catalogue.groupTree.GroupTreeEvent;
+			import com.makolab.components.inputComponents.DocumentAttributeEditor;
+			import com.makolab.components.layoutComponents.DynamicDetailRenderer;
+			import com.makolab.components.util.ComponentExportManager;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.commands.ChangeDocumentStatusCommand;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.commands.SearchCommand;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.GlobalEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.PermissionManager;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.view.documents.DocumentAccounter;
+			import com.makolab.fractus.view.documents.DocumentBinder;
+			import com.makolab.fractus.view.documents.DocumentFromOrderComponent;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			import com.makolab.fractus.view.documents.MassiveBarcodePrintingWindow;
+			import com.makolab.fractus.view.documents.TextPrintPreviewWindow;
+			import com.makolab.fractus.view.documents.documentEditors.InventoryDocumentEditor;
+			import com.makolab.fractus.view.documents.documentEditors.InventoryDocumentPreview;
+			import com.makolab.fractus.view.finance.FinancialReportEditor;
+			import com.makolab.fractus.view.finance.FinancialReportPreview;
+			import com.makolab.fractus.view.warehouse.LabelPrintingWindow;
+			
+			import mx.collections.XMLListCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.formatters.SwitchSymbolFormatter;
+			import mx.rpc.events.ResultEvent;
+			
+			import assets.IconManager;
+			
+			import flight.binding.Bind;
+			
+			[Bindable]
+			private var showItem:Boolean=true;
+	
+			[Bindable]
+			private var permissionDenied:Boolean;
+			
+			private var _permissionKey:String;
+			
+			[Bindable]
+			public function set permissionKey(value:String):void
+			{
+				_permissionKey = value;
+				permissionDenied = !ModelLocator.getInstance().permissionManager.isEnabled(_permissionKey);
+			}
+			public function get permissionKey():String
+			{
+				return _permissionKey;
+			}
+			
+			[Bindable]
+			public var listPermissionKey:String;
+			
+			[Bindable]
+			public var itemOperations:Array;
+			
+			[Bindable]
+			public var generalOperations:Array;
+			
+			private var _config:XML;
+			
+			[Bindable]
+			private var listType:String;
+			
+			[Bindable]
+			public var documentCategory:String = null;
+			
+			[Bindable]
+			public var showClipboard:Boolean = false;
+			
+			[Bindable]
+			public var openClipboard:Boolean=true;
+		
+			public var clipboardExtraData:XMLList=null;
+			
+			[Bindable]
+			public var link1OperationVisible:Boolean = false;
+			[Bindable]
+			public var link2OperationVisible:Boolean = false;
+			[Bindable]
+			public var link3OperationVisible:Boolean = false;
+			[Bindable]
+			public var link4OperationVisible:Boolean = false;
+			[Bindable]
+			public var link5OperationVisible:Boolean = false;
+			
+			[Bindable]
+			public function set config(listConfig:XML):void
+			{
+				_config = listConfig;
+				switch(listConfig.objectType.toString()){
+					case "CommercialDocument":
+						listType = DocumentSimpleRenderer.COMMERCIAL_DOCUMENT; break;
+					case "WarehouseDocument":
+						listType = DocumentSimpleRenderer.WAREHOUSE_DOCUMENT; break;
+					case "FinancialReport":
+						listType = DocumentSimpleRenderer.FINANCIAL_REPORT; break;
+					case "FinancialDocument":
+						listType = DocumentSimpleRenderer.FINANCIAL_DOCUMENT; break;
+					case "InventoryDocument":
+						listType = DocumentSimpleRenderer.INVENTORY_DOCUMENT; break;
+					case "ComplaintDocument":
+						listType = DocumentSimpleRenderer.COMPLAINT_DOCUMENT; break;
+					case "ServiceDocument":
+						listType = DocumentSimpleRenderer.SERVICE_DOCUMENT; break;
+					case "ProductionDocument":
+						listType = DocumentSimpleRenderer.PRODUCTION_DOCUMENT; break;
+					
+					
+				}
+				if(listConfig.clipboardExtra.length())
+				{
+					clipboardExtraData=listConfig.clipboardExtra;
+				}
+					if(listConfig && listConfig.operations["link1"].length() > 0 ) {
+						link1OperationVisible = true;
+					} else {
+						link1OperationVisible = false;
+					}
+					
+					if(listConfig && listConfig.operations["link2"].length() > 0 ) {
+						link2OperationVisible = true;
+					} else {
+						link2OperationVisible = false;
+					}
+					if(listConfig && listConfig.operations["link3"].length() > 0 ) {
+						link3OperationVisible = true;
+					} else {
+						link3OperationVisible = false;
+					}
+					if(listConfig && listConfig.operations["link4"].length() > 0 ) {
+						link4OperationVisible = true;
+					} else {
+						link4OperationVisible = false;
+					}
+					
+					if(listConfig && listConfig.operations["link5"].length() > 0 ) {
+						link5OperationVisible = true;
+					} else {
+						link5OperationVisible = false;
+					}
+				
+				// tu dodajemy typy dokumentow w schowku
+				
+				if (listConfig.showClipboard.length() > 0 && listConfig.showClipboard.* == "true")
+					{
+						this.showClipboard = true;
+						if(listConfig.showClipboard.@open==true)
+							this.openClipboard=true;
+						else
+							this.openClipboard=false;
+					}
+				else
+					this.showClipboard = false;
+			}
+			
+			public function get config():XML
+			{
+				return _config;
+			}
+			
+			
+			
+			[Bindable]
+			public var currentDocumentTypeDescriptor:DocumentTypeDescriptor;
+			
+			[Bindable]
+			public var dblClickPermissionKey:String;
+			
+			public static function showWindow(type:Class, title:String = null,defaultOperation:CatalogueOperation = null):ComponentWindow
+			{
+				var list:DocumentList = new type();
+				if(defaultOperation){
+					var operations:Array = [];
+					operations.push(defaultOperation);
+					for(var i:int=0;i<list.itemOperations.length;i++){
+						operations.push(list.itemOperations[i]);
+					}
+					list.itemOperations = operations;
+				}
+				var window:ComponentWindow = ComponentWindow.showWindow(list,0,null,title);
+				window.setStyle("headerColors", [IconManager[String(list.config.headerColor)], IconManager[String(list.config.headerColorLight)]]); 
+				if(list.icon)window.titleIcon = list.icon;
+				return window;
+			}
+			
+			public function searchDocument(parameters:Object):void
+			{
+				var cmd:SearchCommand = new SearchCommand(SearchCommand.DOCUMENTS);
+				cmd.searchParams = XML(parameters);
+				cmd.addEventListener(ResultEvent.RESULT,handleSearchResults);
+				cmd.execute();
+			}
+			
+			public function handleSearchResults(event:ResultEvent):void
+			{
+				var result:XML = XML(event.result);
+				catalogueBrowser.searchResults = new XMLListCollection(result.*);
+				catalogueBrowser.rowCount = result.@rowCount;
+				catalogueBrowser.pageNumber = result.@page;
+				catalogueBrowser.itemData = result.itemData;
+				var attributes:Object = {};
+				for each (var x:XML in result.attributes()) attributes['@' + x.localName()] = String(x);
+				catalogueBrowser.resultAttributes = attributes;
+			}
+			
+			public function addToClipboard(document:Object):Boolean
+			{
+				var result:Boolean = this.documentClipboardPanel.addDocument(document as XML);
+				this.documentClipboardPanel.clipboardExtraData=this.clipboardExtraData;
+				if(result) this.clipboardDockPanel.open = true;
+				
+				return result;
+			}
+			
+			protected function operationInvokeHandler(event:CatalogueEvent):void
+			{
+				if (!(event.target is CatalogueOperation)) return;
+				var id:String;
+				if (catalogueBrowser.selectedItem) id = catalogueBrowser.selectedItem.@id;
+				if (!id) return;
+				
+				var arr:Array;
+				var value:Object;
+				var it:String;
+				var id:String;
+				var str:String;
+				
+				
+				
+				switch (event.operation.operationId)
+				{
+					case "operationLink1Item":
+						arr=String(config.operations['link1'].@toRep).split(".");
+						value=event.currentTarget.itemData;
+						for each (it in arr) {
+						value = value[it];
+					}
+						id=value.toString();
+						str=config.operations['link1'].@url;
+						str=str.replace(config.operations['link1'].@rep,id);
+						navigateToURL(new URLRequest(str),"_blank");
+						break;
+					case "operationLink2Item":
+						arr=String(config.operations['link2'].@toRep).split(".");
+						value=event.currentTarget.itemData;
+						for each (it in arr) {
+						value = value[it];
+					}
+						id=value.toString();
+						str=config.operations['link2'].@url;
+						str=str.replace(config.operations['link2'].@rep,id);
+						navigateToURL(new URLRequest(str),"_blank");
+						break;
+					case "operationLink3Item":
+						arr=String(config.operations['link3'].@toRep).split(".");
+						value=event.currentTarget.itemData;
+						for each (it in arr) {
+						value = value[it];
+					}
+						id=value.toString();
+						str=config.operations['link3'].@url;
+						str=str.replace(config.operations['link3'].@rep,id);
+						navigateToURL(new URLRequest(str),"_blank");
+						break;
+					case "operationLink4Item":
+						arr=String(config.operations['link4'].@toRep).split(".");
+						value=event.currentTarget.itemData;
+						for each (it in arr) {
+							value = value[it];
+						}
+						id=value.toString();
+						str=config.operations['link4'].@url;
+						str=str.replace(config.operations['link4'].@rep,id);
+						navigateToURL(new URLRequest(str),"_blank");
+						break;
+						case "operationLink5Item":
+							arr=String(config.operations['link5'].@toRep).split(".");
+							value=event.currentTarget.itemData;
+							for each (it in arr) {
+								value = value[it];
+							}
+							id=value.toString();
+							str=config.operations['link5'].@url;
+							str=str.replace(config.operations['link5'].@rep,id);
+							navigateToURL(new URLRequest(str),"_blank");
+							break;
+					case "createOutcomeShift":
+						var cmd:ShowDocumentEditorCommand = new ShowDocumentEditorCommand(DocumentTypeDescriptor.CATEGORY_WAREHOUSE);
+						cmd.template = "outcomeShift";
+						cmd.source = <source type="outcomeShiftFromWarehouseDocument"><warehouseDocumentId>{id}</warehouseDocumentId></source>;
+						cmd.execute();
+						break;
+					case "operationPrintDocumentFiscal":
+						printFiscalDocument(id, this.currentDocumentTypeDescriptor.getDefaultFiscalPrintProfile());
+						event.deselectItem = true;
+						break;
+					case "operationPrintDocumentGraphical":
+						var pdfPrintParams:Object = null;
+						// nazwa pdf'a:
+						var fileName:String = currentDocumentTypeDescriptor.symbol + "_" + String(catalogueBrowser.itemData.*.number.fullNumber);
+						fileName = fileName.replace(new RegExp("[^a-zA-Z0-9]+","g"),"_");
+						if (event.extendedOperationId == 'operationPrintDocumentGraphicalWithProtocol')
+						{
+							printDocument(id, 'customSykomatSimulatedSettlementInvoiceWithProtocolePdf', fileName, pdfPrintParams);
+						}else{
+							if (event.extendedOperationId == 'operationPrintDocumentGraphicalDuplicate') {
+								pdfPrintParams = { duplicatePrint : 1 };
+								printDocument(id, this.currentDocumentTypeDescriptor.getDefaultPrintProfile(), fileName, pdfPrintParams);
+							}
+							else
+							if( event.extendedOperationId)
+								printDocument(id, event.extendedOperationId, fileName, pdfPrintParams);
+							else
+								printDocument(id, this.currentDocumentTypeDescriptor.getDefaultPrintProfile(), fileName, pdfPrintParams);
+						}
+						break;
+					case "operationPrintDocumentText":
+						var textPrintParams:Object = null;
+						if (event.extendedOperationId == 'operationPrintDocumentTextWithProtocol') 
+						{
+							TextPrintPreviewWindow.showWindow(id, 'customSykomatSimulatedSettlementInvoiceWithProtocoleText', null, textPrintParams);
+						}else{
+							if (event.extendedOperationId == 'operationPrintDocumentTextDuplicate') 
+								textPrintParams = { duplicatePrint : 1 };
+							TextPrintPreviewWindow.showWindow(id, this.currentDocumentTypeDescriptor.xmlOptions.@defaultTextPrintProfile.toString(), null, textPrintParams);
+						}
+						break;
+					case "operationPrintDocumentGraphicalLocation":
+						printDocument(id, this.currentDocumentTypeDescriptor.getDefaultPrintLocationProfile());
+						break;
+					case "operationDuplicateTechnology":
+						var cmd2:ShowDocumentEditorCommand = new ShowDocumentEditorCommand(DocumentTypeDescriptor.CATEGORY_TECHNOLOGY_DOCUMENT);
+						cmd2.template = "technology";
+						cmd2.source = <source type="technology" commercialDocumentId={id} />;
+						cmd2.execute();
+						break;
+					case "operationExportDocument":
+						printDocument(id, config.exportProfile);
+						break;
+					case "operationExportDocumentToFile":
+						printDocument(id, this.currentDocumentTypeDescriptor.xmlOptions.@exportable, 'dokument');
+						break;
+					case "operationCancelDocument":
+						cancelDocument(id);
+						event.deselectItem = true;
+						break;
+					case "operationPreviewDocument":
+						previewDocument(id);
+						break;
+					case "operationAddDocumentToClipboard":
+						var added:Boolean = addToClipboard(catalogueBrowser.selectedItem);
+						if(added) this.clipboardDockPanel.open = true;
+						break;
+					case "operationEditBinding":
+						if(catalogueBrowser.selectedItem)bindDocuments(XML(catalogueBrowser.itemData), event.operation.permissionKey);
+						event.deselectItem = true;
+						break;
+					case "operationAccountancy":
+						if(catalogueBrowser.selectedItem) accountDocument(XML(catalogueBrowser.itemData));
+						break;
+					case "operationOrderToWarehouse":
+						DocumentFromOrderComponent.showWindow(event.itemData.*[0]);
+						event.deselectItem = true;
+						break;
+					case "operationPrintContainerContent":
+						LabelPrintingWindow.showWindow(this, id);
+						break;
+					case "operationEditInventoryDocument":
+						InventoryDocumentEditor.showWindow(id);
+						break;
+					case "operationPreviewInventoryDocument":
+						InventoryDocumentPreview.showWindow(id);
+						break;
+					case "operationOpenDocument":
+						FinancialReportEditor.showWindow(id,FinancialReportEditor.CONTEXT_OPEN_REPORT);
+						break;
+					case "operationPrintBarcodeLabelsForPurchase":
+						var mbpw:MassiveBarcodePrintingWindow = new MassiveBarcodePrintingWindow();
+						mbpw.documentId = id;
+						mbpw.showWindow();
+						break;
+					case "addLinesToCart":
+						for each (var line:XML in catalogueBrowser.itemData.*.lines.line)
+							Clipboard.getInstance().addElement(line);
+						break;
+				} 
+			}
+			
+			protected function previewReport():void
+			{
+				FinancialReportPreview.showWindow(this.objectType,catalogueBrowser.selectedItem.@id);
+			}
+			
+			private function previewDocument(documentId:String):void
+			{
+				DocumentRenderer.showWindow(this.objectType, documentId);
+			}
+			
+			private function bindDocuments(documentXML:XML, permissionKey:String=null):void
+			{
+				DocumentBinder.showWindow(this.objectType, documentXML, permissionKey);
+			}
+			
+			private function accountDocument(documentXML:XML):void
+			{
+				DocumentAccounter.showWindow(this.objectType, documentXML);
+			}
+			
+			private var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand();
+			
+			private function getItemData(parameters:Object):void
+			{
+				cmd.addEventListener(ResultEvent.RESULT, handleItemResult);
+				cmd.execute( { type : this.objectType, id : catalogueBrowser.selectedItem.@id } );
+			}
+			
+			private function handleItemResult(event:ResultEvent):void
+			{
+				var itemData:XML = XML(event.result);
+				var typeId:String;
+				if (itemData != null)
+				{
+					if(itemData.*.documentTypeId.length() > 0)
+						typeId = itemData.*.documentTypeId;
+					else
+						typeId = itemData.*.financialRegisterId;
+				}
+				var ddd:Object=itemData.*.lines.line.(visible=="1").visible;
+				showItem=true;
+				if(ddd  && (ddd as XMLList).length()>0)
+				showItem=ddd[0]=="1"?false:true;
+				this.currentDocumentTypeDescriptor = (typeId ? new DocumentTypeDescriptor(typeId) : null);
+			
+				applyExtendedOperations(itemData,this.currentDocumentTypeDescriptor.xmlOptions.printOptions);
+				catalogueBrowser.itemData = itemData;
+			}
+			
+			private function applyExtendedOperations(itemData:XML,printOptions:XMLList=null):void
+			{
+				var attributeId:String = DictionaryManager.getInstance().dictionaries.documentFields.(name.toString() == 'Attribute_IsSimulateSettlementInvoiceWithProtocole').length() > 0 ? DictionaryManager.getInstance().dictionaries.documentFields.(name.toString() == 'Attribute_IsSimulateSettlementInvoiceWithProtocole')[0].id.toString() : null;
+				var attributes:XMLList = itemData.commercialDocument.attributes.attribute.(documentFieldId.toString() == attributeId);
+				var i:int,j:int;
+				var operations:Array;
+				if (attributes.length() > 0)
+				{
+					// jesli tu jestesmy to oznacza, ze rozpatrujemy proforme rozliczeniowa z protokolem, czyli dokladamy dodatkowa operacje wydruku z protokolem.
+					var operationGraphicalPrint:CatalogueOperation;
+					var operationTextPrint:CatalogueOperation;
+					for (i = 0; i < itemOperations.length; i++)
+					{
+						if (itemOperations[i].operationId == 'operationPrintDocumentGraphical')
+						{
+							
+							operationGraphicalPrint = itemOperations[i];
+							if(printOptions&&printOptions.length())
+							{
+								var op:Array=new Array();
+								for(var s:int=0;s<printOptions.print.length();s++)
+								{
+									var ob:Object=new Object();
+									ob.operationId=printOptions.print[s].@printProfile;
+									ob.label=printOptions.print[s].@label;
+									op.push(ob);
+								}
+								
+								operationGraphicalPrint.extendedOperations=op;
+							}
+						}
+						if (itemOperations[i].operationId == 'operationPrintDocumentText')
+							operationTextPrint = itemOperations[i];
+					}
+					// wydruk graficzny
+					operations = [];
+					for (j = 0; j < operationGraphicalPrint.extendedOperations.length; j++)
+					{
+						if (operationGraphicalPrint.extendedOperations[j].operationId != 'operationPrintDocumentGraphicalWithProtocol') 
+							operations.push(operationGraphicalPrint.extendedOperations[j]);
+					}
+					if (operationGraphicalPrint)
+					{
+						operations.push({label : LanguageManager.getInstance().labels.documents.printSimulatedSettlementInvoiceToSalesOrderWithProtocole, operationId : 'operationPrintDocumentGraphicalWithProtocol'});
+						operationGraphicalPrint.extendedOperations = operations;
+					}
+					//wydruk tekstowy
+					operations = [];
+					for (j = 0; j < operationTextPrint.extendedOperations.length; j++)
+					{
+						if (operationTextPrint.extendedOperations[j].operationId != 'operationPrintDocumentTextWithProtocol') 
+							operations.push(operationTextPrint.extendedOperations[j]);
+					}
+					if (operationTextPrint)
+					{
+						operations.push({label : LanguageManager.getInstance().labels.documents.printSimulatedSettlementInvoiceToSalesOrderWithProtocole, operationId : 'operationPrintDocumentTextWithProtocol'});
+						operationTextPrint.extendedOperations = operations;
+					}
+				}else{
+					// jesli tu jestesmy to oznacza, ze nie jest to proforma rozliczeniowa z protokolem, czyli usuwamy dodatkowa operacje wydruku z protokolem.
+					if (itemOperations)
+					for (i = 0; i < itemOperations.length; i++)
+					{
+						if (itemOperations[i].operationId == 'operationPrintDocumentGraphical' && (itemOperations[i].extendedOperations||(printOptions&&printOptions.length())))
+						{
+							operations = [];
+							/*for (j = 0; j < itemOperations[i].extendedOperations.length; j++)
+							{
+								if (itemOperations[i].extendedOperations[j].operationId != 'operationPrintDocumentGraphicalWithProtocol') 
+									operations.push(itemOperations[i].extendedOperations[j]);
+								
+							}
+							itemOperations[i].extendedOperations = operations;*/
+							if(printOptions&&printOptions.length())
+							{
+								
+								for(var s:int=0;s<printOptions.print.length();s++)
+								{
+									var ob:Object=new Object();
+									ob.operationId=printOptions.print[s].@printProfile.toString();
+									ob.label=printOptions.print[s].@label.toString();
+									operations.push(ob);
+								}
+								
+								
+							}else
+							{
+								for (j = 0; j < itemOperations[i].extendedOperations.length; j++)
+								{
+									if (itemOperations[i].extendedOperations[j].operationId != 'operationPrintDocumentGraphicalWithProtocol') 
+										operations.push(itemOperations[i].extendedOperations[j]);
+									
+								}
+							}
+							itemOperations[i].extendedOperations=operations;
+						}
+						if (itemOperations[i].operationId == 'operationPrintDocumentText' && itemOperations[i].extendedOperations)
+						{
+							operations = [];
+							for (j = 0; j < itemOperations[i].extendedOperations.length; j++)
+							{
+								if (itemOperations[i].extendedOperations[j].operationId != 'operationPrintDocumentTextWithProtocol') 
+									operations.push(itemOperations[i].extendedOperations[j]);
+							}
+							itemOperations[i].extendedOperations = operations;
+						}
+					}
+				}
+				var str:String="";
+				if(!showItem)
+				{
+					if (itemOperations)
+						for (i = 0; i < itemOperations.length; i++)
+						{	
+							str=itemOperations[i].permissionKey;
+							if(str&&str.search("catalogue.items.viewHideItems")==-1)
+							itemOperations[i].permissionKey += ",catalogue.items.viewHideItems";
+							trace(i,"___it_b:",str);
+							trace(i,"___it_e:",itemOperations[i].permissionKey);
+								
+						}
+					if (generalOperations)
+						for (i = 0; i < generalOperations.length; i++)
+						{
+							
+						str=generalOperations[i].permissionKey;
+							if(str&&str.search("catalogue.items.viewHideItems")==-1)
+							generalOperations[i].permissionKey +=",catalogue.items.viewHideItems";
+							trace(i,"___gen_b:",str);
+							trace(i,"___gen_e:",generalOperations[i].permissionKey);
+						}
+				}
+				else
+				{
+					if (itemOperations)
+						for (i = 0; i < itemOperations.length; i++)
+							{
+								
+								str=itemOperations[i].permissionKey;
+								trace(i,"___it_beg:",str);
+								if(str)
+									{itemOperations[i].permissionKey =str.replace(",catalogue.items.viewHideItems","");
+									trace(i,"___it_end:",itemOperations[i].permissionKey);}
+							}
+					if (generalOperations)
+						for (i = 0; i < generalOperations.length; i++)
+							{
+								str=generalOperations[i].permissionKey;
+								trace(i,"___ge_beg:",str);
+								if(str)
+									{generalOperations[i].permissionKey =str.replace(",catalogue.items.viewHideItems","");
+									trace(i,"___ge_end:",generalOperations[i].permissionKey);}
+							}
+				
+				}
+			}
+			
+			private function printFiscalDocument(documentId:String,profile:String):void
+			{
+				//sprawdzamy jakie jest id atrybutu z fiskalizacja
+				var attrId:String = DictionaryManager.getInstance().getByName('Attribute_FiscalPrintDate', 'documentAttributes').id;
+				
+				var attribute:XMLList = catalogueBrowser.itemData.*.attributes.attribute.(documentFieldId == attrId);
+
+		 		var msg:String;
+				if(attribute.length() > 0) msg = LanguageManager.getLabel("documents.repeatedFiscalPrintQuestion");
+				else msg = LanguageManager.getLabel("documents.fiscalPrintQuestion");
+				
+				//ComponentExportManager.getInstance().exportObjectFiscal(documentId, profile);
+				Alert.yesLabel = LanguageManager.getLabel("alert.yes");
+		 		Alert.noLabel = LanguageManager.getLabel("alert.no");
+		 		var alert:Alert = Alert.show(msg, '', Alert.YES | Alert.NO, null, fiscalPrintQuestionHandler, null, Alert.YES);
+		 		alert.data = {'documentId' : documentId, 'profile' : profile};
+			}
+			
+			private function fiscalPrintQuestionHandler(event:CloseEvent):void
+		 	{
+		 		if(event.detail == Alert.YES)
+		 			ComponentExportManager.getInstance().exportObjectFiscal(event.target.data['documentId'], event.target.data['profile']);
+		 	}
+				
+			private function printDocument(documentId:String,profile:String,fileName:String="content", params:Object = null):void
+			{
+				ComponentExportManager.getInstance().exportObject(profile,documentId,fileName, false, params);
+			}
+			
+			
+			private function cancelDocument(documentId:String):void
+			{				
+				var status:String = DocumentObject.STATUS_CANCELED.toString();
+				var cmd:ChangeDocumentStatusCommand = new ChangeDocumentStatusCommand(documentId,status);
+				cmd.execute(catalogueBrowser.itemData);
+				getItemData(null);	
+				ModelLocator.getInstance().eventManager.dispatchEvent(new GlobalEvent(GlobalEvent.DOCUMENT_CHANGED, (new DocumentTypeDescriptor(catalogueBrowser.itemData.*.documentTypeId[0].toString())).categoryNumber.toString()));	
+			}
+			
+			protected function get objectType():String
+			{
+				return config ? config.objectType : null;
+			}
+			
+			protected function getRowTextColor(data:Object):Number
+			{
+				return (data && String(data.@status) && data.@status < 40) ? 0x808080 : NaN;
+			}
+			
+			private function init():void
+			{
+				catalogueBrowser.initSearch("");
+				
+				if (_config && _config.detailsPanelConfiguration.length() > 0){
+					var detailRenderer:DynamicDetailRenderer = new DynamicDetailRenderer();
+					detailRenderer.attributeTypeDictionary = 'documentFields';
+					detailRenderer.attributeTypeIdField = 'documentFieldId';
+					detailRenderer.panelConfig = _config.detailsPanelConfiguration.configuration[0];
+					documentRendererPanel.removeAllChildren();
+					documentRendererPanel.addChild(detailRenderer);
+					detailRenderer.percentWidth = 100;
+					detailRenderer.setStyle("themeColor",this.getStyle("themeColor"));
+					//Bind.addBinding(detailRenderer,"data",catalogueBrowser,"itemData",true);
+					cmd.addEventListener(ResultEvent.RESULT,function (event:ResultEvent):void{detailRenderer.data = catalogueBrowser.itemData},false,-1);
+				}
+			}
+			
+		]]>
+	</mx:Script>
+	<!--<layoutComponents:DockManager id="dockManager" configuration="{layoutConfig}" dockContainers="{{'leftP' : catalogueBrowser.dockContainers.dc2, 'rightP' : catalogueBrowser.dockContainers.dc3}}" dockObjects="{catalogueBrowser.dockObjects}"/>-->
+	<catalogue:CatalogueBrowser 
+		id="catalogueBrowser" 
+		itemSearch="searchDocument(event.parameters)" 
+		itemGetData="getItemData(event.parameters)"
+		config="{config}"
+		itemsType="documents"
+		width="100%" 
+		height="100%" 
+		showLeftPanel="false"
+		itemOperations="{itemOperations}"
+		generalOperations="{generalOperations}"
+		rowTextColorFunction="{getRowTextColor}"
+		dblClickPermissionKey="{dblClickPermissionKey}"
+		documentList="{this}"
+		visible="{!permissionDenied}"
+		includeInLayout="{!permissionDenied}"
+		listPermissionKey="{listPermissionKey}"
+		>
+		<catalogue:rightPanel>
+			<layoutComponents:DockPanel id="clipboardDockPanel" 
+				visible="{this.showClipboard}" 
+				includeInLayout="{this.showClipboard}" 
+				title="{LanguageManager.getInstance().labels.catalogue.clipboard.cart}" width="100%" open="{this.openClipboard}">
+				<catalogue1:DocumentClipboardPanel id="documentClipboardPanel"/>
+			</layoutComponents:DockPanel>
+			<layoutComponents:DockPanel id="documentRendererPanel" title="{LanguageManager.getInstance().labels.documents.details}" width="100%">
+				<inputComponents:DocumentSimpleRenderer id="documentRenderer" documentType="{listType}" documentCategory="{documentCategory}" data="{catalogueBrowser.itemData}"/>
+			</layoutComponents:DockPanel>
+			<layoutComponents:DockPanel title="{LanguageManager.getInstance().labels.documents.relatedDocuments}" width="100%" id="documentRelationsGrid">
+				<documents:DocumentRelationsGrid showDocument="{showItem}" data="{catalogueBrowser.itemData}" documentType="commercialDocument" width="100%"/>
+			</layoutComponents:DockPanel>
+		</catalogue:rightPanel>
+	</catalogue:CatalogueBrowser>
+	<mx:Canvas width="100%" height="100%" visible="{permissionDenied}" includeInLayout="{permissionDenied}">
+		<mx:Label text="{LanguageManager.getInstance().labels.error.permissionDenied}" verticalCenter="0" horizontalCenter="0"/>
+	</mx:Canvas>
+	<mx:XML id="layoutConfig">
+		<root>
+		  <dockObject>
+		    <name>do1</name>
+		    <parent>dc3</parent>
+		    <index>2</index>
+		    <properties/>
+		  </dockObject>
+		  <dockObject>
+		    <name>do2</name>
+		    <parent>dc2</parent>
+		    <index>2</index>
+		    <properties/>
+		  </dockObject>
+		</root>
+	</mx:XML>
+	
+
+</mx:VBox>

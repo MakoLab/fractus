@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:rules="com.makolab.fractus.view.administration.rules.*" initialize="init()">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.formatters.DateFormatter;
+			import mx.controls.Alert;
+			import mx.controls.Button;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:ExportToAccountingFileDialog = new ExportToAccountingFileDialog();
+				window.innerComponent = component;
+				window.buttons = ComponentWindow.BUTTON_COMMIT;
+				window.commitFunction = component.export;
+				window.show(null,new Rectangle(-1,-1,350,100),"Eksport do programu Symfonia");
+				window.commitButton.label = "Pobierz";
+				component.window = window;
+				return window;
+			}
+			
+			private function init():void
+			{
+				ModelLocator.getInstance().configManager.requestValue("accounting_exportService_address");
+			}
+			
+			public var window:ComponentWindow;
+		
+			public function export():void
+			{
+				if (ModelLocator.getInstance().configManager.values.accounting_exportService_address != null)
+				{
+					var date:String = "";
+					if (dateRangeChooser.dateFromControl.selectedDate && dateRangeChooser.dateToControl.selectedDate)
+					{
+						var formatter:DateFormatter = new DateFormatter();
+						formatter.formatString = "YYYYMMDD";
+						var dateFrom:String = formatter.format(dateRangeChooser.dateFromControl.selectedDate);
+						var dateTo:String = formatter.format(dateRangeChooser.dateToControl.selectedDate);
+						date += "_"
+							+ dateFrom
+							+ "_"
+							+ dateTo;
+					}
+					var url:String =
+					ModelLocator.getInstance().configManager.values.services_printService_address.* // adres serwisu
+					+ "/GetExportToAccountingFile"
+					+ "/accounting.p_getSymfoniaData" // nazwa procedury
+					+ "/Symfonia" + date + ".txt" // nazwa pliku
+					+ "?dateFrom=" + dateRangeChooser.dateFromControl.text + "&dateTo=" + dateRangeChooser.dateToControl.text;
+					
+					var u:URLRequest = new URLRequest(url);
+					u.method = URLRequestMethod.GET;
+					navigateToURL(u,"_blank");
+					window.hide();
+				}
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<rules:DateRangeChooser id="dateRangeChooser" width="100%"/>
+</mx:VBox>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="450" height="150">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.utils.SHA256;
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.controls.Alert;
+			import com.makolab.fractus.model.SessionManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.managers.PopUpManager;
+			import mx.core.UIComponent;
+			
+			private static var authorizationWindow:AuthorizationWindow;
+			private var okFunction:Function;
+			
+			public static function show(parent:UIComponent, okFunction:Function):void
+			{
+				if (!authorizationWindow) authorizationWindow = new AuthorizationWindow();
+				authorizationWindow.okFunction = okFunction;
+				
+				
+				PopUpManager.addPopUp(authorizationWindow, parent, true);
+				PopUpManager.centerPopUp(authorizationWindow);
+				authorizationWindow.visible = true;
+			}
+			
+			private function close():void
+			{
+				PopUpManager.removePopUp(authorizationWindow);
+				authorizationWindow.visible = false;
+				authorizationWindow = null;
+			}
+			
+			private function btnOkClick(event:Event):void
+			{
+				var bt:ByteArray = new ByteArray();
+				bt.writeUTFBytes(this.txtCode.text);
+				bt.position = 0;
+				
+				var code:String = SHA256.computeDigest(bt);
+				var xml:XML = XML('<root password="'+code+'" key="administration.permissions.authorization"/>');
+				
+				var command:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("contractor.p_checkPermission",xml);
+				command.addEventListener(ResultEvent.RESULT,handleResult);
+				command.addEventListener(FaultEvent.FAULT,handleFault);
+				command.defaultErrorHandling = false;
+				command.execute();
+				
+			}
+			private function handleFault(event:FaultEvent):void
+			{
+				var errorXML:XML;
+				var msg:String;
+				var extMsg:String;
+				try
+				{
+					errorXML = XML(event.fault.faultString);
+				}
+				catch(e:Error) { ; }
+				if (errorXML && errorXML.toXMLString())
+				{
+					msg = errorXML.customMessage;
+					extMsg = errorXML.extendedCustomMessage;
+					if (!extMsg) extMsg = msg; 
+				}
+				else
+				{
+					msg = event.fault.faultCode;
+					extMsg = event.fault.faultString;
+				}
+			
+					Alert.show(extMsg, msg);
+				
+				
+			}
+			private function handleResult(e:ResultEvent):void
+			{
+				var verificationCode:String = XML(e.result).*;
+				if(verificationCode=="true")
+				{
+					this.close();
+					this.okFunction();
+				}
+				else
+					Alert.show(LanguageManager.getInstance().labels.error.wrongCode);
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox horizontalAlign="center" verticalAlign="middle" width="100%" verticalGap="0" >
+		<mx:Text htmlText="{LanguageManager.getInstance().labels.documents.messages.authorizationWindow}" width="300" textAlign="center" selectable="false" paddingTop="5" paddingBottom="5" fontSize="14" text="Autoryzacja"/>
+		
+		<mx:Form width="100%" defaultButton="{btnOk}" paddingTop="10" paddingBottom="5">
+			<mx:FormItem label="{LanguageManager.getInstance().labels.documents.messages.writeAuthorizationPassword}">
+				<mx:TextInput id="txtCode" width="100" displayAsPassword="true"/>
+			</mx:FormItem>
+			<mx:HBox width="100%" horizontalAlign="center" paddingTop="3">
+				<mx:Button id="btnOk" label="{LanguageManager.getInstance().labels.common.ok}" width="80" click="btnOkClick(event)"/>
+				<mx:Button label="{LanguageManager.getInstance().labels.sales.quick.cancel}" width="80" click="close()"/>
+			</mx:HBox>
+		</mx:Form>
+	</mx:VBox>
+</mx:TitleWindow>

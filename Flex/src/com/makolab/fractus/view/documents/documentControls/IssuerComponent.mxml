@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Label
+			width="100%"
+			text="{documentObject.xml.issuer.contractor.fullName}"
+			styleName="simpleContractorName"
+		/>
+	<inputComponents:AddressRenderer
+			data="{documentObject.xml.issuer.contractor.addresses.address.(id.* == documentObject.xml.issuer.addressId.*)}"
+			width="100%"
+		/>
+		
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.document.DocumentObject;
+			private var _documentObject:DocumentObject;
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void { _documentObject = value; }
+			public function get documentObject():DocumentObject { return _documentObject; }
+		]]>
+	</mx:Script>
+</mx:VBox>

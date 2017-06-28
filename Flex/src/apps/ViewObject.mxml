@@ -1,0 +1,171 @@
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
+		layout="absolute"
+		xmlns:view="com.makolab.fractus.view.*"
+		creationComplete="init()"
+		xmlns:business="com.makolab.fractus.business.*" xmlns:control="com.makolab.fractus.control.*" 
+		xmlns:control1="com.adobe.cairngorm.control.*" xmlns:menu="com.makolab.components.menu.*"
+		backgroundColor="#dddddd"
+		xmlns:documents="com.makolab.fractus.view.documents.*"
+		xmlns:flexmdi="http://flexmdi.googlecode.com/"
+		xmlns:mdi="com.makolab.components.layoutComponents.mdi.*" xmlns:generic="com.makolab.fractus.view.generic.*"
+		pageTitle="Fractus 2.0"
+	xmlns:local="*">
+	<mx:Style source="/assets/stylesheets/mainStyle.css"/>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.GetDocumentByPaymentIdCommand;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			import mx.core.UIComponent;
+			import com.makolab.fractus.commands.LoadAttributeValuesCommand;
+			import flight.utils.getClassName;
+			import com.makolab.fractus.model.SessionManager;
+			import com.makolab.fractus.commands.LoadTemplatesCommand;
+			import mx.collections.ArrayCollection;
+			import com.makolab.fractus.commands.FractusCommand;
+			import com.makolab.fractus.commands.AbstractCommand;
+			import com.makolab.fractus.view.RegistrationWindow;
+			import com.makolab.fractus.commands.CheckRegistrationCommand;
+			import mx.events.ListEvent;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.vo.SessionVO;
+			import com.makolab.fractus.commands.LogInCommand;
+			import mx.managers.HistoryManager;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.soap.WebService;
+			import com.makolab.fractus.model.ConfigManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.AbstractOperation;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			public static const INITIALIZATION_CONFIG_KEYS:Array =
+			[
+				"services.printService.address",
+				"warehouse.isWmsEnabled"
+			];
+			
+			[Bindable]
+			private var modelLocator:ModelLocator = ModelLocator.getInstance();
+			
+			private function init():void
+			{
+				var model:ModelLocator = ModelLocator.getInstance();
+				LogInCommand.handleLoginFunction = this.initializeApplication;
+				
+				model.setDebug(true);
+				
+				LanguageManager.getInstance().setLabelsXML(modelLocator.labelsConfig);
+				
+				if (application.parameters.wsdl)
+				{
+					Services.getInstance().getWebService("kernelService").loadWSDL(application.parameters.wsdl);
+				}
+				
+				Services.getInstance().getKernelService(); //do rozpoznania jaki serwis
+				
+				var logInCmd:LogInCommand = new LogInCommand();
+				logInCmd.execute(new SessionVO("xxx", "CD2EB0837C9B4C962C22D2FF8B5441B7B45805887F051D39BF133B583BAF6860", "pl"));
+			}
+			
+			public var loggedIn:Boolean = false;
+			
+			private function setLanguage(val:String):void
+			{
+				var labXML:Object = { "PL" : modelLocator.labelsConfig, "EN" : modelLocator.labelsConfigEN };
+				LanguageManager.getInstance().setLabelsXML(labXML[val]);
+			}
+
+			// kolejka komend do wykonania zanim nastąpi inicjalizacja aplikacji
+			private var initializationCommandQueue:ArrayCollection = new ArrayCollection();
+			
+			public function queueInitCommand(command:FractusCommand):void
+			{
+				this.initializationCommandQueue.addItem(command);
+				command.addEventListener(ResultEvent.RESULT, this.initializationCommandResult);
+			}
+			
+			private function initializationCommandResult(event:ResultEvent = null):void
+			{
+				var obj:Object = event ? event.target : 'configuration';
+				var queue:ArrayCollection = this.initializationCommandQueue;
+				queue.removeItemAt(queue.getItemIndex(obj));
+				if (queue.length == 0) initializiationComplete();
+			}
+			
+			// result listener dla LogInCommand
+			public function initializeApplication(event:ResultEvent):void
+			{
+				modelLocator.sessionManager.currentState = SessionManager.LOGGED_IN;
+
+				// loading configuration		
+				initializationCommandQueue.addItem('configuration');
+				modelLocator.configManager.requestList(INITIALIZATION_CONFIG_KEYS, initializationCommandResult);
+
+				// loading data to managers
+				queueInitCommand(modelLocator.dictionaryManager.loadDictionaries());
+				//queueInitCommand(modelLocator.permissionManager.loadProfile(modelLocator.permissionProfile));
+				
+				//var loadTemplatesCommand:LoadTemplatesCommand = new LoadTemplatesCommand();
+				//this.queueInitCommand(loadTemplatesCommand);
+				//loadTemplatesCommand.execute();
+							
+				//var loadAttrValuesCommand:LoadAttributeValuesCommand = new LoadAttributeValuesCommand();
+				//this.queueInitCommand(loadAttrValuesCommand);
+				//loadAttrValuesCommand.execute();
+			}
+			
+			private function initializiationComplete():void
+			{
+				if (application.parameters.commercialDocumentId)
+				{
+					DocumentRenderer.showWindow(DocumentTypeDescriptor.COMMERCIAL_DOCUMENT, application.parameters.commercialDocumentId, true);
+				}
+				else if (application.parameters.warehouseDocumentId)
+				{
+					DocumentRenderer.showWindow(DocumentTypeDescriptor.WAREHOUSE_DOCUMENT, application.parameters.warehouseDocumentId, true);
+				}
+				else if (application.parameters.financialDocumentId)
+				{
+					DocumentRenderer.showWindow(DocumentTypeDescriptor.FINANCIAL_DOCUMENT, application.parameters.financialDocumentId, true);
+				}
+				else if (application.parameters.financialReportId)
+				{
+					DocumentRenderer.showWindow(DocumentTypeDescriptor.FINANCIAL_REPORT, application.parameters.financialReportId, true);
+				}
+				else if (application.parameters.paymentId)
+				{
+					var cmd:GetDocumentByPaymentIdCommand = new GetDocumentByPaymentIdCommand(application.parameters.paymentId);
+					cmd.addEventListener(ResultEvent.RESULT, handleCommandResult);
+					cmd.execute();
+				}				
+				else Alert.show("Nie przekazano identyfikatora obiektu.");
+			}
+			
+			private function handleCommandResult(event:ResultEvent):void
+			{
+				var xml:XML = XML(event.result);
+				if (xml.commercialDocumentHeaderId.length() > 0)
+				{
+					DocumentRenderer.showWindow(DocumentTypeDescriptor.COMMERCIAL_DOCUMENT, xml.commercialDocumentHeaderId, true);
+				}
+				else if (xml.financialDocumentHeaderId.length() > 0)
+				{
+					DocumentRenderer.showWindow(DocumentTypeDescriptor.FINANCIAL_DOCUMENT, xml.financialDocumentHeaderId, true);
+				}
+				else
+				{
+					Alert.show("Nie znaleziono dokumentu");
+				}
+			}
+
+		]]>
+	</mx:Script>
+	
+	<mdi:DragCanvas id="mdiCanvas" width="100%" height="100%" />
+	<business:Services id="serviceLocator"/>
+</mx:Application>

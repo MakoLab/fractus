@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="300" height="100" close="close()" keyUp="handleKeyUp(event)" showCloseButton="true">
+	<mx:Metadata>
+		[Event("barcodeSet","flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.managers.PopUpManager;
+			[Bindable]
+			public var barcode:String;
+			
+			private function handleKeyUp(event:KeyboardEvent):void
+			{
+				if ( event.keyCode == 13 ) commit();
+			}
+			
+			private function commit():void
+			{
+				dispatchEvent(new Event("barcodeSet"));
+				close();
+			}
+			
+			private function codeInputChange():void
+			{
+				barcode = codeInput.text;
+			}
+			
+			private function close():void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			
+			public static function show():BarcodeInputWindow
+			{
+				var window:BarcodeInputWindow = new BarcodeInputWindow();
+				PopUpManager.addPopUp(window, ModelLocator.getInstance().applicationObject, true);
+				PopUpManager.centerPopUp(window);
+				window.codeInput.setFocus();
+				return window;
+			}
+		]]>
+	</mx:Script>
+	<mx:FormItem label="Kod:" width="100%">
+		<mx:TextInput id="codeInput" text="{barcode}" change="codeInputChange()"/>
+	</mx:FormItem>
+	<mx:ControlBar>
+		<mx:Button label="OK" click="commit()"/>
+		<mx:Button label="Anuluj" click="close()"/>
+	</mx:ControlBar>
+</mx:TitleWindow>

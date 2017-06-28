@@ -1,0 +1,12 @@
+<!-- Assets imported by this project -->
+<project name="Main.imports">
+
+    <!-- Shared properties -->
+    <property file="${buildScripts.dir}/build-user.properties" />
+
+    <!-- Common properties and targets -->
+    <import file="${Antennae.dir}/tools/build-common-imports.xml" />
+    
+    <!-- Assets -->
+    <import file="${buildScripts.dir}/build-assets.xml"/>	
+</project>

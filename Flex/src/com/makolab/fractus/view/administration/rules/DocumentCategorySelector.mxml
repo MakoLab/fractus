@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheckBoxCombo xmlns="com.makolab.components.inputComponents.*" xmlns:mx="http://www.adobe.com/2006/mxml" dataProvider="{dp.*}">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.DictionaryManager;
+			
+			public static const CATEGORY_SALES:uint = 0;
+			public static const CATEGORY_PURCHASE:uint = 2;
+			public static const CATEGORY_SALES_CORRECTION:uint = 5;
+			public static const CATEGORY_PURCHASE_CORRECTION:uint = 6;
+			
+			//dataProvider:
+			[Bindable]
+			private var dp:XML = 
+				<root>
+					<item>
+						<id>{DocumentCategorySelector.CATEGORY_PURCHASE}</id>
+						<label lang="pl">Zakup</label>
+					</item>
+					<item>
+						<id>{DocumentCategorySelector.CATEGORY_SALES}</id>
+						<label lang="pl">Sprzedaż</label>
+					</item>
+				</root>;
+		
+			public function set ids(value:String):void
+			{
+				if(!value)return;
+				var array:Array = [];
+				var ids:Array = value.split(",");
+				for(var i:int = 0; i < ids.length; i++){
+					for each(var item:Object in dp.*){
+						if(item.id.toString() == ids[i]){
+							array.push(item);
+							break;
+						}
+					}
+				}
+				this.selectedItems = array;
+			}
+			public function get ids():String
+			{
+				var array:Array = [];
+				for each ( var item:Object in selectedItems){
+					array.push(item.id.toString());
+				}
+				return array.join(",");
+			}
+			
+			public function get names():String
+			{
+				var array:Array = [];
+				for each ( var item:Object in selectedItems){
+					array.push(item.label[0]);
+				}
+				return array.join(",");
+			}
+		]]>
+	</mx:Script>
+	
+</CheckBoxCombo>

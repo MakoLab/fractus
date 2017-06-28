@@ -1,0 +1,4 @@
+This product includes software from:
+
+http://code.google.com/p/as3flexunitlib/
+http://www.famfamfam.com/lab/icons/silk/

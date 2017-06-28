@@ -1,0 +1,13 @@
+<catalogueConfig>
+	<listTitle>banks.lists.banks.title</listTitle>
+	<newItemWindowTitle>banks.forms.bank.titleNew</newItemWindowTitle>
+	<editItemWindowTitle>banks.forms.bank.titleEdit</editItemWindowTitle>
+	<newItemParam>
+		<type>Contractor</type>
+	</newItemParam>
+  <listConfig>banks.lists.banks</listConfig>
+  <formConfig>banks.forms.bank</formConfig>
+  <panelConfig>banks.panel.bank</panelConfig>
+  <searchEvent>contractorsSearch</searchEvent>
+  <loadDataEvent>contractorsLoadData</loadDataEvent>
+</catalogueConfig>

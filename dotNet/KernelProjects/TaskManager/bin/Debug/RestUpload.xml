@@ -1,0 +1,324 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>RestUpload</name>
+    </assembly>
+    <members>
+        <member name="T:Makolab.RestUpload.DefaultFileLocalizationStrategy">
+            <summary>
+            Puts the file to the repository folder
+            </summary>
+        </member>
+        <member name="T:Makolab.RestUpload.IFileLocalizationStrategy">
+            <summary>
+            Provides a way to determin file destination path in a configurable way.
+            </summary>
+        </member>
+        <member name="M:Makolab.RestUpload.IFileLocalizationStrategy.GetFileLocation(System.String,System.String)">
+            <summary>
+            Gets the file location.
+            </summary>
+            <param name="repositoryPath">The repository path.</param>
+            <param name="fileId">The file id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Makolab.RestUpload.DefaultFileLocalizationStrategy.GetFileLocation(System.String,System.String)">
+            <summary>
+            Gets the file location.
+            </summary>
+            <param name="repositoryPath">The repository path.</param>
+            <param name="fileId">The file id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Makolab.Repository.FileRepository.AddFile(System.IO.Stream)">
+            <summary>
+            Adds the file from <see cref="T:System.IO.Stream"/> to repository.
+            </summary>
+            <param name="file">The file stream.</param>
+            <returns>The file identifier that is used instead of file name to retrieve the file from repository.</returns>
+        </member>
+        <member name="M:Makolab.Repository.FileRepository.AddFile(System.Byte[])">
+            <summary>
+            Adds the file from byte array to repository with random name.
+            </summary>
+            <param name="file">The file bytes.</param>
+            <returns>The file identifier that is used instead of file name to retrieve the file from repository.</returns>
+        </member>
+        <member name="M:Makolab.Repository.FileRepository.AddFile(System.Byte[],System.String)">
+            <summary>
+            Adds the file from byte array to repository with defined name.
+            </summary>
+            <param name="file">The file bytes.</param>
+            <param name="fileId">The file identifier.</param>
+            <returns>The file identifier that is used instead of file name to retrieve the file from repository.</returns>
+        </member>
+        <member name="M:Makolab.Repository.FileRepository.AddFilesFromStream(System.IO.Stream)">
+            <summary>  
+            Extracts files from multipart MIME format from stram and adds them to repository.
+            </summary>
+            <param name="stream">The stream with files in multipart MIME format.</param>
+            <returns>Collection of orginal file names and corresponding identifiers that are used instead of file name to retrieve files from repository.</returns>
+        </member>
+        <member name="T:Makolab.RestUpload.HttpUploadStream">
+            <summary>
+            Stream that can extract files from the http request stream.
+            </summary>
+        </member>
+        <member name="M:Makolab.RestUpload.HttpUploadStream.#ctor(System.IO.Stream,System.Text.Encoding)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Makolab.RestUpload.HttpUploadStream"/> class.
+            </summary>
+            <param name="stream">The current stream.</param>
+            <param name="encoding">The encoding for text reading.</param>
+        </member>
+        <member name="M:Makolab.RestUpload.HttpUploadStream.#ctor(System.Byte[],System.Text.Encoding)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Makolab.RestUpload.HttpUploadStream"/> class.
+            </summary>
+            <param name="data">The request body.</param>
+            <param name="encoding">The encoding for text reading.</param>
+        </member>
+        <member name="M:Makolab.RestUpload.HttpUploadStream.ReadLine">
+            <summary>
+            Reads the line from the stream.
+            </summary>
+            <returns>Read line if found; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:Makolab.RestUpload.HttpUploadStream.ReadFileData(System.String)">
+            <summary>
+            Reads the file data.
+            </summary>
+            <param name="token">The token for the data.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Makolab.RestUpload.HttpUploadStream.CompareArray(System.Byte[],System.Byte[],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Compares the array.
+            </summary>
+            <param name="first">The first array to compare.</param>
+            <param name="second">The second array to compare.</param>
+            <param name="firstStartPos">Starting position in the first array.</param>
+            <param name="secondStartPos">Starting position in the second array.</param>
+            <param name="length">Max chars to compare from both arrays.</param>
+            <returns><c>true</c> if arrays are the same; otherwise <c>false</c>.</returns>
+        </member>
+        <member name="M:Makolab.RestUpload.HttpUploadStream.SkipNewLine">
+            <summary>
+            Skips new line chars and sets the position to the next line.
+            </summary>
+        </member>
+        <member name="M:Makolab.RestUpload.HttpUploadStream.Dispose(System.Boolean)">
+            <summary>
+            Releases the unmanaged resources used by the <see cref="T:System.IO.Stream"/> and optionally releases the managed resources.
+            </summary>
+            <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
+        </member>
+        <member name="M:Makolab.RestUpload.HttpUploadStream.Flush">
+            <summary>
+            When overridden in a derived class, clears all buffers for this stream and causes any buffered data to be written to the underlying device.
+            </summary>
+            <exception cref="T:System.IO.IOException">
+            An I/O error occurs.
+            </exception>
+        </member>
+        <member name="M:Makolab.RestUpload.HttpUploadStream.Read(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            When overridden in a derived class, reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
+            </summary>
+            <param name="buffer">An array of bytes. When this method returns, the buffer contains the specified byte array with the values between <paramref name="offset"/> and (<paramref name="offset"/> + <paramref name="count"/> - 1) replaced by the bytes read from the current source.</param>
+            <param name="offset">The zero-based byte offset in <paramref name="buffer"/> at which to begin storing the data read from the current stream.</param>
+            <param name="count">The maximum number of bytes to be read from the current stream.</param>
+            <returns>
+            The total number of bytes read into the buffer. This can be less than the number of bytes requested if that many bytes are not currently available, or zero (0) if the end of the stream has been reached.
+            </returns>
+            <exception cref="T:System.ArgumentException">
+            The sum of <paramref name="offset"/> and <paramref name="count"/> is larger than the buffer length.
+            </exception>
+            <exception cref="T:System.ArgumentNullException">
+            	<paramref name="buffer"/> is null.
+            </exception>
+            <exception cref="T:System.ArgumentOutOfRangeException">
+            	<paramref name="offset"/> or <paramref name="count"/> is negative.
+            </exception>
+            <exception cref="T:System.IO.IOException">
+            An I/O error occurs.
+            </exception>
+            <exception cref="T:System.NotSupportedException">
+            The stream does not support reading.
+            </exception>
+            <exception cref="T:System.ObjectDisposedException">
+            Methods were called after the stream was closed.
+            </exception>
+        </member>
+        <member name="M:Makolab.RestUpload.HttpUploadStream.Seek(System.Int64,System.IO.SeekOrigin)">
+            <summary>
+            When overridden in a derived class, sets the position within the current stream.
+            </summary>
+            <param name="offset">A byte offset relative to the <paramref name="origin"/> parameter.</param>
+            <param name="origin">A value of type <see cref="T:System.IO.SeekOrigin"/> indicating the reference point used to obtain the new position.</param>
+            <returns>
+            The new position within the current stream.
+            </returns>
+            <exception cref="T:System.IO.IOException">
+            An I/O error occurs.
+            </exception>
+            <exception cref="T:System.NotSupportedException">
+            The stream does not support seeking, such as if the stream is constructed from a pipe or console output.
+            </exception>
+            <exception cref="T:System.ObjectDisposedException">
+            Methods were called after the stream was closed.
+            </exception>
+        </member>
+        <member name="M:Makolab.RestUpload.HttpUploadStream.SetLength(System.Int64)">
+            <summary>
+            When overridden in a derived class, sets the length of the current stream.
+            </summary>
+            <param name="value">The desired length of the current stream in bytes.</param>
+            <exception cref="T:System.IO.IOException">
+            An I/O error occurs.
+            </exception>
+            <exception cref="T:System.NotSupportedException">
+            The stream does not support both writing and seeking, such as if the stream is constructed from a pipe or console output.
+            </exception>
+            <exception cref="T:System.ObjectDisposedException">
+            Methods were called after the stream was closed.
+            </exception>
+        </member>
+        <member name="M:Makolab.RestUpload.HttpUploadStream.Write(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
+            </summary>
+            <param name="buffer">An array of bytes. This method copies <paramref name="count"/> bytes from <paramref name="buffer"/> to the current stream.</param>
+            <param name="offset">The zero-based byte offset in <paramref name="buffer"/> at which to begin copying bytes to the current stream.</param>
+            <param name="count">The number of bytes to be written to the current stream.</param>
+            <exception cref="T:System.ArgumentException">
+            The sum of <paramref name="offset"/> and <paramref name="count"/> is greater than the buffer length.
+            </exception>
+            <exception cref="T:System.ArgumentNullException">
+            	<paramref name="buffer"/> is null.
+            </exception>
+            <exception cref="T:System.ArgumentOutOfRangeException">
+            	<paramref name="offset"/> or <paramref name="count"/> is negative.
+            </exception>
+            <exception cref="T:System.IO.IOException">
+            An I/O error occurs.
+            </exception>
+            <exception cref="T:System.NotSupportedException">
+            The stream does not support writing.
+            </exception>
+            <exception cref="T:System.ObjectDisposedException">
+            Methods were called after the stream was closed.
+            </exception>
+        </member>
+        <member name="P:Makolab.RestUpload.HttpUploadStream.IsDisposed">
+            <summary>
+            Gets the value that indicates whether <see cref="M:Makolab.RestUpload.HttpUploadStream.Dispose(System.Boolean)"/> has been called.
+            </summary>
+        </member>
+        <member name="P:Makolab.RestUpload.HttpUploadStream.IsEndOfStream">
+            <summary>
+            Gets a value indicating whether this end of stream was reached.
+            </summary>
+            <value>
+            	<c>true</c> if end of stream was reached; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Makolab.RestUpload.HttpUploadStream.CanRead">
+            <summary>
+            When overridden in a derived class, gets a value indicating whether the current stream supports reading.
+            </summary>
+            <value></value>
+            <returns>true if the stream supports reading; otherwise, false.
+            </returns>
+        </member>
+        <member name="P:Makolab.RestUpload.HttpUploadStream.CanSeek">
+            <summary>
+            When overridden in a derived class, gets a value indicating whether the current stream supports seeking.
+            </summary>
+            <value></value>
+            <returns>true if the stream supports seeking; otherwise, false.
+            </returns>
+        </member>
+        <member name="P:Makolab.RestUpload.HttpUploadStream.CanWrite">
+            <summary>
+            When overridden in a derived class, gets a value indicating whether the current stream supports writing.
+            </summary>
+            <value></value>
+            <returns>true if the stream supports writing; otherwise, false.
+            </returns>
+        </member>
+        <member name="P:Makolab.RestUpload.HttpUploadStream.Length">
+            <summary>
+            When overridden in a derived class, gets the length in bytes of the stream.
+            </summary>
+            <value></value>
+            <returns>
+            A long value representing the length of the stream in bytes.
+            </returns>
+            <exception cref="T:System.NotSupportedException">
+            A class derived from Stream does not support seeking.
+            </exception>
+            <exception cref="T:System.ObjectDisposedException">
+            Methods were called after the stream was closed.
+            </exception>
+        </member>
+        <member name="P:Makolab.RestUpload.HttpUploadStream.Position">
+            <summary>
+            When overridden in a derived class, gets or sets the position within the current stream.
+            </summary>
+            <value></value>
+            <returns>
+            The current position within the stream.
+            </returns>
+            <exception cref="T:System.IO.IOException">
+            An I/O error occurs.
+            </exception>
+            <exception cref="T:System.NotSupportedException">
+            The stream does not support seeking.
+            </exception>
+            <exception cref="T:System.ObjectDisposedException">
+            Methods were called after the stream was closed.
+            </exception>
+        </member>
+        <member name="T:Makolab.RestUpload.UploadedFile">
+            <summary>
+            Class containing binary file data and filename.
+            </summary>
+        </member>
+        <member name="P:Makolab.RestUpload.UploadedFile.FileName">
+            <summary>
+            Original filename.
+            </summary>
+        </member>
+        <member name="P:Makolab.RestUpload.UploadedFile.FileIdentifier">
+            <summary>
+            Gets or sets the id that is used instead of file name to retrieve the file from repository.
+            </summary>
+            <value>The file identifier.</value>
+        </member>
+        <member name="P:Makolab.RestUpload.UploadedFile.Data">
+            <summary>
+            Binary file data.
+            </summary>
+        </member>
+        <member name="T:Makolab.RestUpload.UploadHelper">
+            <summary>
+            Main class containing methods for handling http uploads.
+            </summary>
+        </member>
+        <member name="M:Makolab.RestUpload.UploadHelper.ExtractFiles(System.Byte[])">
+            <summary>
+            Extracts files from the http request stream.
+            </summary>
+            <param name="input">Binary data from request (body).</param>
+            <returns>Collection of uploaded files.</returns>
+        </member>
+        <member name="M:Makolab.RestUpload.UploadHelper.ExtractFiles(System.IO.Stream)">
+            <summary>
+            Extracts files from the http request stream.
+            </summary>
+            <param name="input">Http request stream (body).</param>
+            <returns>Collection of uploaded files.</returns>
+        </member>
+    </members>
+</doc>

@@ -1,0 +1,7 @@
+<configuration>
+  <linesTableColumns>
+    <column node="ordinalNumber" headerKey="common.lp" header="Lp" dataFormat="decimal" width="30"/>
+    <column node="description" header="Opis"/>
+    <column node="amount" header="Kwota" dataFormat="money" width="100"/>
+  </linesTableColumns>
+</configuration>

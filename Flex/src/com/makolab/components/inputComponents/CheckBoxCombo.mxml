@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:ComboBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*" creationComplete="update()">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.XMLListCollection;
+			import mx.controls.CheckBox;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			protected var checkBox:CheckBox = new CheckBox();
+			
+			[Bindable]
+			public var _names:Object=null;// vartości przekazywane i otrzymywane do/od back-endu
+			
+			
+			public var _selectedItems:Array = [];
+			[Bindable]
+			public function set selectedItems(items:Array):void
+			{
+				_selectedItems = items;
+				if(dropdown)update();
+			}
+			
+			private var _selectedIndexes:Object;
+			public function set selectedIndexes(indexes:Object):void
+			{
+				_selectedIndexes = indexes;
+				var array:Array = [];
+				if (indexes is String) array = String(indexes).split(",");
+				else if (indexes is Array) array = indexes as Array;
+				// if it's not a String or Array maybe it's an XML or XMLList or anything we can convert to String, so
+				else array = String(indexes).split(",");
+				var items:Array = [];
+				
+				for (var i:int = 0; i < array.length; i++)
+				{
+					var index:int = Number(array[i]);
+					if (!isNaN(index) && index < length)
+					{
+						items.push(dataProvider[index]);
+					}
+				}
+				selectedItems = items;
+			}
+			
+			public function set selectedItemByName(str:String):void
+			{
+				var array:Array = str.split(";");
+			//	trace(str,_names.length())
+				var items:Array = [];
+				if(_names)
+				{
+					for (var i:int = 0; i < _names.length(); i++)
+					{
+						for (var j:int = 0; j < array.length; j++)
+						{
+							
+							if (array[j]==_names[i].toString())
+							{
+								items.push(dataProvider[i]);
+							}
+						}
+					}
+				}
+				else
+				{
+					for (var i:int = 0; i < dataProvider.length; i++)
+					{
+						for (var j:int = 0; j < array.length; j++)
+						{
+							
+							if (array[j]==dataProvider[i].toString())
+							{
+								items.push(dataProvider[i]);
+							}
+						}
+					}
+				}
+				selectedItems = items;
+				//if(dropdown)update();
+			}
+			public function get selectedIndexes():Object
+			{
+				var array:Array = [];
+				for (var i:int = 0; i < selectedItems.length; i++)
+				{
+					if (!dataProvider) return null;
+					for (var j:int = 0; j < dataProvider["length"]; j++)
+					{
+						if (dataProvider[j] == selectedItems[i])
+							array.push(j);
+					}
+				}
+				if (_selectedIndexes is String) return array.join(",");
+				else return array;
+			}
+			
+			private function update():void
+			{
+				//trace("update",_selectedItems,_selectedItems.length);
+			
+				dropdown.selectedItems = _selectedItems;
+				switch(_selectedItems.length){
+					case 0: 
+						//trace("update 0");
+						checkBox.selected = false;
+						checkBox.alpha = 1.0;
+						text = NONE_SELECTED;
+						break;
+					case 1:
+						checkBox.selected = true;
+						if(collection.length != 1)checkBox.alpha = 0.6;
+						else checkBox.alpha = 1.0;
+						if (this.labelField != 'label')
+							text = _selectedItems[0][labelField].toString();
+						else
+							if(_selectedItems[0].label.length())
+							text = _selectedItems[0].label.(@lang == LanguageManager.getInstance().currentLanguage);
+							else
+							{
+								text = _selectedItems[0].(@lang == LanguageManager.getInstance().currentLanguage);
+								
+							}
+						break;
+					case collection.length:
+						checkBox.selected = true;
+						checkBox.alpha = 1.0;
+						text = ALL_SELECTED;
+						break;
+					default:
+						checkBox.selected = true;
+						checkBox.alpha = 0.6;
+						if(_selectedItems.length <= 4)text = _selectedItems.length + " " + LESS_THEN_4_SELECTED;
+						else text = _selectedItems.length + " " + MORE_THEN_4_SELECTED;
+				}
+			}
+			
+			public function get selectedItems():Array
+			{
+				//return (dropdown as CheckBoxList).selectedItems;
+				return _selectedItems;
+			}
+			
+			public function get length():int
+			{
+				return collection.length;
+			}
+			
+			public function selectionToString():String
+			{
+				
+				var textValues:Array = [];
+				for (var i:int = 0; i < selectedItems.length; i++)
+				{
+					var str:String=
+						(selectedItems[i][labelField].@lang.length()>1)?selectedItems[i][labelField].(@lang==LanguageManager.getInstance().currentLanguage)[0]:selectedItems[i][labelField];
+					textValues.push(str);
+				}
+				return textValues.join(", ");
+			}
+			public function selectionNameToString():String
+			{
+				
+				var textValues:Array = [];
+				for (var i:int = 0; i < selectedItems.length; i++)
+				{
+					selectedItems[i].toString();
+					if(_names)
+					{
+						for(var j:int=0;j<dataProvider.length;j++)
+							if(selectedItems[i].toString()==dataProvider[j].toString())
+						textValues.push(_names[j].toString());
+						
+					}
+						else
+					textValues.push(selectedItems[i].toString());
+				}
+				return textValues.join(";");
+			}
+		
+			//private var ALL_SELECTED:String = LanguageManager.getInstance().labels.documentFilters.all;
+			//private var NONE_SELECTED:String = LanguageManager.getInstance().labels.documentFilters.none;
+			//private var SOME_SELECTED:String = LanguageManager.getInstance().labels.documentFilters.some;
+			
+			public function changeHandler(event:ListEvent):void
+			{
+				var itemsCount:int = 0;
+			
+				
+				_selectedItems = dropdown.selectedItems;
+				
+				//dropdown.selectedItems
+				itemsCount = dropdown.selectedItems.length;
+				switch(itemsCount){
+					case 0: 
+						checkBox.selected = false;
+						checkBox.alpha = 1.0;
+						text = NONE_SELECTED;
+						break;
+					case 1:
+						checkBox.selected = true;
+						if(collection.length != 1)checkBox.alpha = 0.6;
+						else checkBox.alpha = 1.0;
+						if (this.labelField != 'label') {
+							text = _selectedItems[0][labelField].toString();
+						} else {
+							if(_selectedItems[0].label.@lang != undefined) {
+								text = _selectedItems[0].label.(@lang == LanguageManager.getInstance().currentLanguage);
+							} else {
+								if(_selectedItems[0].label.length())
+								{
+									if(_selectedItems[0].label.@lang.length())
+										text = _selectedItems[0].label.(@lang == LanguageManager.getInstance().currentLanguage);
+									else
+										text = _selectedItems[0].label;
+								}else
+								{
+									text = _selectedItems[0].(@lang == LanguageManager.getInstance().currentLanguage);
+									
+								}
+								
+							}
+						}
+						break;
+					case collection.length:
+						checkBox.selected = true;
+						checkBox.alpha = 1.0;
+						text = ALL_SELECTED;
+						break;
+					default:
+						checkBox.selected = true;
+						checkBox.alpha = 0.6;
+						if(itemsCount <= 4)text = itemsCount + " " + LESS_THEN_4_SELECTED;
+						else text = itemsCount + " " + MORE_THEN_4_SELECTED;
+				}
+				dropdown.selectedItem = null;
+				dispatchEvent(new ListEvent(ListEvent.CHANGE));
+			}
+			
+			private function getSelectedItems():Array
+			{
+				var items:Array = [];
+				var objects:Object = dataProvider;
+				for each(var o:Object in objects){
+					items.push(o);
+				}
+				return items;
+			}
+			
+			public function selectAll():void
+			{
+				//(dropdown as CheckBoxList).selectAll();
+				selectedItems = getSelectedItems();
+			}
+			
+			public function deselectAll():void
+			{
+				selectedItems = [];
+			}
+			
+			private function handleCheckBoxSelection(event:Event):void
+			{
+				if(checkBox.selected){
+					text = ALL_SELECTED;
+					var selection:Array = [];
+					for each(var o:Object in (dropdown as CheckBoxList).dataProvider){
+						selection.push(o);
+					}
+					selectedItems = selection;
+				}
+				else {
+					(dropdown as CheckBoxList).deselectAll();
+					deselectAll();
+					text = NONE_SELECTED;
+				}
+				dispatchEvent(new ListEvent(ListEvent.CHANGE));
+			}
+			
+			override public function close(trigger:Event=null):void{
+				if(trigger){super.close(trigger)};
+			}
+			
+			override protected function createChildren():void
+			{
+				super.createChildren();
+				checkBox = new CheckBox();
+				checkBox.addEventListener("change",handleCheckBoxSelection);
+				addChild(checkBox);
+				checkBox.move(10,this.textInput.y + (checkBox.height / 2));
+				
+				textInput.move(textInput.x + 20,textInput.y);
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+			{
+				super.updateDisplayList(unscaledWidth,unscaledHeight);
+				checkBox.move(checkBox.x,(this.height - checkBox.height)/2);
+			}
+			
+			public function listInit():void
+			{
+				(dropdown as CheckBoxList).selectedItems = selectedItems;
+			}
+			
+			override public function set enabled(value:Boolean):void
+			{
+				super.enabled = value;
+				checkBox.enabled = value;
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:String id="ALL_SELECTED">{LanguageManager.getInstance().labels.documentFilters.all}</mx:String>
+	<mx:String id="NONE_SELECTED">{LanguageManager.getInstance().labels.documentFilters.none}</mx:String>
+	<mx:String id="LESS_THEN_4_SELECTED">{LanguageManager.getInstance().labels.documentFilters.lessThen4Selected}</mx:String>
+	<mx:String id="MORE_THEN_4_SELECTED">{LanguageManager.getInstance().labels.documentFilters.moreThen4Selected}</mx:String>
+	<mx:dropdownFactory>
+		<mx:Component>
+			<inputComponents:CheckBoxList change="outerDocument.changeHandler(event)" labelField="{outerDocument.labelField}" dataProvider="{outerDocument.dataProvider}" creationComplete="{selectedItems = outerDocument.selectedItems}"/>
+		</mx:Component>
+	</mx:dropdownFactory>
+</mx:ComboBox>

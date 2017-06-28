@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem width="100%" implements="com.makolab.components.catalogue.ICatalogueFilter" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:menu="com.makolab.fractus.view.menu.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.CatalogueFilterError;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			
+			import mx.binding.utils.BindingUtils;
+			
+			import flight.utils.config;
+			private var _config:XML
+			[Bindable]
+			public var columnName:String = "paymentMethodId";
+			
+			public function get value():Object
+			{
+				var ret:Array = [];
+				for(var i:int=0;i<payment.selectedItems.length;i++){
+					ret.push("'" + payment.selectedItems[i].id.* + "'");
+				}
+				return ret.join(",");
+			}
+			
+			public function set config(value:XML):void
+			{
+				_config = value;
+				if(_config.@labelKey.length())
+				{
+					var ka:Array=(_config.@labelKey).split('.');
+					if(ka.length)
+						BindingUtils.bindProperty(this,'label',LanguageManager.getInstance().labels,ka);
+					else
+						BindingUtils.bindProperty(this,'label',LanguageManager.getInstance().labels,_config.@labelKey);
+				}
+				else
+				label = _config.@label;
+			}
+			
+			public function get config():XML
+			{
+				return _config;
+			}
+			
+			public function setParameters(parameters:Object):void
+			{
+				if(payment.selectedItems.length == 0)throw new CatalogueFilterError("Nie zaznaczono żadnej metody płatności w filtrze metod płatności");//todo use LanguageManager
+					
+				if(value.toString() != ""){
+					if(!parameters.filters)parameters.filters = "";
+					var filterNodes:XMLList = parameters.filters.column.(@field == columnName);
+					if(payment.selectedItems.length != payment.length)
+					{
+						if(filterNodes.length() == 0){
+							var newCondition:XML = <column/>;
+							newCondition.@field = columnName;
+							newCondition.* = value;
+							parameters.filters.columns += newCondition;
+						}else{
+							filterNodes[0].* = value;
+						}
+					}else{
+						if(filterNodes.length() > 0){
+							delete filterNodes[0];
+						}
+						
+					}
+				}
+			}
+			
+			private function comboLabelFunction(item:Object):String
+			{
+				var ret:String = item.label.(@lang == LanguageManager.getInstance().currentLanguage).*; 
+				return ret;
+			}
+			
+			private function getSelectedItems(data:Object):Array
+			{
+				var items:Array = [];
+				var objects:Object = payment.dataProvider;
+				for each(var o:Object in objects){
+					items.push(o);
+				}
+				return items;
+			}
+			
+			private function setSelection():void
+			{
+				payment.selectedItems = getSelectedItems(null);
+			}
+			
+			public function set template(valueList:XMLList):void{
+				for each (var value:XML in valueList){
+				//todo: jesli filtr ma rozpoznawac, ktory elem. z listy jest dla niego, trzeba to tu dodać
+				
+				/*
+				<filter value="60,20"/>
+				*/
+				var items:Array = [];
+				var values:Array = String(value.@value).split(",");
+				for each (var v:String in values){
+					var objects:Object = payment.dataProvider;
+					for each(var o:Object in objects){
+						if(o.id.* == v)
+							items.push(o);
+					}
+				}
+				payment.selectedItems = items;
+				}
+			}
+			
+			public function clear():void{
+				if(payment.enabled)payment.selectAll();
+			}
+			
+			public function restore():void{
+				//todo
+				//trzeba dopisac cialo funkcji, jesli inny filtr ma miec mozliwosc przywracania stanu tego filtra sprzed wyczyszczenia go
+				//filtry mogą mieć wpływ na inne filtry poprzez wypelnienie w konfiguracji parametru 'disableFilterType', przyklad w DocNumberFilter
+			}
+		]]>
+	</mx:Script>
+	<inputComponents:CheckBoxCombo id="payment" creationComplete="setSelection()" width="100%" labelFunction="comboLabelFunction">
+			<inputComponents:dataProvider>
+				{DictionaryManager.getInstance().dictionaries.paymentMethod}
+			</inputComponents:dataProvider>
+		</inputComponents:CheckBoxCombo>
+</mx:FormItem>

@@ -1,0 +1,430 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		implements="com.makolab.fractus.view.documents.documentControls.IDocumentControl"
+		xmlns:inputComponents="com.makolab.components.inputComponents.*"
+		xmlns:catalogue="com.makolab.components.catalogue.*"
+		xmlns:catalogue1="com.makolab.fractus.view.catalogue.*" borderStyle="solid" borderColor="white">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.ContractorInfoPanel;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.components.lineList.LineOperationEvent;
+			import com.makolab.fractus.commands.CreateBusinessObjectCommand;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.dictionaries.editors.DocumentType;
+			import com.makolab.fractus.view.documents.plugins.DocumentValidationPlugin;
+			
+			import mx.containers.Box;
+			import mx.controls.Alert;
+			import mx.controls.ComboBox;
+			import mx.events.ValidationResultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.validators.ValidationResult;
+						
+			private var recipientId:Object;
+			
+			private var recipientAdress:Object;
+			//contractor from search
+			[Bindable]
+			public var recipientObject:XMLList;
+			
+			[Bindable]
+			public var enableAddressSelection:Boolean = true;
+			
+			[Bindable]
+			public var supplierFilter:Boolean;
+			
+			[Bindable]
+			public var receiverFilter:Boolean;
+			
+			private var _documentObject:DocumentObject;
+			private var firstRun:Boolean=true;
+			
+			
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				if(value==null)return;
+				var docType:String = DictionaryManager.getInstance().dictionaries.documentTypes.(valueOf().id == String(value.xml.documentTypeId)).symbol;
+				receiverFilter = false;
+				supplierFilter = false;
+				
+				var category:uint = value.typeDescriptor.categoryNumber;
+				
+				if(category == DocumentTypeDescriptor.CATEGORY_SALES ||
+					category == DocumentTypeDescriptor.CATEGORY_SALES_CORRECTION ||
+					value.typeDescriptor.isWarehouseOutcome ||
+					category == DocumentTypeDescriptor.CATEGORY_WAREHOUSE_OUTCOME_CORRECTION ||
+					value.typeDescriptor.isIncomeFinancialDocument ||
+					category == DocumentTypeDescriptor.CATEGORY_WAREHOUSE_RESERVATION)
+				receiverFilter = true;
+				
+				if(category == DocumentTypeDescriptor.CATEGORY_PURCHASE ||
+					category == DocumentTypeDescriptor.CATEGORY_PURCHASE_CORRECTION ||
+					value.typeDescriptor.isWarehouseIncome ||
+					category == DocumentTypeDescriptor.CATEGORY_WAREHOUSE_INCOME_CORRECTION ||
+					value.typeDescriptor.isOutcomeFinancialDocument ||
+					category == DocumentTypeDescriptor.CATEGORY_WAREHOUSE_RESERVATION ||
+					category == DocumentTypeDescriptor.CATEGORY_WAREHOUSE_ORDER)
+				supplierFilter = true;
+				
+				
+				
+				//na potrzeby stanu rendererEditor bo tam inna kontrolka jest
+				delete this.contractorSearchParams.filters;
+				
+				if (supplierFilter)
+					this.contractorSearchParams.appendChild(<filters><column field="isSupplier">1</column></filters>);
+				else if (receiverFilter)
+					this.contractorSearchParams.appendChild(<filters><column field="isReceiver">1</column></filters>);
+				//
+													
+				if (_documentObject)
+				{
+					_documentObject.removeEventListener(DocumentEvent.DOCUMENT_LOAD, handleDocumentLoad);
+					_documentObject.removeEventListener(ValidationResultEvent.INVALID, handleValidationEventt);
+					_documentObject.removeEventListener(DocumentEvent.DOCUMENT_FIELD_CHANGE, handleFieldChange);
+				}
+				
+				_documentObject = value;
+				
+				if (_documentObject)
+				{
+					_documentObject.addEventListener(DocumentEvent.DOCUMENT_LOAD, handleDocumentLoad);
+					_documentObject.addEventListener(ValidationResultEvent.INVALID, handleValidationEventt);
+					_documentObject.addEventListener(DocumentEvent.DOCUMENT_FIELD_CHANGE, handleFieldChange);
+					
+					if(_documentObject.xml.@disableContractorChange.length() > 0)
+					{
+						this.enabled = false;
+						
+						var spl:Array = String(_documentObject.xml.@disableContractorChange).split(/,/g);
+						var msg:String = '';
+
+						for (var i:String in spl) msg += LanguageManager.getLabel(spl[i]) + "\n";
+
+						this.toolTip = msg;
+					}
+					else if(documentObject.typeDescriptor.xmlOptions.@contractorOptionality == 'forbidden'){
+						this.enabled = false;
+					}
+					else
+					{
+						this.enabled = true;
+						this.toolTip = null;
+					}					
+				}
+				
+				handleDocumentLoad();
+			}
+			public function get documentObject():DocumentObject
+			{
+				return _documentObject;
+			}
+
+			[Bindable]
+			public var contractorFullName:String;
+			[Bindable]
+			public var contractorId:String;
+			
+			private function handleValidationEventt(event:ValidationResultEvent):void
+			{
+				for each(var valResult:ValidationResult in event.results)
+				{
+					if(valResult.subField == DocumentValidationPlugin.CONTRACTOR_SUBFIELD)
+					{
+						this.errorString = valResult.errorMessage;
+					}
+				}
+			}
+			
+			private function updateAddress(id:String):void
+			{
+				if(id != '') {
+					recipientObject.addressId = id;
+				} else {
+					if(recipientObject&&recipientObject.addressId) {
+						delete recipientObject.addressId;
+					}
+				}
+				
+			}
+			
+			/**
+			 * Assign a contractor to the document. This method loads complete data of the selected contractor
+			 * 
+			 * @item XML node representing a list entry of the selected contractor
+			 * @data 
+			 */
+			public function setContractor(item:Object, data:Object):void
+			{
+				if(item)
+					setContractorData(item.@id, item.@fullName);
+			}
+			
+			public function setContractorData(id:String, name:String = null):void
+			{
+				
+				if(id != null && id != '') {
+					var command:LoadBusinessObjectCommand = new LoadBusinessObjectCommand();
+					command.addEventListener(ResultEvent.RESULT, loadContractorResult);
+					command.execute( { type : "Contractor", id : id } );
+					contractorId = id;
+				} else {
+					contractorId = null;
+				}
+				
+				if (name) contractorFullName = name;
+				updateAddress('');	
+			}
+			
+			public function loadContractorResult(event:ResultEvent):void
+			{
+				//documentObject.xml.contractor.*
+				recipientObject= XML(event.result).contractor;
+				contractorFullName =recipientObject.fullName;// documentObject.xml.contractor.contractor.fullName;
+				if(recipientObject)
+				{
+					if(firstRun)
+					{
+						recipientObject.addressId=recipientAdress.value.toString();
+					}
+					else
+					{
+					recipientObject.addressId = getAddressForBillingDef(recipientObject).id.*;
+					}
+					firstRun=false;
+				}
+				addAttributes()
+				
+			}
+			
+			private function addAttributes():void
+			{
+				for(var i:int=0;i<documentObject.attributes.length;)
+				{
+					if(documentObject.attributes[i].documentFieldId.toString()==recipientAdress.documentFieldId.toString()||
+						documentObject.attributes[i].documentFieldId.toString()==recipientId.documentFieldId.toString())
+					{
+						documentObject.attributes.removeItemAt(i);
+					}
+					else
+						i++;
+				}
+				documentObject.attributes.addItem(<attribute><documentFieldId>{recipientId.documentFieldId.toString()}</documentFieldId>
+		<value>{recipientObject.id.toString()}</value>
+</attribute>);
+				
+				documentObject.attributes.addItem(    <attribute>
+						<documentFieldId>{recipientAdress.documentFieldId.toString()}</documentFieldId>
+						<value>{recipientObject.addressId.toString()}</value>
+					  </attribute>);
+				
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_FIELD_CHANGE, DocumentObject.FIELD_RECIPIENT_ADDRESS));
+			}
+			/**
+			 * Gets the contractor billing address. If the address is not present it gets default address.
+			 * 
+			 * @param contractor Contractor xml list (node).
+			 * 
+			 * @return Selected address for billing.
+			 */
+			protected function getAddressForBillingDef(contractor:XMLList):XML
+			{
+				var addressBilling:String = DictionaryManager.getInstance().getByName("Address_Billing").id;
+				var addressDefault:String = DictionaryManager.getInstance().getByName("Address_Default").id;
+				
+				var choosenAddress:XMLList = contractor.addresses.address.(contractorFieldId == addressBilling);
+				
+				if(choosenAddress.length() == 0)
+					choosenAddress = contractor.addresses.address.(contractorFieldId == addressDefault);
+				
+				if(choosenAddress.length() == 0)
+					choosenAddress = contractor.addresses.address[0]
+				
+				return XML(choosenAddress);			
+			}
+			public function addressSelectorListLabelFunction(item:Object):String
+			{
+				var addressLabel:String = DictionaryManager.getInstance().getById(item.contractorFieldId.*).label.*;
+				return addressLabel + ":\n" 
+					+ (String(item.city) != String(item.postOffice) ? (item.city + ", ") : "") + item.address + "\n" 
+					+ item.postCode + " " + item.postOffice;
+			}
+		
+			public function addressSelectorLabelFunction(item:Object):String
+			{
+				if (!item) return '';
+				if (String(item.address) != "")
+				{
+					recipientAdress.id=	recipientObject.addressId=item.id.toString();
+					addAttributes();
+					return String(item.address) + ", " + String(item.postCode) + " " + String(item.city);
+				}	
+				else
+					return String(item.postCode) + " " + String(item.city);
+			}
+			
+			protected function handleDocumentLoad(event:DocumentEvent = null):void
+			{
+				recipientAdress=ModelLocator.getInstance().dictionaryManager.dictionaries.documentAttributes.(name == 'Attribute_RecipientAddressId');
+				recipientAdress.documentFieldId=recipientAdress.id.toString();
+				recipientId=ModelLocator.getInstance().dictionaryManager.dictionaries.documentAttributes.(name == 'Attribute_RecipientId');
+				recipientId.documentFieldId=recipientId.id.toString();
+				var xxx:XML=documentObject.getAttribute("Attribute_RecipientId");
+				var yyy:XML=documentObject.getAttribute("Attribute_RecipientAddressId")
+				recipientAdress=yyy?yyy:recipientAdress;
+				recipientId=xxx?xxx:recipientId;
+				if(recipientObject)
+				{
+					contractorFullName = recipientObject.fullName;
+				}
+				if(xxx)
+				{
+					firstRun=true;
+					setContractorData(xxx.value.toString());
+				}
+				else
+				{
+					firstRun=false;
+				}
+			}
+			
+			public function getAddressForBilling(contractor:XMLList, addressId:XMLList):XML
+			{
+				if(contractor.contractor.length() == 0)
+					return null;
+				
+				if(contractor.addressId.length() != 0)
+				{
+					return XML(contractor.contractor.addresses.address.(id.* == contractor.addressId.*));
+				}
+				else
+				{
+					return null;
+				}
+			}
+			
+			private function handleFieldChange(event:DocumentEvent):void
+			{
+				if (event.fieldName != 'contractorId') return;
+				setContractorData(recipientObject.id);
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:states>
+		<mx:State name="editorNoAddress">
+			<mx:AddChild>
+				<catalogue1:ContractorSearchEditor
+						id="searchEditor"
+						width="500"
+						searchCommandType="contractors"
+						labelField="@fullName"
+						setFunction="{setContractor}"
+						data="{contractorFullName}"
+						itemId="{contractorId}"
+						itemReload="setContractorData(searchEditor.itemId)"
+						supplierFilter="{supplierFilter}"
+						receiverFilter="{receiverFilter}"
+					/>
+			</mx:AddChild>
+		</mx:State>
+		<mx:State name="editor" basedOn="editorNoAddress">
+			<mx:AddChild>
+				<inputComponents:DictionarySelector
+						id="addressSelector"
+						labelFunction="{addressSelectorLabelFunction}"
+						listLabelFunction="{addressSelectorListLabelFunction}"
+						width="500"
+						valueMapping="{{ 'id' : '*' }}"
+						dataProvider="{recipientObject.addresses.address}"
+						data="{recipientObject.addressId}"
+						change="updateAddress(String(addressSelector.dataObject))"
+						tabEnabled="false"
+					/>
+			</mx:AddChild>
+		</mx:State>
+		<mx:State name="rendererEditor">
+			<mx:AddChild>
+				<!-- wybor adresu -->
+				<inputComponents:EditorContainer
+						id="editorContainer"
+						change="
+							if(editorContainer.itemEditorInstance['addressSelector'].dataObject.length() > 0)
+							{
+						trace('Ssss');
+						recipientObject.addressId = editorContainer.itemEditorInstance['addressSelector'].dataObject;
+								documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_FIELD_CHANGE, 'contractorAddress'));
+							}
+						"
+						width="100%"
+					>
+					<inputComponents:itemEditor>
+						<mx:Component>
+							<mx:VBox width="100%">
+								<!-- wyszukiwanie kontrahenta -->
+								<catalogue:CatalogueSearchEditor
+										id="searchEditor"
+										width="100%"
+										searchCommandType="contractors"
+										labelField="@fullName"
+										setFunction="{outerDocument.setContractor}"
+										text="{outerDocument.contractorFullName}"
+										searchParams="{outerDocument.contractorSearchParams}"
+										filterFields="{['@shortName', '@fullName', '@code', '@nip']}"
+									/>
+								<!-- wybor adresu -->
+								<inputComponents:DictionarySelector
+										id="addressSelector"
+										width="100%"
+										labelFunction="{outerDocument.addressSelectorLabelFunction}"
+										listLabelFunction="{outerDocument.addressSelectorListLabelFunction}"
+										valueMapping="{{ 'id' : '*' }}"
+										dataProvider="{outerDocument.recipientObject.contractor.addresses.address}"
+										data="{outerDocument.recipientObject.addressId}"
+									/>
+							</mx:VBox>
+						</mx:Component>
+					</inputComponents:itemEditor>
+					<inputComponents:itemRenderer>
+						<mx:Component>
+							<mx:VBox width="100%">
+								<!-- wyswietlanie nazwy -->
+								<mx:Text
+										styleName="simpleContractorName"
+										text="{outerDocument.contractorFullName ? outerDocument.contractorFullName : '[ wybierz ]'}"
+										color="{outerDocument.contractorFullName ? 0x000000 : 0xcccccc}"
+									/>
+								<!-- wyswietlanie adresu -->
+								<inputComponents:AddressRenderer
+										data="{outerDocument.recipientObject.contractor.addresses.address.(id.* == outerDocument.recipientObject.addressId.*)}"
+									/>
+							</mx:VBox>
+						</mx:Component>
+					</inputComponents:itemRenderer>
+				</inputComponents:EditorContainer>
+			</mx:AddChild>
+		</mx:State>
+	</mx:states>
+	
+		<mx:XML id="contractorSearchParams" xmlns="">
+		<searchParams>
+			<query/>
+			<columns>
+				<column field="shortName" sortOrder="1" sortType="ASC"/>
+				<column field="fullName"/>
+				<column field="code"/>
+				<column field="nip"/>
+				<!--column field="version" sortOrder="3" sortType="ASC"/-->
+			</columns>
+		</searchParams>
+	</mx:XML>
+</mx:VBox>

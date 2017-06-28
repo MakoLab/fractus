@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" horizontalAlign="right" horizontalGap="3">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.components.inputComponents.CurrencyRenderer;
+			import mx.controls.Label;
+			private var _values:Object;
+			
+			private var valueFields:Object = {};
+			
+			public function set values(value:Object):void
+			{
+				_values = value;
+				for (var i:String in valueFields)
+				{
+					if (value && String(value[i])) valueFields[i].data = parseFloat(value[i]);
+					else valueFields[i].data = null;
+				}
+			}
+			
+			public function set config(columns:XMLList):void
+			{
+				this.removeAllChildren();
+				this.valueFields = {};
+				for each (var x:XML in columns)
+				{
+					var label:String;
+					if (String(x.@labelKey)) label = LanguageManager.getLabel(x.@labelKey);
+					else label = String(x.@label);
+					
+					
+					var showSystemCurrency:Boolean;
+					if(x.attribute("showSystemCurrency").toString() != "")
+					{
+						showSystemCurrency = Boolean(x.@showSystemCurrency);
+					}
+					else 
+					{
+						showSystemCurrency = false;
+					}
+										
+					addField(label, x.@field, showSystemCurrency);
+				}
+			}
+			
+			private function addField(label:String, field:String, showSystemCurrency:Boolean = false):void
+			{
+				var lLabel:Label = new Label();
+				lLabel.setStyle('color', 0x999999);
+				lLabel.text = label;
+				this.addChild(lLabel);
+				var vLabel:CurrencyRenderer = new CurrencyRenderer();
+				if(showSystemCurrency)
+				{
+					vLabel.currencyId = ModelLocator.getInstance().systemCurrencyId;
+				}
+				this.addChild(vLabel);
+				vLabel.setStyle('fontWeight', 'bold');
+				valueFields[field] = vLabel;
+			}
+			
+		]]>
+	</mx:Script>
+</mx:HBox>

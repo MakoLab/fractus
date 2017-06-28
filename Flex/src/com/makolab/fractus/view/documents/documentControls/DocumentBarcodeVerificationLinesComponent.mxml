@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ExtendedDataGrid
+	rowColorFunction="colorFunction"
+	xmlns="com.makolab.components.layoutComponents.*"
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="100%" height="300"
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	editable="true" selectable="false"
+	dataProvider="{verificationObject.lines}"
+	>
+	<columns>
+		<mx:DataGridColumn editable="false" headerText="{LanguageManager.getInstance().labels.common.lp}" minWidth="20" width="25" itemRenderer="com.makolab.components.inputComponents.OrdinalNumberRenderer"/>
+		<mx:DataGridColumn editable="false" headerText="{LanguageManager.getInstance().labels.common.code}" dataField="itemCode" width="270" headerWordWrap="true"/>
+		<mx:DataGridColumn editable="false" headerText="{LanguageManager.getInstance().labels.items.item}" dataField="itemName" headerWordWrap="true"/>	
+		<mx:DataGridColumn editable="false" headerText="{LanguageManager.getInstance().labels.common.jm}" dataField="unitId" width="40" minWidth="20" headerWordWrap="true" editorDataField="selectedId" itemEditor="com.makolab.fractus.view.generic.FractusDictionarySelector" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" headerStyleName="headerRight" />
+		<mx:DataGridColumn editable="false" headerText="{LanguageManager.getInstance().labels.common.amount}" dataField="itemQuantity" width="50" headerWordWrap="true" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+		<mx:DataGridColumn editable="true" id="verifColumn" headerText="{LanguageManager.getInstance().labels.documents.verifiedQuantity}" dataField="quantity" width="100" labelFunction="verifyQuantityLabelFunction" editorDataField="dataObject" headerWordWrap="true" headerStyleName="headerRight">
+			<mx:itemEditor>
+				<mx:Component>
+					<inputComponents:CurrencyEditor focusEnabled="false" change="outerDocument.handleQuantityChange(event, data)"/>
+				</mx:Component>
+			</mx:itemEditor>
+		</mx:DataGridColumn>
+	</columns>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.document.BusinessObject;
+			import com.makolab.fractus.model.document.CommercialDocumentLine;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.view.catalogue.BarcodeSearchWindow;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.rpc.events.ResultEvent;
+			
+			[Bindable]
+			public var verificationObject:DocumentBarcodeVerificationObject;
+			
+			[Bindable] public var color_ok:Object = "0xe2ffc9";
+			[Bindable] public var color_toMuch:Object = "0xffecc7";
+			[Bindable] public var color_unnown:Object = "0xffc7c7";
+			
+			[Bindable]
+			private var colorFunction:Function = function (data:Object):Object{
+				var quantity:int = Number(data.itemQuantity);
+				var vQuantity:int = verificationObject.getQuantity(data as DocumentBarcodeVerificationObjectLine);
+				if(quantity>0){
+					if(quantity == vQuantity)return color_ok;//zgodne
+					else if(quantity < vQuantity)return color_toMuch;//za duzo wzgledem faktury
+				}
+				else if(vQuantity>0) return color_unnown;//nie bylo na fakturze a jest zliczone
+				
+				return NaN;
+			};
+			
+			//private var _documentCategory:String;
+			
+			private var _documentObject:DocumentObject;
+			
+			public function get documentObject():DocumentObject { return _documentObject; }
+			
+			public function set documentObject(value:DocumentObject):void
+			{
+				_documentObject = value;
+				if (_documentObject && _documentObject.verificationObject) _documentObject.verificationObject.addLines(_documentObject.lines);
+				verificationObject = value.verificationObject;
+				if(value!=null) this.dataProvider = verificationObject.lines;
+				
+				var cmd:ExecuteCustomProcedureCommand;
+				if(_documentObject.typeDescriptor.documentCategory == "CommercialDocument")
+				{
+					cmd	= new ExecuteCustomProcedureCommand("item.p_getCommercialDocumentsAttributeExistance", <root attributeName="Attribute_Barcode">{documentObject.xml.id}</root>);
+				}
+				else if (_documentObject.typeDescriptor.documentCategory == "WarehouseDocument")
+				{
+					cmd = new ExecuteCustomProcedureCommand("item.p_getWarehouseDocumentsAttributeExistance", <root attributeName="Attribute_Barcode">{documentObject.xml.id}</root>);
+				}
+				else
+				{
+					Alert.show("Nieodpowiedni rodzaj dokumentu.");
+				}
+				
+				cmd.addEventListener(ResultEvent.RESULT, this.appendBarcodeData, false, 0, true);
+				cmd.execute();
+			}
+			
+			public function appendBarcodeData(event:ResultEvent):void
+			{
+				
+				var res:XML=XML(event.result);
+				if(!res.line.length())
+				{
+					for(var i:int=0;i<documentObject.lines.length;i++)
+					{
+						var val:String="";
+						if(documentObject.lines[i].itemId)
+						{
+							for(var j=0;j<documentObject.lines[i].attributes.length;j++)
+							{
+								if(documentObject.lines[i].attributes[j].fieldId=="barcode")
+								{
+									val=documentObject.lines[i].attributes[j].value;
+								}
+							}
+							var xmll:XML=<line attributeExistance="1" itemId="" lineId="" quantity="" itemCode="" itemName="" unitId="">
+								<value>{val}</value>
+							  </line>;
+							
+							xmll.@itemId=documentObject.lines[i].itemId;
+							xmll.@itemName=documentObject.lines[i].itemName;
+							xmll.@itemCode=documentObject.lines[i].itemCode;
+							xmll.@unitId=documentObject.lines[i].unitId;
+							//xmll.@lineId=documentObject.lines[i].id;
+							xmll.@quantity=documentObject.lines[i].quantity;
+							res.appendChild(xmll);
+						
+						}
+					}
+				}
+				for(var i:int = 0; i< ArrayCollection(this.dataProvider).length; i++)
+				{
+					for each(var item:XML in res.*)
+					{
+						if( DocumentBarcodeVerificationObjectLine(ArrayCollection(this.dataProvider)[i]).itemId == item.@itemId)
+						{
+							for each(var barcode:String in (item.value))
+							{
+								DocumentBarcodeVerificationObjectLine(ArrayCollection(this.dataProvider)[i]).itemBarcode.addItem(barcode);
+							}
+						}
+					}
+				}
+				
+			}
+			
+			private var _itemsCollection:ArrayCollection;
+			
+			public function get itemsCollection():ArrayCollection { return _itemsCollection; }
+			
+			public function set itemsCollection(items:ArrayCollection):void
+			{
+				_itemsCollection = items;
+				var temp:DocumentBarcodeVerificationObject = new DocumentBarcodeVerificationObject();
+				
+				temp.addLines(itemsCollection);
+				verificationObject = temp;
+				if(items!=null) this.dataProvider = verificationObject.lines;
+			}
+			
+			private function verifyQuantityLabelFunction(data:Object, listData:Object=null):String
+			{
+				return CurrencyManager.formatCurrency(verificationObject.getQuantity(data as DocumentBarcodeVerificationObjectLine),'-');
+			}
+			
+			public function handleQuantityChange(event:Event, data:Object):void
+			{
+				verificationObject.setQuantity(data as DocumentBarcodeVerificationObjectLine, event.target.dataObject);
+			}
+			
+			public function getFirstEmptyLineByBarcode(barcode:String):DocumentBarcodeVerificationObjectLine
+			{
+				var array:ArrayCollection = this.dataProvider as ArrayCollection;
+				var matchingLinesQuantity:int = getSameBarcodesQuantity(barcode);
+				var linesCounter:int = 0;
+				var barcodeMatch:Boolean = false;
+				for(var i:int = 0; i < array.length; i++)
+				{
+					barcodeMatch = false;
+					var tempBarcodeVerifyObjectLine:DocumentBarcodeVerificationObjectLine = DocumentBarcodeVerificationObjectLine((this.dataProvider as ArrayCollection).getItemAt(i));
+					var quantity:int = Number(tempBarcodeVerifyObjectLine.itemQuantity);
+					var vQuantity:int = verificationObject.getQuantity(tempBarcodeVerifyObjectLine as DocumentBarcodeVerificationObjectLine);
+					
+					for(var j:int = 0; j < tempBarcodeVerifyObjectLine.itemBarcode.length; j++)
+					{
+						if(tempBarcodeVerifyObjectLine.itemBarcode.getItemAt(j) == barcode)
+						{
+							barcodeMatch = true;
+							break;
+						}
+					}
+					if(barcodeMatch)
+					{
+						linesCounter++;
+						if((vQuantity < quantity) || (quantity == 0) || (linesCounter == matchingLinesQuantity))
+						{
+							return DocumentBarcodeVerificationObjectLine((this.dataProvider as ArrayCollection).getItemAt(i));
+						}
+					}
+				}
+				return null;
+			}
+			
+			public function getSameBarcodesQuantity(barcode:String):int
+			{
+				var array:ArrayCollection = this.dataProvider as ArrayCollection;
+				var quantity:int = 0;
+				var barcodeMatch:Boolean = false;
+				for(var i:int = 0; i < array.length; i++)
+				{
+					var tempBarcodeVerifyObjectLine:DocumentBarcodeVerificationObjectLine = DocumentBarcodeVerificationObjectLine((this.dataProvider as ArrayCollection).getItemAt(i));
+					for(var j:int = 0; j < tempBarcodeVerifyObjectLine.itemBarcode.length; j++)
+					{
+						barcodeMatch = false;
+						if(tempBarcodeVerifyObjectLine.itemBarcode.getItemAt(j) == barcode)
+						{
+							barcodeMatch = true;
+							break;
+						}
+					}
+					if(barcodeMatch)
+					{
+						quantity++;
+					}
+				}
+				return quantity;
+			}
+			
+			public function itemFound(item:Object):void{
+				
+				var line:DocumentBarcodeVerificationObjectLine;
+								
+				line = getFirstEmptyLineByBarcode(item.barcodes.barcode.toString());
+								
+				if(line == null) {
+					var l:Object = new Object();
+						l.itemId = String(item.@id);
+						l.quantity = 0;
+						if(String(item.@name) == "")
+						{
+							l.itemName = LanguageManager.getInstance().labels.documents.barcodeVerification.unknownItem + String(item.item.barcodes.barcode.toString());
+						}
+						else
+						{
+							l.itemName = String(item.@name);
+						}
+						l.itemCode = String(item.@code);
+						l.itemBarcode = String(item.barcodes.barcode.toString());
+						verificationObject.addLine(l);
+					
+						line = getFirstEmptyLineByBarcode(item.item.barcodes.barcode.toString());
+				}
+				verificationObject.setQuantity(line, 1, true);
+			}
+
+		]]>
+	</mx:Script>	
+</ExtendedDataGrid>

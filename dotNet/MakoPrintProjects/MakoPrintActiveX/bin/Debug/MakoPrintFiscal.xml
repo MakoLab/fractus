@@ -1,0 +1,614 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>MakoPrintFiscal</name>
+    </assembly>
+    <members>
+        <member name="T:Makolab.Printing.Fiscal.IFiscalPrinterDriver">
+            <summary>
+            Defines methods for all fiscal printer drivers.
+            </summary>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.IFiscalPrinterDriver.Configure(System.Xml.XmlNode)">
+            <summary>
+            Configures fiscal printer driver by setting the port name, speed etc.
+            </summary>
+            <param name="configuration">The printer configuration.</param>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.IFiscalPrinterDriver.PrintBill(System.Xml.XmlDocument)">
+            <summary>
+            Prints the bill.
+            </summary>
+            <param name="bill">The xml representation of bill.</param>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.IFiscalPrinterDriver.PrintDailyReport(System.Xml.XmlDocument)">
+            <summary>
+            Prints the daily report.
+            </summary>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.IFiscalPrinterDriver.Display(System.Xml.XmlDocument)">
+            <summary>
+            Sends the specified data to display.
+            </summary>
+            <param name="data">The data to display.</param>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.ElzabDriver.Configure(System.Xml.XmlNode)">
+            <summary>
+            Configures fiscal printer driver by setting the port name, speed etc.
+            </summary>
+            <param name="configuration">The printer configuration.</param>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.ElzabDriver.PrintBill(System.Xml.XmlDocument)">
+            <summary>
+            Prints the bill.
+            </summary>
+            <param name="bill">The xml representation of bill.</param>
+            
+            
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.ElzabDriver.PrintDailyReport(System.Xml.XmlDocument)">
+            <summary>
+            Prints the daily report.
+            </summary>
+            <param name="reportData"></param>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.ElzabDriver.Display(System.Xml.XmlDocument)">
+            <summary>
+            Sends the specified data to display.
+            </summary>
+            <param name="data">The data to display.</param>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.ElzabDriver.GetPortName(System.Xml.XmlNode)">
+            <summary>
+            Gets the name of the printer port from configuration.
+            </summary>
+            <param name="configuration">The configuration.</param>
+            <returns>Name of the printer port</returns>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.ElzabDriver.Dispose">
+            <summary>
+            Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+            </summary>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.ElzabDriver.Dispose(System.Boolean)">
+            <summary>
+            Releases unmanaged and - optionally - managed resources
+            </summary>
+            <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.ElzabLibWrapper.LibAdditionalLine(System.Int32,System.String)">
+            <summary>
+            Print additional line (ex. bill number)
+            </summary>
+            <param name="code">Code of template (ex. NUMER).</param>
+            <param name="text">Additional text.</param>
+            <returns>Error Message.</returns>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.ElzabLibWrapper.LibCommunicationInit(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Initialization communication with printer
+            </summary>
+            <param name="port">COM port number, ex. "1"</param>
+            <param name="speed">9600 bit/s</param>
+            <param name="timeout">5 sec</param>
+            <returns>Error Message.</returns>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.ElzabLibWrapper.LibCommunicationEnd">
+            <summary>
+            Closing communication with printer
+            </summary>
+            <returns>Error Message.</returns>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.ElzabLibWrapper.LibDailyReport(System.Int32)">
+            <summary>
+            Closing communication with printer
+            </summary>
+            <param name="unconditionally">1 - raport zostanie wykonany zawsze kiedy spełnione są jego warunki
+                                          0 - raport dobowy zostanie wykonany jeżeli zostałą wykonana sprzedaż</param>
+            <returns>Error Message.</returns>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.ElzabLibWrapper.LibErrMessage(System.Int32)">
+            <summary>
+            Error handling, translating code to message
+            </summary>
+            <param name="result">Code of template (ex. NUMER).</param>
+            <param name="errorMessage">Translated error message.</param>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.ElzabLibWrapper.LibReceiptBegin">
+            <summary>
+            Receipt Begin
+            </summary>
+            <returns>Error Message.</returns>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.ElzabLibWrapper.LibReceiptEnd(System.Int32)">
+            <summary>
+            Receipt End with optional discount
+            </summary>
+            <param name="discount">Percentage discount to bill</param>
+            <returns>Error Message.</returns>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.ElzabLibWrapper.LibReceiptItem(System.String,System.Int32,System.Int32,System.Int32,System.String,System.Int32,System.Int32)">
+            <summary>
+            Print receipt item
+            </summary>
+            <param name="name">fiscal name of item</param>
+            <param name="vatRate">Vat Rate (1 for A, etc.)</param>
+            <param name="quantity">quantity (without coma)</param>
+            <param name="coma">Coma position in quantity</param>
+            <param name="measure">Measure (ex. "szt.")</param>
+            <param name="price">Price of item</param>
+            <returns>Error Message.</returns>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.ElzabLibWrapper.LibRSSequence(System.Int32,System.Int32,System.Int32,System.Byte[],System.Byte[])">
+            <summary>
+            Allows using printer control sequence
+            </summary>
+            <param name="controlCode">Control sequence (ex. 0x43)</param>
+            <param name="quantityOfBytesToReceive">quantity of bytes (printer response)</param>
+            <param name="quantityOfBytesToSend">quantity of bytes to send</param>
+            <param name="InputBuffer">Buffer for printer response</param>
+            <param name="OutputBuffer">Buffer for data sent to printer</param>
+            <returns>Error Message.</returns>
+        </member>
+        <member name="T:Makolab.Printing.Fiscal.FiscalPrinterDriverFactory">
+            <summary>
+            Factory call that creates fiscal printer driver.
+            </summary>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.FiscalPrinterDriverFactory.CreateDriver(Makolab.Printing.Fiscal.PrinterModel,System.Xml.XmlNode)">
+            <summary>
+            Creates the driver for specified printer model.
+            </summary>
+            <param name="model">The printer model.</param>
+            <param name="configuration">The printer configuration.</param>
+            <returns>Created fiscal driver.</returns>
+        </member>
+        <member name="T:Makolab.Printing.Fiscal.MakoPrintFiscal">
+            <summary>
+            Class that prints document to fiscal printer.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.Fiscal.MakoPrintFiscal.printerDriver">
+            <summary>
+            Fiscal printer driver that is used for printing to specific printer.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.Fiscal.MakoPrintFiscal.SerialPortSyncRoot">
+            <summary>
+            Object that is used to synchronize access to serial port.
+            </summary>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.MakoPrintFiscal.#ctor(Makolab.Printing.Fiscal.PrinterModel,System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Makolab.Printing.Fiscal.MakoPrintFiscal"/> class.
+            </summary>
+            <param name="printer">The printer model.</param>
+            <param name="configuration">The printer configuration.</param>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.MakoPrintFiscal.PrintBill(System.String)">
+            <summary>
+            Prints the bill.
+            </summary>
+            <param name="bill">The bill.</param>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.MakoPrintFiscal.Generate(System.String,System.IO.Stream)">
+            <summary>
+            Prints specfied document to fiscal printer.
+            </summary>
+            <param name="xml">Input xml.</param>
+            <param name="output">Output stream, not used.</param>
+            <remarks>
+            xml should containt information from printed document and configuration for printer.
+            </remarks>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.MakoPrintFiscal.GetDocumentType(System.Xml.XmlDocument)">
+            <summary>
+            Gets the type of the document from specified xml.
+            </summary>
+            <param name="xmlData">The xml with document.</param>
+            <returns>The type of document.</returns>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.MakoPrintFiscal.GetConfiguration(System.Xml.XmlDocument)">
+            <summary>
+            Gets the configuration node from input xml.
+            </summary>
+            <param name="documentXml">The xml with configuration.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.MakoPrintFiscal.GetPrinterModel(System.Xml.XmlNode)">
+            <summary>
+            Gets the printer model from printer configuration.
+            </summary>
+            <param name="configuration">The printer configuration.</param>
+            <returns></returns>
+        </member>
+        <member name="T:System.Text.MazoviaEncoding">
+            <summary>
+            Represents Mazovia encoding of Unicode characters.
+            </summary>
+            <remarks>
+            If You wander why MazoviaEncoding does not inherits from Encoding instead of ASCIIEncoding, 
+            it's because SerialPort class accepts only few fixed encodings and ASCIIEncoding is one of them.
+            So if you want to use your custom encoding class with SerialPort it has to inherit from one of fixed encoding classes.
+            </remarks>
+        </member>
+        <member name="M:System.Text.MazoviaEncoding.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:System.Text.MazoviaEncoding"/> class.
+            </summary>
+        </member>
+        <member name="M:System.Text.MazoviaEncoding.GetBytes(System.String)">
+            <summary>
+            Encodes all the characters in the specified <see cref="T:System.String"/> into a sequence of bytes.
+            </summary>
+            <param name="s">String that is encoded.</param>
+            <returns>
+            A byte array containing the results of encoding the specified set of characters.
+            </returns>
+            <exception cref="T:System.ArgumentNullException">
+            	<paramref name="s"/> is null. </exception>
+            <exception cref="T:System.Text.EncoderFallbackException">A fallback occurred (see Understanding Encodings for complete explanation)-and-<see cref="P:System.Text.Encoding.EncoderFallback"/> is set to <see cref="T:System.Text.EncoderExceptionFallback"/>.</exception>
+        </member>
+        <member name="M:System.Text.MazoviaEncoding.GetString(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Decodes a sequence of bytes from the specified byte array into a string.
+            </summary>
+            <param name="bytes">The byte array containing the sequence of bytes to decode.</param>
+            <param name="index">The index of the first byte to decode.</param>
+            <param name="count">The number of bytes to decode.</param>
+            <returns>
+            A <see cref="T:System.String"/> containing the results of decoding the specified sequence of bytes.
+            </returns>
+            <exception cref="T:System.ArgumentNullException">
+            	<paramref name="bytes"/> is null. </exception>
+            <exception cref="T:System.ArgumentOutOfRangeException">
+            	<paramref name="index"/> or <paramref name="count"/> is less than zero.-or- <paramref name="index"/> and <paramref name="count"/> do not denote a valid range in <paramref name="bytes"/>. </exception>
+            <exception cref="T:System.Text.DecoderFallbackException">A fallback occurred (see Understanding Encodings for complete explanation)-and-<see cref="P:System.Text.Encoding.DecoderFallback"/> is set to <see cref="T:System.Text.DecoderExceptionFallback"/>.</exception>
+        </member>
+        <member name="M:System.Text.MazoviaEncoding.CharToByte(System.Char)">
+            <summary>
+            Returns the byte that represents specified char.
+            </summary>
+            <param name="c">The char.</param>
+            <returns>Byte represents specified char.</returns>
+        </member>
+        <member name="M:System.Text.MazoviaEncoding.ByteToChar(System.Byte)">
+            <summary>
+            Returns the char that is represented by specified byte.
+            </summary>
+            <param name="b">The byte.</param>
+            <returns>Char that is represented by specified byte.</returns>
+        </member>
+        <member name="M:System.Text.MazoviaEncoding.GetByteCount(System.Char[],System.Int32,System.Int32)">
+            <summary>
+            Calculates the number of bytes produced by encoding a set of characters from the specified character array.
+            </summary>
+            <param name="chars">The character array containing the set of characters to encode.</param>
+            <param name="index">The index of the first character to encode.</param>
+            <param name="count">The number of characters to encode.</param>
+            <returns>
+            The number of bytes produced by encoding the specified characters.
+            </returns>
+            <exception cref="T:System.ArgumentNullException">
+            	<paramref name="chars"/> is null. </exception>
+            <exception cref="T:System.ArgumentOutOfRangeException">
+            	<paramref name="index"/> or <paramref name="count"/> is less than zero.-or- <paramref name="index"/> and <paramref name="count"/> do not denote a valid range in <paramref name="chars"/>.-or- The resulting number of bytes is greater than the maximum number that can be returned as an integer. </exception>
+            <exception cref="T:System.Text.EncoderFallbackException">A fallback occurred (see Understanding Encodings for complete explanation)-and-<see cref="P:System.Text.Encoding.EncoderFallback"/> is set to <see cref="T:System.Text.EncoderExceptionFallback"/>.</exception>
+        </member>
+        <member name="M:System.Text.MazoviaEncoding.GetBytes(System.Char[],System.Int32,System.Int32,System.Byte[],System.Int32)">
+            <summary>
+            Encodes a set of characters from the specified character array into the specified byte array.
+            </summary>
+            <param name="chars">The character array containing the set of characters to encode.</param>
+            <param name="charIndex">The index of the first character to encode.</param>
+            <param name="charCount">The number of characters to encode.</param>
+            <param name="bytes">The byte array to contain the resulting sequence of bytes.</param>
+            <param name="byteIndex">The index at which to start writing the resulting sequence of bytes.</param>
+            <returns>
+            The actual number of bytes written into <paramref name="bytes"/>.
+            </returns>
+            <exception cref="T:System.ArgumentNullException">
+            	<paramref name="chars"/> is null.-or- <paramref name="bytes"/> is null. </exception>
+            <exception cref="T:System.ArgumentOutOfRangeException">
+            	<paramref name="charIndex"/> or <paramref name="charCount"/> or <paramref name="byteIndex"/> is less than zero.-or- <paramref name="charIndex"/> and <paramref name="charCount"/> do not denote a valid range in <paramref name="chars"/>.-or- <paramref name="byteIndex"/> is not a valid index in <paramref name="bytes"/>. </exception>
+            <exception cref="T:System.ArgumentException">
+            	<paramref name="bytes"/> does not have enough capacity from <paramref name="byteIndex"/> to the end of the array to accommodate the resulting bytes. </exception>
+            <exception cref="T:System.Text.EncoderFallbackException">A fallback occurred (see Understanding Encodings for complete explanation)-and-<see cref="P:System.Text.Encoding.EncoderFallback"/> is set to <see cref="T:System.Text.EncoderExceptionFallback"/>.</exception>
+        </member>
+        <member name="M:System.Text.MazoviaEncoding.GetCharCount(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Calculates the number of characters produced by decoding a sequence of bytes from the specified byte array.
+            </summary>
+            <param name="bytes">The byte array containing the sequence of bytes to decode.</param>
+            <param name="index">The index of the first byte to decode.</param>
+            <param name="count">The number of bytes to decode.</param>
+            <returns>
+            The number of characters produced by decoding the specified sequence of bytes.
+            </returns>
+            <exception cref="T:System.ArgumentNullException">
+            	<paramref name="bytes"/> is null. </exception>
+            <exception cref="T:System.ArgumentOutOfRangeException">
+            	<paramref name="index"/> or <paramref name="count"/> is less than zero.-or- <paramref name="index"/> and <paramref name="count"/> do not denote a valid range in <paramref name="bytes"/>.-or- The resulting number of bytes is greater than the maximum number that can be returned as an integer. </exception>
+            <exception cref="T:System.Text.DecoderFallbackException">A fallback occurred (see Understanding Encodings for complete explanation)-and-<see cref="P:System.Text.Encoding.DecoderFallback"/> is set to <see cref="T:System.Text.DecoderExceptionFallback"/>.</exception>
+        </member>
+        <member name="M:System.Text.MazoviaEncoding.GetChars(System.Byte[],System.Int32,System.Int32,System.Char[],System.Int32)">
+            <summary>
+            Decodes a sequence of bytes from the specified byte array into the specified character array.
+            </summary>
+            <param name="bytes">The byte array containing the sequence of bytes to decode.</param>
+            <param name="byteIndex">The index of the first byte to decode.</param>
+            <param name="byteCount">The number of bytes to decode.</param>
+            <param name="chars">The character array to contain the resulting set of characters.</param>
+            <param name="charIndex">The index at which to start writing the resulting set of characters.</param>
+            <returns>
+            The actual number of characters written into <paramref name="chars"/>.
+            </returns>
+            <exception cref="T:System.ArgumentNullException">
+            	<paramref name="bytes"/> is null.-or- <paramref name="chars"/> is null. </exception>
+            <exception cref="T:System.ArgumentOutOfRangeException">
+            	<paramref name="byteIndex"/> or <paramref name="byteCount"/> or <paramref name="charIndex"/> is less than zero.-or- <paramref name="byteindex"/> and <paramref name="byteCount"/> do not denote a valid range in <paramref name="bytes"/>.-or- <paramref name="charIndex"/> is not a valid index in <paramref name="chars"/>. </exception>
+            <exception cref="T:System.ArgumentException">
+            	<paramref name="chars"/> does not have enough capacity from <paramref name="charIndex"/> to the end of the array to accommodate the resulting characters. </exception>
+            <exception cref="T:System.Text.DecoderFallbackException">A fallback occurred (see Understanding Encodings for complete explanation)-and-<see cref="P:System.Text.Encoding.DecoderFallback"/> is set to <see cref="T:System.Text.DecoderExceptionFallback"/>.</exception>
+        </member>
+        <member name="M:System.Text.MazoviaEncoding.GetMaxByteCount(System.Int32)">
+            <summary>
+            Calculates the maximum number of bytes produced by encoding the specified number of characters.
+            </summary>
+            <param name="charCount">The number of characters to encode.</param>
+            <returns>
+            The maximum number of bytes produced by encoding the specified number of characters.
+            </returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">
+            	<paramref name="charCount"/> is less than zero.-or- The resulting number of bytes is greater than the maximum number that can be returned as an integer. </exception>
+        </member>
+        <member name="M:System.Text.MazoviaEncoding.GetMaxCharCount(System.Int32)">
+            <summary>
+            Calculates the maximum number of characters produced by decoding the specified number of bytes.
+            </summary>
+            <param name="byteCount">The number of bytes to decode.</param>
+            <returns>
+            The maximum number of characters produced by decoding the specified number of bytes.
+            </returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">
+            	<paramref name="byteCount"/> is less than zero.-or- The resulting number of bytes is greater than the maximum number that can be returned as an integer. </exception>
+        </member>
+        <member name="P:System.Text.MazoviaEncoding.Mazovia">
+            <summary>
+            Gets instance of <see cref="T:System.Text.MazoviaEncoding"/> class.
+            </summary>
+            <value>The <see cref="T:System.Text.MazoviaEncoding"/> object.</value>
+        </member>
+        <member name="P:System.Text.MazoviaEncoding.CodePage">
+            <summary>
+            Gets the code page identifier of the current <see cref="T:System.Text.Encoding"/>.
+            </summary>
+            <value></value>
+            <returns>The code page identifier of the current <see cref="T:System.Text.Encoding"/>.</returns>
+        </member>
+        <member name="P:System.Text.MazoviaEncoding.WindowsCodePage">
+            <summary>
+            Gets the Windows operating system code page that most closely corresponds to the current encoding.
+            </summary>
+            <value></value>
+            <returns>The Windows operating system code page that most closely corresponds to the current <see cref="T:System.Text.Encoding"/>.</returns>
+        </member>
+        <member name="T:Makolab.Printing.Fiscal.PosnetSpecialChars">
+            <summary>
+            Defines characters specific for Posnet fiscal printers.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.Fiscal.PosnetSpecialChars.CarriageReturn">
+            <summary>
+            Carriage return character.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.Fiscal.PosnetSpecialChars.NewLine">
+            <summary>
+            New line character.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.Fiscal.PosnetSpecialChars.BeginCommand">
+            <summary>
+            Characters that starts every command.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.Fiscal.PosnetSpecialChars.EndCommand">
+            <summary>
+            Characters that ends every command.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.Fiscal.PosnetSpecialChars.DLE">
+            <summary>
+            Return printer status command.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.Fiscal.PosnetSpecialChars.ENQ">
+            <summary>
+            Return printer status command.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.Fiscal.PosnetSpecialChars.BEL">
+            <summary>
+            Sound signal.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.Fiscal.PosnetSpecialChars.CAN">
+            <summary>
+            Stop interpreting current command.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.Fiscal.PosnetSpecialChars.DC1">
+            <summary>
+            No data to read character.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.Fiscal.PosnetSpecialChars.BlockErrorHandlingCommand">
+            <summary>
+            Block error messages command.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.Fiscal.PosnetSpecialChars.CancelTransactionCommand">
+            <summary>
+            Cancel unfinished transaction command.
+            </summary>
+        </member>
+        <member name="T:Makolab.Printing.Fiscal.PosnetThermal5VDriver">
+            <summary>
+            Driver that handles printing on Posnet Thermal 5V fiscal printer.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.Fiscal.PosnetThermal5VDriver.regexPatternLBERNRQ">
+            <summary>
+            Regular expressions pattern that extracts error code from printer LBERNRQ message.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.Fiscal.PosnetThermal5VDriver.printerPort">
+            <summary>
+            Serial port used to communicate with printer.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.Fiscal.PosnetThermal5VDriver.protocolOptions">
+            <summary>
+            Bit mask describing protocol variations:
+            0 - default for Thermal 5V etc. - dots in quantites and amounts, system number passed with # prefix
+            1 - no system number (start transaction with simplified LBTRSHDR)
+            2 - system number printed in header (no # prefix for extended LBTRSHDR)
+            4 - comma as a decimal separator in quantities
+            8 - comma as a decimal separator in amounts
+            16 - "wpłata" equal to document sum
+            32 - don't require ONL (on-line) bit = 1 before printing
+            64 - don't try to communicate with the printer before sending data to print
+            </summary>		
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.PosnetThermal5VDriver.Configure(System.Xml.XmlNode)">
+            <summary>
+            Configures fiscal printer driver by setting the port name, speed etc.
+            </summary>
+            <param name="configuration">The printer configuration.</param>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.PosnetThermal5VDriver.PrintBill(System.Xml.XmlDocument)">
+            <summary>
+            Prints the bill.
+            </summary>
+            <param name="bill">The xml representation of bill.</param>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.PosnetThermal5VDriver.PrintDailyReport(System.Xml.XmlDocument)">
+            <summary>
+            Prints the daily report.
+            </summary>
+            <param name="reportData"></param>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.PosnetThermal5VDriver.Display(System.Xml.XmlDocument)">
+            <summary>
+            Sends the specified data to display.
+            </summary>
+            <param name="data">The data to display.</param>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.PosnetThermal5VDriver.ValidatePrintOperation">
+            <summary>
+            Validates the printer state by checking error codes.
+            </summary>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.PosnetThermal5VDriver.PrintBillLines(System.Xml.XmlDocument,System.Text.StringBuilder)">
+            <summary>
+            Prints the bill lines.
+            </summary>
+            <param name="bill">The bill.</param>
+            <param name="outputStream">The output stream.</param>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.PosnetThermal5VDriver.PrepareLine(System.String)">
+            <summary>
+            Prepares the specified line for pinting by enclosing it with special characters and adding line checksum.
+            </summary>
+            <param name="line">The line.</param>
+            <returns>Line that is ready to be send to printer.</returns>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.PosnetThermal5VDriver.GenerateChecksum(System.String)">
+            <summary>
+            Generates the checksum for specified data.
+            </summary>
+            <param name="data">The data.</param>
+            <returns>Checksum of specified data.</returns>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.PosnetThermal5VDriver.StartBillTransaction(System.Int32,System.String,System.Text.StringBuilder)">
+            <summary>
+            Starts the bill transaction by printing specific command.
+            </summary>
+            <param name="amountOfLines">The amount of bill lines.</param>
+            <param name="additionalLine">The additional line.</param>
+            <param name="outputStream">The output stream.</param>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.PosnetThermal5VDriver.StopBillTransaction(System.String,System.String,System.String,System.Text.StringBuilder)">
+            <summary>
+            Commits the bill transaction by printing specific command.
+            </summary>
+            <param name="till">The till.</param>
+            <param name="cashier">The cashier.</param>
+            <param name="grossValue">The bill gross value.</param>
+            <param name="outputStream">The output stream.</param>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.PosnetThermal5VDriver.GetPortName(System.Xml.XmlNode)">
+            <summary>
+            Gets the name of the printer port from configuration.
+            </summary>
+            <param name="configuration">The configuration.</param>
+            <returns>Name of the printer port</returns>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.PosnetThermal5VDriver.GetProtocolOptions(System.Xml.XmlNode)">
+            <summary>
+            Gets the protocol options from configuration.
+            </summary>
+            <param name="configuration">The configuration.</param>
+            <returns>Number of the protocol</returns>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.PosnetThermal5VDriver.CheckPrinterPort">
+            <summary>
+            Checks the printer port status.
+            </summary>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.PosnetThermal5VDriver.Dispose">
+            <summary>
+            Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+            </summary>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.PosnetThermal5VDriver.Dispose(System.Boolean)">
+            <summary>
+            Releases unmanaged and - optionally - managed resources
+            </summary>
+            <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+        </member>
+        <member name="T:Makolab.Printing.Fiscal.PrinterModel">
+            <summary>
+            Specifies the type of fiscla printer.
+            </summary>
+        </member>
+        <member name="F:Makolab.Printing.Fiscal.PrinterModel.PosnetThermal5V">
+            <summary>
+            Printer is a Posnet Thermal 5V
+            </summary>
+        </member>
+        <member name="T:Makolab.Printing.Fiscal.SerialPortHelper">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.SerialPortHelper.ReadUntil(System.IO.Ports.SerialPort,System.String)">
+            <summary>
+            Reads from the specified port until specified character occurs.
+            </summary>
+            <param name="port">The port.</param>
+            <param name="terminatingCharacter">The character that stops read operation.</param>
+            <returns>Data read from port.</returns>
+        </member>
+        <member name="M:Makolab.Printing.Fiscal.SerialPortHelper.ReadUntil(System.IO.Ports.SerialPort,System.String,System.Int32)">
+            <summary>
+            Reads from the specified port until specified character occurs.
+            </summary>
+            <param name="port">The port.</param>
+            <param name="terminatingCharacter">The character that stops read operation.</param>
+            <param name="timeoutInMilliseconds">The timeout in milliseconds.</param>
+            <returns>Data read from port.</returns>
+        </member>
+    </members>
+</doc>

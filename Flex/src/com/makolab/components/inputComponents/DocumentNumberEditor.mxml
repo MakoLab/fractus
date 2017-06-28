@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+	initialize="handleInitialize(event)" 
+	creationComplete="handleCreationComplete(event)">
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.FocusManager;
+			import mx.controls.*;
+			import com.makolab.fractus.model.*;
+
+			/**
+			 * XMLList containing collection of numberSettingId in the following format:
+			 * <root>
+			 *   <item label="some label">guid</item>
+			 *   <item label="some label2">guid2</item>
+			 * </root>
+			 */
+			[Bindable]
+			public var dataProvider:XMLList;
+			
+			/**
+			 * Copy of data that UIComponents works on and that are bound to.
+			 */
+			[Bindable]
+			public var dataObject:Object;
+			/**
+			 * Lets you pass a value to the editor.
+			 * template:<br/>
+			 * &lt;number&gt;<br/>
+			*	  &lt;number&gt;36&lt;/number&gt;<br/>
+			*	  &lt;fullNumber&gt;36/FV_S/12/2008&lt;/fullNumber&gt;<br/>
+			*	  &lt;numberSettingId&gt;0A2155CE-7598-44C2-804B-333BC6332388&lt;/numberSettingId&gt;<br/>
+			*	&lt;/number&gt;
+			 * @see #dataObject
+			 */
+			override public function set data(value:Object):void
+			{
+				if(this.initialized)
+					this.dataObject = value;
+				
+				super.data = value;
+			}
+			
+			[Bindable] public var userModified:Boolean; 
+						
+			/**
+			 * Event handler for the <code>creationComplete</code> event.
+			 * 
+			 * @param event Event data.
+			 */
+			public function handleCreationComplete(event:Event):void
+			{
+				this.dataObject = this.data.copy();
+				if(!userModified)this.lstNumberSetting.selectedItem = XML(this.dataProvider.(valueOf().toString()==this.dataObject.numberSettingId.*));
+				this.txtInNumber.enabled = !this.cboxAutoAssign.selected;
+			}
+			
+			/**
+			 * Event handler for the <code>initialize</code> event.
+			 * 
+			 * @param event Event data.
+			 */
+			public function handleInitialize(event:Event):void
+			{
+				var numberSetting:XMLList = DictionaryManager.getInstance().dictionariesXML.numberSetting;
+				
+				var list:XML = new XML(<root/>);
+				
+				for each(var entry:Object in numberSetting.*)
+				{
+					list.appendChild(<item label={entry.label.*}>{entry.id.*}</item>);
+				}
+								
+				this.dataProvider = list.*;			
+			}
+			
+			/**
+			 * Event handler for the <code>change</code> event of check box auto assign.
+			 * 
+			 * @param event Event data.
+			 */
+			public function handleCheckBoxAutoAssignChange(event:Event):void
+			{
+				this.txtInNumber.enabled = !this.cboxAutoAssign.selected;
+			}
+			
+			/**
+			 * Event handler for the <code>close</code> event of lstNumberSetting popup button.
+			 * 
+			 * @param event Event data.
+			 */
+			public function handlePopUpButtonClose(event:Event):void
+			{
+				this.dispatchEvent(new FocusEvent(FocusEvent.FOCUS_OUT));
+			}
+		]]>
+	</mx:Script>
+	<mx:Binding source="txtInNumber.text" destination="this.dataObject.fullNumber" />
+	<mx:Binding source="lstNumberSetting.selectedItem.*" destination="this.dataObject.numberSettingId.*" />
+	<mx:Binding source="Number(!cboxAutoAssign.selected)" destination="this.dataObject.number.@userModified" />
+	<mx:HBox visible="{userModified}" includeInLayout="{userModified}">
+		<mx:TextInput id="txtInNumber" width="150" text="{this.dataObject.number.fullNumber}" focusOut="handlePopUpButtonClose(event)"/>
+		<mx:CheckBox id="cboxAutoAssign" 
+			selected="{!Boolean(parseInt(this.dataObject.number.@userModified))}"
+			label="Nadaj automatycznie"
+			change="handleCheckBoxAutoAssignChange(event)" 
+			visible="false"
+			includeInLayout="false"
+			/>
+	</mx:HBox>
+	<mx:HBox visible="{!userModified}" includeInLayout="{!userModified}">
+		<mx:PopUpButton label="{lstNumberSetting.selectedItem.@label}" openAlways="true" fontFamily="Arial" fontSize="14" close="handlePopUpButtonClose(event)">
+			<mx:popUp>
+				<mx:List
+					id="lstNumberSetting"
+					labelField="@label"
+					dataProvider="{dataProvider}"
+					rowCount="{Object(dataProvider).length()}"
+					backgroundAlpha="0.5"
+				/>
+			</mx:popUp>
+		</mx:PopUpButton>
+	</mx:HBox>
+</mx:HBox>

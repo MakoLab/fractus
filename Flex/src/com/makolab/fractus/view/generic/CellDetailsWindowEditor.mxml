@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	creationComplete="onCreationComplete()" xmlns:generic="com.makolab.fractus.view.generic.*" width="100%" height="100%">
+	
+	<mx:Metadata>
+		[Event(name="commit", type="flash.events.Event")]
+		[Event(name="close", type="flash.events.Event")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.ClassFactory2;
+			import com.makolab.fractus.model.document.DecisionComplainDocumentLine;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.controls.Button;
+			import mx.containers.HBox;
+			import mx.containers.TitleWindow;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.controls.Alert;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			public function load():void{}
+			
+			public function save():void{}	
+			
+			private var window:TitleWindow;
+			
+			[Bindable]
+			private var _itemData:Object;
+
+			[Bindable] 
+			public function set itemData (value:Object):void
+			{
+				this._itemData = value; 
+			}
+			
+			public function get itemData():Object
+			{
+				return this._itemData;
+			}
+			
+			private function onCreationComplete():void
+			{
+				this.load();
+			}
+			
+			private function commit(event:Event):void
+			{
+				this.save();
+				if(window)
+				{
+					window.dispatchEvent(new CloseEvent(CloseEvent.CLOSE));
+					PopUpManager.removePopUp(this.window);
+				}
+			}	
+			
+			private function close(event:Event):void
+			{
+				if(this.window)
+				{
+					window.dispatchEvent(new CloseEvent(CloseEvent.CLOSE));
+					PopUpManager.removePopUp(this.window);
+				}
+			}
+			
+			public static function showWindow(parent:DisplayObject ,itemData:Object, cellWindowEditor:CellDetailsWindowEditor, titleWindow:String):TitleWindow 
+			{
+				var editor:CellDetailsWindowEditor = cellWindowEditor;
+				editor.itemData = itemData;
+				
+				var window:TitleWindow = new TitleWindow();
+				window.width = 500;
+				window.height = 400;
+				window.addChild(editor);
+				window.title = titleWindow;
+				editor.window = window;
+				
+				var hBox:HBox = new HBox();
+				hBox.setStyle("horizontalAlign", "center");
+				hBox.width = window.width-8;
+				
+				var btnClose:Button = new Button();
+				btnClose.label = LanguageManager.getInstance().labels.common.cancel;
+				btnClose.addEventListener(MouseEvent.CLICK, editor.close, false, 0, true);
+				
+				var btnCommit:Button = new Button();
+				btnCommit.label = LanguageManager.getInstance().labels.common.accept;
+				btnCommit.addEventListener(MouseEvent.CLICK, editor.commit, false, 0, true);
+				
+				hBox.addChild(btnCommit);
+				hBox.addChild(btnClose);
+				hBox.setConstraintValue("bottom", 5);
+				hBox.setConstraintValue("left", 0);
+				
+				editor.addChild(hBox);
+				
+				PopUpManager.addPopUp(window, parent, true);
+				PopUpManager.centerPopUp(window);
+				editor.setFocus();
+				
+				return window;	
+			}
+		]]>
+	</mx:Script>
+
+</mx:Canvas>

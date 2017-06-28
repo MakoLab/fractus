@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:DataGrid xmlns:mx="http://www.adobe.com/2006/mxml" headerHeight="0" rowCount="3" selectable="false" verticalGridLines="false">
+	<mx:columns>
+		<mx:DataGridColumn dataField="description">
+			<mx:itemRenderer>
+				<mx:Component>
+					<mx:Canvas borderThickness="0" borderStyle="solid" width="100%" height="50" mouseOver="mouseOverHandler(event)" mouseOut="mouseOutHandler(event)" verticalScrollPolicy="off" horizontalScrollPolicy="off" useHandCursor="true">
+						<mx:Script>
+						<![CDATA[
+							private function mouseOverHandler(event:MouseEvent):void
+							{
+								currentState = "mouseOverState";
+							}
+							private function mouseOutHandler(event:MouseEvent):void
+							{
+								currentState = null;
+							}
+						]]>
+					</mx:Script>
+						<mx:TextArea editable="false" width="100%" maxHeight="30" top="0" bottom="20" borderThickness="0" text="{data.description}" backgroundAlpha="0" paddingLeft="10" paddingRight="10"/>
+						<mx:states>
+							<mx:State name="mouseOverState">
+								<mx:AddChild creationPolicy="all">
+									<mx:HBox width="100%" bottom="0" mouseOver="mouseOverHandler(event)" horizontalGap="0" mouseOut="mouseOutHandler(event)" horizontalAlign="right">
+										<mx:LinkButton label="zmień datę" height="20"/>
+										<mx:LinkButton label="zrobione" height="20"/>
+									</mx:HBox>
+								</mx:AddChild>
+								<mx:SetStyle name="borderThickness" value="4"/>
+							</mx:State>
+						</mx:states>
+					</mx:Canvas>
+				</mx:Component>
+			</mx:itemRenderer>
+		</mx:DataGridColumn>
+	</mx:columns>
+	<mx:dataProvider>
+		<mx:ArrayCollection>
+	         <mx:Object>
+	            <mx:description>Opis zadania 1.</mx:description>
+	         </mx:Object>
+	         <mx:Object>
+	            <mx:description>Opis zadania 2.</mx:description>
+	         </mx:Object>
+	         <mx:Object>
+	            <mx:description>Opis zadania 3.</mx:description>
+	         </mx:Object>
+	         <mx:Object>
+	            <mx:description>Opis zadania 4.</mx:description>
+	         </mx:Object>
+	      </mx:ArrayCollection>
+	</mx:dataProvider>
+
+</mx:DataGrid>

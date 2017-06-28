@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="100%" height="100%" 
+	xmlns:commonGrid="com.makolab.components.commonGrid.*" 
+	xmlns:list="com.makolab.components.list.*"
+	horizontalScrollPolicy="off"
+	verticalGap="10" xmlns:filters="com.makolab.fractus.view.documents.reports.filters.*" xmlns:catalogue="com.makolab.fractus.view.catalogue.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.commands.items.ItemCreateEquivalentCommand;
+			import mx.collections.ICollectionView;
+			import com.makolab.fractus.commands.items.ItemRemoveEquivalentCommand;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.controls.Alert;
+			
+			[Bindable]
+			public var columns:XMLList;
+			
+			private var loadRelations:Boolean = true;
+			
+			[Bindable]
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				//trace("set data: " + data.toString());
+				if(loadRelations) {
+					getRelations();
+					loadRelations = false;
+				}
+			}
+			
+			private function getRelations():void {
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("item.p_getItemEquivalentsXML", XML('<root>'+data.id+'</root>'));
+				cmd.addEventListener(ResultEvent.RESULT, handleResult);
+				cmd.execute();
+			}
+		
+			private function handleResult(event:ResultEvent):void {			
+				var result:XML = XML(event.result);
+				grid.dataProvider = XMLList(result.item);
+			}
+			
+			
+			
+			
+			private function deleteEquivalent():void	
+			{
+				var params:XML = new XML("<params/>");
+				var id:String = data.id.toString();
+				
+				for each(var xml:XML in grid.selectedItems)	{
+					var xl:XML = new XML('<item id="'+id+'" relatedItemId="'+xml.@id+'"></item>');
+					params.appendChild(xl);
+					if(deleteBothSidedEquivalent.selected) {
+						xl = new XML('<item id="'+xml.@id+'" relatedItemId="'+id+'"></item>');
+						params.appendChild(xl);
+					}
+				}
+				
+				// wolanie komendy jest niepotrzebne bo serwer usunie towar z grupy po zatwierdzeniu calego XML towaru
+				var cmd:ItemRemoveEquivalentCommand = new ItemRemoveEquivalentCommand();
+				cmd.addEventListener(ResultEvent.RESULT, onResultHandler);
+				cmd.execute(params.toXMLString());
+				//data.relations = '';
+				//grid.dataProvider = null;
+			}
+			
+			private function addEquivalent():void {
+				var temp:XMLList = XMLList(itemSearch.cs.dataSelectedObject);
+				
+				//data.relations.relation.relatedObject.customXmlList.customXmlList == (itemSearch.cs.dataSelectedObject);
+				if(temp.length() && temp.@id && temp.@id != '') {
+					var params: XML = new XML("<params/>");
+					var xl:XML = new XML('<item id="'+data.id+'" relatedItemId="'+temp.@id+'"></item>');
+					params.appendChild(xl);
+					if(bothSidedEquivalent.selected) {
+						xl = new XML('<item id="'+temp.@id+'" relatedItemId="'+data.id+'"></item>');
+						params.appendChild(xl);
+					}
+					var cmd:ItemCreateEquivalentCommand = new ItemCreateEquivalentCommand();
+					cmd.addEventListener(ResultEvent.RESULT, onResultHandler);
+					cmd.execute(params.toXMLString());
+				}
+			}
+			
+			private function onResultHandler(event:ResultEvent):void {
+				getRelations();
+				loadBisnessObject();
+			}
+			
+			private function loadBisnessObject():void {
+				var loadCmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand();
+				loadCmd.addEventListener(ResultEvent.RESULT, handleCommandResult);
+				loadCmd.execute({ 'id' : data.id, 'type' : 'Item' });
+			}
+			
+			private function handleCommandResult(event:ResultEvent):void {
+				var result:XML = XML(event.result);
+				data.relations.relation.((@type == 'ItemRelation') && (delete parent().children()[valueOf().childIndex()]));
+				data.relations.appendChild(result.item.relations.relation.(@type == 'ItemRelation'));
+				data.version = result.item.version;
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:Label text="{LanguageManager.getInstance().labels.items.item}: {data.name}"/>
+	<mx:VBox horizontalGap="20" verticalGap="20" width="100%" horizontalScrollPolicy="off">
+		<mx:VBox verticalGap="0" width="100%" horizontalScrollPolicy="off">
+			<mx:HBox width="100%">
+				<catalogue:ItemSearchEditor 
+						id="itemSearch"
+						searchCommandType="items"
+						showItemOperations="false"
+						width="100%"
+					/>
+				<!--
+				<filters:ItemFilter id="itemF" label="{LanguageManager.getInstance().labels.reports.filters.item}" width="100%" useAsFilter="false"/>
+				-->
+				<mx:Button label="{LanguageManager.getInstance().labels.items.forms.item.addEquivalent}" click="addEquivalent()"/>
+			</mx:HBox>
+			<mx:CheckBox id="bothSidedEquivalent" selected="true" label="{LanguageManager.getInstance().labels.items.forms.item.bothSidedEquivalent}"/>
+		</mx:VBox>
+		<mx:VBox verticalGap="0" width="100%" horizontalScrollPolicy="off">
+			<mx:Button label="{LanguageManager.getInstance().labels.items.forms.item.deleteEquivalent}" click="deleteEquivalent()"/>
+			<mx:CheckBox id="deleteBothSidedEquivalent" selected="true" label="{LanguageManager.getInstance().labels.items.forms.item.deleteBothSidedEquivalent}"/>
+		</mx:VBox>
+	</mx:VBox>
+	
+	<list:CommonGrid allowMultipleSelection="true" id="grid" width="100%" config="{columns}" height="100%" />
+	<!--
+	<list:CommonGrid allowMultipleSelection="true" id="grid" width="100%" dataProvider="{data.relations.relation.relatedObject.customXmlList.customXmlList.item}" config="{columns}" height="100%" />
+	-->
+</mx:VBox>

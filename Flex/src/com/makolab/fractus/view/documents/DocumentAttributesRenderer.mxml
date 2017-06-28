@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*"
+	width="100%">
+<mx:Script>
+	<![CDATA[
+		import com.makolab.fractus.model.DictionaryManager;
+		[Bindable]
+		public var documentXML:XML;
+		
+		private function getDataProvider(xml:XML):XMLList
+		{
+			if(xml)
+			{
+				var provider:XMLList = new XMLList();
+				
+				for each(var field:XML in DictionaryManager.getInstance().dictionaries.documentFields)
+				{
+					var attributes:XMLList = xml.attributes.attribute.(valueOf().documentFieldId.* == field.id.*);
+					
+					provider += attributes;				
+				}
+				
+				return provider;
+			}
+			else return null;
+		}
+	]]>
+</mx:Script>
+	<mx:Form width="100%" >
+		<mx:Repeater width="100%" id="rptr" dataProvider="{getDataProvider(documentXML)}">
+			<documentControls:KeyValueAttributeRenderer idField="documentFieldId" data="{rptr.currentItem}" width="100%"/>
+		</mx:Repeater>
+	</mx:Form>
+</mx:VBox>

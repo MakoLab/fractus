@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MultiToggleButtonBox xmlns="com.makolab.components.layoutComponents.*" xmlns:mx="http://www.adobe.com/2006/mxml" change="changeHandler(event)">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Button;
+			import mx.events.ListEvent;
+			import com.makolab.components.document.DocumentEvent;
+			import mx.collections.XMLListCollection;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.document.DocumentObject;
+			
+			public var paymentEditor:QuickSalesPaymentEditor = new QuickSalesPaymentEditor();
+			public var paymentsSummary:PaymentsEditorSummary = new PaymentsEditorSummary();
+			
+			private var documentObjectChanged:Boolean;
+			private var _documentObject:DocumentObject;
+			[Bindable("documentObjectChanged")]
+			public function set documentObject(value:DocumentObject):void
+			{
+				_documentObject = value;
+				paymentEditor.documentObject = _documentObject;
+				paymentsSummary.documentObject = _documentObject;
+				documentObjectChanged = true;
+				invalidateProperties();
+				dispatchEvent(new Event("documentObjectChanged"));
+				
+			}
+			public function get documentObject():DocumentObject
+			{
+				return _documentObject;
+			}
+			
+			private function setDataProvider():void
+			{
+				var payments:XMLListCollection = new XMLListCollection();
+				for each (var method:XML in documentObject.typeDescriptor.availablePaymentMethods)
+				{
+					var payment:XML = createLine();
+					payment.paymentMethodId = method.id.toString();
+					payment.label = method.label.(@lang == ModelLocator.getInstance().languageManager.currentLanguage).toString();
+					payments.addItem(payment.copy());
+				}
+				dataProvider = documentObject.typeDescriptor.availablePaymentMethods;//payments;
+			}
+
+			private function createLine():XML
+			{
+				var template:XML = XML(paymentTemplate.*[0]).copy();
+				template.paymentCurrencyId = ModelLocator.getInstance().systemCurrencyId;
+				template.exchangeDate = documentObject.xml.exchangeDate.toString();
+				return template;
+			}
+			
+			private function setDefaultSelection():void
+			{
+				var selection:Array = [];
+				var payments:XMLList = new XMLList();
+				if (documentObject.paymentsXML && documentObject.paymentsXML.payment.length() > 0)
+					for each (var existing:XML in documentObject.paymentsXML.payment)
+					{
+						var method:XML = documentObject.typeDescriptor.availablePaymentMethods.(id.toString() == existing.paymentMethodId.toString())[0];
+						existing.label = method.label.(@lang == ModelLocator.getInstance().languageManager.currentLanguage).toString();
+						selection.push(method);
+					}
+				selectedItems = selection;
+			}
+			
+			override protected function commitProperties():void
+			{
+				if (documentObjectChanged)
+				{
+					setDataProvider();
+					setDefaultSelection();
+					documentObjectChanged = false;
+				}
+				super.commitProperties();
+			}
+			
+			private function changeHandler(event:ListEvent):void
+			{
+				var button:Button = event.itemRenderer as Button;
+				var method:XML = button.data as XML;
+				if (button.selected)
+				{
+					var payment:XML = createLine();
+					payment.paymentMethodId = method.id.toString();
+					payment.label = method.label.(@lang == ModelLocator.getInstance().languageManager.currentLanguage).toString();
+					documentObject.paymentsXML.appendChild(payment);
+					documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_PAYMENT_CHANGE,null,payment));
+				}
+				else
+				{
+					delete documentObject.paymentsXML.payment.(paymentMethodId.toString() == method.id.toString())[0];
+					documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_PAYMENT_CHANGE));
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:XML id="paymentTemplate" xmlns="">
+		<payments>
+		      <payment>
+		      	<exchangeRate>1</exchangeRate>
+		      	<exchangeScale>1</exchangeScale>
+		      	<exchangeDate></exchangeDate>
+		      </payment>
+		</payments>		
+	</mx:XML>
+</MultiToggleButtonBox>

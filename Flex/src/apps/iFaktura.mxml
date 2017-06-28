@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		layout="absolute"
+		creationComplete="xmlService.send()"
+		xmlns:document="com.makolab.components.document.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+		]]>
+	</mx:Script>
+
+	<document:iFakturaComponent
+			id="documentEditor"
+			width="100%" height="100%"
+			documentXML="{documentXML}"
+			lineTemplate="{lineTemplate}"
+			itemCategories="{dictionaries.itemCategories.category}"
+			vatRates="{dictionaries.vatRates.vatRate}"
+		/>
+	
+	<mx:Style>
+		DataGrid
+		{	
+			verticalGridLines: false;
+			borderSides: 'top';
+			horizontalGridLineColor: #000000;
+			alternatingItemColors: #ffffff, #ffffff;
+			borderColor: #000000;
+			borderThickness: 1;
+			themeColor: #c0c0c0;
+			headerColors: #dddddd, #dddddd;
+			horizontalGridLines: true;
+			selectionColor: #e0e0ff;
+			headerSeparatorSkin: ClassReference('mx.skins.Border');
+		}
+	</mx:Style>
+
+	<!-- service pobierajacy cache towarow -->	
+	<mx:HTTPService id="xmlService" fault="Alert.show(event.fault.message)" result="documentEditor.itemDirectory = XML(event.result)" url="xml/kartoteka.xml" resultFormat="e4x" />
+
+	<mx:XML id="documentXML" source="xml/iFakturaDocument.xml"/>
+	
+	<mx:XML id="dictionaries" source="xml/iFakturaDictionaries.xml"/>
+	
+	<mx:XML id="lineTemplate">
+	 <Line>
+	  <Item></Item>
+      <Quantity>1</Quantity>
+      <DiscountRate>0</DiscountRate>
+      <NetPrice>0</NetPrice>
+      <GrossPrice>0</GrossPrice>
+      <NetPriceDiscounted>0</NetPriceDiscounted>
+      <GrossPriceDiscounted>0</GrossPriceDiscounted>
+      <LineNet>0</LineNet>
+      <LineGross>0</LineGross>
+      <VatRate VatRateId="1">22</VatRate>
+      <WarehouseId>0</WarehouseId>
+      <LastPurchasePriceProfitMargin>0</LastPurchasePriceProfitMargin>
+      <LineVatAmount>0</LineVatAmount>
+      <DiscountAmount>0</DiscountAmount>
+      <UnitOfMeasure>?</UnitOfMeasure>
+     </Line>
+	</mx:XML>
+</mx:Application>

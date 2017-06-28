@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	verticalGap="0" height="0" 
+	xmlns:template="com.makolab.components.document.template.*"
+	implements="com.makolab.components.util.IExportableComponent"
+	creationComplete="init()">
+	
+	<mx:Metadata>
+		[Event(name="edit", type="flash.events.Event")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.components.util.ComponentExportManagerDialog2;
+			import com.makolab.components.util.ComponentExportManagerDialog;
+			import mx.managers.PopUpManager;
+			import mx.core.IFlexDisplayObject;
+			import com.makolab.components.util.ComponentExportManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.controls.Alert;
+			
+			private var _data:Object;				
+			/**
+			 * Lets you pass a value to the editor.
+			 */
+			[Bindable]
+			override public function set data(value:Object):void	{
+				_data = value;
+				if(data[0])this.height = NaN;
+				else this.height = 0;
+				init();
+			}
+			/**
+			 * @private
+			 */
+			override public function get data(): Object	{
+				return _data;
+			}
+			
+			/**
+			 * Handler for <code>creationComplete</code> event.
+			 */
+			private function init():void
+			{
+				this.contextMenu = ComponentExportManager.getInstance().getExportMenu();
+			}
+			
+			/**
+			 * Shows the export dialog window.
+			 */
+			public function showExportDialog() : void {
+				var dialog:IFlexDisplayObject = PopUpManager.createPopUp(ModelLocator.getInstance().applicationObject, ComponentExportManagerDialog2, true);
+				PopUpManager.centerPopUp(dialog);
+			}
+			
+			/**
+			 * Exports an XML to a given format.
+			 */
+			public function exportXml(format:String):XML
+			{
+				ModelLocator.getInstance().exportListXML = <id>{data.id}</id>;
+				return ModelLocator.getInstance().exportListXML;
+			}
+			
+			public static function showWindow(contractorId:String):ComponentWindow
+			{
+				var renderer:ContractorRenderer = new ContractorRenderer();
+				var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand(LoadBusinessObjectCommand.TYPE_CONTRACTOR, contractorId);
+				cmd.targetObject = renderer;
+				cmd.targetField = 'data';
+				cmd.noRoot = true;
+				cmd.execute();
+				return ComponentWindow.showWindow(renderer, 0, new Rectangle(-1, -1, 300, 200));
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:Style>
+		.headerBar
+		{
+			paddingBottom:0;
+			paddingTop:0;
+			cornerRadius:0;
+			fillColors:#fff, #003;
+			fillAlphas:0.2,0.5;
+		}
+		.header
+		{
+			font-size: 16pt;
+			font-weight: bold;
+		}
+		.subHeader
+		{
+			padding-top: 5pt;
+			padding-left: 10pt;
+			font-size: 12pt;
+			font-weight: normal;
+		}
+		.address
+		{
+			padding-left: 10pt;
+			font-size: 12pt;
+			/*
+			font-style: italic;
+			*/
+		}
+		.attributeLabel
+		{
+			padding-left: 0pt;
+			font-size: 10pt;
+			font-weight: bold;
+		}
+		.attributeValue
+		{
+			padding-left: 10pt;
+			font-size: 10pt;
+		}
+		.link
+		{
+			color: blue; 
+			fontFamily: Arial; 
+			textRollOverColor: blue;
+			font-size: 10pt;
+		}
+	</mx:Style>
+	
+	<mx:Text text="{data.shortName}" width="100%" styleName="header"/>
+	<mx:HBox>
+		<mx:Text text="{data.fullName}" styleName="subHeader" width="100%"/>
+		<mx:Button label="{LanguageManager.getInstance().labels.contractors.forms.contractor.titleEdit}" click="dispatchEvent(new Event('edit'))"/>
+	</mx:HBox>
+	
+	<mx:Tile direction="horizontal" width="100%">
+		<mx:Repeater id="rp" dataProvider="{data.addresses.*}" styleName="address">
+			<mx:VBox verticalGap="0">
+				<mx:Text styleName="attributeLabel"
+						text="{DictionaryManager.getInstance().dictionaries.getById(rp.currentItem.contractorFieldId).label}"
+					/>
+				<inputComponents:AddressRenderer width="100%" styleName="address" data="{rp.currentItem}" paddingBottom="0" paddingTop="0"/>
+			</mx:VBox>
+		</mx:Repeater>
+	</mx:Tile>
+	<mx:Tile direction="horizontal" width="100%" height="100%">
+		<mx:Repeater id="rpa" dataProvider="{data.attributes.*}">
+			<inputComponents:AttributeRenderer backgroundColor="0xdddddd" data="{rpa.currentItem}" idField="contractorFieldId"/>
+			<!--
+			<mx:HBox>
+				<mx:Label styleName="attributeLabel"
+						text="{DictionaryManager.getInstance().dictionaries.getById(rpa.currentItem.contractorFieldId).label}"
+					/>
+				<mx:Label styleName="attributeValue" width="100%" htmlText="{getHTMLText(rpa.currentItem.value)}" selectable="true" link="onLinkClick(event)"/>	
+			</mx:HBox>
+			-->
+		</mx:Repeater>
+	</mx:Tile>
+</mx:VBox>

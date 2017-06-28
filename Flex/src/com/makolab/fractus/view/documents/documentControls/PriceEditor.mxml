@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" xmlns:inputComponents="com.makolab.components.inputComponents.*" horizontalGap="0" horizontalScrollPolicy="off" creationComplete="creationCompleteHandler()">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.controls.List;
+			import mx.events.ListEvent;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.components.inputComponents.DataObjectManager;
+			import flash.events.Event;
+			
+		/**
+		 * Lets you pass a value to the editor.
+		 * @see #data
+		 */
+		public function set dataObject(value:Object):void
+		{
+			if(value){
+				ce.data = value.initialNetPrice;
+				if(!value.itemPrices || value.itemPrices.length() == 0){
+					cb.visible = false;
+					cb.includeInLayout = false;
+				}else{
+					cb.popUp['labelFunction'] = labelFunction;
+					cb.dataProvider = value.itemPrices;
+				}
+			}
+		}
+		/**
+		 * @private
+		 */
+		public function get dataObject():Object
+		{
+			return ce.dataObject;
+		}
+		/**
+		 * Lets you pass a value to the editor.
+		 * @see #dataObject
+		 */
+		public override function set data(value:Object):void
+		{
+			super.data = value;
+			dataObject = value;
+		}
+		
+		private function labelFunction(item:Object):String
+		{
+			return CurrencyManager.formatCurrency(Number(item.@value)) + " " + DictionaryManager.getInstance().getById(ModelLocator.getInstance().systemCurrencyId).symbol.toString() + " (" + DictionaryManager.getInstance().dictionaries.itemPrices.(name.toString() == item.@name).label.(@lang == LanguageManager.getInstance().currentLanguage) + ")"; 
+		}
+		
+		private function handlePriceSelect(event:ListEvent):void
+		{
+			ce.dataObject = CurrencyManager.systemToDocument(Number((cb.popUp as List).selectedItem.@value),data.documentObject);
+		}
+		
+		private function creationCompleteHandler():void
+		{
+			ce.setFocus();
+		}
+		]]>
+	</mx:Script>
+	
+	<inputComponents:CurrencyEditor id="ce" width="100%"/>
+	<inputComponents:ComboButton id="cb" itemClick="handlePriceSelect(event)"/>
+</mx:HBox>

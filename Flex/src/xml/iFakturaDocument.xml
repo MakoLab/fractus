@@ -1,0 +1,110 @@
+<SalesDocument>
+  <VatRate>22</VatRate>
+  <DocumentNumber>137/2008</DocumentNumber>
+  <IssueDate>2008-03-01</IssueDate>
+  <SalesDate>2008-03-01</SalesDate>
+  <IssuePlace>Łódź</IssuePlace>
+  <PaymentForm PaymentFormId="3">Przelew 7dni</PaymentForm>
+  <PaymentDue>2008-04-01</PaymentDue>
+  <Issuer>
+    <name>Roman&amp;Roman sp. z.o.o.</name>
+    <address>ul. Koziołka Matołka 666
+11-666 Pacanów</address>
+  </Issuer>
+  <Contractor>
+    <name>Burax s.c.</name>
+    <address>
+      <address>ul. Przykładowa 18</address>
+      <postCode>12-345</postCode>
+      <city>Kozie Bobki</city>
+      <country>Polska</country>
+    </address>
+  </Contractor>
+  <Lines>
+    <Line>
+      <Item ItemId="123">Mini wykłady o maxi sprawach</Item>
+      <ItemCategory>Towary</ItemCategory>
+      <Quantity>1</Quantity>
+      <DiscountRate>0</DiscountRate>
+      <NetPrice>11.5</NetPrice>
+      <GrossPrice>14.03</GrossPrice>
+      <NetPriceDiscounted>11.5</NetPriceDiscounted>
+      <GrossPriceDiscounted>14.03</GrossPriceDiscounted>
+      <LineNet>11.5</LineNet>
+      <LineGross>14.03</LineGross>
+      <VatRate VatRateId="1">22</VatRate>
+      <WarehouseId>6</WarehouseId>
+      <LastPurchasePriceProfitMargin>-3.13</LastPurchasePriceProfitMargin>
+      <LineVatAmount>2.53</LineVatAmount>
+      <DiscountAmount>0</DiscountAmount>
+      <UnitOfMeasure>szt.</UnitOfMeasure>
+    </Line>
+    <Line>
+      <Item ItemId="199">Album Himalaje/Misja Everest</Item>
+      <ItemCategory>Towary</ItemCategory>
+      <Quantity>1</Quantity>
+      <DiscountRate>10</DiscountRate>
+      <NetPrice>45.2</NetPrice>
+      <GrossPrice>55.14</GrossPrice>
+      <NetPriceDiscounted>40.68</NetPriceDiscounted>
+      <GrossPriceDiscounted>49.63</GrossPriceDiscounted>
+      <LineNet>40.68</LineNet>
+      <LineGross>49.63</LineGross>
+      <VatRate VatRateId="1">22</VatRate>
+      <WarehouseId>6</WarehouseId>
+      <LastPurchasePriceProfitMargin>100</LastPurchasePriceProfitMargin>
+      <LineVatAmount>8.95</LineVatAmount>
+      <DiscountAmount>4.52</DiscountAmount>
+      <UnitOfMeasure>szt.</UnitOfMeasure>
+    </Line>
+    <Line>
+      <Item ItemId="123">Pakowanie w papier ozdobny</Item>
+      <ItemCategory>Usługi</ItemCategory>
+      <Quantity>2</Quantity>
+      <DiscountRate>0</DiscountRate>
+      <NetPrice>5</NetPrice>
+      <GrossPrice>6.1</GrossPrice>
+      <NetPriceDiscounted>5</NetPriceDiscounted>
+      <GrossPriceDiscounted>6.1</GrossPriceDiscounted>
+      <LineNet>10</LineNet>
+      <LineGross>12.2</LineGross>
+      <VatRate VatRateId="1">22</VatRate>
+      <WarehouseId>6</WarehouseId>
+      <LastPurchasePriceProfitMargin>100</LastPurchasePriceProfitMargin>
+      <LineVatAmount>2.2</LineVatAmount>
+      <DiscountAmount>0</DiscountAmount>
+      <UnitOfMeasure>szt.</UnitOfMeasure>
+    </Line>
+    <Line>
+      <Item ItemId="199">Przesyłka DHL</Item>
+      <ItemCategory>Koszty transportu</ItemCategory>
+      <Quantity>1</Quantity>
+      <DiscountRate>0</DiscountRate>
+      <NetPrice>20</NetPrice>
+      <GrossPrice>24.4</GrossPrice>
+      <NetPriceDiscounted>20</NetPriceDiscounted>
+      <GrossPriceDiscounted>24.4</GrossPriceDiscounted>
+      <LineNet>20</LineNet>
+      <LineGross>24.4</LineGross>
+      <VatRate VatRateId="1">22</VatRate>
+      <WarehouseId>6</WarehouseId>
+      <LastPurchasePriceProfitMargin>100</LastPurchasePriceProfitMargin>
+      <LineVatAmount>4.4</LineVatAmount>
+      <DiscountAmount>0</DiscountAmount>
+      <UnitOfMeasure>szt.</UnitOfMeasure>
+    </Line>
+  </Lines>
+  <Total>
+    <Subtotals>
+      <Subtotal>
+        <Net>82.18</Net>
+        <Gross>100.26</Gross>
+        <VatAmount>18.08</VatAmount>
+        <VatRate VatRateId="1">22</VatRate>
+      </Subtotal>
+    </Subtotals>
+    <Net>82.18</Net>
+    <Gross>100.26</Gross>
+    <VatAmount>18.08</VatAmount>
+  </Total>
+</SalesDocument>

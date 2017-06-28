@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*"
+	>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.components.inputComponents.DictionaryEditor;	
+			
+			public var changeFunction:Function;
+			
+			[Bindable]
+			public var action:String;
+			
+			override public function set data(value:Object):void {
+				var repData:XMLList = value.xmlLabels.labels.label;
+				var lang:XMLList = LanguageManager.getLanguages().langs;
+				var temp:XMLList = new XMLList(XML('<labels></labels>'));
+								
+				for each(var item:XML in lang) {
+					var s:String = item.text();
+					var x:Boolean = false;
+					
+					for each(var itemIn:XML in repData) {
+						if(itemIn.@lang == s) {
+							x = true;
+							break;
+						}
+					}
+					
+					if(!x) {
+						temp.appendChild(XML('<label lang="'+s+'" disabled="0"></label>'));
+					} else {
+						var n:int = repData.length();
+						for(var i:int = n-1; i >= 0; i--) {
+							if(repData[i].@lang == s) {
+								repData[i].@disabled = 0;
+								temp.appendChild(repData[i].copy());
+								delete repData[i];
+								break;
+							}
+						}
+					}
+				}
+				
+				if(repData.length()){
+					for each(item in repData) {
+						item.@disabled = 1;
+						temp.appendChild(item);
+					}
+				}
+				
+				delete value.xmlLabels.labels;
+				
+				value.xmlLabels.appendChild(temp);
+				
+				super.data = value;
+			}
+		]]>
+	</mx:Script>
+	<mx:Form>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.common.shortName}: ">
+			<inputComponents:ExTextInput 
+				text="{(action==DictionaryEditor.ADD) ? '' : data.name}" 
+				level="1"
+			 	nodeName="name" 
+				change="changeFunction(event)"
+				creationComplete="changeFunction(event, true)"
+				/>
+		</mx:FormItem>
+		<mx:Repeater id="labelsList" dataProvider="{data.xmlLabels.labels.label}">
+			<mx:FormItem label="{LanguageManager.getInstance().labels.common.label} {labelsList.currentItem.@lang}: " visible="{!Boolean(int(labelsList.currentItem.@disabled))}" includeInLayout="{!Boolean(int(labelsList.currentItem.@disabled))}">
+				<inputComponents:ExTextInput 
+					text="{(action==DictionaryEditor.ADD) ? '' : labelsList.currentItem}" 
+					level="2"
+					nodeName="label" 
+					attributeName="lang" 
+					attributeValue="{labelsList.currentItem.@lang}" 
+					change="changeFunction(event)"
+					creationComplete="changeFunction(event, true)"
+					enabled="{!Boolean(int(labelsList.currentItem.@disabled))}"
+					/>	
+			</mx:FormItem>				
+		</mx:Repeater>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.warehouse.storedInWarehouse}: ">
+			<inputComponents:ExTextInput 
+				text="{(action==DictionaryEditor.ADD) ? '' : data.isWarehouseStorable}" 
+				level="1"
+			 	nodeName="isWarehouseStorable" 
+				change="changeFunction(event)"
+				creationComplete="changeFunction(event, true)"
+				/>
+		</mx:FormItem>
+		<mx:Repeater id="metaList" dataProvider="{data.xmlMetadata.metadata.*}">
+			<mx:FormItem label="Metadata - {metaList.currentItem.name()}: ">
+				<inputComponents:ExTextInput 
+					text="{(action==DictionaryEditor.ADD) ? '' : metaList.currentItem}" 
+					level="2"
+					nodeName="{metaList.currentItem.name()}" 
+					change="changeFunction(event)"
+					creationComplete="changeFunction(event, true)"
+					/>
+			</mx:FormItem>
+		</mx:Repeater>
+	</mx:Form>
+</mx:VBox>

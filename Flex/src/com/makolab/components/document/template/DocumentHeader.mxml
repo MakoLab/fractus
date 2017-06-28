@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" backgroundColor="#FFFFFF">
+	<mx:Script>
+		<![CDATA[
+		import mx.binding.utils.*;
+		import mx.events.FlexEvent;
+
+			[Bindable]
+			public var documentNameType : String = "";
+			[Bindable]
+			public var documentNumber : String = "";
+			[Bindable]
+			public var documentNumberPrefix : String = "";
+			[Bindable]
+			public var documentNumberPostfix : String = "";
+			[Bindable]
+			public var contractorName : String = "";
+		
+			
+		]]>
+	</mx:Script>
+	
+	<mx:HBox height="100%" width="100%" verticalAlign="middle" horizontalAlign="center">
+		<mx:Label id="labelDocumentNumber"
+			text="{documentNameType +' '+ documentNumberPrefix + documentNumber + documentNumberPostfix }"
+			textAlign="right"  fontSize="12"  fontWeight="bold"/>
+			
+		<mx:Label id="labelFor"
+			text="{contractorName.replace(/.+/gi,' dla: ')}"
+			fontWeight="normal" textAlign="center"/>	
+			
+		<mx:Label 
+			id="labelContractor"
+			text="{contractorName }"
+			textAlign="left"  fontSize="12"  fontWeight="normal" fontStyle="italic"/>
+			
+	</mx:HBox>
+</mx:Canvas>

@@ -1,0 +1,31 @@
+﻿<!-- konfiguracja wyszukiwarki kontrahentow na dokumentach -->
+<config>
+	<searchParams>
+		<query/>
+		<columns>
+			<column field="fullName" sortOrder="1" sortType="ASC"/>
+			<column field="shortName" sortType="ASC"/>
+			<column field="nip"/>
+			<column field="code"/>
+		</columns>
+		<filters/>
+	</searchParams>
+	<operations>
+		<item name="newItem" global="1"><label lang="pl">Stwórz nowego kontrahenta...</label><label lang="en">New contractor...</label></item>
+		<item name="editItem"><label lang="pl">Edytuj wybranego kontrahenta...</label><label lang="en">Edit contractor...</label></item>
+		<item name="itemDetails"><label lang="pl">Wyświetl informacje o kontrahencie</label><label lang="en">Contractor details...</label></item>
+	</operations>
+	<searchModes>
+		<column label="ogólne" field=""><label lang="pl">Ogólne</label><label lang="en">Index</label></column>
+		<column labelKey="common.shortName" label="Nazwa"   field="name"><label lang="pl">Nazwa</label><label lang="en">Name</label></column>
+		<column label="NIP" field="nip"><label lang="pl">NIP</label><label lang="en">NIP</label></column>
+		<column label="Miasto"  field="city"><label lang="pl">Miasto</label><label lang="en">City</label></column>
+		<column label="Adres"  field="address"><label lang="pl">Adres</label><label lang="en">Address</label></column>
+	</searchModes>
+	<columns>
+		<column field="@fullName" labelKey="common.fullName" filter="1" hidden="1"/>
+		<column field="@nip" labelKey="common.nip" filter="1" hidden="1"/>
+		<column field="@shortName" filter="1"/>
+		<column field="@code" filter="1"/>
+	</columns>
+</config>

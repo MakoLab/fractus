@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			[Bindable]
+			protected var dictionaryManager:DictionaryManager = DictionaryManager.getInstance();
+			
+		]]>
+	</mx:Script>
+	<mx:Form visible="{Boolean(data)}">
+		<mx:FormItem label="{LanguageManager.getInstance().labels.documents.documentType}">
+			<mx:Label text="{dictionaryManager.getById(data.documentTypeId).label}"/>
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.common.number}">
+			<mx:Label text="{data.fullNumber}"/>
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.contractors.contractor}">
+			<mx:Label text="{data.contractor.contractor.shortName}"/>
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.documents.issueDate}">
+			<mx:Label text="{String(data.issueDate)}"/>
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.documents.grossValue}">
+			<inputComponents:CurrencyRenderer data="{data.grossValue}"/>
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.documents.linesLength}">
+			<mx:Label text="{data.lines.line.length()}"/>
+		</mx:FormItem>
+	</mx:Form>
+</mx:VBox>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" width="600" height="300" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:list="com.makolab.components.list.*" >
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			[Bindable]
+			var message:XML=null;
+			/*
+			<message>
+			<id>
+			1
+			</id>
+			<date_add>
+			2015-11-24T12:21:35
+			</date_add>
+			<message>
+			tresc ze strony
+			</message>
+			<email>
+			pawel.kulinski@makolab.net
+			</email>
+			<threadStatus>
+			closed
+			</threadStatus>
+			<token>
+			HgPzcfnUb7xM
+			</token>
+			<customerId>
+			4
+			</customerId>
+			<fractusContractorId>
+			8363C86D-1CF1-4ED6-8891-EACDF06FD560
+			</fractusContractorId>
+			</message>
+			*/
+			[Bindable]
+			var mess:String="";
+			var from:String="";
+			var time:String="";
+			var stat:String="";
+			[Bindable]
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				value.message
+					mess=value.message.toString();
+					from=value.email.toString();
+					var str:String=value.date_add.toString();
+					var a:Array=str.split("T");;
+					time=myDateFormatter.format(a[0])+ "  "+a[1];
+					stat=value.threadStatus.toString();
+			}
+			override public function get data():Object 
+			{ 
+				return message;
+			}
+		
+			public function showWindow(title:String ,mess:XML):ComponentWindow
+			{
+				var component:Message = new Message();
+				component.data=mess;
+				var window:ComponentWindow = ComponentWindow.showWindow(component, ComponentWindow.BUTTON_CLOSE, new Rectangle(-1, -1, 660, 400));
+				window.title = title;
+				window.closeFunction = window.hide;
+				return window;
+			}
+		]]>
+	</mx:Script>
+
+	
+	
+	<mx:DateFormatter id="myDateFormatter" formatString="YYYY-MM-DD"/>  
+			<mx:VBox width="600">
+				<mx:HBox width="100%">
+					
+				<mx:Label text="{LanguageManager.getInstance().labels.common.contractor} : " fontWeight="bold" width="150" textAlign="right"/><mx:Label text="{from}"/>
+				</mx:HBox>
+				<mx:HBox width="100%">
+					
+					<mx:Label text="{LanguageManager.getInstance().labels.common.creationTime} : " fontWeight="bold" width="150" textAlign="right" /><mx:Label text="{time}"/>
+				</mx:HBox>	
+				<mx:HBox width="100%">
+					
+					<mx:Label text="{LanguageManager.getInstance().labels.documents.status} : " fontWeight="bold" width="150" textAlign="right"/><mx:Label text="{stat}"/>
+				</mx:HBox>	
+				
+			</mx:VBox>
+			
+	
+			<mx:VBox width="600" >
+				<mx:TextArea width="580" height="200" text="{mess}"/>
+		</mx:VBox>
+	
+</mx:Form>

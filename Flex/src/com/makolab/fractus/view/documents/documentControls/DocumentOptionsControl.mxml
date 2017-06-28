@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" implements="com.makolab.fractus.view.documents.documentControls.IDocumentControl">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.document.DocumentEvent;
+			import mx.controls.CheckBox;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.document.DocumentObject;
+			[Bindable]
+			public var config:XML; 
+
+				
+			private var _documentObject:DocumentObject;
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				_documentObject = value;
+			}
+			public function get documentObject():DocumentObject
+			{
+				return _documentObject;
+			}
+			
+			private function handleChange(event:Event):void
+			{
+				var cb:CheckBox = event.target as CheckBox;
+				cb.data.@selected = cb.selected ? 1 : 0;
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:Repeater id="rep" dataProvider="{documentObject.documentOptions.(valueOf().@selected.length() > 0)}">
+		<mx:CheckBox label="{LanguageManager.getLabel(rep.currentItem.@labelKey)}" data="{rep.currentItem}" selected="{rep.currentItem.@selected == 1}" change="handleChange(event)" enabled="{rep.currentItem.hasOwnProperty('@enabled')?(rep.currentItem.@enabled=='true'?true:false):true}"/>
+	</mx:Repeater>
+</mx:VBox>

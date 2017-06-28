@@ -1,0 +1,448 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem xmlns:mx="http://www.adobe.com/2006/mxml" 
+		width="100%" 
+		implements="com.makolab.components.inputComponents.IAttributeEditorComponent, com.makolab.components.inputComponents.IFormBuilderComponent" 
+		direction="horizontal">
+	<mx:Metadata>
+		[Style(name="labelWidth", type="Number", format="Length", inherit="yes")]
+		[Style(name="editorWidth", type="Number", format="Length", inherit="yes")]
+		[Style(name="errorColor", type="uint", inherit="yes")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.inputComponents.ContractorNotesEditor;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.PermissionManager;
+			import com.makolab.fractus.view.generic.AttributeValueSelector;
+			import com.makolab.fractus.view.generic.AttributeValueSelectorND;
+			import com.makolab.fractus.view.generic.FractusDictionarySelector;
+			
+			import mx.binding.utils.ChangeWatcher;
+			import mx.controls.Alert;
+			import mx.controls.CheckBox;
+			import mx.controls.ComboBox;
+			import mx.controls.PopUpButton;
+			import mx.controls.TextArea;
+			import mx.controls.TextInput;
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			import mx.events.ValidationResultEvent;
+			import mx.utils.UIDUtil;
+			import mx.validators.CurrencyValidator;
+			import mx.validators.ValidationResult;
+			import mx.validators.Validator;
+			//import com.makolab.components.inputComponents.LastItemDropdown;
+		
+			/**
+			 * Name of editor's value field.
+			 */
+			[Bindable]
+			public var valueField:String = "value";
+			
+			private var regExp:RegExp = null;
+			
+			/**
+			 * Specifies item editor class.
+			 */
+			public var itemEditor:ClassFactory;
+			/**
+			 * Name of the editor's data field
+			 */
+			public var editorDataField:String;
+			/**
+			 * An object containing possible options to choose
+			 */
+			public var editorDataProvider:Object;
+			
+			/**
+			 * An object containing possible values for editorDataProvider to choose
+			 */
+			public var editorDataValuesProvider:Object;
+			
+			[Bindable]
+			/**
+			 * Dispatch event when the editor does.
+			 */
+			public var dispatchChange:Boolean = true;
+			
+			[Bindable]
+			/**
+			 * Make delete button visible.
+			 */
+			public var showDeleteButton:Boolean = true;
+			
+			/**
+			 * An item editor instance.
+			 */
+			public var itemEditorInstance:UIComponent;
+			
+			/**
+			 * A message text.
+			 */
+			public function set message(value:String):void
+			{
+				lblMessage.text = value;
+			}
+			/**
+			 * @private
+			 */
+			public function get message():String { return lblMessage.text; }
+			
+			/**
+			 * Lets you pass a value to the editor.
+			 * the <code>data</code> property doesn't change while editing values in editor. The value of <code>data</code> is copied to <code>dataObject</code>. To read modified values use <code>dataObject</code> property.
+			 * @see #dataObject
+			 */
+			[Bindable]
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				dataObject = data;
+			}
+			
+			protected var validator:GenericValidator;
+			
+			private var _dataObject:Object;
+			
+			/**
+			 * Lets you pass a value to the editor.
+			 */
+			[Bindable]
+			public function set dataObject(value:Object):void
+			{
+				_dataObject = value;
+				setEditorValue();
+			}
+			/**
+			 * @private
+			 */
+			public function get dataObject():Object { 
+				return _dataObject; }
+			
+			private var _attributeType:Object;
+			
+			/**
+			 * Specifies type of data that can be entered.
+			 * 
+			 * Object contains:
+			 * <code>metadata.dataType</code> 
+			 * 	<ul>
+			 * 		<li><code>boolean</code> control displays checkbox</li>
+			 * 		<li><code>decimal</code> control displays text input and restricts charset to digits, "," and "."</li>
+			 * 		<li><code>float</code> control displays text input and restricts charset to digits, "," and "."</li>
+			 * 		<li><code>integer</code> control displays text input and restricts charset to digits</li>
+			 * 	</ul>
+			 * 
+			 * <code>metadata.regExpStr</code> - Control uses given regular expression to additionally retrict text input.
+			 */
+			public function set attributeType(value:Object):void
+			{
+				_attributeType = value;
+				if (_attributeType)
+				{
+					
+					label = _attributeType.label.(@lang==LanguageManager.getInstance().currentLanguage)[0];
+					var dataType:String = _attributeType.metadata.dataType;
+					var regExpStr:String = _attributeType.metadata.regExp;
+					regExp = regExpStr ? new RegExp(regExpStr, "i") : null;
+					if (!itemEditor)
+					{
+						var c:Class;						
+						switch(dataType)	{
+							case "link":
+								c=LinkEditor;
+								break;
+							case "xml":
+								if(_attributeType.name == "Attribute_Warning" || _attributeType.name == "Attribute_Annotation" || _attributeType.name == "Attribute_Remark")	{							
+									c = ContractorNotesEditor;
+									editorDataField = "dataObject";
+								}	
+								else if(_attributeType.name == "Attribute_Passport")	{ 
+									c = PassportEditor;
+									editorDataField = "dataObject";
+								}
+								else{
+									//fixme  tu brakuje opcji dla innych atrybutow typu xml, np. Attribute_Width
+									c = TextInput;
+								}
+								break;
+							case "boolean":
+								c = CheckBox;
+								break;
+							case "multiselect":
+								editorDataProvider=_attributeType.metadata.values.value.labels.label.(@lang== LanguageManager.getInstance().currentLanguage);
+								editorDataValuesProvider=_attributeType.metadata.values.value.name;
+								c=CheckBoxCombo;//AttributeValueSelectorND;
+								
+								//editorDataField="selectedItem";
+								required = false;
+								break;
+							case "select":
+								//c =ComboBox;
+								//editorDataProvider=_attributeType.metadata.values.value.name;
+								editorDataProvider=_attributeType.metadata.values.value.labels.label.(@lang== LanguageManager.getInstance().currentLanguage);
+								editorDataValuesProvider=_attributeType.metadata.values.value.name;
+								c=AttributeValueSelectorND;
+								//editorDataField="selectedItem";
+								required = false;
+								break;
+							default:
+								//trace(_attributeType.dictionaryName.*);
+								if(_attributeType.metadata.dictionaryName.length() > 0){
+									c = FractusDictionarySelector;
+									editorDataField = "selectedId";
+								}else if (_attributeType.metadata.autoDictionary.length() > 0){
+									c = AttributeValueSelector;
+									required = false;
+									editorDataField = "selectedItem";
+								}else{
+									c = TextInput;
+								}
+						}					
+						
+						if (itemEditorInstance && !(itemEditorInstance is c)) 
+							removeEditorInstance();
+						if (!itemEditorInstance) 
+							createEditorInstance(new ClassFactory(c)); 
+					}
+					else if (!itemEditorInstance) 
+						createEditorInstance(itemEditor);
+					//dodane
+//					if(itemEditorInstance)
+//						itemEditorInstance.percentWidth=100;
+//					if(c)
+//						c.percentWidth=100;
+					var tiEditor:TextInput = itemEditorInstance as TextInput;
+					if (tiEditor)
+					{ 
+						//dodane
+						//tiEditor.percentWidth=100;
+						switch (dataType)
+						{
+							case "decimal": case "float": case "money":
+								tiEditor.restrict = "0-9,.";
+								break;
+							case "integer":
+								tiEditor.restrict = "0-9";
+								break;
+							default:
+								tiEditor = null;
+						}
+					}
+					
+				}
+				if (validator)
+				{
+					validator.validationRules = _attributeType && _attributeType.metadata.validation.length() > 0 ? XML(_attributeType.metadata.validation) : null;
+				}
+			}
+			/**
+			 * @private
+			 */
+			public function get attributeType():Object { return _attributeType; }
+			
+			public function get deleteButton():LinkButton { return btDelete; }
+			
+			private var initialColor:Number = -1;
+			
+			protected function handleChange(event:Event):void
+			{
+				if (initialColor == -1) initialColor = itemEditorInstance.getStyle("backgroundColor");
+				if (_dataObject)
+				{
+					var val:Object = getValueFromEditor();					
+					if (valueField) _dataObject[valueField] = val;
+					validate();
+					/*
+					if (regExp)
+					{
+						var match:Array = String(val).match(regExp);
+						if (match) itemEditorInstance.setStyle("backgroundColor", initialColor);
+						else itemEditorInstance.setStyle("backgroundColor", getStyle("errorColor"));
+					}
+					else if (match) itemEditorInstance.setStyle("backgroundColor", initialColor);
+					*/
+				}
+				
+				if (dispatchChange) dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			override protected function createChildren():void
+			{
+				super.createChildren();
+				if (itemEditor) createEditorInstance(itemEditor);
+			}
+			
+			protected function createEditorInstance(factory:ClassFactory):void
+			{
+				if (!factory.generator) return;
+				itemEditorInstance = factory.newInstance();
+				
+				
+				if(itemEditorInstance is ContractorNotesEditor)
+				{
+					setStyle("labelWidth", 90);
+				}
+				else
+				{
+					itemEditorInstance.width = getStyle("editorWidth");
+					deleteHBox.percentWidth=100;
+				}
+								
+				itemEditorInstance.addEventListener(FocusEvent.FOCUS_OUT, handleChange);
+				if(itemEditorInstance.hasOwnProperty("dataProvider") && editorDataProvider)itemEditorInstance["dataProvider"] = editorDataProvider;
+				if(itemEditorInstance.hasOwnProperty("_names") && editorDataValuesProvider)itemEditorInstance["_names"] = editorDataValuesProvider;
+				
+				
+				if(itemEditorInstance.hasOwnProperty("dictionaryName"))itemEditorInstance["dictionaryName"] = _attributeType.metadata.dictionaryName.*;
+				if(_attributeType && _attributeType.metadata.permissionKey.length() > 0)
+				{
+					itemEditorInstance.enabled = ModelLocator.getInstance().permissionManager.isEnabled(_attributeType.metadata.permissionKey);
+					if (deleteButton) deleteButton.enabled = ModelLocator.getInstance().permissionManager.isEnabled(_attributeType.metadata.permissionKey);
+				}
+				if(itemEditorInstance.hasOwnProperty("attributeName"))itemEditorInstance["attributeName"] = _attributeType.name.*;
+				addChildAt(itemEditorInstance, 0);
+				if (!(itemEditorInstance is IFormBuilderComponent) && !(itemEditorInstance is CheckBox)
+				/*&& !(itemEditorInstance is ComboBox)*/
+				/*  && !(itemEditorInstance is AttributeValueSelector) */)
+			// warunek na AttributeValueSelector to prowizorka ale t
+				{ 
+					validator = new GenericValidator();
+					validator.source = itemEditorInstance;
+					validator.property = editorDataField ? editorDataField : "text";
+					validator.required = required;
+				}
+				//dodane aby rozszerzyć do okna dla itemów
+				//itemEditorInstance.percentWidth=100;
+				
+				setEditorValue();
+			}
+			
+			protected function removeEditorInstance():void
+			{
+				itemEditorInstance.removeEventListener(Event.CHANGE, handleChange);
+				removeChild(itemEditorInstance);
+				itemEditorInstance = null;		
+			}
+			
+			protected function setEditorValue():void
+			{
+				if (_dataObject != null)
+				{
+					var val:Object;
+					if (valueField)
+					{
+						if (XMLList(_dataObject[valueField]).length() == 0) _dataObject[valueField] = '';
+						val = _dataObject[valueField];
+					}
+					else val = _dataObject;
+					if (itemEditorInstance)
+					{
+						if (itemEditorInstance is CheckBox) itemEditorInstance["selected"] = parseInt(String(val));
+						else
+							if(itemEditorInstance is CheckBoxCombo)
+							{
+							
+								(itemEditorInstance as CheckBoxCombo).selectedItemByName=String(val);
+								
+							}
+							else
+								if(itemEditorInstance is AttributeValueSelectorND)
+								{
+									
+									(itemEditorInstance as AttributeValueSelectorND).selectedItemByName=String(val);
+									
+								}
+//						else if(itemEditorInstance is LastItemDropdown){
+//						(itemEditorInstance as LastItemDropdown).dataProvider=val;
+//						//[{label: "New Folder"}, {label: "Sent Items"}, {label: "Inbox"}];
+//						trace("val:")
+//						}
+						else if (itemEditorInstance is ComboBox)
+						{ 
+							itemEditorInstance["data"] = val;
+						}
+						else itemEditorInstance["data"] = val;
+					}
+				}
+			}
+			
+			protected function getValueFromEditor():Object
+			{// dodac tutaj popup
+				if (itemEditorInstance is CheckBox) 
+					return CheckBox(itemEditorInstance).selected ? "1" : "0";
+				else
+				if(itemEditorInstance is CheckBoxCombo)
+					return (itemEditorInstance as CheckBoxCombo).selectionNameToString();
+				else
+					if(itemEditorInstance is AttributeValueSelectorND)
+						return (itemEditorInstance as AttributeValueSelectorND).selectionNameToString();
+			//	else if (itemEditorInstance is ComboBox) 
+			//		return ComboBox(itemEditorInstance).selectedItem;
+//				else if (itemEditorInstance is LastItemDropdown) 
+//					return LastItemDropdown(itemEditorInstance).selectedItem;// sprawdzi czy zwraca dobrze
+//					
+				else
+				{
+					var val:Object = itemEditorInstance[editorDataField ? editorDataField : 'text'];
+					var dataType:String = _attributeType.metadata.dataType;
+					switch (dataType)
+					{
+						case "decimal": case "float": case "money":
+							val = parseFloat(String(val).replace(/\,/, '.'));
+							break;
+						case "integer":
+							val = parseInt(String(val).replace(/\,/, '.'));
+							break;
+					}
+					if (val is Number && isNaN(Number(val))) val = '';
+					return val;
+				} 
+			}
+			
+			/**
+			 * Validates entered data.
+			 * @return Array of error messages.
+			 */
+			public function validate():Object
+			{
+				var result:Object = null;
+				if (validator) {
+					result = [];
+					var resultEvent:ValidationResultEvent = validator.validate();
+					for (var i:String in resultEvent.results) (result as Array).push(resultEvent.results[i]);	
+				}
+				else if (itemEditorInstance is IFormBuilderComponent) result = IFormBuilderComponent(itemEditorInstance).validate();
+				if (result is Array)
+				{
+					for (i in result) extendMessage(ValidationResult(result[i]));
+				}
+				else if (result is ValidationResult) extendMessage(ValidationResult(result));
+				return result;
+			}
+			
+			protected function extendMessage(result:ValidationResult):void
+			{
+				result.errorMessage = attributeType.label.(@lang==LanguageManager.getInstance().currentLanguage)[0] + ": " + result.errorMessage;
+			}
+			
+			/**
+			 * A method of <code>IFormBuilderComponent</code> interface.
+			 */
+			public function commitChanges():void { ; }
+			
+			/**
+			 * A method of <code>IFormBuilderComponent</code> interface.
+			 */
+			public function reset():void {}
+		]]>
+	</mx:Script>
+
+	<!--mx:TextInput id="tiValue" change="handleChange(event)" width="{getStyle('editorWidth')}"/-->
+	<mx:HBox id="deleteHBox" horizontalAlign="right">
+		<mx:Label id="lblMessage"/>
+		<mx:LinkButton id="btDelete" label="[{LanguageManager.getInstance().labels.common.deleteAll}]" visible="{showDeleteButton}"/>
+	</mx:HBox>
+</mx:FormItem>

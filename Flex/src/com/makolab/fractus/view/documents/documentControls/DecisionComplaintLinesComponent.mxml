@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AbstractLinesComponent xmlns="com.makolab.fractus.view.documents.documentControls.*"  
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:lineList="com.makolab.components.lineList.*"
+	xmlns:catalogue="com.makolab.fractus.view.catalogue.*"  
+	 xmlns:inputComponents="com.makolab.components.inputComponents.*"
+	  xmlns:complaint="com.makolab.fractus.view.complaint.*"
+	  creationComplete="init()" linesObjectName="decisionComplaint" xmlns:generic="com.makolab.fractus.view.generic.*"  xmlns:warehouse="com.makolab.fractus.view.warehouse.*">
+	<columns>
+		
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.lp')}" minWidth="20" width="30" editable="false" itemRenderer="com.makolab.components.inputComponents.OrdinalNumberRenderer"/>
+		
+		<mx:DataGridColumn headerText="Towar - reklamowany" dataField="itemNameOrg" headerWordWrap="true" editorUsesEnterKey="true" editorDataField="dataObject" editable="false" itemRenderer="mx.controls.Label"/>
+		
+		<mx:DataGridColumn headerText="Towar do wydania" dataField="itemName" headerWordWrap="true" editorUsesEnterKey="true" editorDataField="dataObject">
+			<mx:itemEditor>
+				<mx:Component>
+					<catalogue:ItemSearchEditor
+							setFunction="{outerDocument.setLineItem}"
+							itemId="{data.itemId}"
+							itemReload="outerDocument.documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_SET_COMPLAIN, 'itemId', data, true))"
+							enabled="{data.editableRow &amp;&amp; data.editableItem}"
+						>
+						<mx:Script>
+							<![CDATA[
+								import com.makolab.components.document.DocumentEvent;
+							]]>
+						</mx:Script>
+					</catalogue:ItemSearchEditor>
+				</mx:Component>
+			</mx:itemEditor>
+		</mx:DataGridColumn>
+		
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.quantity')}" dataField="quantity" width="50" headerWordWrap="true" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+		
+		<mx:DataGridColumn headerText="Decyzja" dataField="typeDecision" width="120" headerWordWrap="true" editorDataField="selectedValue" itemRenderer="com.makolab.fractus.view.documents.documentControls.ComplaintDecisionLabelRenderer" headerStyleName="headerRight" >
+			<mx:itemEditor>
+				<mx:Component>
+					<inputComponents:ValueComboBox labelField="@label" valueField="@value" dataProvider="{outerDocument.decisionTypeList.*}" />
+				</mx:Component>
+			</mx:itemEditor>
+		</mx:DataGridColumn>
+		
+		<generic:CellDetailColumn  headerText="{LanguageManager.getInstance().labels.complaint.ReasonsForDecision}" cellWindowEditor="{new DecisionWindowEditor()}" parent="{this.parent}" dataField="decisionText" headerStyleName="headerRight" enabled="{data.editableRow}"  titleWindow="{LanguageManager.getInstance().labels.complaint.ReasonsForDecision}" width="200"/> 
+		
+		<mx:DataGridColumn headerText="Data dec." dataField="date" width="80" minWidth="25" headerWordWrap="true" editorDataField="dataObject"  itemRenderer="com.makolab.components.inputComponents.DateRenderer" rendererIsEditor="true" headerStyleName="headerRight" />
+
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.warehouseShort')}" dataField="warehouseId" width="50" minWidth="40" headerWordWrap="true" editorDataField="selectedId" itemEditor="com.makolab.fractus.view.generic.FractusDictionarySelector" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer" headerStyleName="headerRight" textAlign="right"/>
+		
+		<mx:DataGridColumn headerText="wyst. dok." textAlign="center"  dataField="realizeOption" width="40" headerWordWrap="true" editorDataField="dataObject"   rendererIsEditor="true" headerStyleName="headerRight" itemRenderer="com.makolab.fractus.view.documents.documentControls.ThreeStateCheckBox" />
+		
+		<mx:DataGridColumn headerText="Opt." minWidth="20" width="30" editable="false"   >
+			<mx:itemRenderer>
+				<mx:Component>
+					<lineList:LineMenu enabled="{!outerDocument.disableLinesChangeMessage}">
+						<lineList:operations>
+							<lineList:LineOperation label="{outerDocument.lm.getLabel('common.Delete')}" operationInvoke="outerDocument.lineListDeleteComplain(event)" icon="{outerDocument.getIcon('delete_small')}" textAlign="left" enabled="{data.editableRow}" />
+						</lineList:operations>
+					</lineList:LineMenu>
+					
+				</mx:Component>
+				
+			</mx:itemRenderer>
+		</mx:DataGridColumn>
+		
+	</columns>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import com.makolab.components.inputComponents.DataObjectManager;
+			import com.makolab.fractus.model.LanguageManager;
+		]]>
+	</mx:Script>
+	<mx:Script>
+		<![CDATA[
+			import mx.events.DataGridEvent;
+			import com.makolab.components.lineList.LineOperationEvent;
+			import mx.containers.TitleWindow;
+			import com.makolab.fractus.model.document.BusinessObject;
+			import com.makolab.fractus.model.document.ProtocolComplainDocumentLine;
+			import com.makolab.fractus.model.document.DecisionComplainDocumentLine;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import mx.controls.Alert;
+			import com.makolab.components.lineList.LineOperation;
+			import com.makolab.fractus.view.documents.documentControls.DecisionWindowEditor;
+			import com.makolab.fractus.view.generic.CellDetailsWindowEditor;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			[Bindable]
+			override public function set documentObject(value:DocumentObject):void
+			{
+				super.documentObject = value;
+			}
+			
+			override public function get documentObject():DocumentObject
+			{
+				return super.documentObject;
+			}
+			
+			public var lm:LanguageManager=LanguageManager.getInstance();
+			override protected function init():void
+			{
+				super.init();
+				this.documentLines.newLineTemplateFunction = newLineTemplateComplainFactory;
+				this.documentLines.addEventListener(DataGridEvent.ITEM_EDIT_BEGIN, itemEditBegining);
+			}
+			
+			private function itemEditBegining(event:DataGridEvent):void
+			{
+				var o:DecisionComplainDocumentLine = this.documentLines.dataProvider[event.rowIndex];
+				
+				if(!o.editableRow)
+					event.preventDefault()
+			}
+			
+			private function newLineTemplateComplainFactory():Object
+			{
+				return new DecisionComplainDocumentLine(null,this.documentObject);
+			}
+		
+
+			
+			public function lineListDeleteComplain(event:LineOperationEvent):void
+			{
+				var line:BusinessObject = BusinessObject(LineOperation(event.target).line);
+				this.documentObject.decisionComplaint.removeItemAt(this.documentObject.decisionComplaint.getItemIndex(line));
+			}	
+		]]>
+	</mx:Script>
+	<mx:XML id="decisionTypeList"  >
+		<root>
+			<item label="Nie uznana" value="0" />
+			<item label="Uznana/utylizuj" value="3" />
+			<item label="Uznana/do dostawcy" value="4" />
+			<!--<item type="FV" label="Korekta wartościowa" value="1" />
+			<item type="FV" label="Korekta ilościowa" value="2" />-->
+		</root>
+	</mx:XML>
+</AbstractLinesComponent>
+
+
+
+

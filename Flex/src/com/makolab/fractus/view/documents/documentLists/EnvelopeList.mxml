@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 xmlns:list="com.makolab.components.list.*" 
+		 width="100%" height="100%">
+			<list:CommonGrid id="grid" useHandCursor="true" rowColorFunction="colorFun" rowTextColorFunction="colorFun1" rowCount="{grid.dataProvider.length>10?10:grid.dataProvider.length}" width="100%" height="100%" doubleClick="gridDoubleClickHandler(event)" doubleClickEnabled="true">		
+				<list:columns >
+					<mx:DataGridColumn dataField="@fullNumber" headerText="{LanguageManager.getInstance().labels.dashboard.documentNumber}" width="220"/>
+					<mx:DataGridColumn dataField="@issueDate" headerText="{LanguageManager.getInstance().labels.dashboard.date}" itemRenderer="com.makolab.components.inputComponents.DateRenderer" />
+				</list:columns>
+			</list:CommonGrid>
+			<mx:HBox>
+				<mx:VBox>
+					
+				<mx:Text  text="{LanguageManager.getInstance().labels.warehouse.mm.waitingForCancel}" color="0xFF0000"/>
+				<mx:Text  text="{LanguageManager.getInstance().labels.warehouse.mm.mmOrdersWaitingForCommit}" color="0x000000"/>
+				
+				<mx:Text  text="{LanguageManager.getInstance().labels.warehouse.mm.waitingForCommit}" color="0x00ff00"/>
+				</mx:VBox>
+				
+</mx:HBox>
+		
+			
+			<mx:Script>
+				<![CDATA[
+					import com.makolab.fractus.model.LanguageManager;
+					import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+					import com.makolab.fractus.view.documents.DocumentRenderer;
+					
+					private var _data:Object;
+					[Bindable]
+					public override function set data(ob:Object):void{
+						_data=ob;
+						grid.dataProvider=_data.*.*;
+					}
+					[Bindable]
+					public override function get data():Object{
+						return _data;
+					}
+
+					function gridDoubleClickHandler(event:MouseEvent):void
+					{
+						var documentId:String=grid.selectedItem.@id;
+						//trace(grid.selectedItem.@id);
+						if(grid.selectedItem.@color==(0x000000).toString())
+							DocumentRenderer.showWindow(DocumentTypeDescriptor.COMMERCIAL_DOCUMENT, documentId);
+						else
+						DocumentRenderer.showWindow(DocumentTypeDescriptor.WAREHOUSE_DOCUMENT, documentId);
+					}
+					function colorFun1(data:Object):Number
+					{
+						return data.@color1;
+						/*
+						* <document id="0828AD60-113D-4EAE-BEEE-5C5ECF2DE541" fullNumber="01/98/2016" issueDate="2016-01-19T09:10:43"/>
+						*/
+					}
+					function colorFun(data:Object):Number
+					{
+						 return data.@color;
+						/*
+						 * <document id="0828AD60-113D-4EAE-BEEE-5C5ECF2DE541" fullNumber="01/98/2016" issueDate="2016-01-19T09:10:43"/>
+						 */
+					}
+				]]>
+			</mx:Script>
+	</mx:VBox>

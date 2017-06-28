@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Label text="Klucz konfiguracji"/>
+	<mx:TextInput id="tiKey" width="100%" keyDown="if (event.keyCode == Keyboard.ENTER) load()" creationComplete="{tiKey.setFocus()}"/>
+	<mx:Button label="Pobierz" click="load()"/>
+	<mx:TextArea id="taValue" width="100%" height="100%"/>
+	<mx:Button label="Zapisz" click="save()"/>
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.Alert;
+			import com.makolab.fractus.commands.SaveConfigurationCommand;
+			import com.makolab.fractus.commands.LoadConfigurationCommand;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			public static function showWindow():ComponentWindow
+			{
+				var editor:ConfigurationEditor = new ConfigurationEditor();
+				var title:String = LanguageManager.getInstance().labels.title.configuration;
+				return ComponentWindow.showWindow(editor, 0, new Rectangle(-1, -1, 600, 400), title);
+			}
+			
+			private function load():void
+			{
+				var cmd:LoadConfigurationCommand = new LoadConfigurationCommand();
+				cmd.targetObject = taValue;
+				cmd.targetField = "text";
+				cmd.execute({ key: tiKey.text });
+			}
+			
+			private function save():void
+			{
+				try
+				{
+					var cmd:SaveConfigurationCommand = new SaveConfigurationCommand();
+					cmd.addEventListener(ResultEvent.RESULT, handleResult);
+					cmd.execute( { requestXml : XML(taValue.text) } );
+				}
+				catch (e:Error)
+				{
+					Alert.show(e.message, e.name);
+				}
+			}
+			
+			private function handleResult(event:ResultEvent):void
+			{
+				Alert.show("Zapisano", "Zapis wartości konfiguracji");
+			}
+		]]>
+	</mx:Script>
+</mx:VBox>

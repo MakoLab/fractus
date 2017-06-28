@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:LinkButton xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" implements="com.makolab.components.lineList.ILineOperation,mx.controls.listClasses.IListItemRenderer" focusEnabled="false">
+	<mx:Metadata>
+		[Event(name="operationInvoke", type="com.makolab.components.lineList.LineOperationEvent")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.DataGrid;
+			import mx.controls.listClasses.BaseListData;
+			
+			private var _dataGrid:DataGrid;
+			private var _line:Object;
+			
+			public override function set data(value:Object):void
+			{
+				if (listData)
+				{
+					dataGrid = DataGrid(BaseListData(value).owner);
+				}
+				line = data;
+			}
+			
+			override protected function clickHandler(event:MouseEvent):void
+			{
+				super.clickHandler(event);
+				if (enabled) invoke();
+			}
+			
+			public function invoke():void
+			{
+				dispatchEvent(new LineOperationEvent(LineOperationEvent.OPERATION_INVOKE));
+			}
+			
+			public function set dataGrid(value:DataGrid):void { _dataGrid = value; };
+			public function get dataGrid():DataGrid { return _dataGrid; };
+		
+			[Bindable]
+			public function set line(value:Object):void { _line = value; };
+			public function get line():Object { return _line; };
+
+		]]>
+	</mx:Script>
+</mx:LinkButton>

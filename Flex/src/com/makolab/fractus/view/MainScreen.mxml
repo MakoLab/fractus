@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:catalogue="com.makolab.components.catalogue.*">
+	<catalogue:CatalogueQuickSearch
+		searchCommandType="contractors"
+		labelField="@fullName"
+		searchParams="{contractorSearchParams}"
+		setFunction="{setContractor}"
+	/>
+	
+	<mx:Script>
+		<![CDATA[
+			private function setContractor(object:Object):void
+			{
+				
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:XML id="contractorSearchParams" xmlns="">
+		<searchParams>
+			<query/>
+			<columns>
+				<column field="shortName" sortOrder="1" sortType="ASC"/>
+				<column field="fullName" sortOrder="2" sortType="ASC"/>
+				<!--column field="version" sortOrder="3" sortType="ASC"/-->
+			</columns>
+		</searchParams>
+	</mx:XML>
+</mx:Canvas>

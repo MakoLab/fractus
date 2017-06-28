@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="800" height="600" xmlns:list="com.makolab.components.list.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.components.inputComponents.DocumentSimpleRenderer;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			import com.makolab.fractus.view.catalogue.CatalogueItemInfo;
+			import mx.charts.CategoryAxis;
+			import com.makolab.fractus.view.catalogue.CatalogueContractorInfo;
+			import mx.formatters.SwitchSymbolFormatter;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.commands.SearchCommand;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.FractusCommand;
+			import mx.events.ListEvent;
+			
+			[Bindable]
+			private var _columns:XMLList;
+			private var searchParams:XML;
+			private var _configurationKey:String;
+			private var _configuration:XML;
+			public var autoSearch:Boolean = true;
+			public var searchFilters:XML;
+			public var dateFrom:String;
+			public var dateTo:String;
+			public var groups:String;
+			public var includeGroupUnussigned:Boolean;
+			public var query:String;
+			
+			public function set configurationKey(value:String):void
+			{
+				_configurationKey = value;
+				if (_configurationKey) ModelLocator.getInstance().configManager.requestList([_configurationKey],loadConfigurationHandler);
+			}
+			public function get configurationKey():String
+			{
+				return _configurationKey;
+			}
+			
+			private function loadConfigurationHandler():void
+			{
+				if (_configurationKey)
+				{
+					_configuration = ModelLocator.getInstance().configManager.getXMLValue(_configurationKey);
+					_columns = _configuration.columns;
+				}
+				if (autoSearch) search();
+			}
+			
+			public var elementsType:String;
+	        
+	        public function search():void
+	        {
+	        	if(!elementsType)return;
+	        	searchParams = _configuration.searchParams[0];
+				if (searchFilters)
+				{
+					if (searchParams && searchParams.filters.length() == 0) searchParams.filters = <filters/>
+					searchParams.filters.* = searchParams.filters.* + searchFilters.*; 
+				}
+				if (query) searchParams.query.* = query;
+				searchParams.currentWarehouse = ModelLocator.getInstance().currentWarehouseId;
+				searchParams.currentItemPriceId = ModelLocator.getInstance().currentItemPriceId;
+				if (groups) searchParams.groups.* = searchParams.groups.* + groups;
+				if (includeGroupUnussigned) {searchParams.groups.@includeUnassigned="1";}
+				else {delete searchParams.groups.@includeUnassigned;}
+				if (dateFrom) searchParams.dateFrom = dateFrom;
+				if (dateTo) searchParams.dateTo = dateTo;
+	        	var cmd:SearchCommand = new SearchCommand(elementsType);
+				cmd.searchParams = XML(searchParams);
+				cmd.addEventListener(ResultEvent.RESULT,searchResultHandler);
+				cmd.execute();
+	        }
+	        
+	        private function searchResultHandler(event:ResultEvent):void
+	        {
+	        	grid.dataProvider = XML(event.result).*;
+	        }
+			
+			private function itemDoubleClickHandler(event:ListEvent):void
+			{
+				switch (elementsType)
+				{
+					case SearchCommand.CONTRACTORS:
+						CatalogueContractorInfo.showWindow(grid.dataProvider[event.rowIndex].@id);
+						break;
+					case SearchCommand.ITEMS:
+						CatalogueItemInfo.showWindow(grid.dataProvider[event.rowIndex].@id);
+						break;
+					case SearchCommand.DOCUMENTS:
+						var typeDescriptor:DocumentTypeDescriptor = new DocumentTypeDescriptor(grid.dataProvider[event.rowIndex].@documentTypeId);
+						DocumentRenderer.showWindow(typeDescriptor.documentCategory,grid.dataProvider[event.rowIndex].@id);
+						break;
+				}
+			}
+			
+			public static function showWindow(elementType:String, configurationKey:String = null, autoSearch:Boolean = true):ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var list:SimpleCatalogue = new SimpleCatalogue();
+				list.autoSearch = autoSearch;
+				list.elementsType = elementType;
+				if (configurationKey) list.configurationKey = configurationKey;
+				window.innerComponent = list;
+				//window.setStyle("headerColors",[IconManager.CONTRACTORS_COLOR,IconManager.CONTRACTORS_COLOR_LIGHT]); 
+				//if(catalogue.icon)window.titleIcon = catalogue.icon;
+				window.show(null,new Rectangle(-1,-1,800,600));
+				return window;
+			}
+		]]>
+	</mx:Script>
+	<mx:Text selectable="false" text="{LanguageManager.getInstance().labels.alert.simpleCatalogueAlert}" paddingLeft="5" paddingRight="5" paddingTop="5" paddingBottom="2" width="100%" fontSize="11" fontWeight="bold" color="#700000" />
+	<list:CommonGrid  id="grid" width="100%" height="100%" config="{_columns}" doubleClickEnabled="true" itemDoubleClick="{itemDoubleClickHandler(event)}" />
+</mx:VBox>

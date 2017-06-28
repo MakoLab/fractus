@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" verticalGap="0">
+
+	<mx:Metadata>
+        [Event(name="change", type="flash.events.Event")]
+    </mx:Metadata>
+    
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			
+			import flash.net.navigateToURL;
+			
+			private var _dataObject:XML;
+		
+			/**
+			 * Lets you pass a value to the editor.
+			 * @see #dataObject
+			 */
+			override public function set data(value:Object):void{
+				dataObject = XML(value);
+			}
+			
+			[Bindable]
+			public function set dataObject(value:XML):void
+			{
+				_dataObject = value;
+			}
+			
+			public function get dataObject():XML
+			{
+				return _dataObject;
+			}
+			
+			private function changeLink(event:Event):void{
+				_dataObject = <value>{link.text}</value>;
+				dispatchEvent(new Event("change"));
+			}
+			private function goToUrl():void
+			{
+				navigateToURL(new URLRequest(dataObject),"_blank");
+			}
+			
+			
+		]]>
+	</mx:Script>
+
+	<mx:HBox width="100%">
+		<mx:TextInput id="link" width="80%" maxChars="256" change="changeLink(event)" text="{dataObject}"/>
+		<mx:Button id="linkBtn" width="20%" label="idz" click="goToUrl()"/>
+	</mx:HBox>
+</mx:VBox>

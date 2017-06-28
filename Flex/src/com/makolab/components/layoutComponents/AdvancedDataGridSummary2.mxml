@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:DataGrid xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="creationCompleteHandler()" horizontalScrollPolicy="{source.horizontalScrollPolicy}" fontWeight="bold" headerHeight="0">
+  <mx:Script>
+    <![CDATA[
+			import mx.collections.HierarchicalData;
+			import mx.collections.HierarchicalCollectionView;
+			import mx.events.ScrollEvent;
+			import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+			import mx.collections.ArrayCollection;
+			import mx.collections.XMLListCollection;
+			import mx.events.FlexEvent;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.events.IndexChangedEvent;
+			import mx.events.AdvancedDataGridEvent;
+			import mx.controls.AdvancedDataGrid;
+			private var _source:AdvancedDataGrid;
+			
+			/**
+			 * createDataProvider(gridDataProvider:Object):ICollection
+			 */
+			public var createDataProviderFunction:Function = createDataProvider;
+			
+			private var columnRelations:Array = [];
+			
+			private function creationCompleteHandler():void
+			{
+				if(this.horizontalScrollBar){
+					//this.horizontalScrollBar.includeInLayout = false;
+					this.horizontalScrollBar.visible = false; // nie wiedziec czemu nie dziala. Nie chce mi sie wnikac wiec alpha = 0. coolik
+					this.horizontalScrollBar.alpha = 0;
+				}
+			}
+			
+			[Bindable]
+			public function set source(value:AdvancedDataGrid):void
+			{
+				_source = value;
+				if(value){
+					_source.addEventListener(FlexEvent.CREATION_COMPLETE,sourceCreationCompleteHandler);
+					_source.addEventListener(IndexChangedEvent.HEADER_SHIFT,columnLocationChange);
+					_source.addEventListener(AdvancedDataGridEvent.COLUMN_STRETCH,columnWidthChange);
+					_source.addEventListener(FlexEvent.UPDATE_COMPLETE,updateColumnWidth);
+					_source.addEventListener(ScrollEvent.SCROLL,updateScrollPosition);
+				}
+			}
+			
+			private function sourceCreationCompleteHandler(event:FlexEvent):void
+			{
+				defineColumns();
+			}
+			
+			private function defineColumns():void
+			{
+				if (source)
+				{
+					this.columns = [];
+					var tempColumns:Array = [];
+					var columnsWidth:Number = 0;
+					columnRelations = [];
+					for(var i:int = 0; i < _source.columnCount; i++){
+						var sc:DataGridColumn = new DataGridColumn(_source.columns[i].headerText); 
+						tempColumns.push(sc);
+						tempColumns[i].width = _source.columns[i].width;
+						(tempColumns[i] as DataGridColumn).dataField = _source.columns[i].dataField;
+						tempColumns[i].labelFunction = _source.columns[i].labelFunction;
+						(tempColumns[i] as DataGridColumn).setStyle("textAlign",_source.columns[i].getStyle("textAlign"));
+						if(_source.columns[i].getStyle("color")&& _source.columns[i].getStyle("color")!=undefined)
+						(tempColumns[i] as DataGridColumn).setStyle("color",_source.columns[i].getStyle("color"));
+						//trace("color1:", _source.columns[i].getStyle("color"));
+						tempColumns[i].visible = _source.columns[i].visible;
+						columnsWidth += _source.columns[i].width;
+						columnRelations.push({sourceColumn : _source.columns[i], summaryColumn : sc});
+					}
+					this.columns = tempColumns;
+					this.dataProvider = createDataProviderFunction(_source.dataProvider);
+					this.lockedColumnCount = _source.lockedColumnCount;
+				}
+			}
+			
+			public function get source():AdvancedDataGrid
+			{
+				return _source;
+			}
+			
+			private function columnLocationChange(event:IndexChangedEvent):void
+			{
+				var newColumnOrder:Array = [];
+				
+				for (var i:int = 0; i < source.columnCount; i++)
+				{
+					for (var j:int = 0; j < columnRelations.length; j++)
+					{
+						if (source.columns[i] == columnRelations[j].sourceColumn) newColumnOrder.push(columnRelations[j].summaryColumn);
+					}
+				}
+				this.columns = newColumnOrder;
+				
+				/* for (var c:int = 0; c < _source.columnCount; c++)
+				{
+					for (var i:int = 0; i < this.columns.length; i++){
+						if(_source.columns[c].dataField)newColumnOrder.push(this.columns[i]);
+					}
+				}
+				var column:DataGridColumn = this.columns[event.newIndex];
+				newColumnOrder[event.newIndex] = newColumnOrder[event.oldIndex];
+				newColumnOrder[event.oldIndex] = column; 
+				this.columns = newColumnOrder;
+				this.columns[event.newIndex].width = _source.columns[event.newIndex].width;
+				this.columns[event.oldIndex].width = _source.columns[event.oldIndex].width;
+				*/
+			}
+			
+			private function columnWidthChange(event:AdvancedDataGridEvent):void
+			{
+				if (event.columnIndex < columns.length)
+					this.columns[event.columnIndex].width = source.columns[event.columnIndex].width;
+			}
+			
+			private function updateColumnWidth(event:Event = null):void
+			{
+				defineColumns();
+				for(var i:int=0;i<this.columns.length;i++){
+					this.columns[i].width = source.columns[i].width;
+				}
+			}
+			
+			private function updateScrollPosition(event:ScrollEvent = null):void
+			{
+				this.horizontalScrollPosition = source.horizontalScrollPosition;
+			}
+			
+			private var _summaryColumns:Array = [];
+			
+			[Bindable]
+			public function set summaryColumns(value:Array):void
+			{
+				_summaryColumns = value;
+				defineColumns();
+			}
+			public function get summaryColumns():Array
+			{
+				return _summaryColumns;
+			}
+			
+			private function createDataProvider(value:Object):XMLList
+			{
+				var xmlList:XMLList = new XMLList();
+				var operationsArray:Array = [];
+				var exist:Boolean = false;
+				var max:int = 0;
+				for(var c:int = 0; c < summaryColumns.length; c++){
+					operationsArray = [];
+					for(var o:int=0;o<(summaryColumns[c] as SummaryColumn).operations.length;o++){
+						exist = false;
+						for(var e:int=0;e<operationsArray.length;e++){
+							if(operationsArray[e] == (summaryColumns[c] as SummaryColumn).operations[o]){
+								exist = true;
+								break;
+							}
+						}
+						if(!exist)operationsArray.push((summaryColumns[c] as SummaryColumn).operations[o]);
+						if(operationsArray && operationsArray.length > max)max = operationsArray.length;
+					}
+				}
+				/* for(var l:int=0;l<operationsArray.length;l++){
+					if(operationsArray[l] && operationsArray[l].length > max)max = operationsArray[l].length;
+				} */
+				if (value)
+				{
+					var dataFieldName:String = "";
+					for(var i:int = 0; i < max; i++){
+						xmlList = xmlList + <summaryRow/>;
+						for(var j:int=0;j<summaryColumns.length;j++){
+							dataFieldName = (summaryColumns[j] as SummaryColumn).sourceColumn.dataField;
+							if(dataFieldName){
+								if((summaryColumns[j] as SummaryColumn).operations.length > i){
+									trace("opertaion:",(summaryColumns[j] as SummaryColumn).operations[i]);
+									if(dataFieldName=="@profitMargin")
+										xmlList[i][dataFieldName] = (summaryColumns[j] as SummaryColumn).operations[i] ? 
+									((summaryColumns[j] as SummaryColumn).operations[i] as Function).call(
+									this,XMLList(source.dataProvider.source is HierarchicalData ? 
+									source.dataProvider.source.source : 
+									source.dataProvider.source),
+									dataFieldName,summaryColumns[j].childDataField) 
+									: "";
+									else
+									xmlList[i][dataFieldName] = (summaryColumns[j] as SummaryColumn).operations[i] ? 
+									((summaryColumns[j] as SummaryColumn).operations[i] as Function).call(
+									this,XMLList(source.dataProvider.source is HierarchicalData ? 
+									source.dataProvider.source.source : 
+									source.dataProvider.source),
+									dataFieldName,summaryColumns[j].childDataField,summaryColumns[j].childDataFields) 
+									: "";
+								}else{
+									xmlList[i][dataFieldName] = "";
+								};
+							}
+						}
+					}
+				}
+				var rows:int = 0;
+				for(var col:int=0;col < summaryColumns.length;col++){
+					if((summaryColumns[col] as SummaryColumn).operations.length > rows)rows = (summaryColumns[col] as SummaryColumn).operations.length; 
+				}
+				this.rowCount = rows;
+				return xmlList;
+			}
+		]]>
+  </mx:Script>
+</mx:DataGrid>

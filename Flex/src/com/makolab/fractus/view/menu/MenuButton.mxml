@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:LinkButton xmlns:mx="http://www.adobe.com/2006/mxml" labelPlacement="bottom" creationComplete="initL();">
+<!-- Aby przycisk mogl miec zdefiniowane w stylu tlo trzeba zmienic LinkButton na Button
+		TODO: ujednolicic to z MultiButtonem-->
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ConfigManager;
+			import com.makolab.fractus.model.GlobalEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			import mx.controls.Label;
+			
+			import assets.IconManager;
+			[Bindable]
+			public var functionName:String;
+			
+			[Bindable]
+			public var functionClass:String;
+			
+			[Bindable]
+			public var functionParameters:Array = [];
+
+			protected override function clickHandler(event:MouseEvent):void
+			{
+				super.clickHandler(event);
+				if (enabled && functionName) 
+				{
+					if (functionClass)
+					{
+						try
+						{
+							var cls:Class = getDefinitionByName(functionClass) as Class;
+							(cls[functionName] as Function).apply(this,functionParameters);
+						}
+						catch (error:Error)
+						{
+							var errorText:String = "Klasa " + functionClass + " nie istnieje, nie znajduje się w kompilacji lub parametry funkcji " + functionName + " są niezgodne.";
+							ConfigManager.reportConfigurationError(errorText,"Błąd konfiguracji");
+						}
+					}
+					else
+						(model.menuManager[functionName] as Function).apply(model.menuManager,functionParameters);
+				}
+				//if (enabled && functionName) model.menuManager[functionName]();
+			}
+			
+			private var _labelKey:String;
+			private var _toolTipKey:String;
+			private function initL():void
+			{
+			model.eventManager.addEventListener(GlobalEvent.LANGUAGE_CHANGED, langChanged, false, 0 , true);
+			langChanged();
+			}
+		/*	private function popUpMenuButton_labelFunc(item:Object):String {
+				var str:String=	item.@labelEn;
+				var a:Array=str.split(";");
+				if(a.length)
+				{
+					var c:String=LanguageManager.getInstance().currentLanguage;
+					var i:int=0;
+					var I:int=0;
+					for( i=0;i< LanguageManager.getInstance().languagesList.length;i++)
+					{
+						if(LanguageManager.getInstance().languagesList[i].toLocaleUpperCase()==c.toLocaleUpperCase())
+							I=i+1;
+						
+					}
+					if(a.length>I)
+						return a[I];
+					else
+						return "uzupełnij język";
+				}
+				else 
+					return "";
+			}*/
+			private function langChanged(e:Event=null):void
+			{
+				label=model.languageManager.getLabel(_labelKey);
+				if(_toolTipKey)
+					this.toolTip = model.languageManager.getLabel(_toolTipKey);
+			}
+			public function set labelKey(value:String):void
+			{
+				// TODO: aktualizacja etykiet przy zmianie jezyka (binding lub zdarzenie)
+				_labelKey = value;
+				this.label = model.languageManager.getLabel(_labelKey);
+			}
+			public function get labelKey():String
+			{
+				return _labelKey;
+			}
+			
+			override public function set label(value:String):void
+			{
+				var labelKeyValue:String = labelKey ? model.languageManager.getLabel(_labelKey) : null;
+				if (!labelKeyValue || labelKeyValue == "")
+					super.label = value;
+				else 
+					super.label = labelKeyValue;
+			}
+			
+			public function set toolTipKey(value:String):void
+			{
+				// TODO: aktualizacja etykiet przy zmianie jezyka (binding lub zdarzenie)
+				_toolTipKey = value;
+				this.toolTip = model.languageManager.getLabel(_toolTipKey);
+			}
+			public function get toolTipKey():String
+			{
+				return _toolTipKey;
+			}
+			
+			private var _iconName:String;
+			
+			public function set iconName(value:String):void
+			{
+				_iconName = value;
+				setStyle("icon", IconManager.getIcon(_iconName));
+				setStyle("disabledIcon", IconManager.getIcon("dis_"+_iconName));
+			}
+			public function get iconName():String { return _iconName; }
+			
+			private function get model():ModelLocator
+			{
+				return ModelLocator.getInstance();
+			}
+			
+			override protected function createChildren():void {
+				super.createChildren();
+				if (textField){
+					textField.wordWrap = true;
+					textField.multiline = true;
+				}				
+			}
+	 		
+			override public function measureText(s:String):TextLineMetrics {
+				textField.text = s;
+				var lineMetrics:TextLineMetrics = textField.getLineMetrics(0);
+				lineMetrics.width = textField.textWidth;
+				if(textField.numLines<=1)lineMetrics.height = 2*textField.textHeight;
+				else lineMetrics.height = textField.textHeight;	 			
+				return lineMetrics;
+			}
+		]]>
+	</mx:Script>
+</mx:LinkButton>

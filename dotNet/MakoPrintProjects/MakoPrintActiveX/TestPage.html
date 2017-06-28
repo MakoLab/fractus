@@ -1,0 +1,21 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>MakoPrintActiveX test page</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta http-equiv="pragma" content="no-cache" />
+    </head>
+    <body>
+        <script type="text/javascript">
+        function onBtnPrint() {
+            var makoPrintAX = new ActiveXObject("Makolab.Printing.MakoPrintActiveX");
+			makoPrintAX.PrintFiscal(document.getElementById("xml").value);
+        }
+        </script>
+        <div>
+		    <textarea cols="0" rows="0" id="xml" style="width: 700px; height: 500px;"></textarea>
+			<br/>
+			<input type="button" value="Print document" onclick="onBtnPrint();" />
+        </div>
+    </body>
+</html>

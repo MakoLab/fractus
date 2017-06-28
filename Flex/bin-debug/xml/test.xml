@@ -1,0 +1,122 @@
+		<zestawienie>
+		  <naglowek>
+		    <lp>Lp.</lp>
+		    <skrot  data-type="text">Rodzaj</skrot>
+		    <nrpelny data-type="text">Dokument FV</nrpelny>
+		    <roznica><![CDATA[Różnica]]></roznica>
+		    <faktura><![CDATA[Ilość z FV]]></faktura>
+		    <wz><![CDATA[Ilość z WZ]]></wz>
+		  </naglowek>
+		  <pozycja >
+		    <skrot><![CDATA[FV_S                ]]></skrot>
+		    <nrpelny><![CDATA[17/B/2007]]></nrpelny>
+		    <roznica>-23</roznica>
+		    <faktura>1</faktura>
+		    <wz>24</wz>
+		  </pozycja>
+		  <pozycja >
+		    <skrot><![CDATA[FV_S                ]]></skrot>
+		    <nrpelny><![CDATA[21/B/2007]]></nrpelny>
+		    <roznica>-5</roznica>
+		    <faktura>1</faktura>
+		    <wz>6</wz>
+		  </pozycja>
+		  <pozycja >
+		    <skrot><![CDATA[FV_S                ]]></skrot>
+		    <nrpelny><![CDATA[31/B/2007]]></nrpelny>
+		    <roznica>-8</roznica>
+		    <faktura>1</faktura>
+		    <wz>9</wz>
+		  </pozycja>
+		  <pozycja >
+		    <skrot><![CDATA[FV_S                ]]></skrot>
+		    <nrpelny><![CDATA[39/B/2007]]></nrpelny>
+		    <roznica>-1</roznica>
+		    <faktura>1</faktura>
+		    <wz>2</wz>
+		  </pozycja>
+		  <pozycja >
+		    <skrot><![CDATA[FV_S                ]]></skrot>
+		    <nrpelny><![CDATA[41/B/2007]]></nrpelny>
+		    <roznica>-17</roznica>
+		    <faktura>1</faktura>
+		    <wz>18</wz>
+		  </pozycja>
+		  <pozycja >
+		    <skrot><![CDATA[FV_S                ]]></skrot>
+		    <nrpelny><![CDATA[42/B/2007]]></nrpelny>
+		    <roznica>-2</roznica>
+		    <faktura>1</faktura>
+		    <wz>3</wz>
+		  </pozycja>
+		  <pozycja >
+		    <skrot><![CDATA[FV_S                ]]></skrot>
+		    <nrpelny><![CDATA[670/B/2007]]></nrpelny>
+		    <roznica>5</roznica>
+		    <faktura>10</faktura>
+		    <wz>5</wz>
+		  </pozycja>
+		  <pozycja >
+		    <skrot><![CDATA[FV_S                ]]></skrot>
+		    <nrpelny><![CDATA[671/B/2007]]></nrpelny>
+		    <roznica>5</roznica>
+		    <faktura>14</faktura>
+		    <wz>9</wz>
+		  </pozycja>
+		  <pozycja >
+		    <skrot><![CDATA[FV_S                ]]></skrot>
+		    <nrpelny><![CDATA[721/B/2007]]></nrpelny>
+		    <roznica>-14</roznica>
+		    <faktura>2</faktura>
+		    <wz>16</wz>
+		  </pozycja>
+		  <pozycja >
+		    <skrot><![CDATA[FV_S                ]]></skrot>
+		    <nrpelny><![CDATA[744/B/2007/6]]></nrpelny>
+		    <roznica>2</roznica>
+		    <faktura>2</faktura>
+		    <wz>0</wz>
+		  </pozycja>
+		  <pozycja >
+		    <skrot><![CDATA[PAR                 ]]></skrot>
+		    <nrpelny><![CDATA[B/74/06/2008]]></nrpelny>
+		    <roznica>4</roznica>
+		    <faktura>8</faktura>
+		    <wz>4</wz>
+		  </pozycja>
+		  <pozycja >
+		    <skrot><![CDATA[PAR                 ]]></skrot>
+		    <nrpelny><![CDATA[1349/B/2007]]></nrpelny>
+		    <roznica>-4</roznica>
+		    <faktura>2</faktura>
+		    <wz>6</wz>
+		  </pozycja>
+		  <pozycja >
+		    <skrot><![CDATA[KOR_FV_S            ]]></skrot>
+		    <nrpelny><![CDATA[23/B/2007]]></nrpelny>
+		    <roznica>1</roznica>
+		    <faktura>2</faktura>
+		    <wz>1</wz>
+		  </pozycja>
+		  <pozycja >
+		    <skrot><![CDATA[KOR_FV_S            ]]></skrot>
+		    <nrpelny><![CDATA[48/B/2007]]></nrpelny>
+		    <roznica>1</roznica>
+		    <faktura>-3</faktura>
+		    <wz>-2</wz>
+		  </pozycja>
+		  <pozycja >
+		    <skrot><![CDATA[FD                  ]]></skrot>
+		    <nrpelny><![CDATA[8/B/2008]]></nrpelny>
+		    <roznica>4</roznica>
+		    <faktura>8</faktura>
+		    <wz>4</wz>
+		  </pozycja>
+		  <pozycja >
+		    <skrot><![CDATA[ZS                  ]]></skrot>
+		    <nrpelny><![CDATA[38/B/2007]]></nrpelny>
+		    <roznica>-8</roznica>
+		    <faktura>8</faktura>
+		    <wz>16</wz>
+		  </pozycja>
+		</zestawienie>

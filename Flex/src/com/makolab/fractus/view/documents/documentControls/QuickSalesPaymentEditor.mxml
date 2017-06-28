@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:DataGrid 
+		xmlns:mx="http://www.adobe.com/2006/mxml" 
+		initialize="onInitialize()" xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+		editable="true" 
+		rowHeight="50" 
+		width="100%"
+		dataProvider="{documentObject.paymentsXML.payment}">
+		
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ListEvent;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.components.inputComponents.CurrencyEditor;
+			import com.makolab.fractus.view.dictionaries.editors.Currency;
+			import mx.core.EventPriority;
+			import mx.controls.listClasses.IListItemRenderer;
+			import com.makolab.components.document.DocumentEvent;
+			import mx.events.DataGridEvent;
+			import mx.collections.XMLListCollection;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.document.DocumentObject;
+			
+			private var _documentObject:DocumentObject;
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				_documentObject = value;
+			}
+			public function get documentObject():DocumentObject
+			{
+				return _documentObject;
+			}
+			
+			private function onInitialize():void
+			{
+				addEventListener(DataGridEvent.ITEM_EDIT_END,itemEditEndHandler,false,EventPriority.DEFAULT_HANDLER - 1);
+			}
+			
+			private function itemEditEndHandler(event:DataGridEvent):void
+			{
+				var payment:XML = event.itemRenderer.data as XML;
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_PAYMENT_CHANGE,event.dataField,payment));
+			}
+			
+			public function itemFocusOutHandler(event:FocusEvent):void
+			{
+				var payment:XML = (event.currentTarget as IListItemRenderer).data as XML;
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_PAYMENT_CHANGE,"amount",payment));
+			}
+			
+			public function itemAmountChange(event:Event):void
+			{
+				var val:Number = CurrencyManager.parseCurrency((event.currentTarget as CurrencyEditor).text, 2);
+				if (!isNaN(val))
+				{
+					var payment:XML = (event.currentTarget as IListItemRenderer).data as XML;
+					payment.amount = val;
+					documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_PAYMENT_CHANGE,"amount",payment));
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:columns>
+		<mx:DataGridColumn headerText="Forma płatności" editable="false" dataField="label"/>
+		<mx:DataGridColumn headerText="Kwota" editable="true" dataField="amount" editorDataField="dataObject" rendererIsEditor="true" id="priceEditor">
+			<mx:itemRenderer>
+				<mx:Component>
+					<!--<inputComponents:CurrencyRenderer columnIdent="amount"/>-->
+					<inputComponents:CurrencyEditor borderThickness="0" backgroundAlpha="0" fontSize="18" update="outerDocument.itemAmountChange(event)" focusIn="selectAll(event)" mouseUp="selectAll(event)">
+						<mx:Script>
+							<![CDATA[
+								import com.makolab.components.inputComponents.CurrencyEditor;
+								public  function selectAll(event:Event):void
+								{
+									(event.currentTarget as CurrencyEditor).setSelection(0,(event.currentTarget as CurrencyEditor).text.length);
+								}
+							]]>
+						</mx:Script>
+					</inputComponents:CurrencyEditor>
+				</mx:Component>
+			</mx:itemRenderer>
+			<!--<mx:itemEditor>
+				<mx:Component>
+					<inputComponents:CurrencyEditor/>
+				</mx:Component>
+			</mx:itemEditor>-->
+		</mx:DataGridColumn>
+	</mx:columns>
+</mx:DataGrid>

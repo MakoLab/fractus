@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="creationCompleteHandler(event)">
+	<mx:Script>
+       <![CDATA[
+       	import com.makolab.fractus.model.ModelLocator;
+       	import mx.core.ScrollPolicy;
+       	import mx.events.FlexEvent;
+       	import mx.core.Application;
+       	import mx.controls.Alert;
+       	import com.makolab.fractus.view.ComponentWindow;
+                       
+           import flash.errors.IOError;
+           import flash.events.Event;
+           import flash.events.HTTPStatusEvent;
+           import flash.events.IOErrorEvent;
+           import flash.events.ProgressEvent;
+           import flash.events.TimerEvent;
+           import flash.utils.Timer;
+           import mx.controls.SWFLoader;
+   
+   
+           private var swfLoader:SWFLoader;
+           private var urlLoader:URLLoader;
+           private var t:Timer;
+           [Bindable]
+           private var keyCodes:String = "";
+           
+           [Bindable] private var bytes:String = "";
+           [Bindable] private var time:String = "";
+           
+           private function cc():void
+           {
+           					/* startButton.setStyle("color",0x000000);
+                           swfLoader = new SWFLoader();
+                           swfLoader.addEventListener(Event.COMPLETE, onSwfLoaderComplete);
+                           swfLoader.addEventListener(IOErrorEvent.IO_ERROR, onLoaderError);
+                           swfLoader.addEventListener(Event.UNLOAD, onUnload); */
+
+					var fileName:String = stage.loaderInfo.url;
+					var urlRequest:URLRequest = new URLRequest(fileName);
+					
+					urlLoader = new URLLoader();
+					urlLoader.addEventListener(Event.COMPLETE, onUrlLoaderComplete);
+					urlLoader.addEventListener(IOErrorEvent.IO_ERROR, onLoaderError);
+                           
+					t = new Timer(1,0);
+					t.start();
+					   
+					//swfLoader.load(fileName);
+					urlLoader.load(urlRequest);
+           }
+   
+           private function onSwfLoaderComplete(e:Event):void
+           {                                                             
+               bytes = swfLoader.bytesTotal/1000 + " [kB]"; 
+               time = Math.floor(t.currentCount/1000 +1) + " [S]";
+               // ponizszy kod niestety nie dziala- zaladowany raz swf bedzie wciaz siedzial w pamieci
+               // przechwytywal eventy i wykonywal requesty za naszego wlasciwego Fractusa. 
+               swfLoader.unloadAndStop();
+               swfLoader = null;
+           }
+   
+           private function onUrlLoaderComplete(e:Event):void
+           {                                                             
+               bytes = urlLoader.bytesTotal/1000 + " [kB]"; 
+               time = Math.floor(t.currentCount/1000 +1) + " [S]";
+           }
+           
+           private function onLoaderError(e:IOErrorEvent):void
+           {                                                             
+                           Alert.show(" error" + e.text,"Blad");                                                             
+           }
+           
+			private function onUnload(event:Event):void
+			{
+				startButton.setStyle("color",0xff0000);
+			}
+               
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:SpeedTest = new SpeedTest();
+				component.percentHeight = 100;
+				component.percentWidth = 100;
+				window.innerComponent = component; 
+				if(component.icon)window.titleIcon = component.icon;
+				window.show(null,new Rectangle(0,0,400,600),"Test prędkości");
+				return window;
+			}
+			
+			private function creationCompleteHandler(event:FlexEvent):void
+			{
+				stage.addEventListener(KeyboardEvent.KEY_DOWN,handleKeyDown);
+				stage.addEventListener(KeyboardEvent.KEY_UP,handleKeyUp);
+			}
+			
+		private function handleKeyDown(event:KeyboardEvent):void
+		{
+			if (ModelLocator.getInstance().isDebug())
+			{
+				keyCodes += "Down "+event.keyCode + "\n";
+				keyCodesText.text = keyCodes;
+				keyCodesText.verticalScrollPosition = keyCodesText.maxVerticalScrollPosition;
+			}
+		}
+		
+		private function handleKeyUp(event:KeyboardEvent):void
+		{
+			if (ModelLocator.getInstance().isDebug())
+			{
+				keyCodes += "Up "+event.keyCode + "\n";
+				keyCodesText.text = keyCodes;
+				keyCodesText.verticalScrollPosition = keyCodesText.maxVerticalScrollPosition;
+			}
+		}
+                       
+       ]]>
+	</mx:Script>
+	<mx:FormItem label="Ilość bajtow:">
+		<mx:Label text="{bytes}"/>
+	</mx:FormItem>
+	<mx:FormItem label="Czas:">
+		<mx:Label text="{time}"/>
+	</mx:FormItem>
+	<mx:Button id="startButton" label="Start" click="cc()"/>
+	<mx:FormHeading label="Klawiatura" visible="{ModelLocator.getInstance().isDebug()}" includeInLayout="{ModelLocator.getInstance().isDebug()}"/>
+	<mx:FormItem label="kody klawiszy:" visible="{ModelLocator.getInstance().isDebug()}" includeInLayout="{ModelLocator.getInstance().isDebug()}">
+		<mx:TextArea id="keyCodesText" editable="false" height="300"/>
+		<mx:Button label="Wyczyść">
+			<mx:click>
+				<![CDATA[
+					keyCodesText.text = keyCodes = "";
+				]]>
+			</mx:click>
+		</mx:Button>
+	</mx:FormItem>
+</mx:Form>

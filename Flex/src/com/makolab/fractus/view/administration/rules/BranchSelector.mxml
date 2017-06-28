@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheckBoxCombo xmlns="com.makolab.components.inputComponents.*" xmlns:mx="http://www.adobe.com/2006/mxml" dataProvider="{DictionaryManager.getInstance().dictionaries.branches}">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.DictionaryManager;
+			
+			public function set branchIds(value:String):void
+			{
+				if(!value)return;
+				var array:Array = [];
+				var ids:Array = value.split(",");
+				for(var i:int = 0; i < ids.length; i++){
+					for each(var item:Object in DictionaryManager.getInstance().dictionaries.branches){
+						if(item.id.toString() == ids[i]){
+							array.push(item);
+							break;
+						}
+					}
+				}
+				this.selectedItems = array;
+			}
+			public function get branchIds():String
+			{
+				var array:Array = [];
+				for each ( var item:Object in selectedItems){
+					array.push(item.id.toString());
+				}
+				return array.join(",");
+			}
+			
+			public function get branchNames():String
+			{
+				var array:Array = [];
+				for each ( var item:Object in selectedItems){
+					array.push(item.label[0]);
+				}
+				return array.join(",");
+			}
+		]]>
+	</mx:Script>
+	
+</CheckBoxCombo>

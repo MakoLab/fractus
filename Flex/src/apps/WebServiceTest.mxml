@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical">
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.rpc.events.ResultEvent;
+			private const DELAY:int = 100;
+			private const LOG_INTERVAL:int = 50;
+			
+			[Bindable]
+			private var lastRequestTime:Number;
+			
+			[Bindable]
+			private var log:ArrayCollection = new ArrayCollection();
+			
+			private var timer:Date;
+			
+			private var totalTime:Number = 0;
+			
+			[Bindable]
+			private var counter:int = 0;
+			
+			private var run:Boolean;
+			
+			private var counter2:Number = 0;
+			private var totalTime2:Number = 0;
+			
+			private function makeRequest():void
+			{
+				counter++;
+				counter2++;
+				timer = new Date();
+				webService.getOperation("Delay").send(DELAY);
+			}
+			
+			private function resultHandler(event:ResultEvent):void
+			{
+				var time:Number = new Date().getTime() - timer.getTime();
+				totalTime += time;
+				totalTime2 += time;
+				lastRequestTime = time;
+				if (counter % LOG_INTERVAL == 0 || counter == 1)
+				{
+					log.addItem({count : counter, last : time, interval_avg : Math.round(totalTime2/counter2), total_avg : Math.round(totalTime/counter)});
+					counter2 = 0;
+					totalTime2 = 0;
+				}
+				if (run) makeRequest();
+			}
+		]]>
+	</mx:Script>
+	<!--
+	<mx:Label text="{'Zapytań: ' + counter}"/>
+	<mx:Label text="{'Czas wykonania ostatniego zapytania: ' + lastRequestTime}"/>
+	-->
+	
+	<mx:DataGrid dataProvider="{log}" width="100%" height="100%"/>
+	
+	<mx:Button label="Start" click="run = true; makeRequest()"/>
+	<mx:Button label="Stop" click="run = false;"/>
+	
+	<mx:WebService id="webService" wsdl="http://svn_serv/kernelservices/kernelservice.svc?wsdl">
+		<mx:operation name="Delay" result="resultHandler(event)"/>
+	</mx:WebService>
+</mx:Application>

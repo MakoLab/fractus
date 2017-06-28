@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		width="250" 
+		implements="mx.controls.listClasses.IListItemRenderer, com.makolab.components.inputComponents.IFormBuilderComponent"
+		verticalAlign="middle"
+		currentState="{cbEqual.selected ? '' : 'city'}"
+		verticalGap="6"
+	>
+	<mx:states>
+		<mx:State name="city">
+			<mx:AddChild position="lastChild" creationPolicy="all">
+				<mx:HBox id="hbCity" width="100%" visible="{!cbEqual.selected}">
+					<mx:Label text="{labels.postOffice}"/>
+					<mx:TextInput id="tiPostOffice" width="100%" change="handleChange(event)"/>
+				</mx:HBox>
+			</mx:AddChild>
+
+		</mx:State>
+	</mx:states>
+	<mx:Script>
+	<![CDATA[
+		import mx.validators.ValidationResult;
+		import mx.events.FlexEvent;
+		import com.makolab.fractus.model.LanguageManager;
+		/**
+		 * Labels text.
+		 * <ul>
+		 * <li>address</li>
+		 * <li>postCode</li>
+		 * <li>postOffice</li>
+		 * <li>city</li>
+		 * <li>equal</li>
+		 * </ul>
+		 */
+		[Bindable]
+		public var labels:Object =
+			{
+				address : LanguageManager.getInstance().labels.common.address,
+				postCode : LanguageManager.getInstance().labels.common.code,
+				postOffice : LanguageManager.getInstance().labels.common.post,
+				city : LanguageManager.getInstance().labels.common.city,
+				equal : LanguageManager.getInstance().labels.address.copy
+			};
+		[Bindable]
+			public var countries:XMLList = new XMLList();
+			
+		private var _dataObject:Object;
+		/**
+		 * Lets you pass value to the editor.
+		 * @see #data
+		 */
+		[Bindable]
+		public function set dataObject(value:Object):void
+		{
+			_dataObject = value;
+			taAddress.text = dataObject.address;
+			tiPostCode.text = dataObject.postCode;
+			tiPostOffice.text = dataObject.postOffice;
+			tiCity.text = dataObject.city;
+		}
+		/**
+		 * @private
+		 */
+		public function get dataObject():Object { return _dataObject; }
+		
+		private var _listData:Object;
+		
+		
+		/**
+		 * Lets you pass value to the editor.
+		 * @see #dataObject
+		 */
+		public override function set data(value:Object):void
+		{
+			if (super.data != value) cbEqual.selected = (String(value.city) == String(value.postOffice)); 
+			super.data = value;
+			dataObject = DataObjectManager.getDataObject(data, listData);
+		}
+		
+		public function set listData(value:Object):void
+		{
+			_listData = value;
+		}
+		public function get listData():Object
+		{
+			return _listData;
+		}
+		
+		private function handleChange(event:Event):void
+		{
+			if (event.target == tiPostOffice) cbEqual.selected = false;
+			if (dataObject)
+			{
+				dataObject.address = taAddress.text;
+				dataObject.city = tiCity.text;
+				//dataObject.postOffice = tiPostOffice.text;
+				dataObject.postCode = tiPostCode.text;
+				if (cbEqual.selected) tiPostOffice.text = dataObject.postOffice = tiCity.text;
+				else dataObject.postOffice = tiPostOffice.text;
+			}
+			validate();
+			dispatchEvent(new Event(Event.CHANGE));
+		}
+		
+		/**
+		 * A method of IFormBuilderComponent interface.
+		 * @see com.makolab.components.inputComponents.IFormBuilderComponent
+		 */
+		public function validate():Object
+		{
+			// TODO: komunikaty jezykowe
+			var errorMessage:String = "Adres nie może być pusty";
+			if (isEmpty(_dataObject.address) && isEmpty(_dataObject.postOffice) && isEmpty(_dataObject.city) && isEmpty(_dataObject.postCode))
+			{
+				errorString = errorMessage;
+				return new ValidationResult(true, null, "emptyAddress", errorMessage);
+			}
+			else
+			{
+				errorString = null;
+				return null;
+			}
+		}
+		
+		private function isEmpty(s:String):Boolean
+		{
+			return Boolean(s.match(/^\s*$/));
+		}
+		
+		/**
+		 * A method of IFormBuilderComponent interface.
+		 * @see com.makolab.components.inputComponents.IFormBuilderComponent
+		 */
+		public function commitChanges():void {}
+		
+		/**
+		 * A method of IFormBuilderComponent interface.
+		 * @see com.makolab.components.inputComponents.IFormBuilderComponent
+		 */
+		public function reset():void {}
+	]]>
+	</mx:Script>
+	
+	<mx:TextArea id="taAddress" right="0" width="100%" height="50" change="{handleChange(event)}" shadowDistance="0" errorString="{errorString}"/>
+	
+	<mx:HBox width="100%">
+		<mx:Label text="{labels.postCode}"/>
+		<mx:TextInput id="tiPostCode" width="40%" change="handleChange(event)" errorString="{errorString}"/>
+		<mx:Label text="{labels.city}"/>
+		<mx:TextInput id="tiCity" width="100%" text="{dataObject.city}" change="handleChange(event)" errorString="{errorString}"/>
+      <!--  <mx:Label text="{labels.country}"/>
+		<mx:ComboBox id="countryCmb" dataProvider="{countries}" labelField="symbol" selectedItem="{countryID}" change="handleChange(event)"/>  change="countryChangeHandler(event)"-->
+			 
+	 
+		<mx:CheckBox id="cbEqual" toolTip="{labels.equal}" click="handleChange(event)"/>
+	</mx:HBox>
+</mx:VBox>

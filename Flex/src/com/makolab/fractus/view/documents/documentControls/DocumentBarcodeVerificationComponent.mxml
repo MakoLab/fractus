@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox 
+	xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="{init()}"
+	xmlns:layoutComponents="com.makolab.components.layoutComponents.*"
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*"
+	>
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.view.generic.FractusDictionaryRenderer;
+			import com.makolab.components.inputComponents.DictionaryRenderer;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.components.inputComponents.FloatRenderer;
+			import com.makolab.components.inputComponents.CurrencyRenderer;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import com.makolab.components.util.ColorTools;
+			import mx.collections.XMLListCollection;
+			import assets.IconManager;
+			import com.makolab.components.util.ComponentExportManagerDialog;
+			import mx.managers.PopUpManager;
+			import mx.core.IFlexDisplayObject;
+			import com.makolab.components.util.Tools;
+			import mx.collections.ArrayCollection;
+			import mx.core.UIComponent;
+			import mx.containers.HBox;
+			import mx.containers.VBox;
+			import mx.containers.Canvas;
+			import mx.controls.Label;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.events.CloseEvent;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.model.document.CommercialDocumentLine;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.document.BusinessObject;
+			import com.makolab.fractus.model.BarcodeManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.catalogue.BarcodeSearchWindow;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.components.util.LocalFileLoader;
+			
+			// TODO ta zmienna trzeba usunac, kiedy będziemy robic obsluge kodow paskowych 'porzadnie'
+			private var barcodeManager:BarcodeManager;
+			
+			private var _documentObject:DocumentObject;
+			
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				_documentObject = value;
+			}
+			public function get documentObject():DocumentObject
+			{
+				return _documentObject;
+			}
+			
+			private var _itemsCollection:ArrayCollection;
+			
+			public function get itemsCollection():ArrayCollection { return _itemsCollection; }
+			
+			public function set itemsCollection(items:ArrayCollection):void
+			{
+				_itemsCollection = items;
+			}
+			
+			private var _window:ComponentWindow;
+			
+			public function set window(componentWindow:ComponentWindow):void
+			{
+				_window = componentWindow;
+			}
+			public function get window():ComponentWindow
+			{
+				return _window;
+			}
+			
+			public var fileLoader:LocalFileLoader = new LocalFileLoader;
+			
+			private var fileTypes:Object = {
+				txt : [new FileFilter("TXT","*.txt"),new FileFilter("wszystkie","*.*")]
+			};
+			
+			[Bindable]
+			private var languageManager:LanguageManager = LanguageManager.getInstance();
+			protected var model:ModelLocator = ModelLocator.getInstance();
+			
+			private var externalFileContent:XML;
+				
+			public static function showWindow(documentObject:DocumentObject = null, items:ArrayCollection = null, fileName:String = "", documentCategory:uint = 0 ):ComponentWindow
+			{
+				var title:String;
+				var editor:DocumentBarcodeVerificationComponent = new DocumentBarcodeVerificationComponent();
+				var buttons:int = ComponentWindow.BUTTON_CLOSE;
+				var window:ComponentWindow = ComponentWindow.showWindow(editor,buttons,new Rectangle(-1, -1, 1000, 500)); 
+				
+				editor.window = window;
+				
+				if(documentObject != null)
+				{
+					var number:String = String(documentObject.xml.number.fullNumber);
+					var type:String = documentObject.typeDescriptor.symbol;
+					editor.documentObject = documentObject;
+
+					title = LanguageManager.getInstance().labels.documents.documentVerification + " " + (title ? " - " : "") + type + " " + number;
+					
+					editor.window.setStyle("headerColors",[documentObject.typeDescriptor.documentThemeColor,documentObject.typeDescriptor.documentThemeColorLight]);
+					
+				}
+				else if(items != null)
+				{
+					editor.itemsCollection = items;
+					
+					title = LanguageManager.getInstance().labels.documents.documentVerification + " " + fileName;
+					
+					var dtd:DocumentTypeDescriptor = new DocumentTypeDescriptor(null, documentCategory);
+					editor.window.setStyle("headerColors",[dtd.documentThemeColor,dtd.documentThemeColorLight]);
+				}
+				
+				editor.window.title = title;
+				
+				return window;
+			}
+			
+			
+			
+			protected function setWindowFocus(event:Event = null):void
+			{
+				this.window.setFocus();
+			}
+			
+			public function hideFunction():void
+			{
+				verificationComponent.verificationObject.removeEventListener(DocumentBarcodeVerificationObject.DOCUMENT_BARCODE_VERIFICATION_CHANGE,makeSumaryRow);
+				window.removeEventListener(MouseEvent.CLICK, setWindowFocus);
+				window.removeEventListener(CloseEvent.CLOSE, handleWindowClose);
+				barcodeManager.removeEventListener("result",resultHandler);
+				barcodeManager.component = null;
+				window.hide();
+			}
+	
+			
+			private function openBarcodeSearchWindow():void
+			{
+				barcodeManager.enterBarcodeManually();
+			}
+			
+			private function init():void{
+				
+				if(itemsCollection!=null)
+				{
+					this.verificationComponent.itemsCollection = itemsCollection;
+				}
+				else if(documentObject !=null)
+				{
+					this.verificationComponent.documentObject = documentObject;
+				}
+				
+				makeLegendRow(verificationComponent.color_ok, LanguageManager.getInstance().labels.documents.verificationOk);
+				makeLegendRow(verificationComponent.color_toMuch, LanguageManager.getInstance().labels.documents.verificationToMuch);
+				makeLegendRow(verificationComponent.color_unnown, LanguageManager.getInstance().labels.documents.verificationUnnown);
+				verificationComponent.verificationObject.addEventListener(DocumentBarcodeVerificationObject.DOCUMENT_BARCODE_VERIFICATION_CHANGE, makeSumaryRow);
+				
+				barcodeManager = BarcodeManager.getInstance();
+				barcodeManager.callbackFunction = barcodeManager.getItems;
+				if (window) barcodeManager.component = window;
+				barcodeManager.addEventListener("result",resultHandler);
+				
+				if (window)
+				{
+					window.closeFunction = hideFunction;
+					window.addEventListener(CloseEvent.CLOSE,handleWindowClose);
+					window.addEventListener(MouseEvent.CLICK, setWindowFocus);
+				}
+				setWindowFocus();
+			}
+			
+			private function handleWindowClose(event:CloseEvent):void
+			{
+				hideFunction();
+			}
+			
+			private function resultHandler(event:Event):void
+			{
+				var element:Object;
+				while (element = barcodeManager.popElement(0))
+				{
+					verificationComponent.itemFound(element);
+				}
+			}
+			
+			private function makeLegendRow(color:Object, label:String):void
+			{
+				var row:HBox = new HBox();
+					row.setStyle("paddingLeft", 10);
+				var colorSquare:Canvas = new Canvas();
+					colorSquare.setStyle("backgroundColor", color);
+					colorSquare.setStyle("borderStyle","solid");
+					colorSquare.setStyle("borderThickness","2");
+					colorSquare.width = 16;
+					colorSquare.height = 16;
+				var lab:Label = new Label();
+					lab.text = label;
+				row.addChild(colorSquare);
+				row.addChild(lab);
+				this.infoBox.addChild(row);
+			}
+			
+			[Bindable]private var summary:XML = 
+			<summary>
+				<positions>Niezgodne</positions>
+				<amount>Niezgodne</amount>
+			</summary>
+			
+			private function makeSumaryRow(event:Event):void{
+				summary.positions = (verificationComponent.verificationObject.isLinesQuantityValid())? "Zgodne": "Niezgodne";
+				summary.amount = (verificationComponent.verificationObject.isQuantityValid())? "Zgodne": "Niezgodne";
+			}
+			
+			private function clear():void
+			{
+				if(this.documentObject != null)
+				{
+					verificationComponent.verificationObject.clear(documentObject.lines);
+				}
+				else if(this.itemsCollection != null)
+				{
+					this.verificationComponent.itemsCollection = this.itemsCollection;
+				}
+			}
+			
+			private function loadDataCollectorFile():void
+			{
+				fileLoader.loadFile(fileLoaded, fileTypes["txt"]);
+			}
+			
+			public function fileLoaded(resultFile:XML, fileName:String):void
+			{
+				externalFileContent = resultFile;
+				
+				if(model.configManager.isAvailable("system.barcode"))
+				{					
+					var delimiter:String = model.configManager.getXMLValue("system.barcode").collectorFileDelimiter[0];
+					var dataArray:Array = Tools.CSVtoArray(String(externalFileContent), delimiter);				
+					barcodeManager.appendBarcodesFromFile(dataArray);
+				}
+				else
+				{
+					ModelLocator.getInstance().configManager.requestList(["system.barcode"],importConfigurationLoaded);
+				}
+			}
+			
+			protected function importConfigurationLoaded():void
+			{		
+				var delimiter:String = ";"
+				
+				if(model.configManager.isAvailable("system.barcode"))
+				{
+					delimiter = model.configManager.getXMLValue("system.barcode").collectorFileDelimiter[0];													
+				}				
+				var dataArray:Array = Tools.CSVtoArray(String(externalFileContent), delimiter);				
+				barcodeManager.appendBarcodesFromFile(dataArray);
+			}
+			
+			/*public function searchForCode(barcode:String):DocumentBarcodeVerificationObjectLine
+			{
+				for(var i:int = 0; i < this.verificationComponent.itemsCollection.length; i++)
+				{
+					var tempBarcodeVerifyObjectLine:DocumentBarcodeVerificationObjectLine = DocumentBarcodeVerificationObjectLine((verificationComponent.dataProvider as ArrayCollection).getItemAt(i));
+				}
+				return new DocumentBarcodeVerificationObjectLine(new Object());
+			}*/
+			
+			public function showExportDialog() : void {
+				var dialog:IFlexDisplayObject = PopUpManager.createPopUp( this, ComponentExportManagerDialog, true);
+				PopUpManager.centerPopUp(dialog);
+			}
+			
+			/**
+		 * Exports an XML to a given format.
+		 */ 
+		public function exportXml(format:String):XML
+		{
+			var columns:Array = [];
+			var result:XML = <list><columns/><elements/><details/></list>;
+			var xmlnsPattern:RegExp;
+			var cc:String;
+			
+			var col:XML;
+			columns = this.verificationComponent.columns;
+					
+				for (var i:int = 0; i < columns.length; i++) {
+					if(columns[i].dataField != null)	{
+						col = <column label={columns[i].headerText} field={columns[i].dataField} color={ColorTools.HexToRGB(columns[i].getStyle("color")).string}/>;
+						if(col.@field == "quantity")
+						{
+							col.@dataType = "currency";
+						}
+						else if((columns[i] as DataGridColumn).itemRenderer)
+							switch (((columns[i] as DataGridColumn).itemRenderer as ClassFactory).generator){
+								case CurrencyRenderer:
+									col.@dataType = "currency";
+									break;
+								case FloatRenderer:
+									col.@dataType = "float";
+									break;
+							}
+
+						result.columns.* += col;
+					}					
+				}
+			
+			for (var j:int = 0; j < ArrayCollection(this.verificationComponent.dataProvider).length; j++) {
+				var a:DocumentBarcodeVerificationObjectLine = this.verificationComponent.dataProvider[j];
+				var line:XML = <line/>;
+				line.@itemCode = a.itemCode;
+				line.@itemName = a.itemName;
+				line.@unitId = (((columns[3] as DataGridColumn).itemRenderer) as ClassFactory).generator["getTextValue"](a,columns[3].dataField); // uber hardcode :P
+							
+							
+				line.@itemQuantity = a.itemQuantity;
+				line.@quantity = Number(a.quantity);
+				result.elements.appendChild(line);
+			}
+			
+			// naglowek z tytulem zestawienia
+				var titleNode:XML = <detail/>;
+				titleNode.@header = this.window.title;
+				result.details.appendChild(titleNode);
+				
+				ModelLocator.getInstance().exportListXML = result;
+				return result;
+		}
+		//konfiguracja w system.barcode. Dla collectorFileType dopuszczalne wartosci to: codeOnly i codeQuantity
+		]]>
+	</mx:Script>
+	<mx:LinkButton icon="{IconManager.getIcon('export_small')}" toolTip="{languageManager.labels.common.export}" right="68" top="2" height="27" enabled="true" visible="true" click="exportXml('xml');showExportDialog()"/>
+	
+	<documentControls:DocumentBarcodeVerificationLinesComponent id="verificationComponent" width="100%" height="100%"/>
+	
+	<mx:HBox width="100%">
+		<mx:VBox id="infoBox" paddingBottom="10">
+			<mx:HBox paddingLeft="10">
+				<mx:Label text="Podsumowanie:" fontWeight="bold"/>
+				<mx:FormItem label="Pozycje dokumentu: ">
+					<mx:Label text="{summary.positions}" fontWeight="bold"/>
+				</mx:FormItem>
+				<mx:FormItem label="Ilości towarów: ">
+					<mx:Label text="{summary.amount}" fontWeight="bold"/>
+				</mx:FormItem>
+			</mx:HBox>
+		</mx:VBox>
+		<mx:HBox width="100%"/>
+		<mx:VBox paddingRight="10">
+			<mx:Button label="{languageManager.labels.documents.barcodeVerification.clearScanResults}" click="clear()" width="230"/>
+			<mx:Button label="{languageManager.labels.documents.barcodeVerification.insertBarcodeManually}" click="openBarcodeSearchWindow()" width="230"/>
+			<mx:Button label="{languageManager.labels.documents.barcodeVerification.loadDataFromCollector}" click="loadDataCollectorFile()" width="230"/>
+		</mx:VBox>
+	</mx:HBox>
+</mx:VBox>

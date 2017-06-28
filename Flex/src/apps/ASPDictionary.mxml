@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="absolute"
+	initialize="init()"	  backgroundColor="#ffffff" 
+	xmlns:data="com.makolab.components.data.*" 
+	xmlns:aspDictionary="com.makolab.aspDictionary.*">
+	<mx:Script>
+		<![CDATA[
+			//import com.makolab.components.inputComponents.PackageEditor;
+			import com.makolab.components.inputComponents.HTMLTextEditor;
+			import mx.controls.TextInput;
+			import mx.controls.TextArea;
+			import mx.controls.Image;
+			import mx.controls.DateField;
+			import mx.controls.CheckBox;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.components.inputComponents.CurrencyRenderer;
+			import com.makolab.components.inputComponents.CurrencyInput;
+			import com.makolab.components.inputComponents.RegExpEditor;
+			import com.makolab.components.inputComponents.CheckBoxEditor;
+			import com.makolab.components.inputComponents.CurrencyEditor;
+			import com.makolab.components.inputComponents.AttributeEditor;
+			import com.makolab.components.inputComponents.GenericAttributeEditorComponent;
+			import mx.containers.Box;
+			import com.makolab.components.inputComponents.LabelListEditor;
+			import com.makolab.components.inputComponents.LabelValueEditor;
+			import mx.controls.ColorPicker;
+			import mx.controls.ComboBox;
+			import mx.controls.RichTextEditor;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.AbstractOperation;
+			import mx.rpc.events.FaultEvent;
+			import mx.events.ResizeEvent;
+			import mx.controls.Alert; 
+		 	
+		 	//deklaracje  komponętów używanych w liscie
+			private var editor1 : ComboBox ;
+			private var editor2 : LabelValueEditor ;
+			private var editor3 : RichTextEditor ;
+			private var editor4 : LabelListEditor ;
+			private var editor5 : ComboBox;
+			private var editor6 : ColorPicker;
+			private var editor7 : GenericAttributeEditorComponent;
+			private var editor8 : AttributeEditor;
+			private var editor9 : CurrencyEditor;
+			private var editor10: CheckBoxEditor ;
+			private var editor11: RegExpEditor;
+			private var editor14: CurrencyManager;
+			private var editor12: CurrencyInput; 
+			private var editor13: CurrencyRenderer;
+			private var editor15: CheckBox;
+			private var editor16: DateField;
+			private var editor17: Image;
+			private var editor18: TextArea;
+			private var editor19: TextInput;
+			private var editor20: HTMLTextEditor;
+			//private var editor21: PackageEditor;
+
+			//deklaracje  komponętów używanych w liscie
+			
+			private function init():void{
+				dict.table=application.parameters.dictionaryTable;
+				if(application.parameters.title != "")
+					dict.title =application.parameters.title;
+				else
+					dict.title =application.parameters.dictionaryTable
+				dict.init();
+			}
+		]]>
+	</mx:Script>
+	   <data:FractusKernelService	id="kernelService"	rootUrl=""/>
+	   <aspDictionary:DictionaryList id ="dict"  kernelService="{kernelService}" width="100%" height="100%"/>
+</mx:Application>

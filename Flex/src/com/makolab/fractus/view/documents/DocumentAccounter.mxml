@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300" 
+	xmlns:lineList="com.makolab.components.lineList.*" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*"
+	paddingLeft="20"
+	paddingRight="20"
+	paddingTop="10"
+	xmlns:documents="com.makolab.fractus.view.documents.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.UpdateAccountingEntriesCommand;
+			import com.makolab.fractus.commands.CreateAccountingEntriesCommand;
+			import com.makolab.fractus.commands.GetAccountingEntriesCommand;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import mx.controls.Alert;
+			import assets.IconManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.LanguageManager;
+		
+			protected var window:ComponentWindow;
+			private var _documentXML:XML;
+			[Bindable] public var languageManager:LanguageManager = LanguageManager.getInstance();
+			[Bindable] private var accountingEntries:XML;
+			[Bindable] public var typeDescriptor:DocumentTypeDescriptor;
+			[Bindable] private var debitTotal:Number;
+			[Bindable] private var creditTotal:Number;
+			[Bindable] private var summation:XML;
+			[Bindable] public var status:String;
+			
+			[Bindable]
+			public function set documentXML(value:XML):void
+			{
+				_documentXML = value;
+				getAccountingEntries();
+				accountingDataEditor.documentId = _documentXML.*[0].id;
+				this.status = _documentXML.*[0].status;
+				accountingDataEditor.documentCategory = _documentXML.*.@type;
+				
+				accountingDataEditor.documentXML = _documentXML;
+				
+				accountingDataEditor.loadData();
+			}
+			
+			private function getAccountingEntries():void
+			{
+				var cmd:GetAccountingEntriesCommand = new GetAccountingEntriesCommand(documentXML.*[0].id);
+				cmd.execute(getAccountingEntriesResult);
+			}
+			
+			private function recalculate():void
+			{
+				creditTotal = 0;
+				debitTotal = 0;
+				for each(var x:XML in accountingEntries.*)	{
+					debitTotal += Number(x.debitAmount);
+					creditTotal += Number(x.creditAmount);
+				}
+				summation = <summation/>;
+				summation.label = languageManager.labels.finance.total;
+				summation.debitTotal = debitTotal;
+				summation.creditTotal = creditTotal;
+			}
+			
+			private function getAccountingEntriesResult(result:XML):void
+			{
+				accountingEntries = result;
+				recalculate();
+				if(accountingEntries.toString() == '') accountingDG.dataProvider = newLine();
+			}
+			
+			/**
+			 * First save accounting data, then auto-create and load entries and data. 
+			 */
+			private function saveDataAndCreateEntries():void
+			{
+				accountingDataEditor.saveAccountingData(createAccountingEntries);
+			}
+			
+			private function createAccountingEntries(arg:Object = null):void
+			{
+				var cmd:CreateAccountingEntriesCommand = new CreateAccountingEntriesCommand(documentXML.*.id.text(), documentXML.*.@type);
+				cmd.execute(createAccountingEntriesResult);
+			}
+			
+			private function createAccountingEntriesResult(result:XML = null):void
+			{
+				if(result.toString() != '') Alert.show(result);
+				else {
+					getAccountingEntries();
+					accountingDataEditor.loadData();
+					Alert.show('OK');
+				}
+			}
+			
+			private function updateAccountingEntries(arg:Object = null):void
+			{
+				var param:XML = new XML(<accountingEntries/>);
+				var order:Number = 0;
+				param.@id = documentXML.*.id;
+				for each(var x:XML in accountingDG.dataProvider)
+				{
+					order++;
+					x.order = order;
+					param.appendChild(x);	
+				}
+				var cmd:UpdateAccountingEntriesCommand = new UpdateAccountingEntriesCommand(param);
+				cmd.execute(updateAccountingEntriesResult);
+			}
+			
+			/**
+			 * Save both accounting data and accounting entries
+			 */
+			private function commitChanges():void
+			{
+				accountingDataEditor.saveAccountingData(updateAccountingEntries);
+			}
+			
+			private function updateAccountingEntriesResult(result:XML = null):void
+			{
+				if(result.toString() != '') Alert.show(result);
+				else window.hide();
+			}
+			
+			public function getIcon(name:String):Class
+			{
+				return IconManager.getIcon(name);
+			}
+			
+			public function get documentXML():XML
+			{
+				return _documentXML;
+			}
+			
+			public function close():void
+			{
+				window.hide();
+			}
+			
+			public static function showWindow(documentCategory:String, document:XML):ComponentWindow
+			{
+				var renderer:DocumentAccounter = new DocumentAccounter();
+				var typeDescriptor:DocumentTypeDescriptor = new DocumentTypeDescriptor(document.*.documentTypeId.*);
+				
+				renderer.window = ComponentWindow.showWindow(
+					renderer,
+					ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL,
+					new Rectangle(-1, -1, 780, 500),
+					"Panel edycji dekretów - " + typeDescriptor.label + " " + document.*.number.fullNumber.text()
+				);
+				renderer.window.setStyle("headerColors",[typeDescriptor.documentThemeColor,typeDescriptor.documentThemeColorLight]);
+				renderer.documentXML = document;
+				
+				if(document.*[0].status.* != "60")
+					renderer.window.commitFunction = renderer.commitChanges;
+				
+				renderer.window.closeFunction = renderer.close;
+				renderer.typeDescriptor = typeDescriptor;
+				return renderer.window;
+			}
+			
+			private function newLine():XML
+			{
+				return accountingEntryTemplate.copy();
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:XML xmlns="" id="accountingEntryTemplate">
+		<accountingEntry>
+			<debitAccount/>
+			<debitAmount/>
+			<creditAccount/>
+			<creditAmount/>
+			<description/>
+			<order/>
+		</accountingEntry>
+	</mx:XML>
+	
+	<mx:Label text="{typeDescriptor.label} {documentXML.*.number.fullNumber}" fontSize="16" fontWeight="bold" width="100%" textAlign="center"/>
+
+	<documents:AccountingDataEditor id="accountingDataEditor" enabled="{this.status != '60'}"/>
+	
+	<mx:Label text="Dekrety księgowe" fontSize="14"/>
+	
+	<lineList:LineList
+		enabled="{this.status != '60'}"
+		id="accountingDG" 
+		dataProvider="{accountingEntries.accountingEntry}" 
+		rowCount="{accountingEntries.length + 1}"
+		editable="true"
+		autoAddLines="false"
+		selectable="true"
+		newLineTemplateFunction="newLine"
+		itemFocusOut="recalculate()"
+		width="100%"
+		resizableColumns="false"
+		sortableColumns="false"
+		draggableColumns="false"
+		>
+		<lineList:columns>
+			<mx:DataGridColumn width="100" dataField="debitAccount" headerText="{languageManager.labels.finance.creditAccount}" >
+				<mx:itemEditor>
+					<mx:Component>
+						<mx:TextInput/>
+					</mx:Component>
+				</mx:itemEditor>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn width="100" dataField="debitAmount" headerText="{languageManager.labels.finance.debitAmount}">
+				<mx:itemRenderer>
+					<mx:Component>
+						<inputComponents:CurrencyRenderer nanText=""/>
+					</mx:Component>
+				</mx:itemRenderer>
+				<mx:itemEditor>
+					<mx:Component>
+						<inputComponents:CurrencyEditor/>
+					</mx:Component>
+				</mx:itemEditor>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn width="100" dataField="creditAccount" headerText="{languageManager.labels.finance.debitAccount}">
+				<mx:itemEditor>
+					<mx:Component>
+						<mx:TextInput/>
+					</mx:Component>
+				</mx:itemEditor>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn width="100" dataField="creditAmount" headerText="{languageManager.labels.finance.creditAmount}">
+				<mx:itemRenderer>
+					<mx:Component>
+						<inputComponents:CurrencyRenderer nanText=""/>
+					</mx:Component>
+				</mx:itemRenderer>
+				<mx:itemEditor>
+					<mx:Component>
+						<inputComponents:CurrencyEditor/>
+					</mx:Component>
+				</mx:itemEditor>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn dataField="description" headerText="{languageManager.labels.finance.description}">
+				<mx:itemEditor>
+					<mx:Component>
+						<mx:TextInput/>
+					</mx:Component>
+				</mx:itemEditor>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn headerText="" minWidth="20" width="20" editable="false">
+				<mx:itemRenderer>
+					<mx:Component>
+						<lineList:LineMenu enabled="{outerDocument.status != '60'}">
+							<lineList:operations>
+								<lineList:LineOperation label="{outerDocument.languageManager.labels.common.deleteAll}" operationInvoke="outerDocument.accountingDG.deleteLine((event.target as LineOperation).line as XML)" icon="{outerDocument.getIcon('delete_small')}" textAlign="left"/>
+								<lineList:LineOperation label="{outerDocument.languageManager.labels.common.addNewF}" operationInvoke="outerDocument.accountingDG.addLine(null, ((event.target as LineOperation).line as XML).childIndex()+1)" icon="{outerDocument.getIcon('add_small')}" textAlign="left"/>
+							</lineList:operations>
+						</lineList:LineMenu>
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+		</lineList:columns>
+	</lineList:LineList>
+	<mx:HBox width="100%">
+		<mx:DataGrid dataProvider="{summation}" rowCount="1" headerHeight="0"
+				resizableColumns="false"
+				sortableColumns="false"
+				draggableColumns="false"
+				enabled="{this.status != '60'}"
+			>
+			<mx:columns>
+				<mx:DataGridColumn width="100" dataField="label"/>
+				<mx:DataGridColumn width="100" dataField="debitTotal">
+					<mx:itemRenderer>
+						<mx:Component>
+							<inputComponents:CurrencyRenderer nanText=""/>
+						</mx:Component>
+					</mx:itemRenderer>
+				</mx:DataGridColumn>
+				<mx:DataGridColumn width="100"/>
+				<mx:DataGridColumn width="100" dataField="creditTotal">
+					<mx:itemRenderer>
+						<mx:Component>
+							<inputComponents:CurrencyRenderer nanText=""/>
+						</mx:Component>
+					</mx:itemRenderer>
+				</mx:DataGridColumn>
+			</mx:columns>
+		</mx:DataGrid>
+
+		<mx:Button label="{languageManager.labels.finance.createAutomatically}" click="saveDataAndCreateEntries()" enabled="{this.status != '60'}"/>
+	</mx:HBox>
+
+</mx:VBox>

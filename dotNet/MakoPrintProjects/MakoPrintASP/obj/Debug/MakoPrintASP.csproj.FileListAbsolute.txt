@@ -1,0 +1,2 @@
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintASP\obj\Debug\MakoPrintASP.csprojResolveAssemblyReference.cache
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintASP\obj\Debug\MakoPrintASP.csprojResolveAssemblyReference.cache

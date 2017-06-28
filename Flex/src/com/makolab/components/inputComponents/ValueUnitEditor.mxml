@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" horizontalGap="0" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	
+	<mx:Metadata>
+        [Event(name="change", type="flash.events.Event")]
+    </mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ListEvent;
+			import mx.controls.List;
+			import mx.controls.Menu;
+			import com.makolab.fractus.model.DictionaryManager;
+            
+            [Bindable]
+			private var _dataObject:Object = null;
+			
+			public static var LENGTH:String = "Length_Unit";
+			public static var WIDTH:String = "Width_Unit";
+			public static var AREA:String = "Area_Unit";
+			public static var QUANTITY:String = "Quantity_Unit";
+			public static var TIME:String = "Time_Unit";
+			public static var TIMESPAN:String = "TimeSpan_Unit";
+			public static var VOLUME:String = "Volume_Unit";
+			
+			[Bindable]
+			private var unitDictionary:XMLList;
+			
+			[Bindable]
+			private var list:List = new List();   
+			
+			public function set unitType(value:String):void
+			{
+				var unitTypeNode:String = DictionaryManager.getInstance().dictionaries.unitTypes.(name.* == value).id.*;
+				unitDictionary = DictionaryManager.getInstance().dictionaries.units.(unitTypeId.* == unitTypeNode);
+				list.dataProvider = unitDictionary;
+				list.selectedIndex = 0;
+				list.rowCount = unitDictionary.length();
+				list.addEventListener(ListEvent.CHANGE,valueChangeHandler);
+				unitSelector.popUp = list;
+			}
+			
+			private function updateList():void
+			{
+				if (!unitDictionary || !dataObject) return;
+				for(var i:int=0;i<unitDictionary.length();i++){
+					if(unitDictionary[i].id.* == dataObject.root.unitId.*)
+					list.selectedIndex = i;
+				}
+				unitSelector.popUp = list;
+			}
+			
+			public function set dataObject(value:Object):void
+			{
+				_dataObject = value.copy();
+				ti.text = value.root.value.*;
+				if(unitSelector)updateList();
+			}
+			
+			public function get dataObject():Object
+			{
+				return _dataObject;
+			}
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				dataObject = value;
+			}
+			
+			private function valueChangeHandler(event:Event):void
+			{
+				if(ti.text == ""){
+					_dataObject = "";
+				}else{
+					_dataObject = <value><root><value/><unitId/></root></value>
+					_dataObject.root.value.* = ti.text;
+					_dataObject.root.unitId.* = list.selectedItem.id.*;
+				}
+				dispatchEvent(new Event("change"));
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:TextInput id="ti" width="100%" change="valueChangeHandler(event)"/>
+	<mx:PopUpButton id="unitSelector" width="50" label="{list.selectedItem.label.@symbol}" cornerRadius="0" creationComplete="updateList()"/>
+</mx:HBox>

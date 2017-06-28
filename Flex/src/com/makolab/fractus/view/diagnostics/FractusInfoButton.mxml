@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<permission:ButtonComponent xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:permission="com.makolab.components.permission.*" 
+	label="{LanguageManager.getInstance().labels.fractusinfo.buttonName}"
+	toolTip="{LanguageManager.getInstance().labels.fractusinfo.buttonToolTip}" 
+	click="FractusInfoWindow.showWindow()"
+	paddingLeft="2" paddingRight="2" styleName="colorBut">
+	
+	<mx:Style>
+		Button.colorBut {
+		   fillAlphas: 1, 1, 1, 1;
+		   fillColors: #ff9900, #ff6600, #ff9900, #ff6600;
+		}
+	</mx:Style>
+
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+		]]>
+	</mx:Script>
+</permission:ButtonComponent>

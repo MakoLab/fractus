@@ -1,0 +1,89 @@
+<root>
+  <contractor>
+    <id/>
+    <code/>
+    <isSupplier>0</isSupplier>
+    <isReceiver>0</isReceiver>
+    <isBusinessEntity>0</isBusinessEntity>
+    <isBank>0</isBank>
+    <isEmployee>0</isEmployee>
+    <isOwnCompany>0</isOwnCompany>
+    <fullName/>
+    <shortName/>
+    <nip/>
+    <nipPrefixCountryId/>
+    <version/>
+    
+    <!--If IsBank == 1-->
+    <bankNumber/>
+    <swiftNumber/>
+    <timestampBank/>
+    <!--end if-->
+    
+    <!--If IsEmployee == 1-->
+    <jobPositionId/>
+    <versionEmployee/>
+    <!--end if-->
+    
+    <addresses>
+      <address>
+        <id/>
+        <contractorFieldId/>
+        <address/>
+        <city/>
+        <postCode/>
+        <postOffice/>
+        <countryId/>
+        <version/>
+      </address>
+    </addresses>
+    
+    <relations>
+      <relation>
+        <id/>
+        <contractorRelationTypeId/>
+        <relatedContractor>
+          <contractor>
+            <id/>
+            <fullName/>
+            <shortName/>
+            <!--pelne dane kontrahenta opcjonalne-->
+          </contractor>
+        </relatedContractor>
+        <xmlAttributes/>
+        <version/>
+      </relation>
+    </relations>
+    
+    <accounts>
+      <account>
+        <id/>
+        <bankContractorId/>
+        <accountNumber/>
+        <version/>
+      </account>
+    </accounts>
+    
+    <attributes>
+      <attribute>
+        <id/>
+        <contractorFieldId/>
+        <value/>
+        <version/>
+      </attribute>
+    </attributes>
+    
+    <groupMemberships>
+      <groupMembership>
+        <id/>
+        <contractorGroupId/>
+        <version/>
+      </groupMembership>
+      <groupMembership>
+        <id/>
+        <contractorGroupId/>
+        <version/>
+      </groupMembership>
+    </groupMemberships>
+  </contractor>
+</root>

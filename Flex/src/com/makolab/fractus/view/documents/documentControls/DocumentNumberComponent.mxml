@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<EditorContainer
+		editorDataField="dataObject"
+		editorDestination="{documentObject.xml.number}"
+		implements="com.makolab.fractus.view.documents.documentControls.IDocumentControl"
+		xmlns="com.makolab.components.inputComponents.*"
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		change="documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_FIELD_CHANGE, 'documentNumber'))"
+		editable="{userModified}"
+		enabled="{documentObject.xml.version.length() == 0 || userModified}"
+		backgroundColor="0xEFEFEF"
+		minWidth="100"
+	>
+	<!--editable="{(documentObject.isNewDocument || userModified)}"-->
+	<itemRenderer>
+		<mx:Component>
+			<mx:Label
+				text="{outerDocument.documentObject.xml.number.fullNumber}"
+				fontFamily="Times New Roman"
+				fontSize="20"
+				color="{outerDocument.numberRendererColor}"
+				toolTip="{outerDocument.numberRendererToolTip}"
+			/>
+		</mx:Component>
+	</itemRenderer>
+	<itemEditor>
+		<mx:Component>
+			<DocumentNumberEditor data="{outerDocument.documentObject.xml.number}" userModified="{outerDocument.userModified}" fontFamily="Arial" fontSize="16"/>
+		</mx:Component>
+	</itemEditor>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.core.EventPriority;
+			import com.makolab.components.inputComponents.DocumentNumberEditor;
+			import mx.controls.TextInput;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.ConfigManager;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			
+			[Bindable]
+			public var numberRendererColor:uint;
+			[Bindable]
+			public var numberRendererToolTip:String; 
+			
+			[Bindable] public var userModified:Boolean; 
+
+			private var _documentObject:DocumentObject;
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				_documentObject = value;
+				if(value)ModelLocator.getInstance().configManager.requestList(["system.startDate"],setEditor);
+				value.addEventListener(DocumentEvent.DOCUMENT_FIELD_CHANGE,documentFieldChangeListener,false,EventPriority.DEFAULT-1);
+			}
+			public function get documentObject():DocumentObject
+			{
+				return _documentObject;
+			}
+			
+			private function documentFieldChangeListener(event:DocumentEvent):void
+			{
+				if(event.fieldName == "issueDate")setEditor();
+			}
+			
+			private function setEditor():void
+			{
+				var systemStart:Date = Tools.isoToDate(ModelLocator.getInstance().configManager.getString("system.startDate"));
+				var issueDate:Date = Tools.isoToDate(documentObject.xml.issueDate);
+				var factory:ClassFactory
+				if(issueDate < systemStart){
+					/* editorDataField = "text";
+					editorDestination = documentObject.xml.number.fullNumber;
+					factory = new ClassFactory(TextInput);
+					factory.properties = {data : documentObject.xml.number.fullNumber.toString()}; */
+					documentObject.xml.number.number = 0;
+					documentObject.xml.number.number.@userModified = 1;
+					userModified = true;
+				}else{
+					/* editorDataField = "dataObject";
+					editorDestination = documentObject.xml.number;
+					factory = new ClassFactory(DocumentNumberEditor);
+					factory.properties = {data : documentObject.xml.number}; */
+					documentObject.xml.number.number.@userModified = 0;
+					userModified = false;
+				}
+				//this.itemEditor = factory;
+			}
+		]]>
+	</mx:Script>
+</EditorContainer>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReportBase xmlns="com.makolab.fractus.view.documents.reports.*" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:layoutComponents="com.makolab.components.layoutComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import mx.formatters.CurrencyFormatter;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+			import mx.controls.AdvancedDataGrid;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			private function getLabel(data:Object, field:String, index:Number, percentValue:Number):String
+			{
+				return data.@documetFeatures + " - " + data.@quantity;
+			}
+			
+			private function nameLabelFunction(item:Object, column:AdvancedDataGridColumn):String
+			{
+				var value:XMLList = DictionaryManager.getInstance().dictionaries.documentFeatures.(id.toString() == item.@documentFeatureId);
+				if(value.length() > 0)return value[0].label.(@lang == LanguageManager.getInstance().currentLanguage);
+				else return "";
+			}
+			
+			private function calculateProfitMargin(source:XMLList,dataField:String,childDataField:String = null):String{
+				var dataFieldName:String = dataField;
+				var nettoSum:Number = 0;
+				var profitSum:Number = 0;
+				for(var i:int=0;i<source.length();i++){
+					nettoSum += Number(source[i].@netValue);
+					profitSum += Number(source[i].@profit);
+				}
+				return (profitSum/nettoSum).toString();
+			}
+		]]>
+	</mx:Script>
+	<table>
+		<mx:AdvancedDataGrid id="grid" width="100%" height="100%">
+			<mx:columns>
+				<mx:AdvancedDataGridColumn headerText="Nazwy cech" dataField="@documentFeatures" labelFunction="nameLabelFunction"/>
+				<mx:AdvancedDataGridColumn id="quantityColumn" sortCompareFunction="{Tools.getSortFunction('@quantity')}" headerText="{LanguageManager.getLabel('common.quantity')}" dataField="@quantity" textAlign="right" labelFunction="quantityLabelFunction" width="120"/>
+				<mx:AdvancedDataGridColumn id="costColumn" sortCompareFunction="{Tools.getSortFunction('@cost')}" headerText="Wartość wg cen zakupu" dataField="@cost" textAlign="right" labelFunction="currencyLabelFunction" width="120"/>
+				<mx:AdvancedDataGridColumn id="netValueColumn" sortCompareFunction="{Tools.getSortFunction('@netValue')}" headerText="Wartość netto sprzedaży" dataField="@netValue" textAlign="right" labelFunction="currencyLabelFunction" width="120"/>
+				<mx:AdvancedDataGridColumn id="grossValueColumn" sortCompareFunction="{Tools.getSortFunction('@grossValue')}" headerText="Wartość brutto sprzedaży" dataField="@grossValue" textAlign="right" labelFunction="currencyLabelFunction" width="120"/>
+				<mx:AdvancedDataGridColumn id="profitColumn" sortCompareFunction="{Tools.getSortFunction('@profit')}" headerText="Zysk" dataField="@profit" textAlign="right" labelFunction="currencyLabelFunction" width="120"/>
+				<mx:AdvancedDataGridColumn id="profitMarginColumn" sortCompareFunction="{Tools.getSortFunction('@profitMargin')}" headerText="{LanguageManager.getLabel('common.profit')}" dataField="@profitMargin" textAlign="right" labelFunction="percentLabelFunction" width="100"/>
+			</mx:columns>
+		</mx:AdvancedDataGrid>
+	</table>
+	<summary>
+		<layoutComponents:AdvancedDataGridSummary2 source="{grid}">
+			<layoutComponents:summaryColumns>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{quantityColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{costColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{netValueColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{grossValueColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{profitColumn}"/>
+				<layoutComponents:SummaryColumn operations="{[calculateProfitMargin]}" sourceColumn="{profitMarginColumn}"/>
+			</layoutComponents:summaryColumns>
+		</layoutComponents:AdvancedDataGridSummary2>
+	</summary>
+	<graph>
+		<mx:VBox width="100%" height="100%">
+			<mx:PieChart dataProvider="{dataProvider}" width="100%" height="100%">
+				<mx:series>
+					<mx:PieSeries field="@quantity" nameField="{LanguageManager.getLabel('common.quantity')}" labelFunction="getLabel" labelPosition="callout"/>
+				</mx:series>
+			</mx:PieChart>
+		</mx:VBox>
+	</graph>
+</ReportBase>

@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<list:CommonGrid
+	xmlns:list="com.makolab.components.list.*" 
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	width="400" height="300" creationComplete="init()" 
+	implements="com.makolab.components.util.IExportableComponent">
+	
+	<mx:Metadata>
+		[Event(name="result",type="mx.rpc.events.ResultEvent")]
+		[Event(name="fault",type="mx.rpc.events.FaultEvent")]
+		[Event(name="collectionChange",type="mx.events.CollectionEvent")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.components.inputComponents.CurrencyRenderer;
+			import mx.controls.NumericStepper;
+			import mx.core.UIComponent;
+			import mx.managers.DragManager;
+			import mx.events.DragEvent;
+			//import com.makolab.components.inputComponents.FloatStepper;
+			import com.makolab.components.inputComponents.FloatStepper;
+			import mx.controls.NumericStepper;
+
+			import com.makolab.components.util.ComponentExportManager;
+			import com.makolab.components.util.ComponentExportManagerDialog;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.events.CollectionEvent;
+			import mx.collections.ICollectionView;
+			import com.makolab.components.inputComponents.OrdinalNumberRenderer;
+			import mx.rpc.Fault;
+			import mx.controls.Text;
+			import mx.states.AddChild;
+			import mx.events.FlexEvent;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.collections.XMLListCollection;
+			import mx.managers.PopUpManager;
+			public var headerNode:String = "naglowek";
+			
+			[Bindable]
+			public var itemNode:String = "pozycja";
+			[Bindable]
+			public var itemRoot:String = null;
+			
+			public var useTagName:Boolean = true;
+			public var columnDataField:String = null;
+			public var columnHeaderField:String = null;
+			
+			[Bindable]
+			private var dataXML:XML;
+			private var model:ModelLocator = ModelLocator.getInstance();
+			
+			[Bindable]
+			public var customColumns:Array = [];
+			[Bindable]
+			protected var automaticColumns:Array;
+			
+			private var dataForFormatResult:Object = new Object();
+			
+			private function init():void
+			{
+				contextMenu = ComponentExportManager.getInstance().getExportMenu();
+			}
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				if (!data)
+				{
+					dataProvider = null;
+					return;
+				}
+				dataXML = value as XML;
+				columnConfig = dataXML[headerNode].*;
+				//if (itemRoot) this.dataProvider = dataXML[itemRoot].*;
+				//else this.dataProvider = dataXML[itemNode];
+				//dataProvider = dataXML.items.*;
+			}
+			
+			public function set columnConfig(colsList:XMLList):void
+			{
+				if (!colsList) return;
+				var cols:Array = [];
+				for each (var x:XML in colsList)
+				{
+					var fieldName:String = columnDataField ? x[columnDataField] : x.localName();
+					var column:DataGridColumn = new DataGridColumn(fieldName);
+					if(columnHeaderField == "@labelKey"){
+						column.headerText = LanguageManager.getInstance().getLabel(x.attribute(columnHeaderField.substr(1)));
+					}else{
+						column.headerText = columnHeaderField ? x[columnHeaderField] : x;
+					}
+					column.dataField = fieldName;
+					var editor:String = x.@editor;
+					if (editor)
+					{
+						if (editor == "integer" || editor.match(/^decimal/))
+						{
+							column.itemEditor = new ClassFactory(FloatStepper);
+							column.itemRenderer = new ClassFactory(CurrencyRenderer);
+							column.editorDataField = "value";
+							ClassFactory(column.itemEditor).properties = { minimum : 0};
+							ClassFactory(column.itemEditor).properties = { maximum : 1000000};
+							if (editor.match(/^decimal\d+/))
+							{
+								var prec:int = parseInt(editor.replace(/^decimal/, ''));
+								if (prec) ClassFactory(column.itemEditor).properties = { stepSize : Math.pow(10, -prec) };
+							}
+						}
+					}
+					else column.editable = false;
+					if (x.@width.length() > 0) column.width = parseInt(x.@width);
+					if (fieldName == "lp")// zobaczyć czy działa po wgraniu języka
+					{
+						column.itemRenderer = new ClassFactory(OrdinalNumberRenderer);
+					}
+					cols.push(column);
+				}
+				automaticColumns = cols;
+			}
+			
+			private function handleResult(event:ResultEvent):void
+			{
+				try
+				{
+					this.data = XML(event.result);
+					if (this.data == "") throw new Error();
+					dispatchEvent(event);
+				}
+				catch (e:Error)
+				{
+					showError("Błędny XML pobrany z serwera.", String(event.result));
+				}
+			}
+			
+			public function loadUrl(url:String):void
+			{
+				httpService.url = url;
+				httpService.send();
+			}
+			
+			private function handleFault(event:FaultEvent):void
+			{
+				showError("Błąd ładowania XML z danymi", String(event.message));
+			}
+			
+			private function showError(code:String, msg:String):void
+			{
+				super.dataProvider = [[(code + "\n" + msg)]];
+				dispatchEvent(FaultEvent.createEvent(new Fault(code, msg)));
+			}
+			
+			override protected function dragEnterHandler(event:DragEvent):void
+			{
+				super.dragEnterHandler(event);
+				if(event.dragSource.hasFormat("contractors"))
+				{
+					var data:Object = event.dragSource.dataForFormat("contractors");
+					dataForFormatResult = data;
+					DragManager.acceptDragDrop(UIComponent(event.currentTarget));
+				}
+			}
+			
+			override protected function dragOverHandler(event:DragEvent):void
+			{
+				super.dragOverHandler(event);
+				var data:Object = dataForFormatResult;
+				DragManager.showFeedback(DragManager.COPY);
+			}
+			
+			override protected function dragDropHandler(event:DragEvent):void
+			{
+				super.dragDropHandler(event);
+				var data:Object = dataForFormatResult;
+				
+			}
+			
+			public function refresh():void
+			{
+				//ICollectionView(dataProvider).refresh();
+				updateList();
+			}
+			
+			override protected function collectionChangeHandler(event:Event):void
+			{
+				super.collectionChangeHandler(event);
+				dispatchEvent(event);
+			}
+		]]>
+	</mx:Script>
+	
+	<list:dataProvider>
+		{itemRoot ? dataXML.*.(localName() == itemRoot).* : dataXML.*.(localName() == itemNode)}
+	</list:dataProvider>
+	
+	<list:columns>
+		{automaticColumns.concat(customColumns)}
+	</list:columns>
+	<mx:HTTPService id="httpService" result="handleResult(event)" fault="handleFault(event)" resultFormat="text" />
+</list:CommonGrid>

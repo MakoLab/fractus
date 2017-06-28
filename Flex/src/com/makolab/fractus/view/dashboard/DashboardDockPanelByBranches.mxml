@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DockPanel 	xmlns="com.makolab.components.layoutComponents.*" 
+			xmlns:mx="http://www.adobe.com/2006/mxml" 
+			width="100%" maxHeight="300" 
+			xmlns:list="com.makolab.components.list.*" 
+			creationComplete="callCommand();grid.contextMenu.customItems=[];" 
+			headerColors="[0xe4ff00, 0x819400]" titleStyleName="bold"
+			title="{LanguageManager.getInstance().labels.dashboard.ByBranchesTitle}" xmlns:filters="com.makolab.fractus.view.documents.reports.filters.*">
+			
+			<mx:VBox width="100%" height="100%">
+		<list:CommonGrid id="grid" rowCount="{grid.dataProvider.length>10?10:grid.dataProvider.length}" width="100%" height="100%">		
+				<list:columns>
+					<mx:DataGridColumn dataField="@branch" headerText="Oddział"/>
+					<mx:DataGridColumn dataField="@quantity" headerText="Ilość" itemRenderer="com.makolab.components.inputComponents.FloatRenderer"/>
+					<mx:DataGridColumn dataField="@grossValue" headerText="Kwota Brutto" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer"/>
+					<mx:DataGridColumn dataField="@profit" headerText="Zysk" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer"/>
+				</list:columns>
+			</list:CommonGrid>
+			<mx:LinkButton label="{LanguageManager.getInstance().labels.dashboard.more}" click="goToRaport();"/>
+			</mx:VBox>
+			
+			<mx:Script>
+				<![CDATA[
+					import com.makolab.fractus.view.documents.reports.filters.IReportFilter;
+					import com.makolab.fractus.model.LanguageManager;
+					import com.makolab.components.util.Tools;
+					import com.makolab.fractus.view.documents.reports.salesReports.SalesReport;
+					import mx.controls.Alert;
+					import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+					import mx.rpc.events.ResultEvent;
+					
+					private var cmd:ExecuteCustomProcedureCommand;
+					private var searchParams:XML = <searchParams> 
+														<dateFrom/>
+  														<dateTo/>
+												   </searchParams>;
+					
+					
+					private function callCommand():void
+					{
+						var today:Date = new Date();
+						//today = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+						searchParams.dateTo = Tools.dateToString(today) + "T23:59:59.997";
+						searchParams.dateFrom = Tools.dateToString(new Date(today.getFullYear(), today.getMonth(), today.getDate()-7, 0, 0, 0, 0));
+						
+						cmd = new ExecuteCustomProcedureCommand('reports.p_getSalesByBranch',searchParams);
+						cmd.addEventListener(ResultEvent.RESULT,generateReportResult);
+						cmd.execute();
+					}		
+					
+					private function generateReportResult(event:ResultEvent):void
+					{
+						grid.dataProvider = XML(event.result).*;
+					}
+				
+					private function goToRaport():void{
+						SalesReport.showWindow();
+					}
+					
+				]]>
+			</mx:Script>
+</DockPanel>

@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox creationComplete="creationComplete()" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:catalogue="com.makolab.components.catalogue.*" xmlns:layoutComponents="com.makolab.components.layoutComponents.*" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:documents="com.makolab.fractus.view.documents.*" xmlns:catalogue1="com.makolab.fractus.view.catalogue.*">
+
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.view.documents.documentEditors.DocumentEditor;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.view.finance.FinancialReportEditor;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.GlobalEvent;
+			import com.makolab.fractus.view.documents.TextPrintPreviewWindow;
+			import com.makolab.fractus.view.documents.documentEditors.InventoryDocumentPreview;
+			import com.makolab.fractus.view.warehouse.LabelPrintingWindow;
+			import mx.formatters.SwitchSymbolFormatter;
+			import com.makolab.fractus.view.finance.FinancialReportPreview;
+			import mx.events.CloseEvent;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			import com.makolab.fractus.view.documents.DocumentFromOrderComponent;
+			import com.makolab.fractus.view.documents.DocumentBinder;
+			import com.makolab.fractus.view.documents.DocumentAccounter;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.components.inputComponents.DocumentAttributeEditor;
+			import com.makolab.fractus.commands.ChangeDocumentStatusCommand;
+			import mx.controls.Alert;
+			import com.makolab.components.catalogue.CatalogueOperation;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.components.util.ComponentExportManager;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import assets.IconManager;
+			import com.makolab.components.catalogue.CatalogueEvent;
+			import mx.collections.XMLListCollection;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.SearchCommand;
+			import com.makolab.components.catalogue.GroupTreeEditorEvent;
+			import com.makolab.components.catalogue.groupTree.GroupTreeEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.view.documents.documentEditors.InventoryDocumentEditor;
+	
+			public static var SALES:int = 0;
+			public static var PURCHASE:int = 1;
+			public static var WAREHOUSE:int = 2;
+			
+			[Bindable]
+			private var listPermissionKey:String;
+	
+			[Bindable]
+			public var itemOperations:Array = [];
+			
+			[Bindable]
+			public var config:XML;
+			
+			public static function showWindow(listCategory:int, title:String = null):ComponentWindow
+			{
+				var list:DraftDocumentList = new DraftDocumentList();
+				list.init(listCategory);
+				var window:ComponentWindow = ComponentWindow.showWindow(list,0,null,title);
+				window.setStyle("headerColors", [IconManager[String(list.config.headerColor)], IconManager[String(list.config.headerColorLight)]]); 
+				if(list.icon)window.titleIcon = list.icon;
+				return window;
+			}
+			
+			public function searchDocument(parameters:Object):void
+			{
+				var cmd:SearchCommand = new SearchCommand(SearchCommand.DRAFTS);
+				cmd.searchParams = XML(parameters);
+				cmd.addEventListener(ResultEvent.RESULT,handleSearchResults);
+				cmd.execute();
+			}
+			
+			public function handleSearchResults(event:ResultEvent):void
+			{
+				var result:XML = XML(event.result);
+				catalogueBrowser.searchResults = new XMLListCollection(result.*);
+				catalogueBrowser.rowCount = result.@rowCount;
+				catalogueBrowser.pageNumber = result.@page;
+				catalogueBrowser.itemData = result.itemData;
+				var attributes:Object = {};
+				for each (var x:XML in result.attributes()) attributes['@' + x.localName()] = String(x);
+				catalogueBrowser.resultAttributes = attributes;
+			}
+			
+			private function getItemData(parameters:Object):void
+			{
+				catalogueBrowser.itemData = catalogueBrowser.selectedItem;
+			}
+			
+			protected function get objectType():String
+			{
+				return config ? config.objectType : null;
+			}
+			
+			protected function getRowTextColor(data:Object):Number
+			{
+				//return (data && String(data.@status) && data.@status < 40) ? 0x808080 : NaN;
+				return NaN;
+			}
+			
+			private function editDocument(event:CatalogueEvent):void
+			{
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("document.p_getDraft", <root><id>{catalogueBrowser.selectedItem.@id}</id></root>);
+				cmd.addEventListener(ResultEvent.RESULT, this.editDocumentResult, false, 0, true);
+				cmd.execute();
+			}
+			
+			private function editDocumentResult(event:ResultEvent):void
+			{
+				var draftEntry:XML = XML(event.result).draft.entry[0];
+				var documentObject:DocumentObject = new DocumentObject(draftEntry.dataXml.*[0]);
+				documentObject.draftId = draftEntry.id.*;
+				documentObject.isNewDocument = true;
+				ShowDocumentEditorCommand.showEditor(documentObject);				
+			}
+			
+			private function deleteDocument(event:CatalogueEvent):void
+			{
+				Alert.show(LanguageManager.getInstance().labels.alert.realyDelete + '?', "", Alert.YES | Alert.NO, null, this.deleteDocumentQuestionResult, null, Alert.NO); 
+			}
+			
+			private function deleteDocumentQuestionResult(event:CloseEvent):void
+			{
+				if(event.detail == Alert.YES)
+				{
+					var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("document.p_deleteDraft", <root><id>{catalogueBrowser.selectedItem.@id}</id></root>);
+					cmd.addEventListener(ResultEvent.RESULT, this.handleCommandResult, false, 0, true);
+					cmd.execute();
+				}
+			}
+			
+			private function handleCommandResult(event:ResultEvent):void
+			{
+				catalogueBrowser.initSearch("");
+			}
+			
+			public function init(listCategory:int):void
+			{
+				var permisionEdit:String;
+				var permisionDelete:String;
+				var permisionDraftDelete:Array;
+				
+				//permission hard coded
+				if(listCategory == DraftDocumentList.SALES) {
+					this.config = ModelLocator.getInstance().configManager.getXML("documents.lists.salesDraft");
+					listPermissionKey = 'sales.drafts.list';
+					permisionEdit = 'sales.edittmp';
+					permisionDelete = 'sales.delete|sales.salesOrders.delete';
+					permisionDraftDelete = ['sales.delete', 'sales.salesOrders.delete'];
+				} else if (listCategory == DraftDocumentList.PURCHASE) {
+					this.config = ModelLocator.getInstance().configManager.getXML("documents.lists.purchaseDraft");
+					listPermissionKey = 'purchase.drafts.list';
+					permisionEdit = 'purchase.edittmp';
+					permisionDelete = 'purchase.delete';
+				} else if (listCategory == DraftDocumentList.WAREHOUSE) {
+					this.config = ModelLocator.getInstance().configManager.getXML("documents.lists.warehouseDraft");
+					listPermissionKey = 'warehouse.drafts.list';
+					permisionEdit = 'warehouse.edittmp';
+					permisionDelete = 'warehouse.delete';
+				}
+				
+				//tworzymy nowe operacje
+				var oper:CatalogueOperation = new CatalogueOperation();
+				oper.defaultOperation = true;
+				oper.enabled = true;
+				oper.label = LanguageManager.getInstance().labels.documents.edit;
+				oper.image = IconManager.getIcon("edit_small");
+				oper.addEventListener(CatalogueEvent.OPERATION_INVOKE, editDocument, false, 0, true);
+				oper.permissionKey = permisionEdit;
+				itemOperations.push(oper);
+				
+				oper = new CatalogueOperation();
+				oper.enabled = true;
+				oper.label = LanguageManager.getInstance().labels.common.deleteAll;
+				oper.image = IconManager.getIcon("delete_small");
+				oper.addEventListener(CatalogueEvent.OPERATION_INVOKE, deleteDocument, false, 0, true);
+				oper.permissionKey = permisionDelete;
+				if (permisionDraftDelete) oper.extraPermissionKey = permisionDraftDelete;
+				itemOperations.push(oper);
+			}
+			
+			private function creationComplete():void
+			{
+				catalogueBrowser.initSearch("");
+			}
+		]]>
+	</mx:Script>
+	<catalogue:CatalogueBrowser 
+		id="catalogueBrowser" 
+		itemSearch="searchDocument(event.parameters)" 
+		itemGetData="getItemData(event.parameters)"
+		config="{config}"
+		itemsType="documents"
+		width="100%" 
+		height="100%" 
+		showLeftPanel="false"
+		itemOperations="{itemOperations}"
+		rowTextColorFunction="{getRowTextColor}"
+		listPermissionKey="{listPermissionKey}"
+		>
+		<!--<catalogue:rightPanel>
+			<layoutComponents:DockPanel id="clipboardDockPanel" 
+				visible="{this.listType == DocumentSimpleRenderer.WAREHOUSE_DOCUMENT || this.listType == DocumentSimpleRenderer.SERVICE_DOCUMENT}" 
+				includeInLayout="{this.listType == DocumentSimpleRenderer.WAREHOUSE_DOCUMENT || this.listType == DocumentSimpleRenderer.SERVICE_DOCUMENT}" 
+				title="Schowek" width="100%" open="false">
+				<catalogue1:DocumentClipboardPanel id="documentClipboardPanel"/>				
+			</layoutComponents:DockPanel>
+			<layoutComponents:DockPanel id="documentRendererPanel" title="{LanguageManager.getInstance().labels.documents.details}" width="100%">
+				<inputComponents:DocumentSimpleRenderer id="documentRenderer" documentType="{listType}" documentCategory="{documentCategory}" data="{catalogueBrowser.itemData}"/>
+			</layoutComponents:DockPanel>
+			<layoutComponents:DockPanel title="{LanguageManager.getInstance().labels.documents.relatedDocuments}" width="100%" id="documentRelationsGrid">
+				<documents:DocumentRelationsGrid data="{catalogueBrowser.itemData}" documentType="commercialDocument" width="100%"/>
+			</layoutComponents:DockPanel>
+		</catalogue:rightPanel>-->
+	</catalogue:CatalogueBrowser>
+</mx:VBox>

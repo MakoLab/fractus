@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	creationComplete="onCreationComplete()" xmlns:generic="com.makolab.fractus.view.generic.*" width="100%" height="100%">
+	
+	<mx:Metadata>
+		[Event(name="commit", type="flash.events.Event")]
+		[Event(name="close", type="flash.events.Event")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.controls.Button;
+			import mx.containers.HBox;
+			import mx.containers.TitleWindow;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.controls.Alert;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			private var window:TitleWindow;
+			public var attributes:XML = new XML();
+			[Bindable] public var incomeDocumentNumber:String;
+			[Bindable] public var incomeDate:String;
+			[Bindable] public var shiftDate:String;
+			
+			[Bindable] public var onSaveFunction:Function;
+			
+			[Bindable] private var current:String;
+			[Bindable] private var voltage:String;
+			
+			private function loadFromXml():void
+			{
+				if(!attributes){
+					attributes = <attributes/>;//new XML();
+					return;
+				};
+				
+				var currentFieldId:String = DictionaryManager.getInstance().getByName("Attribute_Current", "shiftFields").id.*;
+				var voltageFieldId:String = DictionaryManager.getInstance().getByName("Attribute_Voltage", "shiftFields").id.*;
+				var measureTimeFieldId:String = DictionaryManager.getInstance().getByName("Attribute_MeasureTime", "shiftFields").id.*;
+				var measuredByFieldId:String = DictionaryManager.getInstance().getByName("Attribute_MeasuredBy", "shiftFields").id.*;
+				var otherFieldId:String = DictionaryManager.getInstance().getByName("Attribute_Other", "shiftFields").id.*;
+				
+				var attrib:XMLList = this.attributes.*.(valueOf().shiftFieldId.toString() == currentFieldId);
+				
+				if(attrib.length() > 0)
+					this.current = parseFloat(String(attrib[0].value.*)).toString().replace(".", ",");
+					
+				attrib = this.attributes.*.(valueOf().shiftFieldId.toString() == voltageFieldId);
+				
+				if(attrib.length() > 0)
+					this.voltage = parseFloat(String(attrib[0].value.*)).toString().replace(".", ",");
+					
+				attrib = this.attributes.*.(valueOf().shiftFieldId.toString() == measureTimeFieldId);
+				
+				if(attrib.length() > 0)
+					this.measureTimeDateEditor.selectedDate = Tools.isoToDate(attrib[0].value.*);
+				
+				attrib = this.attributes.*.(valueOf().shiftFieldId.toString() == measuredByFieldId);
+				
+				if(attrib.length() > 0)
+					this.userSelector.selectedId = attrib[0].value.*;
+				else
+					this.userSelector.selectedId = ModelLocator.getInstance().sessionManager.userId;
+					
+				attrib = this.attributes.*.(valueOf().shiftFieldId.toString() == otherFieldId);
+				
+				if(attrib.length() > 0)
+					this.txtBoxAttributeOther.text = attrib[0].value.*;
+			}
+			
+			private function onCreationComplete():void
+			{
+				this.loadFromXml();
+			}
+			
+			private function commit(event:Event):void
+			{
+				this.saveToXml();
+				if(window)window.dispatchEvent(new CloseEvent(CloseEvent.CLOSE));
+				if(this.onSaveFunction != null)
+					this.onSaveFunction();
+			}
+			
+			private function saveToXml():void
+			{
+				var currentFieldId:String = DictionaryManager.getInstance().getByName("Attribute_Current", "shiftFields").id.*;
+				var voltageFieldId:String = DictionaryManager.getInstance().getByName("Attribute_Voltage", "shiftFields").id.*;
+				var measureTimeFieldId:String = DictionaryManager.getInstance().getByName("Attribute_MeasureTime", "shiftFields").id.*;
+				var measuredByFieldId:String = DictionaryManager.getInstance().getByName("Attribute_MeasuredBy", "shiftFields").id.*;
+				var otherFieldId:String = DictionaryManager.getInstance().getByName("Attribute_Other", "shiftFields").id.*;
+				
+				this.saveOrUpdateAttribute(currentFieldId, this.current != null ? this.current.replace(',', '.') : null);
+				this.saveOrUpdateAttribute(voltageFieldId, this.voltage != null ? this.voltage.replace(',', '.') : null);
+				this.saveOrUpdateAttribute(measureTimeFieldId, this.measureTimeDateEditor.selectedDate != null ? Tools.dateToIso(this.measureTimeDateEditor.selectedDate) : null);
+				this.saveOrUpdateAttribute(measuredByFieldId, this.userSelector.selectedId);
+				this.saveOrUpdateAttribute(otherFieldId, this.txtBoxAttributeOther.text);
+			}
+			
+			private function textBoxFocusOutHandler(sender:TextInput, oldValName:String):void
+			{
+				var regExp:Array = sender.text.match(/^[0-9]+[,.]?[0-9]{0,2}$/);
+				
+				if(sender.text == "")
+					this[oldValName] = "";
+				else if(regExp == null || regExp.length == 0)
+					sender.text = this[oldValName];
+				else
+					this[oldValName] = parseFloat(sender.text.replace(',', '.')).toString().replace('.', ',');
+			}
+			
+			private function saveOrUpdateAttribute(fieldId:String, value:String):void
+			{
+				var attrib:XMLList = this.attributes.*.(valueOf().shiftFieldId.toString() == fieldId);
+				
+				if(value != null && value != "") //insert or update
+				{
+					if(attrib.length() > 0) //update
+						attrib.value.* = value;
+					else
+						this.attributes.appendChild(<attribute><shiftFieldId>{fieldId}</shiftFieldId><value>{value}</value></attribute>);
+				}
+				else //delete if exists
+				{
+					if(attrib.length() > 0)
+						delete attrib[0];
+				}
+			}
+			
+			private function close(event:Event):void
+			{
+				if(this.window)
+					window.dispatchEvent(new CloseEvent(CloseEvent.CLOSE));
+					PopUpManager.removePopUp(this.window);
+			}
+			
+			public static function showWindow(parent:DisplayObject, attributes:XML, onSaveFunction:Function, incomeDocumentNumber:String=null, incomeDate:String=null, shiftDate:String=null):TitleWindow
+			{
+				var editor:ShiftAttributeEditor = new ShiftAttributeEditor();
+				editor.attributes = attributes;
+				editor.incomeDocumentNumber = incomeDocumentNumber && incomeDocumentNumber != "" ? incomeDocumentNumber : null;
+				editor.incomeDate = incomeDate && incomeDate != "" ? incomeDate.substr(0, 10) : null;
+				editor.shiftDate = shiftDate && shiftDate != "" ? shiftDate.substr(0, 10) : null;
+				editor.onSaveFunction = onSaveFunction;
+				
+				var window:TitleWindow = new TitleWindow();
+				window.width = 400;
+				window.height = 350;
+				window.addChild(editor);
+				window.title = "Atrybuty transzy";
+				editor.window = window;
+				
+				var hBox:HBox = new HBox();
+				hBox.setStyle("horizontalAlign", "center");
+				hBox.width = window.width-8;
+				
+				var btnClose:Button = new Button();
+				btnClose.label = "Zamknij";
+				btnClose.addEventListener(MouseEvent.CLICK, editor.close, false, 0, true);
+				
+				var btnCommit:Button = new Button();
+				btnCommit.label = "Zatwierdź";
+				btnCommit.addEventListener(MouseEvent.CLICK, editor.commit, false, 0, true);
+				
+				hBox.addChild(btnCommit);
+				hBox.addChild(btnClose);
+				hBox.setConstraintValue("bottom", 5);
+				hBox.setConstraintValue("left", 0);
+				
+				editor.addChild(hBox);
+				
+				PopUpManager.addPopUp(window, parent, true);
+				PopUpManager.centerPopUp(window);
+				
+				return window;	
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox left="0" top="0">
+		<mx:Form>
+			<mx:FormItem label="Nr dok. dostawy" visible="{this.incomeDocumentNumber}" includeInLayout="{this.incomeDocumentNumber}">
+				<mx:Label text="{this.incomeDocumentNumber}" fontWeight="bold" />
+			</mx:FormItem>
+			<mx:FormItem label="Data dostawy" visible="{this.incomeDate}" includeInLayout="{this.incomeDate}">
+				<mx:Label text="{this.incomeDate}" fontWeight="bold" />
+			</mx:FormItem>
+			<mx:FormItem label="Data przesunięcia" visible="{this.shiftDate}" includeInLayout="{this.shiftDate}">
+				<mx:Label text="{this.shiftDate}" fontWeight="bold" />
+			</mx:FormItem>
+		</mx:Form>
+		<mx:Form>
+			<mx:FormItem label="{DictionaryManager.getInstance().getByName('Attribute_Voltage', 'shiftFields').label}">
+				<mx:HBox>
+					<mx:TextInput id="txtBoxAttributeVoltage" textAlign="right" width="50" restrict="0-9," text="{this.voltage}" focusOut="textBoxFocusOutHandler(txtBoxAttributeVoltage, 'voltage')" />
+					<mx:Label text="{DictionaryManager.getInstance().getByName('Attribute_Voltage', 'shiftFields').metadata.valueSuffix}" />			
+				</mx:HBox>
+			</mx:FormItem>
+			<mx:FormItem label="{DictionaryManager.getInstance().getByName('Attribute_Current', 'shiftFields').label}">
+				<mx:HBox>
+					<mx:TextInput id="txtBoxAttributeCurrent" textAlign="right" width="50" restrict="0-9," text="{this.current}" focusOut="textBoxFocusOutHandler(txtBoxAttributeCurrent, 'current')" />
+					<mx:Label text="{DictionaryManager.getInstance().getByName('Attribute_Current', 'shiftFields').metadata.valueSuffix}" />
+				</mx:HBox>
+			</mx:FormItem>
+			<mx:FormItem label="{DictionaryManager.getInstance().getByName('Attribute_MeasureTime', 'shiftFields').label}">
+				<inputComponents:DateEditor id="measureTimeDateEditor" />
+			</mx:FormItem>
+			<mx:FormItem label="{DictionaryManager.getInstance().getByName('Attribute_MeasuredBy', 'shiftFields').label}">
+				<generic:FractusDictionarySelector
+					id="userSelector"
+					dictionaryName="users"
+					comboLabelField="shortName"
+					labelField="shortName"			 
+					/>
+			</mx:FormItem>
+			<mx:FormItem label="{DictionaryManager.getInstance().getByName('Attribute_Other', 'shiftFields').label}">
+				<mx:TextInput id="txtBoxAttributeOther" />
+			</mx:FormItem>
+		</mx:Form>
+	</mx:VBox>
+</mx:Canvas>

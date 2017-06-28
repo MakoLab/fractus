@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem label="{LanguageManager.getLabel('service.servicedObjectList')}" xmlns="com.makolab.components.lineList.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%">
+	<LineList id="list" width="100%" height="100" >
+		<columns>
+			<mx:DataGridColumn
+				id="objectColumn"
+				headerText="{LanguageManager.getLabel('service.servicedObjectIdentifier')}"
+				rendererIsEditor="true"
+				editable="false"
+				dataField="servicedObjectId"
+				editorDataField="selectedId"
+				itemRenderer="com.makolab.fractus.view.generic.FilteredSelector"
+				width="300"
+			/>
+			<mx:DataGridColumn
+				id="descriptionColumn"
+				headerText="{LanguageManager.getLabel('service.servicedObjectDescription')}"
+				dataField="description"
+				itemRenderer="mx.controls.TextInput"
+				rendererIsEditor="true"
+				editable="true"
+			/>
+		</columns>
+		
+		<dataProvider>{this.documentObject.xml.serviceDocumentServicedObjects.serviceDocumentServicedObject}</dataProvider>
+		<autoAddLines>true</autoAddLines>
+		<newLineTemplateFunction>{this.newLineFunction}</newLineTemplateFunction>
+	</LineList>
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ICollectionView;
+			import com.makolab.fractus.view.generic.FilteredSelector;
+			import com.makolab.fractus.view.generic.FilteredList;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.GetServicedObjectsCommand;
+			import com.makolab.fractus.view.documents.documentEditors.DocumentEditor;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			private var _documentObject:DocumentObject;
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				_documentObject = value;
+				if (_documentObject)
+				{
+					_documentObject.addEventListener(DocumentEvent.DOCUMENT_FIELD_CHANGE, handleFieldChange);
+					updateObjects();
+				}
+			}
+			public function get documentObject():DocumentObject
+			{
+				return _documentObject;
+			}
+			
+			private function handleFieldChange(event:DocumentEvent):void
+			{
+				if (event.fieldName != 'contractor') return;
+				updateObjects();
+			}
+			
+			private function updateObjects():void
+			{
+				var contractorId:String = this.documentObject.xml.contractor.contractor.id;
+				if (contractorId)
+				{
+					var cmd:GetServicedObjectsCommand = new GetServicedObjectsCommand(contractorId);
+					cmd.addEventListener(ResultEvent.RESULT, handleCommandResult);
+					cmd.execute();
+				}
+				else
+				{
+					this.enabled = false;
+				}				
+			}
+			
+			private function handleCommandResult(event:ResultEvent):void
+			{
+				objectColumn.itemRenderer = FilteredSelector.getFactory(XML(event.result).*, '@identifier', '@id');
+				this.enabled = true;
+				ICollectionView(list.dataProvider).refresh();
+			}
+			
+			private function newLineFunction():Object
+			{
+				return <serviceDocumentServicedObject><id/><description/></serviceDocumentServicedObject>
+			}
+		]]>
+	</mx:Script>
+</mx:FormItem>

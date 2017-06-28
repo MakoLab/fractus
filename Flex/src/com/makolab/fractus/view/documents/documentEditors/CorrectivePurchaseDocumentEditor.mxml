@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DocumentEditor
+		xmlns="com.makolab.fractus.view.documents.documentEditors.*"
+		xmlns:lineList="com.makolab.components.lineList.*"
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		xmlns:util="com.makolab.components.util.*"
+		xmlns:inputComponents="com.makolab.components.inputComponents.*"
+		xmlns:model="com.makolab.fractus.model.*" xmlns:catalogue="com.makolab.components.catalogue.*"
+		xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*" xmlns:plugins="com.makolab.fractus.view.documents.plugins.*"
+		printProfileName="defaultCommercialDocumentPdf"
+		editorWidth="300"
+		creationComplete="creationComplete()"
+	>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.documents.documentControls.DefaultAttributeComponent;
+			
+			private function creationComplete():void
+			{
+				if(documentObject.typeDescriptor.xmlOptions.additionalAttributes.*.length() == 0)
+				{
+					this.tabNavigator.getTabAt(2).visible = false;
+					this.tabNavigator.getTabAt(2).includeInLayout = false;
+				}
+				
+				if(documentObject.typeDescriptor.xmlOptions.issueOptions.*.length() == 0)
+				{
+					this.tabNavigator.getTabAt(3).visible = false;
+					this.tabNavigator.getTabAt(3).includeInLayout = false;
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<!-- plugins -->
+	<plugins:DocumentValidationPlugin id="validationPlugin" documentObject="{documentObject}"/>
+	<plugins:CommercialDocumentCalculationPlugin documentObject="{documentObject}" calculationLogic="{CommercialDocumentCalculationPlugin.CALCULATION_LOGIC_PURCHASE}"/>
+	<plugins:ContractorPlugin documentObject="{documentObject}"/>
+	<plugins:DocumentNumberPlugin documentObject="{documentObject}"/>
+	<plugins:CostCalculationPlugin documentObject="{documentObject}"/>
+	<plugins:PaymentCalculationPlugin documentObject="{documentObject}"/>
+	
+	<mx:TabNavigator id="tabNavigator" width="100%" height="100%" historyManagementEnabled="false" backgroundAlpha="0.9" backgroundColor="white">
+
+		<mx:Form
+				label="{LanguageManager.getInstance().labels.common.basicTab}"
+				paddingLeft="15"
+				paddingRight="15"
+				width="100%"
+				height="100%"
+				paddingTop="0"
+				paddingBottom="0"
+			>
+	
+			<!-- numer -->
+			<mx:HBox horizontalGap="14">
+				<mx:Label text="{getDocumentType(documentObject.xml).label.@lang.length()?getDocumentType(documentObject.xml).label.(@lang==LanguageManager.getInstance().currentLanguage)[0]:getDocumentType(documentObject.xml).label}" fontSize="18"/>
+				<documentControls:DocumentNumberComponent id="documentNumberComponent" documentObject="{documentObject}"/>
+			</mx:HBox>
+			
+			<!-- nabywca -->
+			<mx:FormItem label="{LanguageManager.getInstance().labels.documents.contractorData}" width="100%">
+				<mx:VBox width="100%">
+					<!-- nazwa -->
+					<mx:Text text="{documentObject.xml.contractor.contractor.fullName}" width="100%"/>
+					<!-- adres -->
+					<documentControls:ContractorDataComponent
+							width="100%"
+							documentObject="{documentObject}"
+						/>
+				</mx:VBox>
+			</mx:FormItem>
+			
+			<!-- lista pozycji dokumentu -->
+			<documentControls:CorrectivePurchaseLinesComponent
+					id="lines"
+					width="100%"
+					documentObject="{documentObject}"
+					rowCount="9"
+				/>
+			
+			<!-- platnosci -->
+			<mx:FormItem label="{LanguageManager.getInstance().labels.documents.payments}">
+				<mx:HBox width="100%" horizontalGap="20">
+					<inputComponents:PaymentSimpleEditor2 id="spc" documentObject="{documentObject}" width="70%"/>
+					<!--documentControls:ChangeCalc documentObject="{documentObject}" width="30%"/-->
+				</mx:HBox>
+			</mx:FormItem>
+			
+		</mx:Form>
+		
+		<!-- ZAKLADKA SZCZEGOLOW -->
+		<mx:HBox
+				label="{LanguageManager.getLabel('common.detailsTab')}"
+				paddingLeft="15"
+				paddingRight="15"
+				paddingTop="15"
+				width="100%"		
+				height="100%"
+			>
+			
+			<!-- lewa kolumna szczegolow -->
+			<mx:Form
+					width="35%"
+					height="100%"
+					paddingTop="4"
+				>
+				<!-- waluta dokumentu -->
+				<documentControls:DocumentCurrencySelector documentObject="{documentObject}" width="100%" visible="{documentObject.typeDescriptor.allowOtherCurrencies}" includeInLayout="{documentObject.typeDescriptor.allowOtherCurrencies}"/>
+				<!-- miejsce wystawienia -->
+				<documentControls:IssuePlaceComponent documentObject="{documentObject}" enabled="false"/>
+				
+				<!-- daty -->		
+				<documentControls:DateControl documentObject="{documentObject}" fieldName="issueDate" currentState="editor"/>
+				<documentControls:DateControl documentObject="{documentObject}" fieldName="eventDate" currentState="editor"/>
+	
+				<!-- sprzedawca -->
+				<!--
+				<documentControls:IssuerComponent documentObject="{documentObject}" width="100%"/>
+				-->
+				
+				<!-- cechy dokumentu -->
+				<documentControls:DocumentFeatureComponent documentObject="{this.documentObject}" currentState="editor" />
+				
+				<!-- netto/brutto -->
+				<documentControls:CalculationTypeComponent documentObject="{documentObject}"/>
+				
+				<!-- osoba odbierajaca -->
+				<documentControls:ReceivingPersonComponent documentObject="{documentObject}" currentState="editor" />
+		
+				<!-- atrybuty podstawowe -->
+				<mx:Repeater id="basicAttributeRepeater" dataProvider="{documentObject.typeDescriptor.xmlOptions.basicAttributes.attribute}">
+					<documentControls:DocumentGenericSingleAttributeComponent documentObject="{documentObject}" attributeName="{basicAttributeRepeater.currentItem.@name}" enabled="{basicAttributeRepeater.currentItem.@readOnly != 1}"/>
+				</mx:Repeater>
+			</mx:Form>
+			
+			<!-- prawa (szersza) kolumna -->
+			<mx:Form
+					width="65%"
+					height="100%"
+					paddingTop="4"
+				>
+				<!-- uwagi -->
+				<!--
+				<mx:FormItem label="{LanguageManager.getInstance().labels.common.remarks}" width="100%">
+					<documentControls:RemarksComponent documentObject="{documentObject}" width="100%" height="150"/>
+				</mx:FormItem>
+				-->
+				<documentControls:RemarksComponent documentObject="{documentObject}" width="100%" height="100"/>
+				
+				<!-- tabela VAT -->
+				<mx:FormItem label="Tabela VAT" width="100%">
+					<documentControls:VatTableComponent id="vatTable" documentObject="{documentObject}" width="100%"/>
+				</mx:FormItem>
+				
+				<!-- płatności -->
+				<inputComponents:PaymentEditor2 documentObject="{documentObject}" width="100%"/>
+			</mx:Form>
+		</mx:HBox>
+		
+		<mx:Form
+				label="{LanguageManager.getInstance().labels.documents.descriptiveCorrection}"
+				paddingLeft="15"
+				paddingRight="15"
+				width="100%"
+				height="100%"
+				paddingTop="0"
+				paddingBottom="0"
+			>
+			<documentControls:DescriptiveCorrectionControl documentObject="{documentObject}" attributeName="Attribute_DescriptiveCorrectionBefore"/>
+			<documentControls:DescriptiveCorrectionControl documentObject="{documentObject}" attributeName="Attribute_DescriptiveCorrectionAfter"/>
+		</mx:Form>
+		
+		<documentControls:AdditionalAttributesTab documentObject="{documentObject}"/>
+			
+		<mx:VBox label="Opcje"
+				paddingLeft="15"
+				paddingRight="15"
+				paddingTop="15"
+				width="100%"
+				height="100%"
+			>		
+			<!-- opcje -->
+			<documentControls:DocumentOptionsControl documentObject="{documentObject}" width="100%"/>
+		</mx:VBox>
+	</mx:TabNavigator>
+</DocumentEditor>

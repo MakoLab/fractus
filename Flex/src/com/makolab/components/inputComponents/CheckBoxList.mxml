@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:List xmlns:mx="http://www.adobe.com/2006/mxml" selectable="false" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.view.documents.documentControls.IssuerComponent;
+		]]>
+	</mx:Script>
+	<mx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			import com.makolab.fractus.view.documents.documentControls.IssuerComponent;
+			import mx.events.ListEvent;
+			import mx.controls.CheckBox;
+			import mx.controls.listClasses.IListItemRenderer;
+			
+			private var selection:Array = [];
+			public static const ITEM_CHECK:String="check_item";
+			public function itemSelectHandler(event:Event):void
+			{
+				var item:Object = (collection[this.itemRendererToIndex(event.target as IListItemRenderer)]);
+				var temp:Array = [];
+				if((event.target as CheckBox).selected == false){
+					for(var i:int=0;i<selection.length;i++){
+						if(selection[i] != item)temp.push(selection[i]);
+					}
+					selection = temp;
+				}else{
+					selection.push(item);
+				}
+				this.dispatchEvent(new ListEvent(ListEvent.CHANGE));
+			}
+			[Bindable]
+			override public function set selectedItems(items:Array):void
+			{
+				var temp:Array = [];
+				if(items){
+					for(var i:int=0;i<collection.length;i++){
+						for(var j:int=0;j<items.length;j++){
+							if(collection[i] == items[j]){
+								if(itemToItemRenderer(collection[i])){(itemToItemRenderer(collection[i]) as CheckBoxListItemRenderer).selected = true;};
+								temp.push(collection[i]);
+								break;
+							}
+						}
+					}
+					selection = temp;
+					//setSelection();
+				}
+			}
+			
+			override public function get selectedItems():Array
+			{
+				return selection;
+			}
+			
+			public function setSelection():void
+			{
+				for(var i:int=0;i<collection.length;i++){
+					var selected:Boolean = false;
+					for (var j:int = 0; j < selection.length; j++){
+						if(selection[j] == collection[i])selected = true;
+					}
+					if(itemToItemRenderer(collection[i])){(itemToItemRenderer(collection[i]) as CheckBoxListItemRenderer).selected = selected;};
+				}
+			}
+			
+			public function selectAll():void
+			{
+				selection = [];
+				for(var i:int=0;i<collection.length;i++){
+					selection.push(collection[i]);
+					if(itemToItemRenderer(collection[i])){(itemToItemRenderer(collection[i]) as CheckBoxListItemRenderer).selected = true;};
+				}
+				dispatchEvent(new ListEvent(ListEvent.CHANGE));
+			}
+			
+			public function deselectAll():void
+			{
+				selection = [];
+				for(var i:int=0;i<collection.length;i++){
+					if(itemToItemRenderer(collection[i])){(itemToItemRenderer(collection[i]) as CheckBoxListItemRenderer).selected = false;};
+				}
+				dispatchEvent(new ListEvent(ListEvent.CHANGE));
+			}
+			
+			public function dataChangeHandler(event:FlexEvent):void
+			{
+				var selected:Boolean = false;
+				for(var i:int=0;i<selection.length;i++){
+					if(selection[i] == event.target.data){
+						selected = true;
+						//trace(selection[i].label.(@lang == "pl"));
+						break;
+					}
+				}
+				event.target.selected = selected;
+				//qla
+				dispatchEvent(new ListEvent(ITEM_CHECK));
+	
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:itemRenderer>
+		<mx:Component>
+			<inputComponents:CheckBoxListItemRenderer dataChange="outerDocument.dataChangeHandler(event)" change="outerDocument.itemSelectHandler(event)"/>
+		</mx:Component>
+	</mx:itemRenderer>
+</mx:List>

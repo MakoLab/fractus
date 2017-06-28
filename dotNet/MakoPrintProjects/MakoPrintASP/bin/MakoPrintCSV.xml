@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>MakoPrintCSV</name>
+    </assembly>
+    <members>
+        <member name="T:Makolab.Printing.CSV.Settings">
+            <summary>
+            Class that contains settings for CSV processing.
+            </summary>
+        </member>
+        <member name="P:Makolab.Printing.CSV.Settings.FieldSeparator">
+            <summary>
+            Separator for CSV fields.
+            </summary>
+        </member>
+        <member name="P:Makolab.Printing.CSV.Settings.QuoteAllFields">
+            <summary>
+            Flag deciding whether to quote all fields.
+            </summary>
+        </member>
+        <member name="P:Makolab.Printing.CSV.Settings.DecimalSeparator">
+            <summary>
+            Decimal separator for CSV fields.
+            </summary>
+        </member>
+        <member name="P:Makolab.Printing.CSV.Settings.Encoding">
+            <summary>
+            Output encoding.
+            </summary>
+        </member>
+        <member name="T:Makolab.Printing.CSV.MakoPrintCsv">
+            <summary>
+            Class that prints document to CSV format.
+            </summary>
+        </member>
+        <member name="M:Makolab.Printing.CSV.MakoPrintCsv.Generate(System.String,System.IO.Stream)">
+            <summary>
+            Generates a CSV file from the specified xml to the specified output stream.
+            </summary>
+            <param name="xml">Input xml.</param>
+            <param name="output">Output stream.</param>
+        </member>
+        <member name="M:Makolab.Printing.CSV.MakoPrintCsv.LoadConfig(System.Xml.Linq.XDocument)">
+            <summary>
+            Loads the configuration from input xml.
+            </summary>
+            <param name="xml">Input xml.</param>
+            <returns>Loaded settings.</returns>
+        </member>
+        <member name="M:Makolab.Printing.CSV.MakoPrintCsv.ReplaceDecimalSeparators(System.Xml.Linq.XDocument,Makolab.Printing.CSV.Settings)">
+            <summary>
+            Replaces the decimal separators.
+            </summary>
+            <param name="xml">Input xml.</param>
+            <param name="settings">The settings for CSV processing.</param>
+        </member>
+        <member name="M:Makolab.Printing.CSV.MakoPrintCsv.InsertAutonumberingElements(System.Xml.Linq.XDocument)">
+            <summary>
+            Inserts the autonumbering elements if user specified column type = "autonumbering".
+            </summary>
+            <param name="xml">The XML.</param>
+        </member>
+        <member name="M:Makolab.Printing.CSV.MakoPrintCsv.EncapsulateFieldValue(System.String,Makolab.Printing.CSV.Settings)">
+            <summary>
+            Encapsulates field value. It escapes double quotas and quote full value if necessary.
+            </summary>
+            <param name="value">The value.</param>
+            <param name="settings">The settings for CSV processing.</param>
+            <returns>Encapsulated value.</returns>
+        </member>
+        <member name="M:Makolab.Printing.CSV.MakoPrintCsv.ProcessItems(System.Xml.Linq.XDocument,System.IO.StreamWriter,Makolab.Printing.CSV.Settings)">
+            <summary>
+            Processes the column values from /*/table/items/* nodes.
+            </summary>
+            <param name="xml">Input xml.</param>
+            <param name="output">Output stream.</param>
+            <param name="settings">The settings for CSV processing.</param>
+        </member>
+        <member name="M:Makolab.Printing.CSV.MakoPrintCsv.ProcessItemHeaders(System.Xml.Linq.XDocument,System.IO.StreamWriter,Makolab.Printing.CSV.Settings)">
+            <summary>
+            Processes the item headers from /*/table/configuration/* nodes.
+            </summary>
+            <param name="xml">Input xml.</param>
+            <param name="output">Output stream.</param>
+            <param name="settings">The settings for CSV processing.</param>
+        </member>
+    </members>
+</doc>

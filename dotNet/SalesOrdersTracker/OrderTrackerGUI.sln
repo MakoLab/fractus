@@ -1,0 +1,56 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderTrackerGUI", "OrderTrackerGUI\OrderTrackerGUI.csproj", "{D5162789-5D81-46B2-9AAD-2059060538AF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrackerDataAccessLayer", "TrackerDataAccessLayer\TrackerDataAccessLayer.csproj", "{7F798C40-CFD4-4AA7-B042-CEEC0FF1BCC3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Commons", "..\Commons\Commons.csproj", "{3B6F1CD9-0C49-4713-9FE9-A457B048FF5C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataAccessLayerHelper", "DataAccessLayerHelper\DataAccessLayerHelper.csproj", "{38066A5F-59D3-45E5-911C-878E77C1ABCB}"
+EndProject
+Global
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 5
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = http://tfs:8080/tfs/fractus
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = OrderTrackerGUI\\OrderTrackerGUI.csproj
+		SccProjectName1 = OrderTrackerGUI
+		SccLocalPath1 = OrderTrackerGUI
+		SccProjectUniqueName2 = TrackerDataAccessLayer\\TrackerDataAccessLayer.csproj
+		SccProjectName2 = TrackerDataAccessLayer
+		SccLocalPath2 = TrackerDataAccessLayer
+		SccProjectUniqueName3 = ..\\Commons\\Commons.csproj
+		SccProjectName3 = ../Commons
+		SccLocalPath3 = ..\\Commons
+		SccProjectUniqueName4 = DataAccessLayerHelper\\DataAccessLayerHelper.csproj
+		SccProjectName4 = DataAccessLayerHelper
+		SccLocalPath4 = DataAccessLayerHelper
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D5162789-5D81-46B2-9AAD-2059060538AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5162789-5D81-46B2-9AAD-2059060538AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5162789-5D81-46B2-9AAD-2059060538AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5162789-5D81-46B2-9AAD-2059060538AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F798C40-CFD4-4AA7-B042-CEEC0FF1BCC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F798C40-CFD4-4AA7-B042-CEEC0FF1BCC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F798C40-CFD4-4AA7-B042-CEEC0FF1BCC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F798C40-CFD4-4AA7-B042-CEEC0FF1BCC3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B6F1CD9-0C49-4713-9FE9-A457B048FF5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B6F1CD9-0C49-4713-9FE9-A457B048FF5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B6F1CD9-0C49-4713-9FE9-A457B048FF5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B6F1CD9-0C49-4713-9FE9-A457B048FF5C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38066A5F-59D3-45E5-911C-878E77C1ABCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38066A5F-59D3-45E5-911C-878E77C1ABCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38066A5F-59D3-45E5-911C-878E77C1ABCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38066A5F-59D3-45E5-911C-878E77C1ABCB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:HDividedBox height="100%" width="100%">
+		<mx:VBox width="30%" height="100%">
+			<mx:Button label="Clear" click="log = new ArrayCollection()"/>
+			<mx:DataGrid id="grid" dataProvider="{log}" itemClick="handleItemClick(event)" width="100%" height="100%">
+				<mx:columns>
+					<mx:DataGridColumn headerText="Czas" dataField="time" width="63"/>
+					<mx:DataGridColumn headerText="Czas trw." dataField="span" width="63"/>
+					<mx:DataGridColumn headerText="Metoda" dataField="commandName"/>
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:VBox>
+		<mx:VDividedBox width="60%" height="100%">
+			<mx:TextArea id="ta" width="100%" height="50%" editable="false"/>
+			<mx:TextArea id="taRes" width="100%" height="50%" editable="false"/>
+		</mx:VDividedBox>
+	</mx:HDividedBox>
+		
+
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.FractusCommand;
+			import mx.collections.ICollectionView;
+			import mx.collections.ArrayCollection;
+			import mx.events.ListEvent;
+			import com.makolab.fractus.view.ComponentWindow;
+			import mx.events.DataGridEvent;
+			
+			[Bindable]
+			private var log:ArrayCollection = new ArrayCollection();
+			
+			public function logCommand(commandName:String, params:Object, commandInstance:FractusCommand):void
+			{
+				log.addItem({time : (new Date().toTimeString().substr(0, 8)), commandName : commandName, params : params, command : commandInstance, startTime : (new Date().getTime()), span : ''});
+			}
+			
+			public function setResult(command:FractusCommand, result:Object):void
+			{
+				for (var i:int = log.length - 1; i >= 0; i--)
+				{
+					if (log[i].command == command)
+					{
+						log[i].result = result;
+						log[i].span = (Number(new Date().getTime() - log[i].startTime) / 1000).toString().replace(".", ",") + " s";
+						log[i] = log[i];
+						break;
+					}
+				}
+			}
+			
+			private function handleItemClick(event:ListEvent):void
+			{
+				var item:Object = event.itemRenderer.data;
+				var params:Object = item.params;
+				var s:String = getQualifiedClassName(item.command) + "\n";
+				if (params) for (var i:String in params)
+				{
+					s += i + ":\n" + params[i] + "\n\n";
+				}
+				ta.text = s;
+				taRes.text = item.result ? item.result.toString() : '';
+			}
+			
+			public static var instance:CommandExecutionLog;
+			
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				if (!instance)
+				{
+					instance = new CommandExecutionLog();
+				}
+				window.innerComponent = instance;
+				window.show(null, new Rectangle(-1, -1, 600, 400));
+				return window;
+			}
+		]]>
+	</mx:Script>
+</mx:VBox>

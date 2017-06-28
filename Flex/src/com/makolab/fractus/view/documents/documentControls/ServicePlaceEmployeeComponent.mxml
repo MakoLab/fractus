@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" label="Serwisanci i stanowiska" xmlns:lineList="com.makolab.components.lineList.*">
+	<mx:HBox width="100%">
+		<!-- serwisanci -->
+		<lineList:EntryListEditor dataProvider="{serviceDocumentEmployees}" newEntryTemplate="{employeeTemplate}" width="500" height="100" addButtonLabel="Dodaj serwisanta">
+			<lineList:columns>
+				<mx:DataGridColumn
+					width="130"
+					headerText="Serwisant"
+					itemEditor="{FractusDictionarySelector.getSelectorFactory('employees')}"
+					itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer"
+					dataField="employeeId"
+					editorDataField="selectedId"
+					/>
+				<mx:DataGridColumn
+					width="40"
+					headerText="%"
+					itemEditor="com.makolab.components.inputComponents.CurrencyEditor"
+					itemRenderer="com.makolab.components.inputComponents.FloatRenderer"
+					dataField="timeFraction"
+					editorDataField="dataObject"
+					textAlign="right"
+					/>
+				<mx:DataGridColumn headerText="Uwagi" dataField="description"/>
+			</lineList:columns>
+		</lineList:EntryListEditor>
+		<!-- stanowiska -->
+		<lineList:EntryListEditor dataProvider="{serviceDocumentServicePlaces}" newEntryTemplate="{servicePlaceTemplate}" width="100%" height="100" addButtonLabel="Dodaj stanowisko">
+			<lineList:columns>
+				<mx:DataGridColumn
+					width="130"
+					headerText="Stanowisko"
+					itemEditor="{FractusDictionarySelector.getSelectorFactory('servicePlaces')}"
+					itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer"
+					dataField="servicePlaceId"
+					editorDataField="selectedId"
+					/>
+				<mx:DataGridColumn
+					width="40"
+					headerText="R-g"
+					itemEditor="com.makolab.components.inputComponents.CurrencyEditor"
+					itemRenderer="com.makolab.components.inputComponents.FloatRenderer"
+					dataField="workTime"
+					editorDataField="dataObject"
+					textAlign="right"
+					/>
+				<mx:DataGridColumn headerText="Uwagi" dataField="description"/>
+			</lineList:columns>
+		</lineList:EntryListEditor>
+	</mx:HBox>
+
+	<mx:XML id="employeeTemplate">
+		<serviceDocumentEmployee><employeeId/><timeFraction>100</timeFraction><description/></serviceDocumentEmployee>
+	</mx:XML>
+	
+	<mx:XML id="servicePlaceTemplate">
+		<serviceDocumentServicePlace><servicePlaceId/><workTime>0</workTime><description/></serviceDocumentServicePlace>
+	</mx:XML>
+	
+	<mx:Script>
+		<![CDATA[
+			import assets.IconManager;
+			import mx.collections.XMLListCollection;
+			import com.makolab.fractus.view.generic.FractusDictionarySelector;
+			import com.makolab.fractus.model.document.DocumentObject;
+			private var _documentObject:DocumentObject;
+			
+			[Bindable]
+			public var deleteIcon:Class = IconManager.getIcon('delete_small');
+			
+			[Bindable]
+			private var serviceDocumentEmployees:XMLListCollection;
+			
+			[Bindable]
+			private var serviceDocumentServicePlaces:XMLListCollection;
+			
+			[Bindable]			
+			public function set documentObject(value:DocumentObject):void
+			{
+				_documentObject = value;
+				if (_documentObject)
+				{
+					serviceDocumentEmployees = new XMLListCollection(_documentObject.xml.serviceDocumentEmployees.serviceDocumentEmployee);
+					serviceDocumentServicePlaces = new XMLListCollection(_documentObject.xml.serviceDocumentServicePlaces.serviceDocumentServicePlace);
+				}
+			}
+			public function get documentObject():DocumentObject
+			{
+				return _documentObject;
+			}
+
+		]]>
+	</mx:Script>
+</mx:FormItem>

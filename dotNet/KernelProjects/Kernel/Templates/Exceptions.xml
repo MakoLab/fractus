@@ -1,0 +1,717 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<exceptions>
+  <exception id="UNHANDLED_EXCEPTION">
+    <customMessage lang="pl">Wystąpił nieprzewidziany błąd.</customMessage>
+    <extendedCustomMessage lang="pl">
+      Podczas przetwarzania zapytania wystąpił nieobsłużony wyjątek po stronie serwera. Szczegółowe informacje znajdują się w systemowym rejestrze błędów. Skontaktuj się z działem wsparcia technicznego.
+    </extendedCustomMessage>
+    <message>oryginalny message z wyjatku</message>
+    <className>klasa wyjatku</className>
+    <serverVersion>wersja biblioteki</serverVersion>
+    <logNumber>0</logNumber>
+  </exception>
+  <exception id="UnknownBusinessObjectType">
+    <customMessage lang="pl">Nieznany typ: %objType%.</customMessage>
+  </exception>
+  <exception id="DictionaryChanged">
+    <customMessage lang="pl">Podczas przetwarzania zapytania nastąpiła zmiana w konfiguracji słowników systemowych. Proszę ponowić próbę.</customMessage>
+  </exception>
+  <exception id="NoSessionId">
+    <customMessage lang="pl">Brak parametru sessionId.</customMessage>
+  </exception>
+  <exception id="FieldValidationError">
+    <customMessage lang="pl">Pole %fieldName% ma nieprawidłową wartość.</customMessage>
+  </exception>
+  <exception id="VersionMismatch">
+    <customMessage lang="pl">Konflikt wersji podczas próby zatwierdzenia zmian.</customMessage>
+    <extendedCustomMessage lang="pl">
+      Zapisywany obiekt uległ zmianie w bazie danych podczas gdy był modyfikowany na tym stanowisku. Prawdopodobnie inny użytkownik dokonał edycji tego obiektu w tym samym czasie. Proszę anulować i ponownie otworzyć obiekt do edycji.
+
+      Klasa obiektu, którego dotyczy konflikt: %objType%
+    </extendedCustomMessage>
+  </exception>
+  <exception id="InvalidLanguageVersion">
+    <customMessage lang="pl">Nieprawidłowa wersja językowa.</customMessage>
+  </exception>
+  <exception id="AuthenticationError">
+    <customMessage lang="pl">Niepoprawna nazwa użytkownika lub hasło.</customMessage>
+    <customMessage lang="en">Incorrect user name or password.</customMessage>
+  </exception>
+  <exception id="InitializeConnectionTimeout">
+    <customMessage lang="pl">Upłynął limit czasu oczekiwania na połączenie.</customMessage>
+  </exception>
+	<exception id="ObjectNotFound">
+		<customMessage lang="pl">Nie znaleziono żądanego obiektu.</customMessage>
+	</exception>
+	<exception id="ContractorNotFound">
+		<customMessage lang="pl">Nie znaleziono żądanego kontrahenta.</customMessage>
+	</exception>
+	<exception id="ObjectAlreadyExists">
+    <customMessage lang="pl">Obiekt już istnieje w bazie danych.</customMessage>
+  </exception>
+  <exception id="ItemEquivalentGroupException">
+    <customMessage lang="pl">Towar %itemName% jest już powiązany z grupą zamienników.</customMessage>
+  </exception>
+  <exception id="Deadlock">
+    <customMessage lang="pl">Wystąpił konflikt wskutek jednoczesnego dostępu do danych. Proszę ponowić próbę.</customMessage>
+  </exception>
+  <exception id="ContractorsGroupDeleteException">
+    <customMessage lang="pl">Nie można usunąc wybranej grupy kontrahentów.</customMessage>
+    <extendedCustomMessage lang="pl">
+      Nie można usunąć wybranej grupy kontrahentów ponieważ nie jest pusta (ilość przypisanych kontrahentów: %count%).
+    </extendedCustomMessage>
+  </exception>
+  <exception id="ItemsGroupDeleteException">
+    <customMessage lang="pl">Nie można usunąc wybranej grupy towarowej.</customMessage>
+    <extendedCustomMessage lang="pl">
+      Nie można usunąć wybranej grupy towarowej, gdyż %count% towar(y) jest już do niej przypisanych.
+    </extendedCustomMessage>
+  </exception>
+  <exception id="SessionExpired">
+    <customMessage lang="pl">Sesja wygasła.</customMessage>
+  </exception>
+  <exception id="SqlTimeout">
+    <customMessage lang="pl">Upłynął limit czasu operacji bazy danych.</customMessage>
+  </exception>
+  <exception id="DocumentNumberChangeException">
+    <customMessage lang="pl">Zmiana numeru dokumentu jest niemożliwa.</customMessage>
+  </exception>
+  <exception id="ReceivingPersonWithoutContractor">
+    <customMessage lang="pl">Dokument nie może posiadać osoby odbierającej jeżeli nie posiada kontrahenta.</customMessage>
+  </exception>
+  <exception id="NoLines">
+    <customMessage lang="pl">Dokument nie zawiera pozycji.</customMessage>
+  </exception>
+  <exception id="OnlyOneDocumentLineAllowed">
+    <customMessage lang="pl">Dokument może zawierać tylko jedną pozycję.</customMessage>
+  </exception>
+  <exception id="ContractorIsMandatory">
+    <customMessage lang="pl">Dokument musi posiadać kontrahenta.</customMessage>
+  </exception>
+  <exception id="ContractorIsForbidden">
+    <customMessage lang="pl">Dokument nie może posiadać kontrahenta.</customMessage>
+  </exception>
+  <exception id="DocumentCurrencyException">
+    <customMessage lang="pl">Dokument nie może być wystawiony w innej walucie niż systemowa.</customMessage>
+  </exception>
+  <exception id="PaymentMethodForbidden">
+    <customMessage lang="pl">Dokument nie może posiadać formy płatności "%paymentMethodName%".</customMessage>
+  </exception>
+  <exception id="DocumentFeatureForbidden">
+    <customMessage lang="pl">Dokument nie może posiadać cechy dokumentu "%documentFeatureName%".</customMessage>
+  </exception>
+  <exception id="NoItemInStock">
+    <customMessage lang="pl">Brak wystarczającej ilości towaru "%itemName%" na magazynie "%warehouseName%".</customMessage>
+  </exception>
+  <exception id="UnableToEditIncomeWarehouseDocument">
+    <customMessage lang="pl">Nie można edytować ani anulować przychodowego dokumentu magazynowego, ponieważ posiada on już rozchody.</customMessage>
+  </exception>
+  <exception id="UnableToEditOutcomeWarehouseDocument">
+    <customMessage lang="pl">Nie można edytować ani anulować rozchodowego dokumentu magazynowego, ponieważ jego data wystawienia jest inna niż bieżąca.</customMessage>
+  </exception>
+  <exception id="UnableToEditOutcomeWarehouseDocument2">
+    <customMessage lang="pl">Nie można edytować rozchodowego dokumentu magazynowego, ponieważ posiada powiązania z dokumentami handlowymi.</customMessage>
+  </exception>
+  <exception id="UnableToEditOutcomeWarehouseDocument3">
+    <customMessage lang="pl">Nie można zmniejszyć ilości na pozycji poniżej ilości stanowiącej realizację powiązanej rezerwacji lub zamówienia.</customMessage>
+  </exception>
+  <exception id="UnableToEditCommercialDocument">
+    <customMessage lang="pl">Nie można edytować dokumentu handlowego, ponieważ posiada powiązania z dokumentami magazynowymi.</customMessage>
+  </exception>
+  <exception id="UnableToRelateDocuments">
+    <customMessage lang="pl">Nie można powiązać dokumentów z powodu ich niezgodności.</customMessage>
+  </exception>
+  <exception id="UnsupportedBusinessObjectType">
+    <customMessage lang="pl">Nieobsługiwany typ obiektu: %objType%.</customMessage>
+  </exception>
+  <exception id="NonStorableItemOnWarehouseDocument">
+    <customMessage lang="pl">Dokument magazynowy może posiadać tylko towary podlegające magazynowaniu.</customMessage>
+  </exception>
+  <exception id="UnableToRealizeOrder">
+    <customMessage lang="pl">Ilość na pozycji przekracza wybraną ilość do zrealizowania dla towaru '%itemName%'.</customMessage>
+  </exception>
+  <exception id="UnableToRealizeOrder2">
+    <customMessage lang="pl">Nie można dokonywać realizacji z kilku magazynów jednocześnie.</customMessage>
+  </exception>
+  <exception id="IncorrectIssueDateOnSalesDocument">
+    <customMessage lang="pl">Nie można wystawić dokumentu sprzedażowego z datą poźniejszą niż data obecna.</customMessage>
+  </exception>
+  <exception id="QuantityBelowOrEqualZero">
+    <customMessage lang="pl">Pozycja '%itemName%' nie może zawierać ilości ujemnej lub równej zero.</customMessage>
+  </exception>
+  <exception id="ContractorTypeChangeError">
+    <customMessage lang="pl">Nie można zmieniać typu kontrahenta.</customMessage>
+  </exception>
+  <exception id="CreateNewDocumentFromCanceledDocument">
+    <customMessage lang="pl">Nie można stworzyć dokumentu z anulowanego dokumentu źródłowego.</customMessage>
+  </exception>
+  <exception id="DocumentCompanyOrBranchError">
+    <customMessage lang="pl">Nie można edytować ani wystawić nowego dokumentu na inny oddział niż bieżący.</customMessage>
+  </exception>
+  <exception id="CatalogueLimitError">
+    <customMessage lang="pl">W wersji demo kartoteka nie może posiadać więcej niż %catalogueLimit% pozycji.</customMessage>
+  </exception>
+  <exception id="WarehouseCorrectionError">
+    <customMessage lang="pl">Nie można automatycznie wygenerować korekty do dokumentów magazynowych podczas edycji dokumentu handlowego.</customMessage>
+  </exception>
+  <exception id="WarehouseCorrectionError2">
+    <customMessage lang="pl">Nie można automatycznie wygenerować korekty do dokumentów magazynowych z powodu niejednoznacznych powiązań.</customMessage>
+  </exception>
+  <exception id="WarehouseCorrectionError3">
+    <customMessage lang="pl">Nie można automatycznie wygenerować korekty do dokumentów magazynowych z powodu niezgodności pozycji handlowych z magazynowymi.</customMessage>
+  </exception>
+  <exception id="WarehouseCorrectionError4">
+    <customMessage lang="pl">Nie można zmniejszyć ilości na pozycji %itemName%, ponieważ %count% %unit% zostały już rozchodowane.</customMessage>
+  </exception>
+  <exception id="FullyCorrectedCorrectionError">
+    <customMessage lang="pl">Nie można skorygować dokumentu magazynowego, do którego wystawiono zwrot całkowity.</customMessage>
+  </exception>
+  <exception id="UnableToEditDocumentBecauseOfCorrections">
+    <customMessage lang="pl">Nie można edytować dokumentu, ponieważ posiada on korekty.</customMessage>
+  </exception>
+  <exception id="NonCorrectiveCorrection">
+    <customMessage lang="pl">Nie można wystawić korekty, która nic nie koryguje.</customMessage>
+  </exception>
+  <exception id="DifferentPaymentsAndDocumentValue">
+    <customMessage lang="pl">Suma na płatnościach musi być zgodna z wartością brutto dokumentu.</customMessage>
+  </exception>
+  <exception id="OpenedFinancialReportDoesNotExist">
+    <customMessage lang="pl">Brak otwartego raportu finansowego dla danego rejestru finansowego.</customMessage>
+  </exception>
+  <exception id="OpenedFinancialReportAlreadyExists">
+    <customMessage lang="pl">Istnieje już otwarty raport finansowy na dany rejestr finansowy.</customMessage>
+  </exception>
+  <exception id="UnableToIssueDocumentToClosedFinancialReport">
+    <customMessage lang="pl">Nie można wystawić dokumentu finansowego ze względu na brak otwartego raportu finansowego na wybranym rejestrze.</customMessage>
+  </exception>
+  <exception id="UnableToIssueFinancialDocument">
+    <customMessage lang="pl">Nie można wystawić dokumentu finansowego z datą wcześniejszą niż data otwarcia raportu finansowego.</customMessage>
+  </exception>
+  <exception id="UnableToIssueFinancialDocument2">
+    <customMessage lang="pl">Nie można wystawić dokumentu finansowego z datą późniejszą niż data otwarcia kolejnego raportu finansowego.</customMessage>
+  </exception>
+  <exception id="UnableToIssueFinancialDocument3">
+    <customMessage lang="pl">Wystawienie powiązanego dokumentu finansowego jest niemożliwe z powodu braku dostępnego rejestru finansowego.</customMessage>
+  </exception>
+	<exception id="UnableToIssueFinancialDocument4">
+		<customMessage lang="pl">Wystawienie dokumentu finansowego jest niemożliwe z powodu braku uprawnień do wybranego rejestru finansowego.</customMessage>
+	</exception>
+	<exception id="FinancialReportCloseError">
+    <customMessage lang="pl">Nie można zamknąć raportu finansowego, ponieważ data zamknięcia jest późniejsza niż data otwarcia kolejnego raportu.</customMessage>
+  </exception>
+  <exception id="FinancialReportCloseError2">
+    <customMessage lang="pl">Data otwarcia raportu finansowego musi być późniejsza niż data zamknięcia poprzedzającego go raportu.</customMessage>
+  </exception>
+  <exception id="FinancialReportCloseError3">
+    <customMessage lang="pl">Data zamknięcia raportu finansowego nie może być wcześniejsza niż data wystawienia któregokolwiek z dokumentów finansowych które zawiera.</customMessage>
+  </exception>
+  <exception id="FinancialReportCloseError4">
+    <customMessage lang="pl">Data zamknięcia raportu finansowego musi być późniejsza od daty jego otwarcia.</customMessage>
+  </exception>
+  <exception id="PaymentAmountEqualToZero">
+    <customMessage lang="pl">Nie można wystawić płatności na zerową wartość.</customMessage>
+  </exception>
+  <exception id="PaymentSettlementException">
+    <customMessage lang="pl">Nie można rozliczyć płatności z dokumentu %docNumber% na kwotę %amount% %currencySymbol%.</customMessage>
+  </exception>
+  <exception id="FinancialDocumentException1">
+    <customMessage lang="pl">Ustawienia numeracji dokumentu finansowego są niezgodne z ustawieniami rejestru finansowego.</customMessage>
+  </exception>
+  <exception id="FinancialDocumentException2">
+    <customMessage lang="pl">Typ dokumentu finansowego jest niezgodny z ustawieniami rejestru finansowego.</customMessage>
+  </exception>
+  <exception id="FinancialDocumentException3">
+    <customMessage lang="pl">Nie można zmieniać raportu finansowego ani rejestru finansowego podczas edycji dokumentu finansowego.</customMessage>
+  </exception>
+  <exception id="SettlementException">
+    <customMessage lang="pl">Płatność nie może zostać rozliczona na kwotę większą niż kwota płatności.</customMessage>
+  </exception>
+  <exception id="AutomaticFinancialDocumentUpdateException">
+    <customMessage lang="pl">Nie można w sposób automatyczny zaktualizować dokumentów finansowych, gdyż ich powiązania nie są jednoznaczne.</customMessage>
+  </exception>
+  <exception id="ZeroPaymentSettlementException">
+    <customMessage lang="pl">Kwota rozliczenia płatności musi być większa od zera.</customMessage>
+  </exception>
+  <exception id="CancelWarehouseDocumentError1">
+    <customMessage lang="pl">Nie można anulować dokumentu, ponieważ posiada on powiązane dokumenty handlowe o numerach: %docNumbers%.</customMessage>
+  </exception>
+  <exception id="CancelWarehouseDocumentError2">
+    <customMessage lang="pl">Nie można anulować dokumentu, ponieważ posiada on powiązane korekty o numerach: %docNumbers%.</customMessage>
+  </exception>
+  <exception id="CancelWarehouseDocumentError3">
+    <customMessage lang="pl">Nie można anulować dokumentu, ponieważ posiada on powiązane dokumenty rozchodowe o numerach: %docNumbers%.</customMessage>
+  </exception>
+  <exception id="CancelWarehouseDocumentError4">
+    <customMessage lang="pl">Nie można anulować dokumentu, ponieważ posiada on powiązane dokumenty magazynowe rozchodowe o numerach: %docNumbers%.</customMessage>
+  </exception>
+  <exception id="ItemUnitIdChangeError">
+    <customMessage lang="pl">Nie można zmienić jednostki miary na towarze, ponieważ istnieją już wystawione dokumenty na ten towar.</customMessage>
+  </exception>
+  <exception id="QuantityOnCorrectionAboveZero">
+    <customMessage lang="pl">Pozycje na korekcie nie mogą zwiększać ilości towaru.</customMessage>
+  </exception>
+  <exception id="ContractorGroupMembershipEnforcement">
+    <customMessage lang="pl">Kontrahent musi być przypisany do co najmniej jednej grupy kontrahentów.</customMessage>
+  </exception>
+  <exception id="ItemGroupMembershipEnforcement">
+    <customMessage lang="pl">Towar %code% musi być przypisany do co najmniej jednej grupy towarowej.</customMessage>
+  </exception>
+  <exception id="ItemOneGroupMembershipEnforcement">
+    <customMessage lang="pl">Towar %code% musi być przypisany do dokładnie jednej grupy towarowej.</customMessage>
+  </exception>
+  <exception id="ContractorOneGroupMembershipEnforcement">
+    <customMessage lang="pl">Kontrahent musi być przypisany do dokładnie jednej grupy kontrahentów.</customMessage>
+  </exception>
+  <exception id="PartiallyRealizedOrderContractorChange">
+    <customMessage lang="pl">Nie można zmienić kontrahenta na częściowo zrealizowanym zamówieniu/rezerwacji.</customMessage>
+  </exception>
+  <exception id="CalculationTypeChangeError">
+    <customMessage lang="pl">Nie można zmienić sposobu przeliczania kwot dla tego typu dokumentu.</customMessage>
+  </exception>
+  <exception id="CorrectedCorrectionCancellationError">
+    <customMessage lang="pl">Nie można anulować dokumentu korygującego ze względu na powiązania z innymi dokumentami magazynowymi.</customMessage>
+  </exception>
+  <exception id="InsufficientQuantityOnContainer">
+    <customMessage lang="pl">Niewystarczająca ilość towaru na kontenerze %containerName%.</customMessage>
+  </exception>
+  <exception id="NotEnoughDeliveriesSelected">
+    <customMessage lang="pl">Nie wybrano wymaganej ilości dostaw na pozycji '%itemName%'.</customMessage>
+  </exception>
+  <exception id="NotEmptyContainerRemoval">
+    <customMessage lang="pl">Jeden lub więcej kontenerów posiada towary i nie można go usunąć.</customMessage>
+  </exception>
+  <exception id="WarehouseChangeError">
+    <customMessage lang="pl">Nie można zmieniać magazynu podczas edycji dokumentów magazynowych.</customMessage>
+  </exception>
+  <exception id="TotalShiftQuantityError">
+    <customMessage lang="pl">Sumaryczna ilość przypisana do gniazd jest większa niż ilość na pozycji %ordinalNumber% (%itemName%).</customMessage>
+  </exception>
+  <exception id="TotalShiftQuantityError2">
+    <customMessage lang="pl">Sumaryczna ilość wybrana z transz jest niezgodna z ilością na pozycji %ordinalNumber% (%itemName%).</customMessage>
+  </exception>
+  <exception id="DeliveriesInNonDeliverySelectedWarehouseError">
+    <customMessage lang="pl">Wskazano dostawy na dokumencie z magazynu nie pozwalającego na wybór dostaw.</customMessage>
+  </exception>
+  <exception id="ContainerUnrelatedQuantityExceeded">
+    <customMessage lang="pl">Próba wydania większej ilości niż dostępna poza kontenerami.</customMessage>
+  </exception>
+  <exception id="ContainerRelatedQuantityExceeded">
+    <customMessage lang="pl">Próba wydania większej ilości niż dostępna z kontenera %containerName%.</customMessage>
+  </exception>
+  <exception id="ItemVatRateIdChangeError">
+    <customMessage lang="pl">Nie można zmienić stawki VAT na towarze, ponieważ istnieją już wystawione dokumenty na ten towar.</customMessage>
+  </exception>
+  <exception id="LinePriceBelowOrEqualZero">
+    <customMessage lang="pl">Cena na pozycji musi być większa lub równa zero.</customMessage>
+  </exception>
+  <exception id="LinePriceBelowZero">
+    <customMessage lang="pl">Cena na pozycji musi być większa od zera.</customMessage>
+  </exception>
+  <exception id="UnableToCancelCorrectedDocument">
+    <customMessage lang="pl">Nie można anulować dokumentu, ponieważ posiada on korekty.</customMessage>
+  </exception>
+  <exception id="NegativePaymentDueDate">
+    <customMessage lang="pl">Termin płatności musi być późniejszy niż data wystawienia płatności.</customMessage>
+  </exception>
+  <exception id="IncorrectDocumentTypesToRelate">
+    <customMessage lang="pl">Nie można powiązać wybranych typów dokumentów.</customMessage>
+  </exception>
+  <exception id="UnableToUnrelate">
+    <customMessage lang="pl">Nie można odwiązać dokumentu handlowego od magazynowego, ponieważ istnieją zaksięgowane dokumenty magazynowe rozchodowe. Numery dokumentów: %docNumbers%.</customMessage>
+  </exception>
+  <exception id="IncorrectEventDateSales">
+    <customMessage lang="pl">Data sprzedaży nie może być poźniejsza niż data wystawienia.</customMessage>
+  </exception>
+  <exception id="IncorrectEventDatePurchase">
+    <customMessage lang="pl">Data wpływu nie może być poźniejsza niż data rejestracji.</customMessage>
+  </exception>
+  <exception id="ItemCodeAlreadyExists">
+    <customMessage lang="pl">Towar o takim samym kodzie już istnieje w bazie.</customMessage>
+  </exception>
+  <exception id="ContractorCodeAlreadyExists">
+    <customMessage lang="pl">Kontrahent istnieje już w bazie.</customMessage>
+  </exception>
+  <exception id="SingleAttributeMultipled">
+    <customMessage lang="pl">Atrybut '%name%' może występować tylko raz.</customMessage>
+  </exception>
+  <exception id="SourceAndDestinationContainersAreTheSame">
+    <customMessage lang="pl">Miejsce źródłowe i docelowe przesunięcia wewnątrzmagazynowego nie może być jednakowe.</customMessage>
+  </exception>
+  <exception id="ContainerUnassignedQuantityExceeded">
+    <customMessage lang="pl">Brak wystarczającej ilości towaru nieprzypisanego do gniazd.</customMessage>
+  </exception>
+  <exception id="EarlierIssueDateOnCorrectiveDocument">
+    <customMessage lang="pl">Data wystawienia na dokumentach korygujących nie może być wcześniejsza niż data dokumentu korygowanego.</customMessage>
+  </exception>
+  <exception id="SourceQuantityExceeded">
+    <customMessage lang="pl">Nie można edytować przypisania transzy dla tego przychodu ponieważ istnieją przesunięcia czerpiące z tych transz.</customMessage>
+  </exception>
+  <exception id="NoContainerIdOnShift">
+    <customMessage lang="pl">Nie wybrano kontenera docelowego na przesunięciu wewnątrzmagazynowym.</customMessage>
+  </exception>
+  <exception id="ZeroQuantityOnShift">
+    <customMessage lang="pl">Ilość na przesunięciu musi być większa od zera.</customMessage>
+  </exception>
+  <exception id="ManufacturerAndCodeLineException">
+    <customMessage lang="pl">Towar '%itemName%' musi mieć określonego producenta i kod producenta, żeby dało się zdalnie złożyć zamówienie.</customMessage>
+  </exception>
+  <exception id="RemoteOrderSendingException1">
+    <customMessage lang="pl">Błąd połączenia z zewnętrznym serwerem do składania zamówień.</customMessage>
+  </exception>
+  <exception id="MissingAttribute">
+    <customMessage lang="pl">Błąd konfiguracji. Brak definicji atrybutu '%name%'.</customMessage>
+  </exception>
+	<exception id="InvalidConfigurationEntry">
+		<customMessage lang="pl">Nieprawidłowa wartość konfiguracji, nazwa klucza: '%name%'.</customMessage>
+	</exception>
+	<exception id="UnableToRelateDocumentBecauseOfStatus">
+    <customMessage lang="pl">Nie można powiązać dokumentów o statusie innym niż 'Zatwierdzony'.</customMessage>
+  </exception>
+  <exception id="InvaluatedOutcomesProhibited">
+    <customMessage lang="pl">Wystawienie dokumentu magazynowego pobierającego towar z niewycenionej dostawy nie jest dozwolone.</customMessage>
+  </exception>
+  <exception id="SettlePaymentsError">
+    <customMessage lang="pl">Automatyczna aktualizacja rozliczeń płatności jest niemożliwa.</customMessage>
+  </exception>
+  <exception id="BillCorrectionError">
+    <customMessage lang="pl">Korekta pozycji paragonu może mieć jedynie postać całkowitego zwrotu ilościowego.</customMessage>
+  </exception>
+  <exception id="InconsistentPaymentMethodOnInvoiceAndBill">
+    <customMessage lang="pl">Paragon i faktura do paragonu muszą mieć tą samą formę płatności.</customMessage>
+  </exception>
+  <exception id="InconsistentCalculationTypeOnInvoiceAndBill">
+    <customMessage lang="pl">Paragon i faktura do paragonu muszą mieć ten sam sposób liczenia podatku VAT (netto albo brutto).</customMessage>
+  </exception>
+  <exception id="MissingLineAttribute">
+    <customMessage lang="pl">Wybierz sposób generowania dokumentów na pozycji nr %ordinalNumber%.</customMessage>
+  </exception>
+  <exception id="GenerateDocumentOptionAttriuteChangeError">
+    <customMessage lang="pl">Nie można zmienić sposobu generowania powiązanych dokumentów na pozycji nr %ordinalNumber% ponieważ jest ona już rozliczona.</customMessage>
+  </exception>
+  <exception id="QuantityBelowServiceRealized">
+    <customMessage lang="pl">Nie można zmienić ilości na pozycji %ordinalNumber% poniżej ilości już zrealizowanej.</customMessage>
+  </exception>
+  <exception id="ServiceRealizedLineRemoval">
+    <customMessage lang="pl">Nie można usuwać zrealizowanej już pozycji.</customMessage>
+  </exception>
+  <exception id="ComplaintDecisionQuantityError">
+    <customMessage lang="pl">Suma ilości na decyzjach reklamacyjnych nie może być większa niż na pozycji, z którą są powiązane.</customMessage>
+  </exception>
+  <exception id="RealizedComplaintDecisionRemoval">
+    <customMessage lang="pl">Nie można usunąć zrealizowanej już decyzji reklamacyjnej.</customMessage>
+  </exception>
+  <exception id="RealizedComplaintDecisionQuantityEdition">
+    <customMessage lang="pl">Nie można zmieniać ilości na zrealizowanej decyzji reklamacyjnej.</customMessage>
+  </exception>
+  <exception id="SelectLots">
+    <customMessage lang="pl">Wybierz transze.</customMessage>
+  </exception>
+  <exception id="ClosedInventorySheetEdition">
+    <customMessage lang="pl">Nie można edytować zamkniętego arkusza spisowego.</customMessage>
+  </exception>
+  <exception id="ClosedInventoryDocumentEdition">
+    <customMessage lang="pl">Nie można edytować zamkniętego dokumentu inwentaryzacyjnego.</customMessage>
+  </exception>
+  <exception id="DuplicatedItemInInventorySheet">
+    <customMessage lang="pl">Każdy towar może występować tylko raz na jednym arkuszu spisowym.</customMessage>
+  </exception>
+  <exception id="InsufficientLineDetails">
+    <customMessage lang="pl">Nieprawidłowe dane towaru na pozycji %ordinalNumber%.</customMessage>
+  </exception>
+  <exception id="SqlConnectionError">
+    <customMessage lang="pl">Błąd połączenia z bazą danych. Proszę ponowić próbę.</customMessage>
+  </exception>
+  <exception id="InvoiceToClosedServiceDocument">
+    <customMessage lang="pl">Nie można wystawić dokumentu handlowego do zamkniętego dokumentu serwisowego.</customMessage>
+  </exception>
+  <exception id="AlreadyClosedServiceDocument">
+    <customMessage lang="pl">Nie można zamknąć już zamkniętego dokumentu serwisowego.</customMessage>
+  </exception>
+  <exception id="ServiceDocumentCloseError1">
+    <customMessage lang="pl">Dokument zawiera pozycje wymagające wystawienia dokumentu sprzedażowego. Proszę rozliczyć dokument fakturą lub paragonem albo zmodyfikować zlecenie zmieniając opcje tworzenia dokumentów powiązanych na niewymagające rozliczenia dokumentem sprzedaży.</customMessage>
+  </exception>
+  <exception id="BookedOutcomeError">
+    <customMessage lang="pl">Modyfikacja wyceny dokumentu przychodowego jest niedozwolona, ponieważ istnieją zaksiegowane dokumenty rozchodowe, wycenione na podstawie tego przychodu o numerach: %docNumbers%.</customMessage>
+  </exception>
+  <exception id="BookedOutcomeError2">
+    <customMessage lang="pl">Nie można edytować zaksięgowanego rozchodowego dokumentu magazynowego.</customMessage>
+  </exception>
+  <exception id="ComplaintDocumentCloseError">
+    <customMessage lang="pl">Nie można zamknąć protokołu reklamacyjnego, ponieważ nie wszystkie pozycje mają decyzje na pełną ilość i są zrealizowane.</customMessage>
+  </exception>
+  <exception id="ItemBlockError">
+    <customMessage lang="pl">Towar '%itemName%' jest już zablokowany na magazynie '%whSymbol%'.</customMessage>
+  </exception>
+  <exception id="BlockedItemError">
+    <customMessage lang="pl">Towar '%itemName%' występuje na otwartym arkuszu spisowym, więc nie można zmienić jego stanu magazynowego.\nIlość zablokowanych towarów występujących na dokumencie: %count%</customMessage>
+  </exception>
+  <exception id="NoWarehouseIdOnInventorySheet">
+    <customMessage lang="pl">Nie wybrano magazynu na arkuszu spisowym nr %ordinalNumber%.</customMessage>
+  </exception>
+  <exception id="NoUserQuantityOnInventorySheetLine">
+    <customMessage lang="pl">Nie wpisano ilości na pozycji nr %lineOrdinalNumber% arkusza spisowego nr %sheetOrdinalNumber%.</customMessage>
+  </exception>
+  <exception id="ComplaintDecisionTypeChangeError">
+    <customMessage lang="pl">Nie można zmienić typu decyzji, która zostałą już zrealizowana.</customMessage>
+  </exception>
+  <exception id="NoSpecifiedVatRate">
+    <customMessage lang="pl">Nie znaleziono stawki VAT o symbolu '%symbol%'.</customMessage>
+  </exception>
+  <exception id="NoSpecifiedPaymentMethod">
+    <customMessage lang="pl">Nie znaleziono formy płatności o nazwie '%label%'.</customMessage>
+  </exception>
+  <exception id="NoSpecifiedCurrency">
+    <customMessage lang="pl">Nie znaleziono waluty o symbolu '%symbol%'.</customMessage>
+  </exception>
+  <exception id="ServiceProcessConfigurationError">
+    <customMessage lang="pl">Błąd konfiguracji dokumentu serwisowego.</customMessage>
+  </exception>
+  <exception id="ItemRemovalError">
+    <customMessage lang="pl">Nie można usunąć towaru, gdyż został on już użyty w systemie.</customMessage>
+  </exception>
+  <exception id="ContractorRemovalError">
+    <customMessage lang="pl">Nie można usunąć kontrahenta, gdyż został on już użyty w systemie.</customMessage>
+  </exception>
+  <exception id="SalesPriceBelowPurchaseError">
+    <customMessage lang="pl">Ceny sprzedaży na pozycji %ordinalNumbers% są niższe niż ceny zakupu.</customMessage>
+  </exception>
+  <exception id="SalesPriceBelowPurchaseWarning">
+    <customMessage lang="pl">Ceny sprzedaży na pozycji %ordinalNumbers% są niższe niż ceny zakupu.\nCzy chcesz kontynuowac?</customMessage>
+    <question>
+      <buttons>
+        <button value="1">yes</button>
+        <button value="0" isDefault="1" abort="1">no</button>
+      </buttons>
+      <actionField>skipSalesPriceBelowPurchaseValidation</actionField>
+    </question>
+  </exception>
+  <exception id="InvaluatedOutcomesError">
+    <customMessage lang="pl">Określenie cen zakupu i marży na pozycji %ordinalNumbers% nie jest możliwe.</customMessage>
+  </exception>
+  <exception id="InvaluatedOutcomesWarning">
+    <customMessage lang="pl">Określenie cen zakupu i marży na pozycji %ordinalNumbers% nie jest możliwe.\nCzy chcesz kontynuowac?</customMessage>
+    <question>
+      <buttons>
+        <button value="1">yes</button>
+        <button value="0" isDefault="1" abort="1">no</button>
+      </buttons>
+      <actionField>skipInvaluatedOutcomesValidation</actionField>
+    </question>
+  </exception>
+  <exception id="SalesOrderPrepaidsNumberMismatch">
+    <customMessage lang="pl">Nie można wystawić dokumentu zaliczkowego, ponieważ od chwili jego wystawiania został do niego wystawiony kolejny dokument zaliczkowy.</customMessage>
+  </exception>
+  <exception id="SalesOrderSettlementOverpaidError">
+    <customMessage lang="pl">Nie można rozliczyć zamówienia sprzedażowego z powodu NADPŁATY w wysokości %value% PLN.</customMessage>
+  </exception>
+  <exception id="SalesOrderSettlementUnderpaidError">
+    <customMessage lang="pl">Nie można rozliczyć zamówienia sprzedażowego z powodu NIEDOPŁATY w wysokości %value% PLN.</customMessage>
+  </exception>
+  <exception id="PrepaidInvoiceLinesError">
+    <customMessage lang="pl">Dokument zaliczkowy może posiadać tylko pozycje zaliczkowe.</customMessage>
+  </exception>
+  <exception id="UnableToRealizeSalesOrder">
+    <customMessage lang="pl">Ilość na pozycji przekracza wybraną ilość do zrealizowania dla towaru '%itemName%'.</customMessage>
+  </exception>
+  <exception id="UnableToRealizeSalesOrder3">
+    <customMessage lang="pl">Nie można wystawić faktury rozliczającej do zamówienia, które nie posiada żadnych pozycji sprzedażowych.</customMessage>
+  </exception>
+  <exception id="UnableToCreateInvoiceToSalesOrder">
+    <customMessage lang="pl">Nie można wystawić faktury z zamówienia sprzedażowego nr %orderNumber%, ponieważ posiada ono już dokumenty zaliczkowe.</customMessage>
+  </exception>
+  <exception id="UnableToCreateInvoiceToWarehouseDocument">
+    <customMessage lang="pl">Nie można wystawić faktury do rozchodowaego dokumentu magazynowego, ponieważ dokument magazynowy posiada powiązanie do zamówienia sprzedażowego, które posiada zaliczki.</customMessage>
+  </exception>
+  <exception id="UnableToCreatePrepaymentDocument">
+    <customMessage lang="pl">Nie można wystawić zaliczki do zamówienia, ponieważ posiada ono dokumenty magazynowe z fakturami.</customMessage>
+  </exception>
+  <exception id="UnableToCreateSettlementDocument">
+    <customMessage lang="pl">Nie można wystawić faktury rozliczającej do zamówienia, ponieważ posiada ono dokumenty magazynowe z fakturami.</customMessage>
+  </exception>
+  <exception id="DifferentCalculationTypes">
+    <customMessage lang="pl">Dokumenty nie mają spójnego sposobu liczenia.</customMessage>
+  </exception>
+  <exception id="ErrorClosingSalesOrder">
+    <customMessage lang="pl">Nie można zamknąć zamówienia sprzedażowego, ponieważ nie posiada on wygenerowanych dokumentów magazynowych na wszystkich pozycjach.</customMessage>
+  </exception>
+  <exception id="UnableToCreatePrepaymentDocument2">
+    <customMessage lang="pl">Nie można wystawić zaliczki do zamówienia, ponieważ posiada ono dokumenty magazynowe powiązane z wieloma zamówieniami sprzedażowymi.</customMessage>
+  </exception>
+  <exception id="UnableToCreateSettlementDocument2">
+    <customMessage lang="pl">Nie można wystawić faktury rozliczającej do zamówienia, ponieważ posiada ono dokumenty magazynowe powiązane z wieloma zamówieniami sprzedażowymi.</customMessage>
+  </exception>
+  <exception id="UnableToCreateSettlementDocument3">
+    <customMessage lang="pl">Nie można wystawić faktury rozliczającej do zamówienia, które nie posiada zaliczek.</customMessage>
+  </exception>
+  <exception id="MissingTechnologyNameOnTechnology">
+    <customMessage lang="pl">Brak nazwy technologii.</customMessage>
+  </exception>
+  <exception id="MissingProductionItemType">
+    <customMessage lang="pl">Wybierz rodzaj towaru na pozycji %ordinalNumber%.</customMessage>
+  </exception>
+  <exception id="MissingProductionTechnologyName">
+    <customMessage lang="pl">Wybierz technologię na pozycji %ordinalNumber%.</customMessage>
+  </exception>
+  <exception id="MissingMainProductOnTechnology">
+    <customMessage lang="pl">Technologia musi posiadać dokładnie jeden produkt główny.</customMessage>
+  </exception>
+  <exception id="InvalidItemType">
+    <customMessage lang="pl">Dokument może posiadać jedynie pozycje towarowe.</customMessage>
+  </exception>
+  <exception id="MissingMaterialOnTechnology">
+    <customMessage lang="pl">Technologia musi posiadać co najmniej jeden materiał.</customMessage>
+  </exception>
+	<exception id="MinimalMarginValidationError">
+		<customMessage lang="pl">Za niska marża na pozycji '%itemName%'.</customMessage>
+		<ordinalNumber>%ordinalNumber%</ordinalNumber>
+	</exception>
+	<exception id="MaximalDiscountValidationError">
+		<customMessage lang="pl">Za wysoki rabat na pozycji '%itemName%'.</customMessage>
+		<ordinalNumber>%ordinalNumber%</ordinalNumber>
+	</exception>
+	<exception id="ProductionOrderQuantityError">
+    <customMessage lang="pl">Ilość na pozycji %ordinalNumber% musi być wielokrotnością ilości na technologii (%quantity%).</customMessage>
+  </exception>
+  <exception id="MissingSalesman">
+    <customMessage lang="pl">Zamówienie sprzedażowe musi posiadac handlowca.</customMessage>
+  </exception>
+  <exception id="ItemsGroupChangeError">
+    <customMessage lang="pl">Nie można zmienić przypisania towaru do grup towarowych, ponieważ jest włączona blokada minimalnej marży.</customMessage>
+  </exception>
+  <exception id="EditDocumentBeforeSystemStartForbidden">
+    <customMessage lang="pl">Nie można edytować dokumentu sprzed startu systemu.</customMessage>
+  </exception>
+  <exception id="ReservationsFromMultipleWarehousesError">
+    <customMessage lang="pl">Nie można zrealizować wielu rezerwacji dokumentem magazynowym, ponieważ rezerwacje nie mają jednakowych magazynów.</customMessage>
+  </exception>
+  <exception id="DocumentCorrectionBeforeSystemStartError">
+    <customMessage lang="pl">Nie można wystawić korekty do dokumentu sprzed startu systemu.</customMessage>
+  </exception>
+  <exception id="NoTargetBranchSelected">
+    <customMessage lang="pl">Wybierz oddział docelowy.</customMessage>
+  </exception>
+  <exception id="IncorrectWarehouseOnShiftOrder">
+    <customMessage lang="pl">Pozycje na Zamówieniu MM muszą mieć jednakowy magazyn.</customMessage>
+  </exception>
+	<exception id="OnDocumentCommitValidationError">
+		<customMessage lang="pl">Wystąpiły błędy podczas próby zapisania dokumentu</customMessage>
+		<extendedCustomMessage lang="pl">%errors%</extendedCustomMessage>
+	</exception>
+	<exception id="EmptyDocumentNumberError">
+		<customMessage lang="pl">Numer dokumentu nie może być pusty.</customMessage>
+	</exception>
+	<exception id="OnlyLineValuesCanBeEdited">
+		<customMessage lang="pl">Jedynie edytowanie wartości/cen na tej pozycji jest dozwolone.</customMessage>
+	</exception>
+	<exception id="ExistingTechnologyName">
+		<customMessage lang="pl">Technologia o nazwie „%name%” już istnieje. Wprowadź inną nazwę.</customMessage>
+	</exception>
+	<exception id="SalesOrderMoreThanOneServiceLineError">
+		<customMessage lang="pl">Zamówienie sprzedażowe nie może posiadać więcej niż jednej pozycji zawierającej usługę. Ponadto pozycja ta nie może generować kosztu oraz nie może posiadać ilości większej od 1.</customMessage>
+	</exception>
+	<exception id="ExcessiveSalesOrderRealizationByCommercialDocument">
+		<customMessage lang="pl">Dokumenty sprzedażowe nie mogą realizować pozycji zamówienia sprzedażowego na większą ilość niż na realizowanej pozycji. Za duża ilość towaru na pozycji %order%. Maksymalna dopuszczalna ilość towaru na tej pozycji to %allowedQuantity%.</customMessage>
+	</exception>
+	<exception id="GenerateOutcomeFromSalesOptionMissing">
+		<customMessage lang="pl">W tym przypadku opcja generowania dokumentu wydania magazynowego musi być zaznaczona.</customMessage>
+	</exception>
+	<exception id="DocumentEditForbiddenRelatedSalesOrderClosed">
+		<customMessage lang="pl">Nie można anulować lub edytować dokumentu realizującego zamknięte zamówienie sprzedażowe.</customMessage>
+	</exception>
+	<exception id="IncorrectNumberOfPayments">
+		<customMessage lang="pl">Dokument nie może posiadać płatności.</customMessage>
+	</exception>
+	<exception id="IncorrectNumberOfPayments2">
+		<customMessage lang="pl">Dokument musi posiadać płatność.</customMessage>
+	</exception>
+	<exception id="IncorrectNumberOfPayments3">
+		<customMessage lang="pl">Dokument posiada niedozwoloną ilość płatności.</customMessage>
+		<extendedCustomMessage lang="pl">Dokument może posiadać następującą ilość płatności: %count%.</extendedCustomMessage>
+	</exception>
+	<exception id="WarehouseNotLocal">
+		<customMessage lang="pl">Wybrany magazyn %warehouse% nie jest lokalny.</customMessage>
+		<extendedCustomMessage lang="pl">Wybrany magazyn %warehouse% nie jest lokalny.\nNie można wystawić dokumentu magazynowego lub pozycji dokumentu handlowego na magazyn obcy.</extendedCustomMessage>
+	</exception>
+	<exception id="CommercialDocumentLineWarehouseNotSelected">
+		<customMessage lang="pl">Brak wybranego magazynu na pozycji %order%.</customMessage>
+	</exception>
+	<exception id="UnableToEditFinancialOutcomeDocumentRelatedWithSalesOrder">
+		<customMessage lang="pl">Nie można edytować rozchodowego dokumentu finansowego powiązanego z zamówieniem sprzedażowym.</customMessage>
+	</exception>
+	<exception id="LineQuantityEditForbiddenRelatedSalesOrder">
+		<customMessage lang="pl">Nie można edytować ilości na pozycji %order%.</customMessage>
+		<extendedCustomMessage lang="pl">Nie można edytować ilości na pozycji %order% dokumentu sprzedażowego realizującej zamówienie sprzedażowe.</extendedCustomMessage>
+	</exception>
+	<exception id="UnsupportedVatRate">
+		<customMessage lang="pl">Stawka VAT o symbolu %symbol% jest nieobsługiwana w procesie.</customMessage>
+	</exception>
+	<exception id="LineQuantityChangeForbiddenDuringRelazationOfSalesOrder">
+		<customMessage lang="pl">Niedozwolona zmiana ilości na pozycji.</customMessage>
+		<extendedCustomMessage lang="pl">Zwiększenie ilości na pozycji dokumentu sprzedażowego podczas realizacji zamówienia sprzedażowego jest niedozwolona.</extendedCustomMessage>
+	</exception>
+	<exception id="MissingBeforeSystemStartWhCorrectionTemplate">
+		<customMessage lang="pl">Nie można wystawić korekty dokumentu magazynowego sprzed startu systemu.</customMessage>
+		<extendedCustomMessage lang="pl">Brak atrybutu 'beforeSystemStartWhCorrectionTemplate' w konfiguracji typu dokumentu.</extendedCustomMessage>
+	</exception>
+	<exception id="SalesDocumentFromSimulatedInvoiceRelatedWithSalesOrderForbidden">
+		<customMessage>Nie można wystawić dokumentu.</customMessage>
+		<extendedCustomMessage>Wystawianie dokumentu sprzedażowego do faktury proforma powiązanej z zamówieniem sprzedażowym jest zabronione. Proszę wystawić dokument do zamówienia sprzedażowego.</extendedCustomMessage>
+	</exception>
+	<exception id="FinancialRegisterBalanceBelowZero">
+		<customMessage>Nie można wystawić dokumentu finansowego gdyż spowodowałby ujemny bilans na rejestrze finansowym.</customMessage>
+	</exception>
+	<exception id="VatRateNotAllowedForSelectedSaleDate">
+		<customMessage>W dokumencie występuje stawka VAT niedozwolona dla wybranej daty sprzedaży.</customMessage>
+	</exception>
+	<exception id="SourceDocumentInvalidFormat">
+		<customMessage>Nieprawidłowy format pliku źródłowego.</customMessage>
+	</exception>
+	<exception id="InsertMissingItems">
+		<customMessage>Następujące towary zostaną dodane do kartoteki.</customMessage>
+	</exception>
+	<exception id="IncompleteRelation">
+		<customMessage>Nie można wczytać dokumentu ze względu na niekompletne powiązanie.</customMessage>
+	</exception>
+	<exception id="ForwardError">
+		<customMessage>%message%</customMessage>
+	</exception>
+	<exception id="BookedFinancialReportRecalculationForbidden">
+		<customMessage>Bilans zaksięgowanego raportu finansowego nie może się zmienić.</customMessage>
+	</exception>
+	<exception id="BookedFinancialReportReopeningForbidden">
+		<customMessage>Nie można ponownie otworzyć zaksięgowanego raportu finansowego.</customMessage>
+	</exception>
+	<exception id="MissingCurrentBranchId">
+		<customMessage>Id oddziału nie zostało prawidłowo skonfigurowane.</customMessage>
+	</exception>
+	<exception id="MissingDefaultOrBillingAddress">
+		<customMessage lang="pl">Brak adresu domyślnego lub adresu do fakturowania dla kontrahenta %name%.</customMessage>
+	</exception>
+	<exception id="ForbiddenUnits">
+		<customMessage lang="pl">Dokument posiada niedozwolone jednostki miary.</customMessage>
+	</exception>
+	<exception id="NotEnoughQuantityContainerSlot">
+		<customMessage lang="pl">Niewystarczająca ilość towaru na kontenerze technicznym.</customMessage>
+	</exception>
+	<exception id="SettlementPaymentsCurrencyMismatch">
+		<customMessage lang="pl">Nie można rozliczyć płatności w różnych walutach.</customMessage>
+	</exception>
+	<exception id="DocumentCurrencyChangeForbidden">
+		<customMessage lang="pl">Zmiana waluty dokumentu jest niedozwolona.</customMessage>
+	</exception>
+	<exception id="IncompatibleDocumentAndFinancialRegisterCurrencies">
+		<customMessage lang="pl">Waluta dokumentu różna od waluty wybranego rejestru finansowego.</customMessage>
+	</exception>
+	<exception id="IncompatibleDocumentAndCorrectionCurrencies">
+		<customMessage lang="pl">Waluta korekty musi być zgodna z walutą korygowanego dokumentu.</customMessage>
+	</exception>
+  <exception id="UnableToEstablishConnectionWithBranch">
+    <customMessage lang="pl">Nie udało się połączyć z bazą danych dla oddziału o id %branchId%.</customMessage>
+  </exception>
+  <exception id="UnableToEdtiConfigurationAtBranch">
+    <customMessage lang="pl">Nie udało się nadpisać konfiguracji dla oddziału o id %branchId%.</customMessage>
+  </exception>
+  <exception id="NoSourceContainerForAutomaticShift">
+    <customMessage lang="pl">Pozycja rozchodowa nie przypisana do miejsca składowania. Wszystkie pozycje rozchodowane automatycznie muszą być przypisane do miejsca składowania.</customMessage>
+  </exception>
+</exceptions> 

@@ -1,0 +1,1408 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DocumentEditor 
+	xmlns="com.makolab.fractus.view.documents.documentEditors.*"
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="100%" 
+	height="100%" 
+	backgroundColor="white"
+	initialize="init()" 
+	creationComplete="creationCompleteHandler(event)"
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*"
+	xmlns:plugins="com.makolab.fractus.view.documents.plugins.*"
+	xmlns:payments="com.makolab.fractus.view.payments.*"
+	xmlns:keyboards="com.makolab.fractus.view.documents.documentEditors.keyboards.*">
+	
+	<mx:Style>
+		.keybordButtom {
+			fontSize:20;
+			paddingLeft:0;
+			paddingRight:0;
+		}
+	</mx:Style>
+	
+	 <mx:Script>
+	   <![CDATA[
+	   	import com.adobe.utils.StringUtil;
+	   	import com.makolab.events.AllEvent;
+	   	import com.makolab.components.util.CurrencyManager;
+	   	import com.makolab.components.inputComponents.CurrencyEditor;
+	   	import mx.core.UITextField;
+	   	import mx.graphics.RadialGradient;
+	   	import com.makolab.fractus.view.dictionaries.editors.DocumentType;
+	   	import mx.rpc.events.ResultEvent;
+	   	import com.makolab.fractus.commands.CreateBusinessObjectCommand;
+	   	import mx.events.FlexEvent;
+	   	import com.makolab.components.document.DocumentEvent;
+	   	import com.makolab.components.barcode.BarcodeEvent;
+	   	import com.makolab.fractus.commands.SearchCommand;
+	   	import com.makolab.fractus.model.BarcodeManager;
+	   	import com.makolab.components.util.Tools;
+	   	import mx.events.CloseEvent;
+	   	import com.makolab.fractus.model.ModelLocator;
+	   	import com.makolab.fractus.view.ComponentWindow;
+	   	import mx.events.ItemClickEvent;
+	   	  import com.makolab.fractus.model.document.quickSales.*;
+	      import mx.collections.*;
+	      import com.makolab.fractus.model.LanguageManager;
+	      import com.makolab.fractus.model.document.*;
+	      import com.makolab.fractus.model.DictionaryManager;
+	      import mx.controls.Alert;
+	      import mx.controls.*;
+	      
+		  XML.ignoreComments = false;
+		  XML.ignoreProcessingInstructions = false;
+		  
+		  //public var quickSalesProxy:IQuickSalesProxy = new ClientSideProxy();
+		  
+		  public var keyXML:XML = 
+		  		<keys>
+			        <key shift='false' ctrl='true' alt='false' charCode='98' itemIdentifier='code'/> 			<!--ctrl + b-->
+			        <key shift='false' ctrl='true' alt='false' charCode='97' itemIdentifier='ammount'/> 		<!--ctrl + a-->
+			    	<key shift='false' ctrl='false' alt='false' charCode='61' itemIdentifier='plus'/>			<!-- = -->
+                	<key shift='false' ctrl='false' alt='false' charCode='45' itemIdentifier='minus'/>			<!-- - -->
+                	<key shift='false' ctrl='true' alt='false' charCode='49' itemIdentifier='PaymentForm1'/>	<!--ctrl + 1-->
+                	<key shift='false' ctrl='true' alt='false' charCode='50' itemIdentifier='PaymentForm2'/>	<!--ctrl + 2-->
+                	<key shift='false' ctrl='true' alt='false' charCode='51' itemIdentifier='PaymentForm3'/>	<!--ctrl + 3-->
+               	 	<key shift='true' ctrl='false' alt='false' charCode='13' itemIdentifier='paid'/>			<!--shift + enter-->
+               	 	<key shift='false' ctrl='false' alt='true' charCode='49' itemIdentifier='givenZl'/>			<!--alt + 1-->
+                	<key shift='false' ctrl='false' alt='true' charCode='50' itemIdentifier='givenGr'/>			<!--alt + 2-->
+                	<key shift='false' ctrl='false' alt='true' charCode='51' itemIdentifier='clearChange'/>		<!--alt + 3-->
+               	 	<key shift='false' ctrl='true' alt='false' charCode='48' itemIdentifier='cancelLastItem'/>	<!--0 numeryczne-->
+			    </keys>;
+
+          [Bindable]
+          public var keyArray:ArrayCollection;
+            
+	      private var Lp:int; //numer porządkowy towaru na dokumencie
+	      private var CodeExist:Boolean; //jeżeli towar istnieje (jest w bazie towar z tym kodem), wtedy true, jeżeli nie istnieje false
+	      private var panelState:int; // 3 - zablokowany z powodu oczekiwania 
+	      private var LastRemoved:Boolean; //true-oznacza ze anulowano ostatni towar
+	      private var lastItemAddOperationResult:int;
+	      
+	      override protected function handleKeyUp(event:KeyboardEvent):void
+	      {
+	      	
+	      }
+	      
+	      private var paymentRBG:RadioButtonGroup;
+	      
+	      [Bindable]
+	      private var actualDate:Date;
+	      
+	      [Bindable]
+	      private var Ilosc:Number = 1; 
+	      
+	      [Bindable]
+	      private var Kod:String;
+	      
+	      [Bindable]
+	      private var KodRestrict:String; //ograniczenie na znaki w kodzie (na przyszłość)
+	      
+	      [Bindable]
+	      private var SumZl:Number;
+	      
+	      [Bindable]
+	      private var SumGr:Number;
+	      
+	      [Bindable]
+	      private var SumZlGiven:Number;
+	      
+	      [Bindable]
+	      private var SumGrGiven:Number;
+	      
+	      [Bindable]
+	      private var ChangeZl:Number;
+	      
+	      [Bindable]
+	      private var ChangeGr:Number;
+	      
+	      [Bindable]
+	      public var NewItem:ArrayCollection; //amount, code, info, jm, lineId, lp, name, price, state, vat, worth
+	      
+	      [Bindable]
+	      public var initDG:ArrayCollection;
+
+//DOCUMENT
+		  [Bindable]
+	      private var DocType:String;
+	  	  /**
+		   * id dokumentu
+		   */
+		  public var DocId:String;
+		
+		  /**
+		   * numer pełny
+		   */
+		  public var DocFullNumber:String;
+		  
+		  /**
+		   * domyślna forma płatności
+		  */
+		  public var DocPaymentForm:String;
+		  [Bindable]
+		  public var DocAvailablePaymentForms:ArrayCollection = new ArrayCollection();
+	
+	 	  /**
+		  * waluta
+		  */
+		  public var DocCurrency:String; //waluta np PLN
+		  [Bindable]
+		  public var DocZl:String; //jednostka glowna np zl
+		  [Bindable]
+		  public var DocGr:String; //jednostka dodatkowa np gr
+		  [Bindable]
+		  private var discountRate:Number = 0;
+		  [Bindable]
+		  private var itemCodeManager:BarcodeManager = new BarcodeManager();
+			
+		//INITIALIZATION
+			      
+		public function init():void {
+		 
+			//newDoc();
+			//createNewDocument();
+			//createPeymentsControl();
+			 
+			Ilosc = 1;
+			sumZlGivenTI.addEventListener(KeyboardEvent.KEY_DOWN,skipToSumGrGivenListener);
+			sumGrGivenTI.addEventListener(KeyboardEvent.KEY_DOWN,skipToClearChangePanelListener);
+			iloscTI.addEventListener(FocusEvent.FOCUS_OUT,ammountListener);
+			//this.addEventListener(KeyboardEvent.KEY_UP,quickSalePanelListener);
+				      	 
+			itemCodeManager.component = this;
+			itemCodeManager.callbackFunction = itemCodeManager.getItems;
+			itemCodeManager.addEventListener("result",itemCodeChangeHandler);
+			itemCodeManager.addEventListener(BarcodeEvent.BARCODE_READ, barcodeReadHandler);
+			itemCodeManager.addEventListener(BarcodeEvent.ITEM_NOT_FOUND, itemNotFoundHandler);
+			itemCodeManager.addEventListener(BarcodeEvent.BARCODE_READ_START, barcodeReadStartHandler);
+			lines.documentLines.clear();
+			
+			paymentsContainer.addChild(paymentControl.paymentEditor);
+			paymentControl.paymentEditor.setStyle("verticalCenter",0);
+			paymentControl.paymentEditor.setStyle("horizontalCenter",0);
+			//paymentControl.paymentEditor.percentWidth = 100;
+			//paymentControl.paymentEditor.percentHeight = 100;
+			paymentsContainer.addChild(paymentControl.paymentsSummary);
+			//paymentControl.paymentsSummary.percentWidth = 100;
+			
+			currentState = "normal";
+		}
+		
+		private function creationCompleteHandler(event:FlexEvent):void
+		{
+			clearChangePanel();
+			kodTI.setFocus();
+			if (window) window.hideAfterCommit = false;
+		}
+		
+		private function barcodeReadHandler(event:BarcodeEvent):void
+		{
+			if (currentState != "discount")
+			{
+				currentState = "normal";
+			} 
+			if (currentState == "discount")
+			{
+				if (event.barcode == /* "7897155001186926" */ "7897155003269860")
+				{
+					this.discountRate = 30;
+					exitDiscount();
+					/* txtInputDiscount.text = "30";
+					txtInputDiscountCode.text = event.barcode;
+					txtInputDiscountCode.setSelection(0,txtInputDiscountCode.text.length - 1); */
+				}
+				else if (event.barcode == "7897155001186926")
+				{
+					this.discountRate = 20;
+					exitDiscount();
+				}
+				else
+				{
+					Alert.show("Błędny kod rabatowy","Błąd");
+				}
+				kodTI.text = "";
+			}
+		}
+		
+		private function barcodeReadStartHandler(event:BarcodeEvent):void
+		{
+			if (currentState != "discount")
+				kodTI.setFocus();
+		}
+		
+		private function itemNotFoundHandler(event:BarcodeEvent):void
+		{
+			changeState(2);
+			infoT.text = "Nie znaleziono towaru o kodzie " + event.barcode;
+		}
+	      
+		private function itemCodeChangeHandler(event:Event):void
+		{
+			if (event.target == itemCodeManager)
+			{
+				if (itemCodeManager.elementsList.length > 0)
+				{
+					var element:Object;
+					while (element = itemCodeManager.popElement(0))
+					{
+						if (Tools.parseBoolean(element.@id))
+						{
+							changeState(0);
+							var line:CommercialDocumentLine = new CommercialDocumentLine();
+							line.itemId = element.@id;
+							line.itemName = element.@name;
+							line.itemCode = element.@code;
+							line.documentObject = documentObject;
+							line.quantity = Number(iloscTI.text);
+							line.initialNetPrice = Number(element.@defaultPrice);
+							lines.documentLines.addLine(line);
+							documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_LINE_ADD,false,false,null,line));
+							documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_LINE_SET_ITEM,false,false,null,line));
+							infoT.text = "";
+							kodTI.text = "";
+						}
+					}
+					showChange();
+					Ilosc = 1;
+				}
+			}
+		}
+		
+	      public static function showWindow():ComponentWindow
+	      {
+	      	var window:ComponentWindow = new ComponentWindow();
+	      	var editor:QuickSalesDocumentEditor = new QuickSalesDocumentEditor();
+	      	window.innerComponent = editor;
+	      	window.show(null,ComponentWindow.FULLSCREEN,LanguageManager.getInstance().labels.title.documents.panel.quick);
+	      	return window;
+	      }
+	      
+	      public function initPanelForNewDoc():void{
+	      	discountRate = 0;
+	      	 panelState = 0;
+		     SumZlGiven = 0;
+		     SumGrGiven = 0;
+		     ChangeZl = 0;
+	         ChangeGr = 0;
+	         SumZl = 0;
+	      	 SumGr = 0;
+			 NewItem = new ArrayCollection();
+			 initDG = new ArrayCollection();  
+			 actualDate = new Date();
+	         Ilosc=1;
+	         Kod="";
+	         KodRestrict="A-Za-z0-9 ";//null;
+	         Lp = 1;
+	         CodeExist = false;
+	         LastRemoved = false; 
+	         paymentRBG = new RadioButtonGroup();
+	         paymentRBG.addEventListener(ItemClickEvent.ITEM_CLICK, paymentRBGItemClickListener); 
+	         lines.documentObject = this.documentObject;
+	      }
+	      				         
+//LISTENERS
+	      
+	      private function paymentRBGItemClickListener(event:Event):void
+	      {
+	      	
+	      }
+	      
+	      public function quickSalePanelListener(event:KeyboardEvent):void{
+	      	
+	      	if(panelState == 0){
+		      	 if (quickSalePanelListenerCheckCSA(event,'code') && event.charCode == keyXML.key.(@itemIdentifier == 'code').@charCode) 
+		      	 {
+		      	 	clearCode();
+		      	 	kodTI.setFocus();
+		      	 }
+		      	 
+		      	 else if (	quickSalePanelListenerCheckCSA(event,'plus') && event.charCode == keyXML.key.(@itemIdentifier == 'plus').@charCode) 
+		      	 {
+		      	 	plusB.setFocus();
+		      	 	plus();
+		      	 }
+		      	 
+		      	 else if (	quickSalePanelListenerCheckCSA(event,'minus') && event.charCode == keyXML.key.(@itemIdentifier == 'minus').@charCode) 
+		      	 {
+		      	 	minusB.setFocus();
+		      	 	minus();
+		      	 }
+		      	 /*
+		      	 else if (	quickSalePanelListenerCheckCSA(event,'firstPaymentForm') && event.charCode == keyXML.key.(@itemIdentifier == 'firstPaymentForm').@charCode) 
+		      	 {
+		      	 	paymentRB0.setFocus();
+		      	 	paymentRB0.selected=true;
+		      	 }
+		      	 
+		      	 else if (	quickSalePanelListenerCheckCSA(event,'secondPaymentForm') && event.charCode == keyXML.key.(@itemIdentifier == 'secondPaymentForm').@charCode) 
+		      	 {
+		      	 	paymentRB1.setFocus();
+		      	 	paymentRB1.selected=true;
+		      	 }
+		      	 
+		      	 else if (	quickSalePanelListenerCheckCSA(event,'thirdPaymentForm') && event.charCode == keyXML.key.(@itemIdentifier == 'thirdPaymentForm').@charCode) 
+		      	 {
+		      	 	paymentRB2.setFocus();
+		      	 	paymentRB2.selected=true;
+		      	 }
+		      	 */
+		      	 else if (	quickSalePanelListenerCheckCSA(event,'paid') && event.charCode == keyXML.key.(@itemIdentifier == 'paid').@charCode) 
+		      	 {
+		      	 	paidB.setFocus();
+		      	 	saveDoc();
+		      	 }
+		      	 
+		      	 else if (	quickSalePanelListenerCheckCSA(event,'givenZl') && event.charCode == keyXML.key.(@itemIdentifier == 'givenZl').@charCode) 
+		      	 {
+		      	 	sumZlGivenTI.setFocus();
+		      	 }
+		      	 
+		      	 else if (	quickSalePanelListenerCheckCSA(event,'givenGr') && event.charCode == keyXML.key.(@itemIdentifier == 'givenGr').@charCode) 
+		      	 {
+		      	 	sumGrGivenTI.setFocus();
+		      	 }
+		      	 
+		      	 else if (	quickSalePanelListenerCheckCSA(event,'clearChange') && event.charCode == keyXML.key.(@itemIdentifier == 'clearChange').@charCode) 
+		      	 {
+		      	 	clearChangePanelB.setFocus();
+		      	 	clearChangePanel();
+		      	 }
+		      	 
+		      	  else if (	quickSalePanelListenerCheckCSA(event,'ammount') && event.charCode == keyXML.key.(@itemIdentifier == 'ammount').@charCode) 
+		      	 {
+		      	 	clearAmmount();
+		      	 	iloscTI.setFocus();
+		      	 }
+		      	 else{
+		      	 	/* var isNextPaymentForm:Boolean = true;
+		      	 	var i:int = 0;
+			      	 while(isNextPaymentForm){
+			      	 	var j:int=i+1;
+			      	 	if(keyXML.key.(@itemIdentifier == 'PaymentForm'+j).length()>0){
+				      	 	if (	quickSalePanelListenerCheckCSA(event,'PaymentForm'+j) && event.charCode == keyXML.key.(@itemIdentifier == 'PaymentForm'+j).@charCode) 
+					      	 {
+					      	 	RadioButton(RadioButtonHB.getChildAt(i)).setFocus();
+					      	 	RadioButton(RadioButtonHB.getChildAt(i)).selected=true;
+					      	 }
+					    }
+					    else isNextPaymentForm = false;
+					    i++;
+			      	 } */
+			     }
+		     }
+	      	 
+	      	 /* if (	quickSalePanelListenerCheckCSA(event,'cancelLastItem') && event.charCode == keyXML.key.(@itemIdentifier == 'cancelLastItem').@charCode) 
+	      	 {
+	      	 	cancelLastItemB.setFocus();
+	      	 	cancelLastItem();
+	      	 } */
+
+	      }
+	      
+	      public function quickSalePanelListenerCheckCSA(event:KeyboardEvent,ident:String):Boolean{
+				return (
+					keyXML.key.(@itemIdentifier == ident).@ctrl == String(event.ctrlKey) &&
+					keyXML.key.(@itemIdentifier == ident).@alt == String(event.altKey) &&
+				  	keyXML.key.(@itemIdentifier == ident).@shift == String(event.shiftKey)
+				);
+	      }
+	      
+	      public function skipToSumGrGivenListener(event:KeyboardEvent):void{
+	      	 //testt="Key Pressed: " + String.fromCharCode(event.charCode) +         " (key code: " + event.keyCode + " character code: "         + event.charCode + ")";
+	      	 event.stopImmediatePropagation();
+	      	 if (event.charCode == 46 || event.charCode == 44 || event.charCode == 13) sumGrGivenTI.setFocus();
+	      }
+	      
+	      public function skipToClearChangePanelListener(event:KeyboardEvent):void{
+	      	 event.stopImmediatePropagation();
+	      	 if (event.charCode == 13) clearChangePanelB.setFocus();
+	      }
+	      
+	      public function txtInputDiscountKeyDownHandler(event:KeyboardEvent):void{
+	      	 event.stopImmediatePropagation();
+	      	 //if (event.charCode == 13) exitDiscount();
+	      }
+	      
+	      public function pikFromPanelListener(event:KeyboardEvent):void{
+	      	//trace("code");
+	      	 event.stopImmediatePropagation();
+	      	 /* if (discountVBox.visible)
+	      	 	if (event.charCode == 13)
+	      	 	{ 
+	      	 		handleDiscountCodeChange();
+	      	 		kodTI.text = "";
+	      	 	}
+	      	 else */
+	      	 	if (event.charCode == 13)
+	      	 	{
+					if (discountVBox.visible)
+					{
+					   kodTI.text = "";
+					}
+		      	 	else
+	      	 			pik();
+	      	 	}
+	      }
+	      
+	      public function ammountListener(event:FocusEvent):void{
+	      	 if (Ilosc <= 0) Ilosc=1;
+	      }
+
+//CHANGE
+	      
+	      public function showChange():void {
+	         var sumGiven:Number;
+	         var change:Number;
+	         sumGiven=SumZlGiven + SumGrGiven/100;
+	         change = Number((sumGiven - documentObject.totalForPayment).toFixed(4));
+	         ChangeGr = Number((change % 1 * 100).toFixed(4));
+	         ChangeZl = Number((change - (change % 1)).toFixed(4));  
+	      }
+
+//BLOCKING AND STATES
+	      
+	      public function blockPanel():void {
+	         leftPanelPartVB.enabled = false;
+	      }
+	      
+	      public function unblockPanel():void {
+	         leftPanelPartVB.enabled = true;
+	      }
+	      
+	      public function changeState(state:int):void {
+	         panelState = state; 
+	         if(state == 2){
+	         	//blockPanel();
+	         	unblockPanel();
+	         	setItemPanelColor("red");
+	         }
+	         else if(state == 1){
+	         	blockPanel();
+	         	setItemPanelColor("#ff7700");
+	         }
+	         else if(state == 0){
+	         	unblockPanel();
+	         	setItemPanelColor("black");
+	         }
+	         else if(state == 3){
+	         	blockPanel();
+	         }
+	      }
+	      
+	      public function setItemPanelColor(color:String):void {
+	         /* itemCodeL.setStyle("color",color);
+	         itemNameL.setStyle("color",color);
+	         itemPriceL.setStyle("color",color);
+	         itemWorthL.setStyle("color",color);
+	         itemJmL.setStyle("color",color);
+	         itemAmountL.setStyle("color",color);
+	         infoT.setStyle("color",color); */
+	      }
+
+//CLEARING
+	      
+	      public function clearChangePanel():void {
+	         SumZlGiven = 0;
+	         SumGrGiven = 0;
+	         ChangeGr = 0;
+	         ChangeZl = 0;
+	         sumZlGivenTI.setFocus();  
+	      }
+	      
+	      public function clearInsertPanel():void {
+	         Ilosc = 1;
+	         Kod = "";	         
+	      }
+	      
+	      public function clearItemPanel():void {
+	         /* itemCodeL.text = "";
+	         itemNameL.text = "";
+	         itemPriceL.text = "";
+	         itemWorthL.text = "";
+	         itemJmL.text = "";
+	         itemAmountL.text = "";	
+	         infoT.text = ""; */         
+	      }
+	      
+	      public function clearCode():void {
+	      	 kodTI.setSelection(0, kodTI.text.length);
+	      }
+	      
+	      public function clearAmmount():void {
+	      	 iloscTI.setSelection(0, iloscTI.text.length);
+	      }
+
+//AMMOUNT 
+
+	       public function plus():void {
+	         //inkrementacja ilosci
+	         Ilosc++;
+	         if (lines.documentLines.selectedItem)
+	         {
+	         	lines.documentLines.selectedItem.quantity = Ilosc;
+	         	documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_CHANGE,"quantity",lines.documentLines.selectedItem));
+	         	showChange();
+	         	iloscTI.setFocus();
+	         }
+	      }
+	      
+	      public function minus():void {
+	         //dekrementacja ilosci
+	         if(Ilosc-1>0)Ilosc=Number((Ilosc-1).toFixed(4)); 
+	         else Ilosc=1;
+	         if (lines.documentLines.selectedItem)
+	         {
+	         	lines.documentLines.selectedItem.quantity = Ilosc;
+	         	documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_CHANGE,"quantity", lines.documentLines.selectedItem));
+	         	showChange();
+	         	iloscTI.setFocus();
+	         }
+	      }
+
+//ITEM OPERATIONS
+
+	      public function addItem():void {
+	         //dodaje towar do listy
+	         Lp++;
+	         var sum:Number = SumZl + SumGr/100;
+	         sum+=NewItem[0].price;
+	         SumGr=Number((sum%1*100).toFixed(4));
+	         SumZl=Number((sum-(sum%1)).toFixed(4));
+	         initDG.addItem(NewItem[0]);
+	      } 
+	      
+	      public function removeItem(nr:int):void {
+	         //odejmuje towar z listy
+	         Lp--;
+	         var sum:Number = SumZl + SumGr/100;
+	         sum-=initDG[nr].price;
+	         SumGr=Number((sum%1*100).toFixed(4));
+	         SumZl=Number((sum-(sum%1)).toFixed(4));
+	         initDG.removeItemAt(nr); 
+	      }
+	      
+	      public function cancelLastItem():void {
+	         //odejmuje towar z listy
+	         if(!LastRemoved){//tylko ostatni towar (usuniecie towaru utawia true, jesli jest true to jest to proba usuniecia przedostatniego towaru)
+		         LastRemoved = true;
+		        // if(initDG[Lp-2].state == 0){
+		        if(lastItemAddOperationResult == AddItemByCodeResult.ITEM_COMMITED){
+			         changeState(3);
+			         // tu funkcja z interfejsu i proba zdjecia towaru funkcją callback removeItemCallback()
+			         //todo: id pozycji
+			         //quickSalesProxy.removeLineById(initDG[Lp-2].lineId, removeItemCallBack);
+			         
+			         
+			         //DO PODMIANY NA WYŻEJ ZAMIESZCZONY FRAGMENT
+	       			 //  
+			         //removeItemCallBack(true);
+			         //
+		         }
+		         else {
+		         	changeState(0);
+		         	clearItemPanel();
+		         	clearInsertPanel();      
+			     	iloscTI.setFocus();
+		         } 
+	         }
+	      }
+	      
+	      public function removeItemCallBack(result:Boolean):void {
+	         //odejmuje towar z listy
+	         if(result){
+		         removeItem(Lp-2);
+		         clearItemPanel();   
+		     	 iloscTI.setFocus();
+	         }
+	         else {
+	         	Alert.show("Opreacja anulowania towaru nie powiodła się!","Uwaga!");
+	         }
+	         changeState(0); 
+	      }
+	      
+	      /*funkcja po kodzie zwraca tablice: [info,name,jm,worth,vat,state]*/
+	       public function takeItem(code:String, ammount:Number):void {
+	       	// tu funkcja z interfejsu i wypełnienie tablicy funkcja callback takeItemCallback()
+	       	//quickSalesProxy.addItemByCode(code, ammount, takeItemCallBack);
+	       	
+	       	//DO PODMIANY NA WYŻEJ ZAMIESZCZONY FRAGMENT
+	       	//
+	       	/*
+	       	var item:AddItemByCodeResult = new AddItemByCodeResult();
+	       	item.name = "185/65/15 88T PASSIO DĘBICA";
+			item.vatRateId = "F8D50E4D-066E-4F0A-BD58-C2BC708BEB0F";
+			item.unitId = "2EC9C7C6-C250-41A6-818A-0C1B2B7D0A6C";
+			item.unitGrossPrice = 2.45;
+			item.operationResult = 0;
+			item.message = "info o towarze";
+	       	
+	       	takeItemCallBack(item);
+	       	*/  
+	       	//  
+	      }
+	      
+	      public function takeItemCallBack(item:AddItemByCodeResult):void {
+	      	var vat:String;
+	      	var jm: String;
+			
+			lastItemAddOperationResult=item.operationResult;
+			
+	       	if(item.operationResult == AddItemByCodeResult.ITEM_COMMITED){
+		       	CodeExist = true;
+	       	}
+	       	else{
+	       		CodeExist = false;
+	       		//if(item.operationResult == AddItemByCodeResult.CODE_NOT_FOUND)changeState(2);
+	       		//if(item.operationResult == AddItemByCodeResult.ITEM_ERROR)changeState(1);
+	       		changeState(2);
+	       		clearInsertPanel();
+	       		clearItemPanel();
+	       		//itemCodeL.text = Kod; 
+	       		infoT.text = item.message;
+	       		kodTI.setFocus();
+	       	} 
+	       	
+	       	if (CodeExist)
+	       	{
+		      	jm = DictionaryManager.getInstance().getById(item.unitId).label.@symbol;
+		       	vat = DictionaryManager.getInstance().getById(item.vatRateId).symbol;	
+		       	changeState(item.operationResult);
+		       	var itemA:Array = [{info:item.message, name:item.name, code:item.code, jm:jm, price:item.unitGrossPrice, vat:vat, state:panelState, lineId:item.lineId}]; 
+		       	     
+		       	itemA[0].lp=Lp;
+		       	itemA[0].amount=Ilosc;
+		       	itemA[0].worth=Number(Number(itemA[0].amount*itemA[0].price).toFixed(2));
+		       	NewItem = new ArrayCollection(itemA); 
+			    clearInsertPanel(); 
+			    iloscTI.setFocus();
+				addItem();
+	       	}
+	      }
+	      
+	      //funkcja symulująca zczytanie kodu (z pola lub z urzadzenia) 
+
+		public function pik():void {
+	       	switch (currentState)
+	       	{
+	       		case "normal" : 
+					// zabezpieczenie przed wyszukiwaniem pustego kodu
+					if (!Kod) return;
+					itemCodeManager.getItems([Kod]);
+					//changeState(3); //blokowanie panelu na okres oczekiwania na odpowiedz
+					//LastRemoved = false; //resetowanie blokady usuwania towaru
+					//takeItem(Kod, Ilosc);
+					break;
+				case "quantityChange" :
+					lines.documentLines.selectedItem = null;
+					currentState = "normal";
+					break;
+				case "discount" :
+					exitDiscount();
+					break; 
+	       	}
+		}
+ 
+//DOCUMENT OPERATION
+		private function createNewDocument():void
+		{
+			var template:String = "bill";
+			var objectType:String = DocumentTypeDescriptor.getDocumentCategory(DocumentTypeDescriptor.CATEGORY_SALES);
+			var source:XML;
+			var createCmd:CreateBusinessObjectCommand = new CreateBusinessObjectCommand();
+			createCmd.addEventListener(ResultEvent.RESULT, handleCommandResult);
+			//logExecution({ 'template' : template, 'type' : objectType, 'source' : source });
+			createCmd.execute({ 'template' : template, 'type' : objectType, 'source' : source });
+		}
+		
+		private function handleCommandResult(event:ResultEvent):void
+		{
+			documentObject = new DocumentObject(XML(event.result));
+			documentObject.isNewDocument = true;
+			lines.documentLines.clear();
+			initPanelForNewDoc();
+			//createPeymentsControl();
+	 		//DocCurrency=DictionaryManager.getInstance().getById(item.currencyId).symbol;
+		}
+		
+		/* private function createPeymentsControl():void
+		{
+			var availablePaymentMethods:XMLList = documentObject.typeDescriptor.availablePaymentMethods;
+			RadioButtonHB.removeAllChildren();
+			for each (var method:XML in availablePaymentMethods)
+			{
+		 		DocAvailablePaymentForms.addItem( {label:method.label.(@lang == LanguageManager.getInstance().currentLanguage).toString(), guid:method.id.toString()} );
+		 		
+	 			var paymentXML:XML = 	<payment>
+											<paymentCurrencyId>{ModelLocator.getInstance().systemCurrencyId}</paymentCurrencyId>
+											<exchangeRate>1</exchangeRate>
+											<exchangeScale>1</exchangeScale>
+											<exchangeDate>{Tools.dateToIso(new Date()).substr(0,10)}</exchangeDate>
+											<paymentMethodId>{method.id.toString()}</paymentMethodId>
+											<date>{Tools.dateToIso(new Date()).substr(0,10)}</date>
+											<dueDate>{Tools.dateToIso(new Date()).substr(0,10)}</dueDate>
+											<amount></amount>
+										</payment>;
+		 			
+	 			var newRB:RadioButton = new RadioButton();
+	 			//newRB.id = "paymentRB"+i;
+	 			newRB.groupName = "paymentsGroup";
+	 			newRB.value = paymentXML;//DocAvailablePaymentForms[i].guid;
+	 			newRB.scaleX=3;
+	 			newRB.scaleY=3;
+	 			newRB.setStyle("fontSize",3);
+	 			newRB.setStyle("fontWeight","bold");
+	 			newRB.setStyle("textAlign","center");
+	 			newRB.labelPlacement="bottom";
+	 			if (DocPaymentForm && method.id.toString() == DocPaymentForm || !DocPaymentForm && method.childIndex() == 0)
+	 				newRB.selected = true;
+	 			//newRB.groupName="paymentRBG";
+	 			//newRB.group=this.paymentRBG;
+	 			newRB.percentWidth = 100/availablePaymentMethods.length();
+	 			newRB.label = method.label.(@lang == LanguageManager.getInstance().currentLanguage).toString();
+				
+				//if(DocAvailablePaymentForms[i].label == DocPaymentForm) newRB.selected=true;
+				
+	 			//RadioButtonHB.addChild(newRB);
+	 		}
+		} */
+/* 
+		public function newDoc():void {
+			var item:OpenDocumentResult = new OpenDocumentResult();
+	       	item.id = "";
+			item.documentTypeId = "E40A8132-C8FE-4798-A902-9D7BF61E0FE5";
+			item.fullNumber = "";
+			item.paymentFormId = "66B4A96A-511D-49F8-ABAB-6DEE34AC3D0D";
+			item.currencyId = "F01007BF-1ADA-4218-AE77-52C106DA4105";
+			item.availablePaymentForms = new Array();
+			item.availablePaymentForms.push("0B9D516E-BCAD-4702-AA17-11AAAED12845");
+			item.availablePaymentForms.push("66B4A96A-511D-49F8-ABAB-6DEE34AC3D0D");
+			
+			newDocCallBack(item);
+			
+		}
+		 public function newDocCallBack(item:OpenDocumentResult):void {
+				
+				initPanelForNewDoc();
+				RadioButtonHB.removeAllChildren();
+				DocType=String(DictionaryManager.getInstance().getById(item.documentTypeId).label).toLocaleUpperCase();
+		  	  	DocId=item.id;
+				DocFullNumber=item.fullNumber;
+			  	DocPaymentForm=DictionaryManager.getInstance().getById(item.paymentFormId).label;
+		 		DocAvailablePaymentForms = new ArrayCollection();	
+		 		for (var i:String in item.availablePaymentForms){
+		 			DocAvailablePaymentForms.addItem( {label:DictionaryManager.getInstance().getById(item.availablePaymentForms[i]).label, guid:item.availablePaymentForms[i]} );
+		 			
+	 				var paymentXML:XML = 	<payment>
+												<paymentCurrencyId>{ModelLocator.getInstance().systemCurrencyId}</paymentCurrencyId>
+												<exchangeRate>1</exchangeRate>
+												<exchangeScale>1</exchangeScale>
+												<exchangeDate>{Tools.dateToIso(new Date()).substr(0,10)}</exchangeDate>
+												<paymentMethodId>{DocAvailablePaymentForms[i].guid}</paymentMethodId>
+												<date>{Tools.dateToIso(new Date()).substr(0,10)}</date>
+												<dueDate>{Tools.dateToIso(new Date()).substr(0,10)}</dueDate>
+												<amount></amount>
+											</payment>;
+		 			
+		 			var newRB:RadioButton = new RadioButton();
+		 			newRB.id = "paymentRB"+i;
+		 			newRB.groupName = "paymentsGroup";
+		 			newRB.value = paymentXML;
+		 			newRB.scaleX=3;
+		 			newRB.scaleY=3;
+		 			newRB.setStyle("fontSize",3);
+		 			newRB.setStyle("fontWeight","bold");
+		 			newRB.setStyle("textAlign","center");
+		 			newRB.labelPlacement="bottom";
+		 			newRB.percentWidth = 100/item.availablePaymentForms.length;
+		 			newRB.label=DocAvailablePaymentForms[i].label;
+					
+					if(DocAvailablePaymentForms[i].label == DocPaymentForm) newRB.selected=true;
+					
+		 			RadioButtonHB.addChild(newRB);
+		 		}
+		 		DocCurrency=DictionaryManager.getInstance().getById(item.currencyId).symbol;
+		 } 
+		  */
+		 private function commitDocHandler(event:CloseEvent):void
+		 {
+		 	//if(event.detail == Alert.YES)
+		 		//quickSalesProxy.closeDocument(String(paymentRBG.selectedValue), DocId, saveDocCallBack);
+		 	//documentObject.paymentsXML = <payments/>;
+		 	//if (paymentsGroup.selectedValue) paymentsGroup.selectedValue.amount = documentObject.totalForPayment;
+		 	//documentObject.paymentsXML.appendChild(paymentsGroup.selectedValue);
+		 	commitDocument();
+		 	//if (!this.commitDocument()) createNewDocument(); //newDoc();
+		 }
+		 
+		 override protected function handleSaveResult(event:ResultEvent):void
+		 {
+		 	super.handleSaveResult(event);
+		 	createNewDocument();
+		 }
+		 
+		 public function saveDoc():void
+		 {
+		 	Alert.yesLabel = LanguageManager.getLabel("alert.yes");
+		 	Alert.noLabel = LanguageManager.getLabel("alert.no");
+			Alert.show(LanguageManager.getLabel("sales.quick.commitQuestion"), '', Alert.YES | Alert.NO, null, commitDocHandler, null, Alert.YES);
+		 }
+		
+		/* public function saveDocCallBack(item:CloseDocumentResult):void {
+				
+				if(item.operationResult == 0) newDoc();
+				else Alert.show(item.errorMessage);
+					 		
+		 } */
+		 private function sendFromKeyboardHandler(event:AllEvent):void {
+		 	sendFromKeyboard(event.body);
+		 }
+		 
+		 public function sendFromKeyboard(value:Object):void {
+		 	var focus:Object = this.getFocus();
+			if(focus != null) {
+				var a:String =focus.parent.id;
+				switch (a){
+				 	case "kodTI":
+				 		if(value is Boolean) this.Kod=this.Kod.substr(0,this.Kod.length-1);
+				 		else updateTI(kodTI, String(value));
+				 		break;
+				 	case "iloscTI":
+				 		if(value is Boolean) {
+				 			this.iloscTI.text=this.iloscTI.text.substr(0,this.iloscTI.text.length-1);
+				 		} else {
+				 			if(String(value) == '.') {
+				 				if(StringUtil.trim(iloscTI.text) == '' || focus.selectedText == iloscTI.text) {
+				 					updateTI(iloscTI, String('0.'));
+				 				} else if(iloscTI.text.split('.').length < 2 ) {
+				 					//split sprawdza ilosc kroprek w numerze nie mozna dodac wiecej niz 2
+				 					updateTI(iloscTI, String(value));
+				 				}
+				 			} else {
+				 				updateTI(iloscTI, String(value));
+				 			}
+				 		}
+				 		if (lines.documentLines.selectedItem) {
+				 			lines.documentLines.selectedItem.quantity = Number(this.iloscTI.text);
+				 			documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_CHANGE,"quantity",lines.documentLines.selectedItem));
+				 		}
+				 		break;
+				 	case "sumZlGivenTI":
+				 		if(value is Boolean) this.sumZlGivenTI.text=this.sumZlGivenTI.text.substr(0,this.sumZlGivenTI.text.length-1);
+				 		else if(value==".") this.sumGrGivenTI.setFocus();
+				 		else updateTI(sumZlGivenTI, String(value));
+				 		showChange();
+				 		break;
+				 	case "sumGrGivenTI":
+				 		if(value is Boolean) this.sumGrGivenTI.text=this.sumGrGivenTI.text.substr(0,this.sumGrGivenTI.text.length-1);
+				 		else updateTI(sumGrGivenTI, String(value));
+				 		showChange();	
+				 		break;
+				 	case "txtInputDiscountCode":
+				 		if(value is Boolean) this.txtInputDiscountCode.text=this.txtInputDiscountCode.text.substr(0,this.txtInputDiscountCode.text.length-1);
+				 		else updateTI(txtInputDiscountCode, String(value));
+				 		break;	
+				 	case "txtInputDiscount":
+				 		if(value is Boolean) this.txtInputDiscount.text=this.txtInputDiscount.text.substr(0,this.txtInputDiscount.text.length-1);
+				 		else updateTI(txtInputDiscount, String(value));
+				 		break;
+				 	case "paymentsContainer":
+				 		if (paymentControl.paymentEditor.selectedItem)
+				 		{
+				 			//(paymentControl.paymentEditor.selectedItem.data as XML).amount
+				 		}
+				 		break;
+				 	default:
+				 		if (focus.parent is TextInput)
+				 		{
+				 			var input:TextInput = focus.parent as TextInput;
+				 			if (value is Boolean) input.text=this.txtInputDiscount.text.substr(0,input.text.length-1);
+				 			else updateTI(input as TextInput, String(value));
+				 		}
+				 		break;
+				 }
+			}
+		 }
+		 
+		 private function updateTI(input:TextInput, value:String):String
+		 {
+		 	if (input.textWidth == 0)
+		 	{
+		 		input.text = value;
+		 	}
+		 	else
+		 	{
+		 		input.text = input.text.substring(0, input.selectionBeginIndex) + value + input.text.substring(input.selectionEndIndex);
+		 	}
+		 	
+		 	var pos:int = input.text.length;//input.selectionBeginIndex + value.length;
+		 	input.setSelection(pos, pos);
+		 	return input.text;
+		 }
+		 
+		 private function selectTI(inp:Object):void
+		 {
+		 	var input:TextInput = inp as TextInput;
+		 	input.setSelection(0, input.text.length);
+		 }
+		 
+		 private function enterDiscount():void
+		 {
+		 	if (btnDiscount.selected)
+		 	{
+			 	currentState = "discount";
+			 	this.txtInputDiscountCode.setFocus();
+			 }else{
+			 	exitDiscount();
+			 }
+		 }
+		 
+		 private function exitDiscount():void
+		 {
+		 	this.calculateDiscount(parseFloat(this.txtInputDiscount.text));
+		 	currentState = "normal";
+			txtInputDiscountCode.text = "";
+			btnDiscount.selected = false;
+		 	kodTI.setFocus();
+		 }
+		 
+		 private function calculateDiscount(discountRate:Number):void
+		 {
+		 	this.discountRate = isNaN(discountRate) ? 0 : discountRate;
+			for each (var line:CommercialDocumentLine in documentObject.lines)
+			{
+				line.discountRate = this.discountRate;
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_CHANGE,"discountRate",line));
+			}
+			showChange();
+		 }
+		 
+		 private function confirmExit():void
+		 {
+		 	Alert.show("Wszystkie niezatwierdzone informacje zostaną utracone. Czy na pewno zakończyć edycję dokumentu?","Ostrzeżenie", Alert.YES | Alert.NO,null,closeResultHandler);
+		 }
+		 
+		 private function closeResultHandler(event:CloseEvent):void
+		 {
+		 	switch (event.detail)
+		 	{
+		 		case Alert.YES: exit(); break;
+		 		case Alert.NO: break;
+		 	}
+		 }
+		 
+		 private function exit():void
+		 {
+		 	window.hide();
+		 }
+		 
+		 private function selectionChangedHandler(event:DocumentEvent):void 
+		 {
+		 	if (event.line && lines.documentLines.selectedItem) 
+		 	{
+			 	currentState = "quantityChange";
+			 	var t:* = event.line.quantity;
+			 	
+			 	if(isNaN(event.line.quantity) || event.line.quantity == 0 || event.line.quantity == '0') {
+			 		iloscTI.text = '0';
+			 	} else {
+			 		iloscTI.text = event.line.quantity;
+			 	}
+			 	iloscTI.setFocus();
+		 		iloscTI.setSelection(0,iloscTI.text.length);
+			}
+		 }
+		 [Bindable]
+		 override public function set documentObject(value:DocumentObject):void
+		 {
+		 	super.documentObject = value;
+		 	value.addEventListener(DocumentEvent.DOCUMENT_LINE_DELETE, lineDeleteHandler);
+		 	value.addEventListener(DocumentEvent.DOCUMENT_LINE_ITEM_DETAILS_LOAD, lineItemsLoadHandler);
+		 }
+		 override public function get documentObject():DocumentObject
+		 {
+		 	return super.documentObject;
+		 }
+		 
+		 private function lineDeleteHandler(event:DocumentEvent):void
+		 {
+		 	lines.documentLines.selectedItem = null;
+		 	currentState = "normal";
+		 }
+		 
+		 private function lineItemsLoadHandler(event:DocumentEvent):void
+		 {
+			if (!isNaN(discountRate) && discountRate != 0)
+			{
+				event.line.discountRate = this.discountRate;
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_LINE_CHANGE, "discountRate", event.line));
+				showChange();
+			}
+		 }
+		 
+		 private function paymentsChangeHandler(event:Event):void
+		 {
+		 	/* if (paymentControl.selectedItems.length > 1)
+		 		currentState = "payments";
+		 	else
+		 		currentState = "normal"; */
+		 }
+		 
+		 private function calculateChange(total:Number, paid:Number):Number
+		 {
+		 	return -(total - paid);
+		 }
+		 
+		 private function paymentsVisibility(payments:Array):Boolean
+		 {
+		 	return payments.length > 1;
+		 }
+		 
+		 private function enterClick(event:FlexEvent):void {
+		 	pik();
+		 }
+		 
+		 [Bindable]
+		 private var testt:String;
+	   ]]>
+   </mx:Script>
+   <mx:Binding source="Number(iloscTI.text)" destination="Ilosc"/>
+   <mx:Binding source="kodTI.text" destination="Kod"/>
+   <mx:Binding source="Number(sumZlGivenTI.text)" destination="SumZlGiven"/>
+   <mx:Binding source="Number(sumGrGivenTI.text)" destination="SumGrGiven"/>
+   
+		<plugins:CommercialDocumentCalculationPlugin id="calculationPlugin" documentObject="{documentObject}"/>
+		<plugins:CostCalculationPlugin id="costCalculationPlugin" documentObject="{documentObject}"/>
+		<plugins:DocumentValidationPlugin id="documentValidationPlugin" documentObject="{documentObject}"/>
+		<plugins:PaymentCalculationPlugin id="paymentCalculationPlugin" documentObject="{documentObject}"/>
+		
+				
+		
+		<mx:HBox id="mainContainer" horizontalGap="10" width="100%" height="100%" minWidth="770" minHeight="500" >
+			
+			<mx:VBox height="100%" width="50%" verticalGap="0" >
+				
+				<documentControls:QuickSalesLinesComponent
+					id="lines"
+					width="100%" height="100%"
+					documentObject="{documentObject}"
+					tabEnabled="false"
+					lineAddEnabled="false"
+					selectionChanged="selectionChangedHandler(event)"/>
+				
+				<mx:VBox id="discountVBox" width="100%" height="100%" visible="false" includeInLayout="false" horizontalAlign="center" verticalAlign="middle">
+					<mx:Label text="Kod rabatu" fontSize="30"/>
+					<mx:TextInput id="txtInputDiscountCode" height="50" width="75%" fontSize="30" minHeight="40" focusIn="selectTI(event.currentTarget)"/>
+					<mx:Label text="Rabat (%)" fontSize="30"/>
+					<inputComponents:CurrencyInput id="txtInputDiscount" height="50" width="75%" fontSize="30" minHeight="40" value="{this.discountRate}" keyDown="txtInputDiscountKeyDownHandler(event)" focusIn="selectTI(event.currentTarget)"/>
+					<mx:Button id="btnEnterDiscount" label="{LanguageManager.getInstance().labels.sales.quick.enter}" click="exitDiscount()" height="50" fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #73EF28]" width="25%"/>
+				</mx:VBox>
+				
+				<mx:VBox id="paymentsContainer" width="100%" visible="{paymentsVisibility(paymentControl.selectedItems)}" includeInLayout="{paymentsVisibility(paymentControl.selectedItems)}" />
+		
+			</mx:VBox>
+			
+			<mx:VBox height="100%" width="50%" verticalGap="10" paddingBottom="10" paddingTop="10" paddingRight="10" id="leftPanelPartVB"  minWidth="470" verticalScrollPolicy="off" >
+				
+				<mx:VBox  width="{produktFindTab.width}" height="100%" verticalGap="10">
+					
+					<mx:HBox width="100%" verticalAlign="middle" horizontalGap="10" height="50">
+						<mx:Label id="quantityLabel" text="{LanguageManager.getInstance().labels.sales.quick.amount}:" width="100" fontWeight="bold" textAlign="right"/>		   
+						<mx:Button id="minusB" click="{minus()}" label="-" focusEnabled="false" height="100%" width="25%" paddingLeft="2" paddingRight="2" fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #FF0000]" fontSize="20" fontWeight="normal"/>
+						<mx:TextInput id="iloscTI" height="100%" width="50%" editable="true" text="{Ilosc}" textAlign="center" fontSize="30" restrict="0123456789/,." focusIn="selectTI(event.currentTarget)"/>
+						<mx:Button id="plusB" click="{plus()}" label="+" focusEnabled="false" width="25%" height="100%" paddingLeft="2" paddingRight="2" fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #01AEFF]" fontSize="20" fontWeight="normal"/>
+					</mx:HBox>
+					
+					<mx:HBox id="codeHB" width="100%" verticalAlign="middle" horizontalGap="10">
+						<mx:Text id="codeLabel" text="{LanguageManager.getInstance().labels.sales.quick.lineCode}{'\\\n' + LanguageManager.getInstance().labels.sales.quick.lineCodeName}:" width="100" fontWeight="bold" textAlign="right" />
+						<mx:TextInput id="kodTI" height="50" width="100%" fontSize="30" text="{Kod}" restrict="{KodRestrict}" focusIn="selectTI(event.currentTarget)" enter="enterClick(event)"/>
+					</mx:HBox>
+					
+					<mx:Text id="infoT" height="50" text="{NewItem.getItemAt(0).info}" width="100%" fontSize="16" fontWeight="bold" textAlign="center" selectable="false"/>         
+										
+					<mx:Box id="changeCalculator" width="100%" borderColor="0xaab3b3" borderThickness="1" borderStyle="solid">
+						<mx:HBox width="100%" height="100%" paddingRight="10" paddingTop="10" paddingBottom="10" horizontalGap="30" >
+							<mx:VBox height="100%" width="100%">
+								<mx:HBox width="100%" horizontalGap="10" verticalAlign="bottom">
+									<mx:Label enabled="{changeCalculator.enabled}" text="{String(LanguageManager.getInstance().labels.sales.quick.toPay).toLocaleUpperCase()}:" width="100" fontWeight="bold" textAlign="right" paddingBottom="3"/>
+									<inputComponents:CurrencyRenderer enabled="{changeCalculator.enabled}" value="{documentObject.totalForPayment}" fontSize="18" currencyId="{ModelLocator.getInstance().systemCurrencyId}"/>
+								</mx:HBox>
+								<mx:HBox width="100%" verticalAlign="bottom" horizontalGap="10">
+									<mx:Label enabled="{changeCalculator.enabled}" text="{String(LanguageManager.getInstance().labels.sales.quick.given).toLocaleUpperCase()}:" width="100" fontWeight="bold" textAlign="right" paddingBottom="3"/>
+									<mx:TextInput id="sumZlGivenTI" change="{showChange()}" width="100%" fontSize="18" textAlign="right" text="{SumZlGiven}" restrict="1234567890" maxHeight="30" focusIn="selectTI(event.currentTarget)"/>
+									<!--
+									<mx:Label text="{DocZl}" width="30"/>
+									-->
+									<mx:TextInput id="sumGrGivenTI" change="{showChange()}" width="40" fontSize="18" textAlign="center" text="{SumGrGiven}" restrict="1234567890" maxChars="2" maxHeight="30" focusIn="selectTI(event.currentTarget)"/>
+									<!--
+									<mx:Label text="{DocGr}" width="30"/>
+									-->
+									
+									<mx:Button id="clearChangePanelB" label="{LanguageManager.getInstance().labels.sales.quick.clear}" click="{clearChangePanel()}" fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #FE6000]" width="80" height="100%"/>
+								</mx:HBox>
+								<mx:HBox width="100%" horizontalGap="10" verticalAlign="bottom">
+									<mx:Label enabled="{changeCalculator.enabled}" text="{String(LanguageManager.getInstance().labels.sales.quick.change).toLocaleUpperCase()}:" width="100" fontWeight="bold" textAlign="right" paddingBottom="3"/>
+									<inputComponents:CurrencyRenderer enabled="{changeCalculator.enabled}" value="{calculateChange(documentObject.totalForPayment,(SumZlGiven + (SumGrGiven / 100)))}" fontSize="18" currencyId="{ModelLocator.getInstance().systemCurrencyId}" nanText="-"/>
+								</mx:HBox>
+							</mx:VBox>
+							<mx:Button id="btnDiscount" label="{LanguageManager.getLabel('common.discount')}" toggle="true" click="enterDiscount()" height="100%" fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #FE6000]" width="80" />
+						</mx:HBox>
+					</mx:Box>
+					
+					<documentControls:QuickSalesPaymentControl id="paymentControl" width="{produktFindTab.width}" height="80" documentObject="{documentObject}" change="paymentsChangeHandler(event)"/>
+				
+				</mx:VBox>
+				
+				<mx:TabNavigator id="produktFindTab" focusEnabled="false"
+					borderStyle="solid" width="100%" height="300"
+					tabWidth="{(produktFindTab.width / produktFindTab.numChildren)-0.5}"
+					tabHeight="50">				
+						<keyboards:KeybordNumeric id="keybordNumeric" label="Kod kreskowy" keyPressed="sendFromKeyboardHandler(event)" functionCall="pik()" focusEnabled="false" />
+						<keyboards:KeybordAlphabetic id="keybordAlphabetic" label="Nazwa produktu" keyPressed="sendFromKeyboardHandler(event)" functionCall="pik()" focusEnabled="false" />
+				</mx:TabNavigator>
+				
+				<mx:HBox width="100%" height="50" >
+					<mx:Button id="paidB" label="{LanguageManager.getInstance().labels.sales.quick.paid}" click="{saveDoc()}" height="100%" fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #73EF28]" width="70%"/>
+					<mx:Button id="exitButton" label="{LanguageManager.getInstance().labels.common.exit}" fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #FE6000]" height="100%" width="30%" click="confirmExit()"/>
+				</mx:HBox>
+				
+			</mx:VBox>
+			
+		</mx:HBox>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		<!--
+		 <mx:HBox visible="false" id="mainContainer2" horizontalGap="5" left="0" right="0" top="0" bottom="0" minHeight="500" minWidth="700">
+		   <mx:VBox height="100%" bottom="0" verticalGap="5" paddingBottom="5" right="0" width="50%">
+			  <documentControls:QuickSalesLinesComponent
+					id="lines2"
+					width="100%"
+					height="100%"
+					documentObject="{documentObject}"
+					tabEnabled="false"
+					lineAddEnabled="false"
+					selectionChanged="selectionChangedHandler(event)"
+				/>
+			  <mx:VBox id="discountVBox2" width="100%" height="100%" visible="false" includeInLayout="false" horizontalAlign="center" verticalAlign="middle">
+			  	<mx:Label text="Kod rabatu" fontSize="30"/>
+			  	<mx:TextInput id="txtInputDiscountCode2" height="50" width="75%" fontSize="30" minHeight="40" focusIn="selectTI(event.currentTarget)"/>
+			  	<mx:Label text="Rabat (%)" fontSize="30"/>
+			  	<inputComponents:CurrencyInput id="txtInputDiscount2" height="50" width="75%" fontSize="30" minHeight="40" value="{this.discountRate}" keyDown="txtInputDiscountKeyDownHandler(event)" focusIn="selectTI(event.currentTarget)"/>
+			  	<mx:Button id="btnEnterDiscount2" label="{LanguageManager.getInstance().labels.sales.quick.enter}" click="exitDiscount()" height="50" fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #73EF28]" width="25%"/>
+			  </mx:VBox>
+		 	 <mx:VBox id="paymentsContainer2" width="100%" height="50%" visible="{paymentsVisibility(paymentControl.selectedItems)}" includeInLayout="{paymentsVisibility(paymentControl.selectedItems)}">
+		  	
+		  </mx:VBox>
+		 </mx:VBox>
+		 
+		   <mx:VBox id="leftPanelPartVB2" height="100%" width="50%" left="0" top="0" verticalGap="5" minWidth="350" paddingBottom="5">
+		      -->
+		      <!--<mx:HBox width="100%" height="60" verticalAlign="middle" horizontalGap="10" paddingLeft="10" paddingRight="10">
+		         <mx:VBox height="100%" width="25%" verticalAlign="middle" horizontalAlign="right">
+		            <mx:Label text="{DocType}" width="80" textAlign="right" fontWeight="bold" color="#969696" paddingTop="0" paddingBottom="0" height="15" paddingRight="10"/>
+		            <mx:Label text="{actualDate.getDate()}.{actualDate.getMonth()+1}.{actualDate.getFullYear()}" width="80" textAlign="right" fontWeight="bold" color="#969696" height="15" paddingRight="10"/>
+		         </mx:VBox>
+		      </mx:HBox>-->
+		      <!--
+		      <mx:HBox width="100%" height="15%" verticalAlign="middle" horizontalGap="10" paddingLeft="10" minHeight="60">		 
+		         <mx:Label id="quantityLabel2" text="{LanguageManager.getInstance().labels.sales.quick.amount}:" width="25%" fontWeight="bold" textAlign="right"/>		   
+		         <mx:HBox width="75%" height="100%" verticalAlign="middle" paddingRight="10" horizontalGap="10">
+		            <mx:Button id="minusB2" click="{minus()}" label="-" height="80%" width="25%" paddingLeft="2" paddingRight="2" fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #FF0000]" fontSize="20" fontWeight="normal"/>
+		            <mx:TextInput id="iloscTI2" height="50" width="50%" editable="true" text="{Ilosc}" textAlign="center" fontSize="30" restrict="0123456789/,." focusIn="selectTI(event.currentTarget)"/>
+		            <mx:Button id="plusB2" click="{plus()}" label="+" width="25%" height="80%" paddingLeft="2" paddingRight="2" fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #01AEFF]" fontSize="20" fontWeight="normal"/>
+		         </mx:HBox>
+		      </mx:HBox>
+		      
+		      <mx:HBox id="codeHB2" width="100%" height="5%" verticalAlign="middle" horizontalGap="10" paddingLeft="10" paddingRight="0">
+		         <mx:Label id="codeLabel2" text="{LanguageManager.getInstance().labels.sales.quick.lineCode}:" width="25%" fontWeight="bold" textAlign="right"/>
+		         <mx:TextInput id="kodTI2" height="50" width="75%" fontSize="30" text="{Kod}" minHeight="40" restrict="{KodRestrict}" focusIn="selectTI(event.currentTarget)"/>
+		      </mx:HBox>
+		      <mx:HBox width="100%" height="5%" verticalAlign="middle" horizontalGap="10" paddingLeft="10" paddingRight="10">
+		         <mx:Text id="infoT2" text="{NewItem.getItemAt(0).info}" width="100%" fontSize="16" fontWeight="bold" textAlign="center"/>         
+		      </mx:HBox>
+		      
+		      <mx:HBox width="100%" height="35%" verticalAlign="middle" horizontalGap="10" paddingLeft="10" paddingRight="10">
+		         <mx:Grid width="100%" height="100%" horizontalGap="10">
+		            <mx:GridRow width="100%" height="100%">
+		               <mx:GridItem width="100%" height="100%">
+		                  <mx:Button focusEnabled="false" click="{sendFromKeyboard(1)}" label="1" height="100%" width="100%" paddingLeft="2" paddingRight="2" fontSize="20"/>
+		               </mx:GridItem>
+		               <mx:GridItem width="100%" height="100%">
+		                  <mx:Button focusEnabled="false" click="{sendFromKeyboard(2)}" label="2" height="100%" width="100%" paddingLeft="2" paddingRight="2" fontSize="20"/>
+		               </mx:GridItem>
+		               <mx:GridItem width="100%" height="100%">
+		                  <mx:Button focusEnabled="false" click="{sendFromKeyboard(3)}" label="3" height="100%" width="100%" paddingLeft="2" paddingRight="2" fontSize="20"/>
+		               </mx:GridItem>
+		               <mx:GridItem width="100%" height="100%" rowSpan="2">
+		                  <mx:Button focusEnabled="false" click="{sendFromKeyboard(false)}" label="Backspace" height="100%" width="100%" paddingLeft="2" paddingRight="2" fontSize="20"/>
+		               </mx:GridItem>
+		            </mx:GridRow>
+		            <mx:GridRow width="100%" height="100%">
+		               <mx:GridItem width="100%" height="100%">
+		                  <mx:Button focusEnabled="false" click="{sendFromKeyboard(4)}" label="4" height="100%" width="100%" paddingLeft="2" paddingRight="2" fontSize="20"/>
+		               </mx:GridItem>
+		               <mx:GridItem width="100%" height="100%">
+		                  <mx:Button focusEnabled="false" click="{sendFromKeyboard(5)}" label="5" height="100%" width="100%" paddingLeft="2" paddingRight="2" fontSize="20"/>
+		               </mx:GridItem>
+		               <mx:GridItem width="100%" height="100%">
+		                  <mx:Button focusEnabled="false" click="{sendFromKeyboard(6)}" label="6" height="100%" width="100%" paddingLeft="2" paddingRight="2" fontSize="20"/>
+		               </mx:GridItem>
+		            </mx:GridRow>
+		            <mx:GridRow width="100%" height="100%">
+		               <mx:GridItem width="100%" height="100%">
+		                  <mx:Button focusEnabled="false" click="{sendFromKeyboard(7)}" label="7" height="100%" width="100%" paddingLeft="2" paddingRight="2" fontSize="20"/>
+		               </mx:GridItem>
+		               <mx:GridItem width="100%" height="100%">
+		                  <mx:Button focusEnabled="false" click="{sendFromKeyboard(8)}" label="8" height="100%" width="100%" paddingLeft="2" paddingRight="2" fontSize="20"/>
+		               </mx:GridItem>
+		               <mx:GridItem width="100%" height="100%">
+		                  <mx:Button focusEnabled="false" click="{sendFromKeyboard(9)}" label="9" height="100%" width="100%" paddingLeft="2" paddingRight="2" fontSize="20"/>
+		               </mx:GridItem>
+		               <mx:GridItem width="100%" height="100%" rowSpan="2">
+		     	 			<mx:Button id="enterCodeB" label="{LanguageManager.getInstance().labels.sales.quick.enter}" fontSize="20" click="{pik()}" height="100%" fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #73EF28]" width="100%"/>
+		               </mx:GridItem>
+		            </mx:GridRow>
+		            <mx:GridRow width="100%" height="100%">
+		               <mx:GridItem width="100%" height="100%">
+		                  <mx:Button focusEnabled="false" click="{sendFromKeyboard(0)}" label="0" height="100%" width="100%" paddingLeft="2" paddingRight="2" fontSize="20"/>
+		               </mx:GridItem>
+		               <mx:GridItem width="100%" height="100%">
+		                  <mx:Button focusEnabled="false" click="{sendFromKeyboard(0);sendFromKeyboard(0);}" label="00" height="100%" width="100%" paddingLeft="2" paddingRight="2" fontSize="20"/>
+		               </mx:GridItem>
+		               <mx:GridItem width="100%" height="100%">
+		                  <mx:Button focusEnabled="false" click="{sendFromKeyboard('.')}" label="." height="100%" width="100%" paddingLeft="2" paddingRight="2" fontSize="20"/>
+		               </mx:GridItem>
+		            </mx:GridRow>
+		         </mx:Grid>
+		      </mx:HBox>
+		      -->
+		      <!--<mx:RadioButtonGroup id="paymentsGroup"/>
+		      <mx:HBox id="RadioButtonHB" width="100%" height="10%" verticalAlign="top" horizontalGap="10" paddingLeft="10" paddingRight="10" paddingTop="5" minHeight="80" horizontalScrollPolicy="off" verticalScrollPolicy="off"/>-->
+			<!--
+			<mx:HBox height="20%" paddingLeft="10" paddingRight="10" minHeight="80" width="100%">
+				<mx:ApplicationControlBar id="changeCalculator2" height="100%" width="80%">
+					<mx:VBox height="100%" width="80%">
+						<mx:HBox width="100%" horizontalGap="10" verticalAlign="middle" height="100%">
+							<mx:Label enabled="{changeCalculator.enabled}" text="{String(LanguageManager.getInstance().labels.sales.quick.toPay).toLocaleUpperCase()}:" fontWeight="bold" width="30%"/>
+							<inputComponents:CurrencyRenderer enabled="{changeCalculator.enabled}" value="{documentObject.totalForPayment}" fontSize="18" currencyId="{ModelLocator.getInstance().systemCurrencyId}"/>
+						</mx:HBox>
+						<mx:HBox width="100%" height="100%" verticalAlign="middle" horizontalGap="10">
+							<mx:Label enabled="{changeCalculator.enabled}" text="{String(LanguageManager.getInstance().labels.sales.quick.given).toLocaleUpperCase()}: " width="30%"/>
+							<mx:TextInput id="sumZlGivenTI2" change="{showChange()}" width="30%" height="80%" fontSize="18" textAlign="center" text="{SumZlGiven}" restrict="1234567890" maxHeight="30" focusIn="selectTI(event.currentTarget)"/>
+							<mx:Label text="{DocZl}" width="10%"/>
+							<mx:TextInput id="sumGrGivenTI2" change="{showChange()}" width="20%" height="80%" fontSize="18" textAlign="center" text="{SumGrGiven}" restrict="1234567890" maxChars="2" maxHeight="30" focusIn="selectTI(event.currentTarget)"/>
+							<mx:Label text="{DocGr}" width="10%"/>
+						</mx:HBox>
+		               <mx:HBox width="100%" height="100%" horizontalGap="10" verticalAlign="middle">
+		                  <mx:Label enabled="{changeCalculator.enabled}" text="{String(LanguageManager.getInstance().labels.sales.quick.change).toLocaleUpperCase()}: " width="30%"/>
+		                  <inputComponents:CurrencyRenderer enabled="{changeCalculator.enabled}" value="{calculateChange(documentObject.totalForPayment,(SumZlGiven + (SumGrGiven / 100)))}" fontSize="18" currencyId="{ModelLocator.getInstance().systemCurrencyId}" nanText="-"/>
+		               </mx:HBox>
+					</mx:VBox>
+		            <mx:Button id="clearChangePanelB2" label="{LanguageManager.getInstance().labels.sales.quick.clear}" click="{clearChangePanel()}" height="100%" fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #FE6000]" width="20%"/>
+				</mx:ApplicationControlBar>
+				<mx:Button id="btnDiscount2" label="{LanguageManager.getLabel('common.discount')}" toggle="true" click="enterDiscount()" height="100%" fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #FE6000]" width="20%"/>
+			</mx:HBox>
+			
+			
+		<documentControls:QuickSalesPaymentControl id="paymentControl2" width="100%" height="10%" minHeight="80" documentObject="{documentObject}" paddingLeft="10" paddingRight="10" paddingTop="5" paddingBottom="5" change="paymentsChangeHandler(event)"/>
+		      <mx:HBox width="100%" height="10%" verticalAlign="middle" horizontalGap="10" paddingLeft="10" paddingRight="10" minHeight="60">
+		         <mx:Button id="paidB2" label="{LanguageManager.getInstance().labels.sales.quick.paid}" click="{saveDoc()}" height="80%" fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #73EF28]" width="70%"/>
+		         <mx:Button id="exitButton2" label="{LanguageManager.getInstance().labels.common.exit}" fillAlphas="[0.4, 0.4, 0.6, 0.6]" fillColors="[#FFFFFF, #FE6000]" height="80%" width="30%" click="confirmExit()"/>
+		      </mx:HBox>
+		   </mx:VBox>
+		</mx:HBox>
+		
+		-->
+		
+		
+		
+		<states>
+			<mx:State name="quantityChange">
+				<mx:SetProperty target="{codeHB}" name="enabled" value="false"/>
+				<!--<mx:SetProperty target="{RadioButtonHB}" name="enabled" value="false"/>-->
+				<mx:SetProperty target="{paidB}" name="enabled" value="false"/>
+				<mx:SetProperty target="{changeCalculator}" name="enabled" value="false"/>
+				<mx:SetProperty target="{btnDiscount}" name="enabled" value="false"/>
+				<mx:SetProperty target="{paymentControl}" name="enabled" value="false"/>
+				<mx:SetProperty target="{paymentsContainer}" name="enabled" value="false"/>
+				<mx:SetProperty target="{keybordAlphabetic}" name="enabled" value="false"/>
+				<mx:SetProperty target="{produktFindTab}" name="selectedIndex" value="0"/>
+				
+			</mx:State>
+			<mx:State name="normal">
+				<mx:SetProperty target="{iloscTI}" name="text" value="1"/>
+				<mx:SetProperty target="{codeHB}" name="enabled" value="true"/>
+				<!--<mx:SetProperty target="{RadioButtonHB}" name="enabled" value="true"/>-->
+				<mx:SetProperty target="{paidB}" name="enabled" value="true"/>
+				<mx:SetProperty target="{changeCalculator}" name="enabled" value="true"/>
+			</mx:State>
+			<mx:State name="discount">
+				<mx:SetProperty target="{lines}" name="visible" value="false"/>
+				<mx:SetProperty target="{lines}" name="includeInLayout" value="false"/>
+				<mx:SetProperty target="{discountVBox}" name="visible" value="true"/>
+				<mx:SetProperty target="{discountVBox}" name="includeInLayout" value="true"/>
+				<mx:SetProperty target="{itemCodeManager}" name="component" value="{discountVBox}"/>
+				<mx:SetProperty target="{quantityLabel}" name="enabled" value="false"/>
+				<mx:SetProperty target="{plusB}" name="enabled" value="false"/>
+				<mx:SetProperty target="{iloscTI}" name="enabled" value="false"/>
+				<mx:SetProperty target="{minusB}" name="enabled" value="false"/>
+				<!--<mx:SetProperty target="{RadioButtonHB}" name="enabled" value="false"/>-->
+				<mx:SetProperty target="{changeCalculator}" name="enabled" value="false"/>
+				<mx:SetProperty target="{codeLabel}" name="enabled" value="false"/>
+				<mx:SetProperty target="{kodTI}" name="enabled" value="false"/>
+				<mx:SetProperty target="{paidB}" name="enabled" value="false"/>
+				<mx:SetProperty target="{itemCodeManager}" name="callbackFunction" value="{null}"/>
+				<mx:SetProperty target="{paymentControl}" name="enabled" value="false"/>
+				<mx:SetProperty target="{paymentsContainer}" name="enabled" value="false"/>
+				<mx:enterState>
+					<![CDATA[
+		 				itemCodeManager.callbackFunction = null;
+					]]>
+				</mx:enterState>
+			</mx:State>
+			<mx:State name="payments">
+				<mx:SetProperty target="{paymentsContainer}" name="visible" value="true"/>
+				<mx:SetProperty target="{paymentsContainer}" name="includeInLayout" value="true"/>
+				<!--<mx:SetProperty target="{lines}" name="visible" value="false"/>
+				<mx:SetProperty target="{lines}" name="includeInLayout" value="false"/>-->
+				<mx:SetProperty target="{quantityLabel}" name="enabled" value="false"/>
+				<mx:SetProperty target="{plusB}" name="enabled" value="false"/>
+				<mx:SetProperty target="{iloscTI}" name="enabled" value="false"/>
+				<mx:SetProperty target="{minusB}" name="enabled" value="false"/>
+				<mx:SetProperty target="{changeCalculator}" name="enabled" value="false"/>
+				<mx:SetProperty target="{codeLabel}" name="enabled" value="false"/>
+				<mx:SetProperty target="{kodTI}" name="enabled" value="false"/>
+				<mx:SetProperty target="{paidB}" name="enabled" value="false"/>
+				<mx:SetProperty target="{itemCodeManager}" name="callbackFunction" value="{null}"/>
+				
+				<mx:enterState>
+					<![CDATA[
+		 				itemCodeManager.callbackFunction = null;
+					]]>
+				</mx:enterState>
+			</mx:State>
+		</states>
+		<!-- 
+		</mx:Panel>
+	</mx:Canvas>-->
+</DocumentEditor>

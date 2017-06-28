@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem implements="com.makolab.components.catalogue.ICatalogueFilter" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.FilterClassMapper;
+			import com.makolab.components.catalogue.ICatalogueFilter;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			import mx.core.UIComponent;
+			
+			import flight.binding.utils.BindingUtils;
+			private var _config:XML
+			[Bindable]
+			public var columnName:String = "number";
+			
+			private var lastNum:String="";
+			public function get value():Object
+			{
+				return number.text;
+			}
+			
+			public function set config(value:XML):void
+			{
+				_config = value;
+				if(_config.@labelKey.length())
+				{
+					var ka:Array=(_config.@labelKey).split('.');
+					if(ka.length)
+						BindingUtils.bindProperty(this,'label',LanguageManager.getInstance().labels,ka);
+					else
+						BindingUtils.bindProperty(this,'label',LanguageManager.getInstance().labels,_config.@labelKey);
+				}
+				else
+					label = _config.@label;
+				disableFilterType = _config.@disableFilterType;
+			}
+			
+			public function get config():XML
+			{
+				return _config;
+			}
+			
+			public function setParameters(parameters:Object):void
+			{
+				if(value != ""){/* todo : w tools.as zrobić funkcję usuwająca białe znaki ze stringa /^\s*(.*)\s*$/ i to replace na $1 */
+					if(!parameters.filters)parameters.filters = "";
+					var filterNodes:XMLList = parameters.filters.column.(@field == columnName);
+					if(filterNodes.length() == 0){
+						var newCondition:XML = <column/>;
+						newCondition.@field = columnName;
+						newCondition.* = value;
+						parameters.filters.columns += newCondition;
+					}else{
+						filterNodes[0].* = value;
+					}
+				}
+			}
+			
+			public function set template(valueList:XMLList):void{
+				for each (var value:XML in valueList){
+				//todo: jesli filtr ma rozpoznawac, ktory elem. z listy jest dla niego, trzeba to tu dodać
+				
+				/*
+				<filter value="123"/>
+				*/
+				number.text = value.@value;
+				
+				}
+			}
+			
+			public function clear():void{
+				
+				if(number.enabled){
+					lastNum=number.text;
+					number.text = "";
+					
+				}
+			}
+			
+			public function restore():void{
+				if(number.enabled)
+				number.text=lastNum;
+				//todo
+				//trzeba dopisac cialo funkcji, jesli inny filtr ma miec mozliwosc przywracania stanu tego filtra sprzed wyczyszczenia go
+				//filtry mogą mieć wpływ na inne filtry poprzez wypelnienie w konfiguracji parametru 'disableFilterType', przyklad w DocNumberFilter
+			}
+			
+			[Bindable]
+			public var disableFilterType:String = '';
+			
+			/*funkcja wywołująca metodę clear() dowolnego filtra podanego jako disableFilterType
+			  wywoływana podczas wypełniania filtraNumerycznego*/
+			private function changeFunction():void {
+				if(disableFilterType!=''){
+					var filterClass:Class = FilterClassMapper.CLASSES[disableFilterType];
+					if (filterClass) {
+						for (var i:int = 0; i<this.parent.numChildren; i++){
+							var child:Object = this.parent.getChildAt(i);
+							if (!(child is ICatalogueFilter)) 
+								throw new Error("Filter must implement ICatalogueFilter.");
+							var filter:ICatalogueFilter = child as ICatalogueFilter;
+							if (filter is UIComponent&& filter is  filterClass) {
+								if(number.text.length>0) filter.clear();
+								else filter.restore();
+							}
+							break;
+						}
+					}
+					else throw new Error("Unknown filter type: '" + disableFilterType + "'");
+				}
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:TextInput id="number" width="100%" change="{changeFunction();}"/>
+</mx:FormItem>

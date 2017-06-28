@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form 
+	implements="com.makolab.components.inputComponents.IFormBuilderComponent"
+	xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+	xmlns:catalogue="com.makolab.fractus.view.catalogue.*"
+	xmlns:inputComponents="com.makolab.components.inputComponents.*"
+	creationComplete="init()">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			[Bindable]
+			public var model:ModelLocator = ModelLocator.getInstance();
+			
+			public var contractorId:String = "";
+			
+			private function init():void
+			{
+				
+			}
+			
+			public function commitChanges():void
+			{
+				
+			}
+			
+			public function validate():Object
+			{
+				return null;
+			}
+			
+			/**
+			 * A method of IFormBuilderComponent interface.
+			 * @see IFormBuilderComponent
+			 */
+			public function reset():void 
+			{
+				
+			}
+			
+			private function dateLabel(item:Object, column:DataGridColumn):String {
+                return String(String(item.date).replace("T", "  ")).substring(0,20);
+            }
+            
+            private function clickHandler(event:MouseEvent):void {
+            	var fromDate:String = '';
+				var toDate:String = '';
+				
+				if(dF.dateFrom) {
+					fromDate = dF.dateFrom.fullYear+"-"+(dF.dateFrom.month+1)+"-"+dF.dateFrom.date;
+				}
+				if(dF.dateTo) {
+					toDate = dF.dateTo.fullYear+"-"+(dF.dateTo.month+1)+"-"+dF.dateTo.date;
+				}
+            	
+            	if(Boolean(inDetail.selectedItem.value)) {
+	            	var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("reports.p_getContractorsSalesByItemsDetailed", XML('<root><searchParams contractorId="'+contractorId+'" /><searchParams fromDate="'+fromDate+'"/><searchParams toDate="'+toDate+'"/><searchParams salesDirection="'+salesDirection.selectedItem.value+'"/></root>'));
+					cmd.addEventListener(ResultEvent.RESULT, handlePurchasedGoodsResult);
+					cmd.execute();
+            	} else {
+	            	cmd = new ExecuteCustomProcedureCommand("reports.p_getContractorsSalesByItems", XML('<root><searchParams contractorId="'+contractorId+'" /><searchParams fromDate="'+fromDate+'"/><searchParams toDate="'+toDate+'"/><searchParams salesDirection="'+salesDirection.selectedItem.value+'"/></root>'));
+					cmd.addEventListener(ResultEvent.RESULT, handlePurchasedGoodsResult);
+					cmd.execute();
+            	}
+            }
+            
+            private function handlePurchasedGoodsResult(event:ResultEvent):void {				
+				var result:XML = XML(event.result);
+				
+				dateColumn.visible = Boolean(inDetail.selectedItem.value);
+				
+				grid.dataProvider = result.*;
+				countDocuments.text = result.*.length()
+	 		}
+			
+		]]>
+	</mx:Script>
+	<mx:HBox>
+		<mx:ComboBox id="inDetail" width="120" dataProvider="{[
+			{label : LanguageManager.getInstance().labels.common.generally, value : 0},
+			{label : LanguageManager.getInstance().labels.common.inDetail, value : 1}
+			]}" />
+		<mx:ComboBox id="salesDirection" width="160" dataProvider="{[
+			{label : LanguageManager.getInstance().labels.contractors.forms.contractor.purchasedGoods.soldAndPurchased, value : 0},
+			{label : LanguageManager.getInstance().labels.contractors.forms.contractor.purchasedGoods.sold, value : -1},
+			{label : LanguageManager.getInstance().labels.contractors.forms.contractor.purchasedGoods.purchased, value : 1}
+			]}" />
+		<inputComponents:DateFilter id="dF" dateFieldsDirection="horizontal" selectedIndex="{0}"/>
+		<mx:Button click="clickHandler(event)"  label="{LanguageManager.getInstance().labels.common.search2}" left="0"/>
+	</mx:HBox>
+	
+	<mx:DataGrid id="grid" width="100%" height="100%">
+		<mx:columns>
+			<mx:DataGridColumn id="dateColumn" visible="false" dataField="@date" headerText="{LanguageManager.getInstance().labels.common.date}" width="80"/>
+			<mx:DataGridColumn dataField="@itemCode" headerText="{LanguageManager.getInstance().labels.common.code}" width="150"/>
+			<mx:DataGridColumn dataField="@itemName" headerText="{LanguageManager.getInstance().labels.common.shortName}"/>
+			<mx:DataGridColumn dataField="@quantity" headerText="{LanguageManager.getInstance().labels.common.quantity}" textAlign="right" width="80"/>
+			<mx:DataGridColumn dataField="@netValue" headerText="{LanguageManager.getInstance().labels.documents.netValue}" textAlign="right" width="100"/>
+			<mx:DataGridColumn dataField="@grossValue" headerText="{LanguageManager.getInstance().labels.documents.grossValue}" textAlign="right" width="100"/>
+			<!--
+			<mx:DataGridColumn dataField="date" labelFunction="dateLabel" headerText="{LanguageManager.getInstance().labels.common.date}"/>
+			-->
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:HBox id="footerBox">
+		<mx:Label text= "{LanguageManager.getInstance().labels.documents.documentsCount} :" />
+		<mx:Label id="countDocuments" />
+	</mx:HBox>
+</mx:Form>

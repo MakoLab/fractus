@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<permission:ButtonComponent xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:permission="com.makolab.components.permission.*" 
+	creationComplete="creationCompleatHandler()" 
+	toolTip="{LanguageManager.getInstance().labels.diagnostics.communication.unexecutedQuantity}" 
+	click="XmlCommunicatorQueueListU.showWindow()">
+
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.GetUnexecutedPackagesQuantityCommand;
+			import com.makolab.fractus.model.ConfigManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			private var procedureTimer:Timer;
+			
+			private var databaseId:String;
+			
+			private var greenQuantity:int = 0;
+			
+			private var redQuantity:int = 100;
+			
+			public var intervalInSeconds:String;
+			
+			public function creationCompleatHandler():void
+			{
+				if(ModelLocator.getInstance().permissionManager.isEnabled(permissionKey)) {
+					if(intervalInSeconds) {
+						this.procedureTimer = new Timer(1000 * Number(intervalInSeconds));
+					} else {
+						this.procedureTimer = new Timer(1000 * 300);
+					}
+					
+					this.procedureTimer.addEventListener(TimerEvent.TIMER, this.procedureTimerTickEvent, false, 0, true);
+					this.procedureTimer.start();
+					
+					ModelLocator.getInstance().configManager.requestList(["communication.unexecutedWarningQuantity"],applyConfiguration);
+				} else {
+					if(this.procedureTimer) {
+						this.procedureTimer.stop();
+					}
+				}
+			}
+			
+			private function procedureTimerTickEvent(event:TimerEvent = null):void
+			{
+				var cmd:GetUnexecutedPackagesQuantityCommand = new GetUnexecutedPackagesQuantityCommand(databaseId);
+				cmd.addEventListener(ResultEvent.RESULT, this.handleResult, false, 0, true);
+				cmd.addEventListener(FaultEvent.FAULT, this.handleFault, false, 0, true);	
+				cmd.execute();
+			}
+			
+			private function handleResult(event:ResultEvent):void
+			{
+				label = XML(event.result).toString();
+				var packageQuantity:int = int(Number(label));
+				
+				if (packageQuantity >= greenQuantity)
+				{
+					applyGreen(this);
+				}
+				if (packageQuantity > redQuantity)
+				{
+					applyRed(this);
+				}
+			}
+			
+			private function handleFault(event:FaultEvent):void
+			{
+			}
+			
+			private function applyConfiguration():void
+			{
+				databaseId = ModelLocator.getInstance().configManager.getString("communication.databaseId");
+				var unexecutedWarningQuantity:String = ModelLocator.getInstance().configManager.getString("communication.unexecutedWarningQuantity"); 
+				if (unexecutedWarningQuantity) redQuantity = Number(unexecutedWarningQuantity); 
+				if (databaseId)
+				{
+					procedureTimerTickEvent(null);
+				}
+			}
+			
+			private function applyRed(child:DisplayObject):void {
+	            var matrix:Array = new Array();
+	            matrix = matrix.concat([1, 0, 0, 0, 0]); // red
+	            matrix = matrix.concat([0, 0, 0, 0, 0]); // green
+	            matrix = matrix.concat([0, 0, 0, 0, 0]); // blue
+	            matrix = matrix.concat([0, 0, 0, 1, 0]); // alpha
+	
+	            applyFilter(child, matrix);
+	        }
+	        
+	        private function applyGreen(child:DisplayObject):void {
+	            var matrix:Array = new Array();
+	            matrix = matrix.concat([0, 0, 0, 0, 0]); // red
+	            matrix = matrix.concat([0, 1, 0, 0, 0]); // green
+	            matrix = matrix.concat([0, 0, 0, 0, 0]); // blue
+	            matrix = matrix.concat([0, 0, 0, 1, 0]); // alpha
+	
+	            applyFilter(child, matrix);
+	        }
+
+			private function applyFilter(child:DisplayObject, matrix:Array):void {
+	            var filter:ColorMatrixFilter = new ColorMatrixFilter(matrix);
+	            var filters:Array = new Array();
+	            filters.push(filter);
+	            child.filters = filters;
+	        }
+			
+		]]>
+	</mx:Script>
+</permission:ButtonComponent>

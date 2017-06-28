@@ -1,0 +1,10 @@
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintText\bin\Debug\MakoPrintText.dll
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintText\bin\Debug\MakoPrintText.pdb
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintText\obj\Debug\MakoPrintText.csprojResolveAssemblyReference.cache
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintText\obj\Debug\MakoPrintText.dll
+C:\Projekty\trunk\dotNet\MakoPrintProjects\MakoPrintText\obj\Debug\MakoPrintText.pdb
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintText\bin\Debug\MakoPrintText.dll
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintText\bin\Debug\MakoPrintText.pdb
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintText\obj\Debug\MakoPrintText.csprojResolveAssemblyReference.cache
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintText\obj\Debug\MakoPrintText.dll
+C:\Users\Cezary.Wozniak\Documents\fractus\dotNet\MakoPrintProjects\MakoPrintText\obj\Debug\MakoPrintText.pdb

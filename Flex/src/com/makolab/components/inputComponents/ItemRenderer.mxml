@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	verticalGap="0" 
+	xmlns:template="com.makolab.components.document.template.*"
+	initialize="handleInitialize(event);init();"
+	width="100%"
+	xmlns:catalogue="com.makolab.fractus.view.catalogue.*" xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*" xmlns:generic="com.makolab.fractus.view.generic.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.layoutComponents.DragElementProxy;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.commands.FractusCommand;
+			import com.makolab.fractus.commands.GetItemStockCommand;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.GlobalEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.view.ComponentWindow;
+			
+			import mx.controls.Alert;
+			import mx.rpc.events.ResultEvent;
+			import mx.utils.ColorUtil;
+			
+			private var _data:Object;
+			
+			[Bindable]
+			public var showInfoButton:Boolean = true;
+			
+			[Bindable]
+			private var attributesAttribute:XMLList;
+			
+			[Bindable] private var lm:LanguageManager = LanguageManager.getInstance();
+			
+			public static function showWindow(itemData:DragElementProxy):ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var renderer:ItemRenderer = new ItemRenderer();
+				window.innerComponent = renderer;
+				if (itemData.itemXML) renderer.data = itemData.itemXML;
+				else if (itemData.id)
+				{
+					var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand(LoadBusinessObjectCommand.TYPE_ITEM, itemData.id);
+					cmd.targetObject = renderer;
+					cmd.targetField = "data";
+					cmd.noRoot = true;
+					cmd.execute();
+				}
+				window.show(null, new Rectangle(-1, -1, 500, 500));
+				return window;
+			}
+			
+			[Bindable]
+			override public function set data(value:Object):void	{
+				_data = value;
+				
+				attributesAttribute = new XMLList();
+				var tAdd:XMLList;
+				if(value) tAdd = value.attributes.attribute;
+				
+				for each (var o:XML in tAdd) {
+					if(o.value != '') {
+						attributesAttribute += o;
+					}
+				}
+				/*
+				if(value.creationUser) {
+					trace(value.creationUser);
+				} else {
+					trace("none");
+				}
+				*/
+				init();
+			}
+			
+			override public function get data(): Object	{
+				return _data;
+			}
+			
+			private function handleInitialize(event:Event):void
+			{
+				ModelLocator.getInstance().configManager.requestValue("services.repositoryService.address");
+				
+			
+			}
+			public function init():void {
+				if (data!=null) this.height=NaN;
+				else this.height=0;
+			}
+			/*
+			private function showStock():void
+			{
+				var cmd:FractusCommand = new RetrieveItemStockCommand(data.id); 
+				cmd.targetObject = ta;
+				cmd.targetField = 'text';
+				cmd.execute();
+			}
+			*/
+		]]>
+	</mx:Script>
+	
+	<mx:Style>
+		.headerBar
+		{
+			paddingBottom:0;
+			paddingTop:0;
+			cornerRadius:0;
+			fillColors:#fff, #003;
+			fillAlphas:0.2,0.5;
+		}
+		.header
+		{
+			font-size: 12px;
+			font-weight: bold;
+			padding-left: 4px;
+			padding-right: 4px;
+		}
+		.subHeader
+		{
+			padding-top: 5px;
+			padding-left: 10px;
+			font-size: 12px;
+			font-weight: normal;
+		}
+		.address
+		{
+			padding-left: 10px;
+			font-size: 12px;
+			/*
+			font-style: italic;
+			*/
+		}
+		.attributeLabel
+		{
+			padding-left: 0px;
+			font-size: 10px;
+			font-weight: bold;
+		}
+		.attributeValue
+		{
+			padding-left: 10px;
+			font-size: 10px;
+		}
+		.link
+		{
+			color: blue; 
+			fontFamily: Arial; 
+			textRollOverColor: blue;
+			font-size: 10px;
+		}
+	</mx:Style>
+	
+	<mx:HBox styleName="header" width="100%" minHeight="20" backgroundColor="{ColorUtil.adjustBrightness2(getStyle('themeColor'), 50)}">
+		<mx:Text text="{data.name}" width="100%" styleName="header" />
+	</mx:HBox>
+	
+	<mx:Form width="100%" paddingTop="4" verticalGap="0" paddingBottom="0">
+		<mx:FormItem label="{LanguageManager.getInstance().labels.items.forms.item.code}"  visible="{Boolean(codeText.text != '')}" includeInLayout="{Boolean(codeText.text != '')}">
+			<mx:Text text="{data.code}" fontWeight="bold" id="codeText"/>
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.items.forms.item.type}"  visible="{Boolean(itemTypeIdText.text != '')}" includeInLayout="{Boolean(itemTypeIdText.text != '')}">
+			<generic:FractusDictionaryRenderer dataObject="{data.itemTypeId}" fontWeight="bold" id="itemTypeIdText"/>
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.dictionaries.unit}"  visible="{Boolean(unitIdText.text != '')}" includeInLayout="{Boolean(unitIdText.text != '')}">
+			<generic:FractusDictionaryRenderer dataObject="{data.unitId}" labelField="label" fontWeight="bold" id="unitIdText"/>
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.items.defaultSalesPrice}"  visible="{Boolean(defaultPriceText.text != '')}" includeInLayout="{Boolean(defaultPriceText.text != '')}">
+			<mx:Text text="{CurrencyManager.formatCurrency(data.defaultPrice)}" fontWeight="bold" id="defaultPriceText"/>
+		</mx:FormItem>
+		<mx:Repeater width="100%" id="rptr" dataProvider="{attributesAttribute}" >
+			<documentControls:KeyValueAttributeRenderer idField="itemFieldId" data="{rptr.currentItem}" width="100%"/>
+		</mx:Repeater>
+		<mx:FormItem label="{lm.labels.contractors.forms.contractor.creationUser.short}" toolTip="{lm.labels.contractors.forms.contractor.creationUser.full}"  visible="{Boolean(creationUserText.text != '')}" includeInLayout="{Boolean(creationUserText.text != '')}">
+			<mx:Text text="{data.creationUser}" fontWeight="bold" id="creationUserText"/>
+		</mx:FormItem>
+		<mx:FormItem label="{lm.labels.contractors.forms.contractor.creationDate}"  visible="{Boolean(creationDateText.text != '')}" includeInLayout="{Boolean(creationDateText.text != '')}">
+			<mx:Text text="{(data.creationDate.length() > 0 ? Tools.dateToString(Tools.isoToDate(data.creationDate)) : '')}" fontWeight="bold" id="creationDateText"/>
+		</mx:FormItem>
+		<mx:FormItem label="{lm.labels.contractors.forms.contractor.modificationUser.short}" toolTip="{lm.labels.contractors.forms.contractor.modificationUser.full}"  visible="{Boolean(modificationUserText.text != '')}" includeInLayout="{Boolean(modificationUserText.text != '')}">
+			<mx:Text text="{data.modificationUser}" fontWeight="bold" id="modificationUserText"/>
+		</mx:FormItem>
+		<mx:FormItem label="{lm.labels.contractors.forms.contractor.modificationDate}"  visible="{Boolean(modificationDateText.text != '')}" includeInLayout="{Boolean(modificationDateText.text != '')}">
+			<mx:Text text="{(data.modificationDate.length() > 0 ? Tools.dateToString(Tools.isoToDate(data.modificationDate)) : '')}" fontWeight="bold" id="modificationDateText"/>
+		</mx:FormItem>
+	</mx:Form>
+	
+	<mx:VBox paddingLeft="15" paddingRight="15" paddingTop="10" paddingBottom="10" width="100%">
+		<catalogue:ItemStockGrid itemId="{data.id}" id="istock" itemName="{data.name}" width="100%" showInfoButton="{this.showInfoButton}" />
+	</mx:VBox>
+	<!--
+	<mx:Button label="Pokaż dostawy" click="showStock()"/>
+	<mx:TextArea id="ta" width="100%" height="300" includeInLayout="{Boolean(ta.text)}"/>
+	-->
+</mx:VBox>

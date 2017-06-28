@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" xmlns:lineList="com.makolab.components.lineList.*" mouseOver="{isMouseOver = true}" mouseOut="{isMouseOver = false}" horizontalGap="0">
+	<mx:Metadata>
+		[Event(name="change",type="flash.events.Event")]
+		[Event(name="delete",type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			
+			import mx.core.Application;
+			import mx.managers.PopUpManager;
+			
+			[Bindable] private var isMouseOver:Boolean;
+			
+			private function handleClick(event:MouseEvent):void
+			{
+				var attributeSelector:PostsalesMarginAttributeSelector = new PostsalesMarginAttributeSelector();
+				PopUpManager.addPopUp(attributeSelector,this.owner,true);
+				PopUpManager.centerPopUp(attributeSelector);
+				if (data && data is XML)
+				{
+					if ( data.attributes.length() == 0 ) data.appendChild(<attributes/>);
+					attributeSelector.attributesXML = data.attributes[0];
+				}
+				attributeSelector.addEventListener("change",handleAttributesChange); 
+			}
+			
+			private function handleAttributesChange(event:Event):void
+			{
+				if ((data as XML)["attributes"].length() > 0 && (data as XML)["attributes"].attribute.length() == 0 ) 
+				{
+					delete (data as XML)["attributes"];
+				}
+				updateLabel();
+				dispatchEvent(new Event("change"));
+			}
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				updateLabel();
+			}
+			
+			private function updateLabel():void
+			{
+				if (data && data is XML && data.attributes.length() > 0)
+				{
+					var values:Array = [];
+					for each (var attribute:XML in data.attributes.attribute)
+					{
+						if (attribute.toString().length > 0) values.push(attribute.toString());
+					}
+					if (values.length > 0) label = values.join(", ");
+					else label = "";
+				}
+				else
+				{
+					label = "";
+				}
+			}
+			
+			private function handleDeleteButtonClick(event:MouseEvent):void
+			{
+				dispatchEvent(new Event("delete"));
+			}
+			
+			private function deleteButtonVisibility(mouseOver:Boolean):Boolean
+			{
+				return (data && data.attributes.length() > 0 && data.attributes.attribute.length() > 0) && mouseOver; 
+			}
+			
+			private function getLabel(label:String):String
+			{
+				return label.length == 0 ? " - " : label; 
+			}
+		]]>
+	</mx:Script>
+	<mx:LinkButton label="{getLabel(label)}" width="100%" click="handleClick(event)" textAlign="left"/>
+	<lineList:LineImageButton iconsName="status_canceled" toolTip="{LanguageManager.getLabel('common.Delete')}" visible="{deleteButtonVisibility(isMouseOver)}" click="handleDeleteButtonClick(event)"/>
+</mx:HBox>

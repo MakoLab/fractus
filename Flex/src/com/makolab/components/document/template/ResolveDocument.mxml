@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas width="100%" height="100%" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:template="document.template.*" 
+	xmlns:inputComponents="inputComponents.*"
+	borderColor="#aaaaa0" borderStyle="outset" cornerRadius="10" 
+	 verticalScrollPolicy="off"
+	>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			[Bindable]
+			public var dataObject:XML;
+			
+		]]>
+	</mx:Script>
+	<mx:VBox width="99%" height ="99%"  horizontalScrollPolicy="off" verticalScrollPolicy="off" >
+		<!--Nagłówek-->
+		<template:DocumentHeader id="headerDocument" width="100%" height="20"
+				documentNameType = "{dataObject.DocType}"
+				documentNumber = "{dataObject.Number}"
+				documentNumberPrefix = "{dataObject.Number.@Prefix}"
+				documentNumberPostfix = "{dataObject.Number.@Postfix}"
+				contractorName = "{dataObject.Contractor.FullName}"/>
+		<!-- data wyst i miejsce wyst-->		
+		<mx:HBox width="100%"  paddingTop="10" horizontalAlign="right"  >
+				<template:Fields 
+					dataObject="{dataObject}" 
+					listFields="{new Array(
+					{'label':{LanguageManager.getLabel('documents.issueDate')},'value':'IssueDate'} ,
+					{'label':{LanguageManager.getLabel('documents.issuePlace')} , 'value':'IssuePlace' })}" 
+					width="50%" />
+		</mx:HBox>
+		<!--kontrahent i dostawca-->		
+		<mx:HBox width="100%" paddingTop="10"  >
+			<template:PersonData id="contractor" width="50%" personDataObject="{dataObject.Contractor[0]}"/>
+			<template:PersonData id="Issuer" width="50%" typePerson="Sprzedawca:"  personDataObject="{dataObject.IssuerDetails[0]}"/>
+		</mx:HBox>
+		
+		<mx:HBox width="100%" paddingTop="10" >
+			<mx:DataGrid dataProvider="{dataObject.ReclamationLines.ReclamationLine}"  width="50%" rowCount="1" headerColors ="[#ffffff,#ffffff]" >
+				<mx:columns>
+					<mx:DataGridColumn backgroundColor="#ffffff" editorDataField="value" headerWordWrap="true" sortable="false" editable="true" rendererIsEditor="true" headerText="{LanguageManager.getLabel('common.item')}" dataField="Item" width="80"  itemRenderer="mx.controls.Label"  />
+					<mx:DataGridColumn backgroundColor="#ffffff" editorDataField="value" headerWordWrap="true" sortable="false" editable="true" rendererIsEditor="true" headerText="{LanguageManager.getLabel('common.quantity')}" dataField="Quantity" width="25"   itemRenderer="inputComponents.CurrencyRenderer"   />
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:VBox  width="50%">
+				<mx:Label text="{LanguageManager.getLabel('common.decisiontype')}" fontSize="14" scaleY="0.9" />	
+				<mx:Label text="{dataObject.SubsetMask.@Label}"	 fontSize="14" scaleY="0.9" fontWeight="bold"  />
+			</mx:VBox>
+		</mx:HBox>
+		
+		<!--decyzja-->	
+		<mx:TextArea  width="100%" height="150" paddingTop="10" editable="false" text="{dataObject.Attachments[0].Attachment[0].Document[0].Decision}"/>
+		<mx:Label visible="false" height="10" />	
+	</mx:VBox>
+</mx:Canvas>

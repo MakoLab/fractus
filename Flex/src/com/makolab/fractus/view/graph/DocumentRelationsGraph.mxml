@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--	
+	xmlns:ravis="org.un.cava.birdeye.ravis.graphLayout.visual.*"
+	xmlns:lc="org.un.cava.birdeye.ravis.components.ui.controls.layouterControls.*"
+	xmlns:vc="org.un.cava.birdeye.ravis.components.ui.controls.vgraphControls.*"
+	xmlns:ui="org.un.cava.birdeye.ravis.components.ui.*"
+	xmlns:dp="org.un.cava.birdeye.ravis.components.ui.dataPresentation.*"
+	xmlns:flexlib="http://code.google.com/p/flexlib/"
+	backgroundGradientColors="[#333333,#999999]" layout="vertical"
+	width="100%" height="100%"
+	creationPolicy="all"
+	creationComplete="init();"
+	>
+-->
+<mx:Canvas
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+		xmlns:ravis="org.un.cava.birdeye.ravis.graphLayout.visual.*"
+
+	borderStyle="solid"
+	borderColor="#CCCCCC"
+	backgroundColor="#FFFFFF"
+	width="100%"
+	height="100%"
+	verticalScrollPolicy="off"
+	creationComplete="init()"
+	>		
+
+	<ravis:VisualGraph id="vgraph" width="100%" height="100%" 
+		paddingBottom="5" left="0" right="0" top="0" bottom="0" backgroundColor="#FFFFFF" alpha="1"
+		resize="vgraph.draw(VisualGraph.DF_RESET_LL)"
+		visibilityLimitActive="true"
+		>
+	</ravis:VisualGraph>
+
+	<!--<mx:XML id="xmldata" source="xml/graph.xml" />-->
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.view.dictionaries.editors.DocumentType;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.commands.FractusCommand;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.ComponentWindow;
+			import org.un.cava.birdeye.ravis.graphLayout.visual.edgeRenderers.BaseEdgeRenderer;
+			import org.un.cava.birdeye.ravis.components.renderers.edgeLabels.BaseEdgeLabelRenderer;
+			import org.un.cava.birdeye.ravis.graphLayout.layout.DirectPlacementLayouter;
+			import org.un.cava.birdeye.ravis.graphLayout.data.Graph;
+
+			private var xmldata:XML;
+			
+			/* Init function, initiates the HTTP
+			 * request. All further initalisation is done
+			 * in the event handler for the HTTP Service */
+			private function init():void {
+				//loadGraph('82C0567C-F658-4869-9407-747DD37F52C1');
+				//initData();
+			}
+			
+			/**
+			 * event handler for HTTPService, does all the remaining required
+			 * initialisation */
+			private function initData():void {
+				
+				/* init a graph object with the XML data */
+				
+				processXml(xmldata);
+				
+				vgraph.graph = new Graph("XMLAsDocsGraph", false, xmldata);
+				
+				vgraph.layouter = new DirectPlacementLayouter(vgraph);
+				vgraph.maxVisibleDistance = 100;
+				vgraph.edgeLabelRenderer = new ClassFactory(FractusRelationLabel);
+				vgraph.edgeRenderer = new FractusRelationRenderer(vgraph.edgeDrawGraphics);
+				vgraph.itemRenderer = new ClassFactory(FractusDocumentTypeIconRenderer);
+				
+				vgraph.currentRootVNode = vgraph.graph.nodeByStringId(String(xmldata.Node[0].@id)).vnode;
+	
+				vgraph.draw();
+				vgraph.draw();
+				
+			}
+			
+			public static function showWindow(lineId:String):ComponentWindow
+			{
+				var graph:DocumentRelationsGraph = new DocumentRelationsGraph();
+				graph.loadGraph(lineId);
+				return ComponentWindow.showWindow(graph);//, 0, new Rectangle(-1, -1, 800, 500));
+			}
+			
+			private function processXml(xml:XML):void
+			{
+				var y:int = 20;
+				for each (var x:XML in xml.Node)
+				{
+					var desc:DocumentTypeDescriptor = new DocumentTypeDescriptor(x.@documentTypeId);
+					x.@icon = desc.iconDocumentListName;
+					x.@y = y;
+					y += 50;
+					switch (desc.categoryNumber)
+					{
+						case DocumentTypeDescriptor.CATEGORY_PURCHASE:
+						case DocumentTypeDescriptor.CATEGORY_WAREHOUSE_ORDER:
+							x.@x = 0;
+							break;
+						case DocumentTypeDescriptor.CATEGORY_PURCHASE_CORRECTION:
+							x.@x = -50;
+							break;
+						case DocumentTypeDescriptor.CATEGORY_WAREHOUSE:
+						case DocumentTypeDescriptor.CATEGORY_WAREHOUSE_INCOME_CORRECTION:
+						case DocumentTypeDescriptor.CATEGORY_WAREHOUSE_OUTCOME_CORRECTION:
+							if (x.@quantity * x.@direction > 0) x.@x = desc.isCorrectiveDocument ? 200 : 150;
+							else x.@x = desc.isCorrectiveDocument ? 400 : 450;
+							break;
+						case DocumentTypeDescriptor.CATEGORY_SALES:
+						case DocumentTypeDescriptor.CATEGORY_WAREHOUSE_RESERVATION:
+							x.@x = 600;
+							break;
+						case DocumentTypeDescriptor.CATEGORY_SALES_CORRECTION:
+							x.@x = 650;
+							break;
+						case DocumentTypeDescriptor.CATEGORY_FINANCIAL_DOCUMENT:
+							if (x.@quantity * x.@direction > 0) x.@x = 0;
+							else x.@x = 750;
+							break;
+					}
+				}
+			}
+			
+			private function loadGraph(lineId:String):void
+			{
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand(
+					'document.p_getDocumentRelationsGraph',
+					<param><lineId>{lineId}</lineId></param>
+				);
+				cmd.addEventListener(ResultEvent.RESULT, handleResult);
+				cmd.execute();
+			}
+			
+			private function handleResult(event:ResultEvent):void
+			{
+				xmldata = XML(event.result);
+				initData();
+			}
+		]]>
+	</mx:Script>		
+
+</mx:Canvas>

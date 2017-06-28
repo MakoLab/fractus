@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="absolute"
+	width="350" 
+	height="160"
+	showCloseButton="true"
+	close="ClipboardCreateNewDocumentWindow.hide()"
+	initialize="init()">
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.XMLListCollection;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.commands.CreateBusinessObjectCommand;
+			import com.makolab.fractus.commands.FractusCommand;
+			import mx.controls.Alert;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.managers.PopUpManager;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			import flash.events.Event;
+			
+			private static var instance:ClipboardCreateNewDocumentWindow;
+			private var clipboardXML:XML;
+			private var model:ModelLocator = ModelLocator.getInstance();
+			[Bindable]
+			private var documentTypes:XML;
+					
+			public static function show(parent:DisplayObject, clipboardXML:XML):ClipboardCreateNewDocumentWindow
+			{
+				if (!ClipboardCreateNewDocumentWindow.instance)
+					ClipboardCreateNewDocumentWindow.instance = new ClipboardCreateNewDocumentWindow();
+			
+				ClipboardCreateNewDocumentWindow.instance.clipboardXML = clipboardXML;
+				PopUpManager.addPopUp(ClipboardCreateNewDocumentWindow.instance, parent);
+				PopUpManager.centerPopUp(ClipboardCreateNewDocumentWindow.instance);
+				ClipboardCreateNewDocumentWindow.instance.visible = true;
+								
+				return ClipboardCreateNewDocumentWindow.instance;
+			}
+			
+			public static function hide():void
+			{
+				ClipboardCreateNewDocumentWindow.instance.visible = false;
+				PopUpManager.removePopUp(ClipboardCreateNewDocumentWindow.instance);
+			}
+			
+			public function btnOkClickHandler(event:MouseEvent):void
+			{
+				this.model.currentScreen = ModelLocator.SALES_DOCUMENT_EDITOR;
+				
+				var cmd:ShowDocumentEditorCommand;
+				var selectedItem:XML = XML(this.cboxDocumentTypes.selectedItem);
+				
+				cmd = new ShowDocumentEditorCommand(this.getDocumentCategory(selectedItem));
+				cmd.template = this.cboxDocumentTypes.selectedItem.@id;
+				cmd.source = <source type="clipboard"><clipboard>{this.clipboardXML.elements.item}</clipboard></source>;
+				if(this.cboxPaymentMethod.selectedItem)cmd.source.clipboard.paymentMethod = this.cboxPaymentMethod.selectedItem.id.*;
+				cmd.addEventListener(ResultEvent.RESULT, loadDocumentResult);
+				cmd.execute();
+			}
+			
+			private function init():void
+			{
+				documentTypes = new XML(<documentTypes/>);
+				for each(var x:XML in ModelLocator.getInstance().documentTemplates.*)	{
+					switch(String(x.name())) {
+						//permission hard coded
+						case "warehouseDocument": if(model.permissionManager.isEnabled("warehouse.add")) documentTypes.appendChild(x); break;
+						case "salesDocument": if(model.permissionManager.isEnabled("sales.add")) documentTypes.appendChild(x); break;
+						case "purchaseDocument": if(model.permissionManager.isEnabled("purchase.add")) documentTypes.appendChild(x); break;
+						case "orderDocument": if(model.permissionManager.isEnabled("warehouse.warehouseOrders.add")) documentTypes.appendChild(x); break;
+					}					
+				}
+				
+				this.comboBoxChangeHandler(null);
+			}
+			
+			private function getDocumentCategory(selectedItem:XML):uint
+			{
+				var group:String = String(XML(selectedItem.parent()).localName());
+				
+				switch(group)
+				{
+					case "warehouseDocument":
+						return DocumentTypeDescriptor.CATEGORY_WAREHOUSE;
+					case "salesDocument":
+						return DocumentTypeDescriptor.CATEGORY_SALES;
+					case "purchaseDocument":
+						return DocumentTypeDescriptor.CATEGORY_PURCHASE;
+					case "orderDocument":
+						return DocumentTypeDescriptor.CATEGORY_WAREHOUSE_ORDER;		
+					default:
+						return null;				
+				}
+			}
+			
+			private function getDocumentType(selectedItem:XML):String
+			{
+				var group:String = String(XML(selectedItem.parent()).localName());
+				
+				switch(group)
+				{
+					case "warehouseDocument":
+						return DocumentTypeDescriptor.WAREHOUSE_DOCUMENT;
+					case "salesDocument":
+					case "purchaseDocument":
+					case "orderDocument":
+						return DocumentTypeDescriptor.COMMERCIAL_DOCUMENT;		
+					default:
+						return null;				
+				}
+			}
+			
+			private function loadDocumentResult(event:ResultEvent):void
+			{
+				ClipboardCreateNewDocumentWindow.hide();
+				dispatchEvent(new Event("documentCreated"));
+			}
+		
+			private function paymentMethodShowFunc(selectedItem:XML):Boolean
+			{
+				return this.getDocumentType(selectedItem) == DocumentTypeDescriptor.COMMERCIAL_DOCUMENT;
+			}
+			
+			private function comboBoxChangeHandler(event:Event):void
+			{
+				var documentTypeId:String = cboxDocumentTypes.selectedItem.@documentTypeId;
+				
+				if(documentTypeId && documentTypeId != "")
+				{
+					var provider:XMLListCollection = new XMLListCollection();
+					
+					var type:XML = DictionaryManager.getInstance().getById(documentTypeId);
+					
+					for each (var pm:XML in type.xmlOptions.*.*.paymentMethods.*)
+					{
+						provider.addItem(DictionaryManager.getInstance().getById(pm.*).copy());
+					}
+					
+					this.cboxPaymentMethod.dataProvider = provider;
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox horizontalCenter="0" verticalCenter="0" horizontalAlign="center">
+		<mx:HBox>
+			<mx:Label text="Wybierz typ dokumentu" />
+			<mx:ComboBox id="cboxDocumentTypes" 
+				dataProvider="{documentTypes.*.template}" 
+				labelField="@label" 
+				change="comboBoxChangeHandler(event)"
+				/>
+		</mx:HBox>
+		<mx:HBox visible="{this.paymentMethodShowFunc(XML(this.cboxDocumentTypes.selectedItem))}">
+			<mx:Label text="Wybierz formę płatności" />
+			<mx:ComboBox id="cboxPaymentMethod" labelField="label" />
+		</mx:HBox>
+		<mx:HBox>
+			<mx:Button label="{LanguageManager.getInstance().labels.common.ok}" click="btnOkClickHandler(event)" />
+			<mx:Button label="{LanguageManager.getInstance().labels.common.cancel}" click="ClipboardCreateNewDocumentWindow.hide()" />
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>

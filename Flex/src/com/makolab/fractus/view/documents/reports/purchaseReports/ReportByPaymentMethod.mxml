@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReportBase xmlns="com.makolab.fractus.view.documents.reports.*" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:layoutComponents="com.makolab.components.layoutComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.Tools;
+			import mx.charts.series.PieSeries;
+			import mx.formatters.CurrencyFormatter;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.DictionaryManager;
+			
+			private function getLabel(data:Object, field:String, index:Number, percentValue:Number):String
+			{
+				var string:String = DictionaryManager.getInstance().dictionaries.paymentMethod.(id.toString() == data.@paymentMethodId).label;
+				for(var i:int=0;i<table.columns.length;i++){
+					if(table.columns[i].dataField == field){
+						string = string + " - " +(table.columns[i] as AdvancedDataGridColumn).labelFunction.call(this,data,table.columns[i]);
+						break;
+					}
+				}
+				return  string;
+			}
+			
+			private function nameLabelFunction(item:Object, column:Object):String
+			{
+				if(!(column is AdvancedDataGridColumn) && !(column is DataGridColumn))throw new Error("the 'column' attribute must be an object of type AdvancedDataGridColumn or DataGridColumn");
+				var value:XMLList = DictionaryManager.getInstance().dictionaries.paymentMethod.(id.toString() == item.@paymentMethodId);
+				if(value.length() > 0)return value[0].label.(@lang == LanguageManager.getInstance().currentLanguage);
+				else return "";
+			}
+			
+			private function calculateProfitMargin(source:XMLList,dataField:String,childDataField:String = null):String{
+				var dataFieldName:String = dataField;
+				var nettoSum:Number = 0;
+				var profitSum:Number = 0;
+				for(var i:int=0;i<source.length();i++){
+					nettoSum += Number(source[i].@netValue);
+					profitSum += Number(source[i].@profit);
+				}
+				return (profitSum/nettoSum).toString();
+			}
+			
+			private function getSeriesObjects(columnList:Array):Array
+			{
+				var array:Array = [];
+				for(var i:int=0;i<columnList.length;i++){
+					array.push({label : columnList[i].headerText, series : new PieSeries()});
+					(array[i].series as PieSeries).field = columnList[i].dataField;
+					(array[i].series as PieSeries).nameField = columnList[i].headerText;
+					(array[i].series as PieSeries).setStyle("labelPosition","callout");
+					(array[i].series as PieSeries).labelFunction = getLabel;
+				}
+				return array;
+			}
+		]]>
+	</mx:Script>
+	<table>
+		<mx:AdvancedDataGrid id="grid" width="100%" height="100%">
+			<mx:columns>
+				<mx:AdvancedDataGridColumn id="methodColumn" headerText="Forma płatności" labelFunction="nameLabelFunction" dataField="@paymentMethodId" width="130"/>
+				<mx:AdvancedDataGridColumn id="quantityColumn" sortCompareFunction="{Tools.getSortFunction('@quantity')}" headerText="{LanguageManager.getLabel('common.quantity')}" dataField="@quantity" labelFunction="quantityLabelFunction" textAlign="right" width="100"/>
+				<mx:AdvancedDataGridColumn id="netValueColumn" sortCompareFunction="{Tools.getSortFunction('@netValue')}" headerText="{LanguageManager.getLabel('reports.headers.netPurchaseValue')}" dataField="@netValue" textAlign="right" labelFunction="currencyLabelFunction" width="120"/>
+				<mx:AdvancedDataGridColumn id="grossValueColumn" sortCompareFunction="{Tools.getSortFunction('@grossValue')}" headerText="{LanguageManager.getLabel('reports.headers.grossPurchaseValue')}" dataField="@grossValue" textAlign="right" labelFunction="currencyLabelFunction" width="120"/>
+			</mx:columns>
+		</mx:AdvancedDataGrid>
+	</table>
+	<graph>
+		<mx:VBox width="100%" height="100%">
+			<mx:FormItem label="Seria wg. kolumny"><mx:ComboBox id="seriesColumn" dataProvider="{getSeriesObjects([quantityColumn,netValueColumn,grossValueColumn])}"/></mx:FormItem>
+			<mx:PieChart dataProvider="{dataProvider}" width="100%" height="100%">
+				<mx:series>
+					{[seriesColumn.selectedItem.series]}
+				</mx:series>
+			</mx:PieChart>
+		</mx:VBox>
+	</graph>
+</ReportBase>

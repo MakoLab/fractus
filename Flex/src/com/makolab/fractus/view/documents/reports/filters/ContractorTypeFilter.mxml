@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem implements="com.makolab.fractus.view.documents.reports.filters.IReportFilter" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.catalogue.CatalogueFilterError;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			private var _parameters:XML
+			
+			protected function get value():Object
+			{
+				var ret:XMLList = new XMLList();
+				for(var i:int=0;i<combo.selectedItems.length;i++){
+					var field:String = combo.selectedItems[i].name.toString();
+					var node:XML = <column>1</column>;
+					node.@field = field;
+					ret = ret + node;
+				}
+				return ret;
+			}
+			[Bindable]
+			public function set parameters(value:XML):void
+			{
+				_parameters = value;
+			}
+			
+			public function get parameters():XML
+			{
+				return _parameters;
+			}
+			
+			private function setParameters(params:XML):void
+			{
+				if(combo.selectedItems.length != 0){
+					if(value.toString() != ""){
+						if(!params.filters){
+							params.filters = "";
+						}else{
+							for(var i:int=0;i<configXml.entry.length();i++){
+								var nodes:XMLList = params.filters.column.(@field == configXml.entry[i].name.toString());
+								if(nodes.length() == 1)delete nodes[0];
+							}
+						}
+						params.filters.* = params.filters.* + value;
+					}
+				}
+			}
+			
+			private function getSelectedItems():Array
+			{
+				var items:Array = [];
+				var objects:Object = combo.dataProvider;
+				for each(var o:Object in objects){
+					if(Number(o.value.*) > -20)items.push(o);
+				}
+				return items;
+			}
+			
+			private function setSelection():void
+			{
+				combo.selectedItems = getSelectedItems();
+				setParameters(parameters);
+			}
+			
+			private function comboLabelFunction(item:Object):String
+			{
+				var ret:String = item.label.(@lang == LanguageManager.getInstance().currentLanguage).*; 
+				return ret;
+			}
+			
+			[Bindable]
+			public var allowEmptySelection:Boolean = false;
+			
+			public function get validationError():String
+			{
+				if(!this.allowEmptySelection && combo.selectedItems.length == 0){
+					this.setStyle("backgroundColor",0xff0000);
+					this.setStyle("backgroundAlpha",0.2);
+					this.errorString = "To generate a report you have to select at least 1 item in the contractor type filter"; // todo use LanguageManager
+					return "To generate a report you have to select at least 1 item in the contractor type filter"; // todo use LanguageManager
+				}
+				this.setStyle("backgroundColor",0xffffff);
+				this.setStyle("backgroundAlpha",0.0);
+				errorString = "";
+				return null;
+			}
+		]]>
+	</mx:Script>
+	<mx:XML id="configXml" xmlns="">
+		<contractorTypes> 
+			<entry>
+				<label lang="pl">Dostawca</label>
+				<label lang="en">Supplier</label>
+				<name>isSupplier</name>
+			</entry>
+			<entry>
+				<label lang="pl">Odbiorca</label>
+				<label lang="en">Receiver</label>
+				<name>isReceiver</name>
+			</entry>
+			<entry>
+				<label lang="pl">Bank</label>
+				<label lang="en">Bank</label>
+				<name>isBank</name>
+			</entry>
+			<entry>
+				<label lang="pl">Przedsiębiorstwo</label>
+				<label lang="en">Business</label>
+				<name>isBusinessEntity</name>
+			</entry>
+			<entry>
+				<label lang="pl">Pracownik</label>
+				<label lang="en">Employee</label>
+				<name>isEmployee</name>
+			</entry>
+		</contractorTypes>
+	</mx:XML>
+		<inputComponents:CheckBoxCombo id="combo" change="setParameters(parameters)" creationComplete="setSelection()" width="100%" labelFunction="comboLabelFunction">
+			<inputComponents:dataProvider>
+				{configXml.entry}
+			</inputComponents:dataProvider>
+		</inputComponents:CheckBoxCombo>
+</mx:FormItem>

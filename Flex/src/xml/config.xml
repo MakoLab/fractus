@@ -1,0 +1,18 @@
+		<config>
+			<searchPanel label="Wyszukiwanie">
+				<field name="d1" type="date" label="Data" value="2007-01-01"/>
+				<field name="d2" type="date" label="Data" value="2008-09-10"/>
+				<field name="t" type="text" label="Tekst"/>
+				<field name="c" type="select" label="Wybór" value="2">
+					<option label="Opcja 1" value="1"/>
+					<option label="Opcja 2" value="2"/>
+					<option label="Opcja 3" value="3"/>
+				</field>
+				<field name="t2" type="text" label="Tekst" value="wartosc"/>
+				<field name="cb1" type="checkbox" label="Opcja 1" value="1"/>
+				<field name="cb2" type="checkbox" label="Opcja 2"/>
+				<field name="b" type="submit" label="Szukaj"/>
+			</searchPanel>
+			<htmlPanel label="Informacje" nodeName="data"/>
+			<htmlPanel label="Informacje dodatkowe" nodeName="extendedData"/>
+		</config>

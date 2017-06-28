@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.business.Services;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			public var dataObject:XML;
+			[Bindable]
+			public var hasDesc:Boolean=true;
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				if (value is XML) this.dataObject = (value as XML);
+				else if (value is XMLList && value.length() > 0) this.dataObject = value[0];
+				else this.dataObject = null;
+			
+				img.addEventListener("sourceChanged", image_sourceChanged);
+			}
+			
+			private function getImageUrl(name:String):String
+			{
+				if(name != null && name != "")
+					return ModelLocator.getInstance().configManager.values.services_repositoryService_address.* + '/GetFile/' + name;
+				else
+					return null;
+			}
+
+			/**
+			 * Event handler for the link button click event.
+			 * 
+			 * @param event MouseEvent object containing event data.
+			 */
+			private function handleLinkButtonClick(event:MouseEvent):void
+			{
+				if(Services.getInstance().serviceMode == Services.MODE_EXTERNAL_INTERFACE)
+					Alert.show("Funkcja niedostępna w wersji desktop");
+				else
+					ImageSelector.show(ModelLocator.getInstance().applicationObject, this.dataObject.image, 'name');
+			}
+			
+			private function resetHeight():void{
+				if(img.measuredWidth)
+					img.height = img.measuredHeight*img.width/img.measuredWidth;
+				else
+					img.height =img.loaderInfo.height*img.width/img.loaderInfo.width;
+					
+			}
+			
+			
+			private function image_sourceChanged(evt:Event):void {
+				resetHeight();
+			}
+			// jg - przenioslem dotychczasowy kod do funkcji ale bylo i w dalszym ciagu jest cos nie tak
+			// z wysokoscia obrazkow w trybie edycji 
+			private function getImgHeight(width:Number):Number
+			{
+				if(img.measuredWidth)
+					return img.measuredHeight * width / img.measuredWidth;
+				else
+					return 0;
+			}
+		]]>
+	</mx:Script>
+	<mx:Image id="img"  complete="{resetHeight()}" scaleContent="true" width="100%" loadForCompatibility="true" maintainAspectRatio="true" 
+		source="{this.getImageUrl(this.dataObject.image.name)}"
+		visible="{Boolean(this.dataObject.image.name.length() > 0)}" />
+	<mx:HBox width="100%" autoLayout="true">
+		<mx:LinkButton label="{LanguageManager.getInstance().labels.images.change}" click="handleLinkButtonClick(event)" focusOut="event.preventDefault(); event.stopImmediatePropagation();"/>
+	</mx:HBox>
+</mx:VBox>

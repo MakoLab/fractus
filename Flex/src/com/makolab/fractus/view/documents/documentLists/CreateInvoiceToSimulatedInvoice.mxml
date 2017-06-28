@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CatalogueOperation xmlns="com.makolab.components.catalogue.*" xmlns:mx="http://www.adobe.com/2006/mxml"
+		image="{IconManager.getIcon('toDocument_small')}"
+		label="{LanguageManager.getInstance().labels.documents.createInvoiceToSimulatedInvoice}"
+		operationInvoke="handleInvoke(event)"
+	>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.CreateBusinessObjectCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import com.makolab.components.catalogue.CatalogueEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import assets.IconManager;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			
+			[Bindable]
+			public var documentTypeDescriptor:DocumentTypeDescriptor;
+			
+			protected function handleInvoke(event:CatalogueEvent):void
+			{
+				if(ModelLocator.getInstance().permissionManager.isEnabled(permissionKey)) {
+					event.deselectItem = true;
+					
+					var cmd:ShowDocumentEditorCommand = new ShowDocumentEditorCommand(documentTypeDescriptor.categoryNumber);
+					cmd.template = String(documentTypeDescriptor.xmlOptions.@simulatedInvoice);
+					cmd.source = <source type="simulatedInvoice" commercialDocumentId={itemData.*.id}/>;
+					cmd.execute();
+				}
+			}
+			
+			/**
+			 * Check if document can be modified. If not, disable the operation and set a tooltip with explanation.
+			 */
+			public override function set itemData(val:Object):void
+			{
+				var per:Boolean = true;
+				var permissions:Array = permissionKey.split(',');
+				
+				for each(var permision:String in permissions) {
+					
+					// dodatek jeszcze nie użyty na ory;
+					if(permision.indexOf('|')>-1) {
+						var orPermissions:Array = permision.split('|');
+						var orPer:Boolean = false;
+						for each(var orPermision:String in orPermissions) {
+							orPer = orPer || ModelLocator.getInstance().permissionManager.isEnabled(orPermision);
+						}
+						per = per && orPer;
+					} else {
+						//trace("permision:",permision,ModelLocator.getInstance().permissionManager.isEnabled(permision));
+						per = per && ModelLocator.getInstance().permissionManager.isEnabled(permision);
+					}
+					//per = per && ModelLocator.getInstance().permissionManager.isEnabled(permision);
+				}
+				
+				if(per||permissionKey=='') {
+					super.itemData = val;
+					this.toolTip = null;
+					if (val is XML)
+					{
+						if(documentTypeDescriptor.xmlOptions.@simulatedInvoice.length() > 0 &&
+							String(documentTypeDescriptor.xmlOptions.@simulatedInvoice) != "" &&
+							parseInt(String(val.*.status)) == 40)
+						{
+							this.enabled = true;
+							this.visible = true;
+							this.includeInLayout = true;
+						}
+						else
+						{
+							this.enabled = false;
+							this.visible = true;
+							this.includeInLayout = true;
+						}
+					}
+				}
+				else
+				{
+					this.visible = false;
+					this.includeInLayout = false;
+				}
+			}
+			
+		]]>
+	</mx:Script>
+</CatalogueOperation>

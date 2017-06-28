@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" horizontalScrollPolicy="off" verticalScrollPolicy="off"
+	width="100%" height="100%" xmlns:pivot="com.flexmonster.pivot.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.core.Application;
+			import com.flexmonster.pivot.data.consts.AggregationName;
+			import com.flexmonster.pivot.data.consts.SortType;
+			import com.flexmonster.pivot.events.CellClickEvent;
+			import com.flexmonster.pivot.model.config.vo.FormatValueObject;
+			import com.flexmonster.pivot.model.config.vo.ReportValueObject;
+			import com.flexmonster.pivot.type.DestinationType;
+			import com.flexmonster.pivot.type.ExportOptions;
+			import com.flexmonster.pivot.type.ExportType;
+			import com.flexmonster.pivot.view.ViewType;
+			import com.flexmonster.pivot.view.charts.ChartType;
+			import com.flexmonster.pivot.view.grid.renderer.PivotGridCellRenderer;
+			import com.flexmonster.utils.StringUtil;
+			
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			//import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.utils.ObjectUtil;
+			import mx.utils.StringUtil;
+			
+			private function get swfFilePath():String {
+				// Flex 4
+				return (Application.application.parameters['swfFilePath'] == null) ? 'flexmonster/' : Application.application.parameters['swfFilePath']; 
+				// Flex 3
+			//	return (Application.application.parameters['swfFilePath'] == null) ? 'flexmonster/' : Application.application.parameters['swfFilePath'];
+			}
+			
+ 			private function addStructure():void {
+				apiPivot.addDimension("[Geography]", "Geography");
+				apiPivot.addDimension("[Product]", "Product");
+				apiPivot.addHierarchy("[Geography]", "[Geography].[Country]", "Country");
+				apiPivot.addHierarchy("[Product]", "[Product].[Color]", "Color");
+				apiPivot.addHierarchy("[Product]", "[Product].[Category]", "Category");
+				apiPivot.addMeasure("[Measures].[Price]", "Price");
+				apiPivot.addMeasure("[Measures].[Discount]", "Discount", AggregationName.COUNT);	
+			}
+			
+			private function addData():void {
+				this.clearData();
+				this.addStructure();
+				
+				var dataRecord:Object = {"[Geography].[Country]": "Australia", "[Product].[Color]": "red", "[Product].[Category]": "Car", "[Measures].[Price]": 123, "[Measures].[Discount]": 10};
+				apiPivot.addDataRecord(dataRecord);
+				var dataRecord1:Object = {"[Geography].[Country]": "Australia", "[Product].[Color]": "red", "[Product].[Category]": "Book", "[Measures].[Price]": 34.32, "[Measures].[Discount]": 28};
+				apiPivot.addDataRecord(dataRecord1);
+				var dataRecord2:Object = {"[Geography].[Country]": "Australia", "[Product].[Color]": "blue", "[Product].[Category]": "Book", "[Measures].[Price]": 19.20, "[Measures].[Discount]": 16};
+				apiPivot.addDataRecord(dataRecord2);
+				var dataRecord3:Object = {"[Geography].[Country]": "Canada", "[Product].[Color]": "green", "[Product].[Category]": "Bike", "[Measures].[Price]": 19.45, "[Measures].[Discount]": 46};
+				apiPivot.addDataRecord(dataRecord3);
+				var dataRecord4:Object = {"[Geography].[Country]": "Canada", "[Product].[Color]": "red", "[Product].[Category]": "Bike", "[Measures].[Price]": 78.45, "[Measures].[Discount]": 12};
+				apiPivot.addDataRecord(dataRecord4);
+				var dataRecord5:Object = {"[Geography].[Country]": "Canada", "[Product].[Color]": "red", "[Product].[Category]": "Book", "[Measures].[Price]": 87.45, "[Measures].[Discount]": 9};
+				apiPivot.addDataRecord(dataRecord5);
+				var dataRecord6:Object = {"[Geography].[Country]": "France", "[Product].[Color]": "white", "[Product].[Category]": "Bike", "[Measures].[Price]": 8.45, "[Measures].[Discount]": 34};
+				apiPivot.addDataRecord(dataRecord6);
+				var dataRecord7:Object = {"[Geography].[Country]": "France", "[Product].[Color]": "white", "[Product].[Category]": "Bike", "[Measures].[Price]": 85, "[Measures].[Discount]": 2};
+				apiPivot.addDataRecord(dataRecord7);
+				var dataRecord8:Object = {"[Geography].[Country]": "Canada", "[Product].[Color]": "white", "[Product].[Category]": "Bike", "[Measures].[Price]": 9.45, "[Measures].[Discount]": 6};
+				apiPivot.addDataRecord(dataRecord8);
+				var dataRecord9:Object = {"[Geography].[Country]": "Canada", "[Product].[Color]": "blue", "[Product].[Category]": "Bike", "[Measures].[Price]": 7.43, "[Measures].[Discount]": 21};
+				apiPivot.addDataRecord(dataRecord9);
+				
+				var rows:Array = [{"uniqueName": "[Product].[Color]", "sort": "asc", "filter": {"type": "top", "quantity": 3, "measure": "[Measures].[Price]"}}, {"uniqueName": "[Product].[Category]", "sort": "asc"}];
+				var columns:Array = [{"uniqueName": "[Geography].[Country]", "sort": "desc", "filter": [{"uniqueName": "[Geography].[Country].[Canada]"}, {"uniqueName": "[Geography].[Country].[Australia]"}]}];
+				var pages:Array = [{"uniqueName": "[Product].[Category]"}];
+				var measures:Array = [{"uniqueName": "[Measures].[Price]", "aggregation" : "Sum"}, {"uniqueName": "[Measures].[Discount]", "aggregation" : "Count"}];
+				var report:ReportValueObject = new ReportValueObject(rows, columns, pages, measures);			
+				apiPivot.currencySymbol = "$";
+				apiPivot.maxDecimalPlaces = 2;
+				apiPivot.report = report;
+				apiPivot.showFieldsList = true;
+				apiPivot.showGrandTotals = true;
+				apiPivot.showTotals = true;
+				apiPivot.load();
+			}
+			
+			private function addStructure1():void {
+				apiPivot.addDimension("[谷歌搜索]", "谷歌搜索");
+				apiPivot.addDimension("[轻松购物]", "轻松购物");
+				apiPivot.addHierarchy("[谷歌搜索]", "[谷歌搜索].[安踏鞋]", "安踏鞋");
+				apiPivot.addHierarchy("[轻松购物]", "[轻松购物].[短裤]", "短裤");
+				apiPivot.addHierarchy("[轻松购物]", "[轻松购物].[上网本]", "上网本");
+				apiPivot.addMeasure("[Measures].[音箱]", "音箱");
+				apiPivot.addMeasure("[Measures].[内裤]", "内裤", AggregationName.COUNT);				
+			}
+			
+			private function addData1():void {
+				this.clearData();
+				this.addStructure1();
+				var array:Array = [
+						["松购", "踏鞋", "谷歌", 89, 34],
+						["松购", "音", "浴缸", 77, 83],
+						["搜索", "踏鞋", "谷歌", 78, 67],
+						["松购", "踏鞋", "浴缸", 3, 90],
+						["搜索", "音", "谷歌", 33, 54],
+						["网本", "内", "帮助", 122, 6]
+					];
+				apiPivot.addDataArray(array);
+				
+				var rows:Array = [{"uniqueName": "[谷歌搜索].[安踏鞋]", "sort": "asc"}, {"uniqueName": "[轻松购物].[短裤]", "sort": "asc"}];
+				var columns:Array = [{"uniqueName": "[轻松购物].[上网本]", "sort": "desc"}];
+				var pages:Array = [];
+				var measures:Array = [{"uniqueName": "[Measures].[内裤]", "aggregation" : "Sum"}, {"uniqueName": "[Measures].[音箱]", "aggregation" : "Count"}];
+				var report:ReportValueObject = new ReportValueObject(rows, columns, pages, measures);
+				report.viewType = ViewType.CHARTS;
+				report.chartType = ChartType.LINE;
+				apiPivot.report = report;
+				apiPivot.load();
+			} 
+			
+			private function getLabels():void {
+				var labels:Array = [];
+				var strings:Array = [];
+				for (var i:int = 0; i < apiPivot.gridRowCount; i++) {
+					labels[i] = [];
+					for (var j:int = 0; j < apiPivot.gridColumnCount; j++) {
+						var cell:PivotGridCellRenderer = apiPivot.getCell(i,j);
+						labels[i][j] = cell.label;
+					}
+					strings.push(labels[i].join(", "));
+				}
+				Alert.show(strings.join("\n"));
+			}
+			
+			private function clearData():void {
+				apiPivot.clear();
+			} 
+
+ 			private function onReady():void {
+				this.btnClearData.enabled = true;
+				this.btnAddData.enabled = true;
+				this.btnAddData1.enabled = true;
+				this.addData();
+			} 
+			
+			private function addPopUp():void {
+				var pivot:FlexPivotComponent = new FlexPivotComponent();
+				pivot.percentWidth = 100;
+				pivot.percentHeight = 100;
+				pivot.swfFilePath = this.swfFilePath;
+				pivot.configUrl = this.swfFilePath + "simple.xml";
+				
+			 	var window:TitleWindow = new TitleWindow();
+				window.title = "Pivot Table"; 
+				window.width = 720;
+				window.height = 480;
+				window.showCloseButton = true;
+				window.addEventListener(CloseEvent.CLOSE, function():void {PopUpManager.removePopUp(window)});
+				PopUpManager.addPopUp(window, this);
+				PopUpManager.centerPopUp(window);
+				
+				window.validateNow();
+				window.addChild(pivot);
+			}
+
+			private function onGridClick(event:Event):void {
+				var cell:PivotGridCellRenderer = (event as CellClickEvent).cell;
+				var rows:Array = [];
+				for (var i:int = 0; i < cell.rows.length; i++) {
+					var row:Object = cell.rows[i];
+					rows.push(row.hierarchyCaption + "=" + row.caption);
+				}
+				var rowStr:String = rows.join(", ");
+				
+				var columns:Array = [];
+				for (i = 0; i < cell.columns.length; i++) {
+					var column:Object = cell.columns[i];
+					columns.push(column.hierarchyCaption + "=" + column.caption);
+				}
+				var columnStr:String = columns.join(", ");
+				
+				Alert.show("Rows: " + rowStr + "\nColumns: " + columnStr + "\nValue:" + cell.label);
+			}
+			
+			private function exportRawCSV():void {
+				pivot4.export(ExportType.CSV, null, onExportRawCSV);
+			}
+			
+			private function onExportRawCSV(data:String):void {
+				Alert.show(data);
+			}
+			
+			private function setFilter():void {
+				var filter:Array = [
+					{uniqueName: "[Color].[Color].[blue]"}, {uniqueName: "[Color].[Color].[red]"}, {uniqueName: "[Color].[Color].[green]"}
+				];
+				pivot0.setFilter("[Color].[Color]", filter);
+			}
+			
+			private function getFilter():void {
+				var filter:Array = pivot0.getFilter("[Color].[Color]");
+				Alert.show(ObjectUtil.toString(filter));	
+			}
+			
+			private function setSort():void {
+				pivot0.setSort("[Color].[Color]", SortType.DESC);	
+			}
+			
+			private function getSort():void {
+				var sortType:String = pivot0.getSort("[Color].[Color]");
+				Alert.show(sortType);
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:Button label="Add Pivot as Popup" click="addPopUp()" horizontalCenter="0" top="4"/>
+	<mx:Accordion width="100%" height="100%" top="30">
+		<mx:Canvas label="Simple Grid" width="100%" height="100%">
+			<pivot:FlexPivotComponent width="100%" height="100%" id="pivot0" top="30"
+									  swfFilePath="{this.swfFilePath}" configUrl="{this.swfFilePath}simple.xml"/>					
+		</mx:Canvas>
+		<mx:Canvas label="Pivot Chart" width="100%" height="100%">
+			<pivot:FlexPivotComponent width="100%" height="100%"
+									  id="chartPivot"
+									  configUrl="{this.swfFilePath}config.xml"
+									  swfFilePath="{this.swfFilePath}"/>
+		</mx:Canvas>
+		<mx:Canvas label="MS OLAP sample" width="100%" height="100%">
+			<mx:Button label="Fields List" right="5" top="5" selected="true" click="pivot1.openFieldsList()"/>
+			<pivot:FlexPivotComponent id="pivot1" width="100%" height="100%" top="30"
+									  showFieldsList="true" 
+									  proxyUrl="http://olap.flexmonster.com/olap/msmdpump.dll"
+									  dataSourceInfo="Provider=MSOLAP; Data Source=extranet;"
+									  catalog="Adventure Works DW Standard Edition"
+									  cube="Adventure Works"
+									  rows="[Product].[Product Categories],[Measures]"
+									  columns="[Product].[Style], [Product].[Color]"
+									  measures="[Measures].[Reseller Order Quantity], [Measures].[Discount Amount]"
+									  swfFilePath="{this.swfFilePath}"/>
+		</mx:Canvas>
+		<mx:Canvas label="Mondrian Sample" width="100%" height="100%">
+			<mx:Button label="Fields List" right="5" top="5" selected="true" click="pivot2.openFieldsList()"/>
+			<pivot:FlexPivotComponent id="pivot2" width="100%" height="100%" top="30"
+									  showFieldsList="true"
+									  proxyUrl="http://olap.flexmonster.com:8080/mondrian/xmla"
+									  dataSourceInfo="Provider=Mondrian;DataSource=MondrianFoodMart;"
+									  catalog="FoodMart"
+									  cube="Sales"
+									  rows="{[{uniqueName: '[Education Level]', sort: 'desc'}, {uniqueName: '[Promotion Media]'}]}"
+									  columns="{[{uniqueName: '[Gender]', filter: ['[Gender].[All Gender].[F]']}]}"
+									  measures="{[{uniqueName: '[Measures].[Sales Count]'}, {uniqueName: '[Measures].[Profit]'}]}"
+									  swfFilePath="{this.swfFilePath}"/>
+		</mx:Canvas>
+		<mx:Canvas label="Switch View" width="100%" height="100%">
+			<mx:Button x="10" y="10" label="Grid" icon="@Embed(source='images/Table.png')" width="100" height="80" color="#0000FF" click="pivot3.showGrid()"/>
+			<mx:Button x="115" y="10" label="Bar" icon="@Embed(source='images/Bar Chart.png')" width="100" height="80" color="#0000FF" click="pivot3.showCharts(ChartType.BAR)"/>
+			<mx:Button x="220" y="10" label="Line" icon="@Embed(source='images/Line Chart.png')" width="100" height="80" color="#0000FF" click="pivot3.showCharts(ChartType.LINE)"/>
+			<mx:Button x="325" y="10" label="Pie" icon="@Embed(source='images/Pie Chart.png')" width="100" height="80" color="#0000FF" click="pivot3.showCharts(ChartType.PIE)"/>
+			<mx:Button label="Fields List" right="5" top="5" selected="true" click="pivot3.openFieldsList()"/>
+			<pivot:FlexPivotComponent id="pivot3" width="100%" height="100%" top="100" x="10" 
+				configUrl="{this.swfFilePath}simple.xml"
+				swfFilePath="{this.swfFilePath}"/>
+		</mx:Canvas>
+		<mx:Canvas label="Print and Export" width="100%" height="100%">
+			<mx:HBox>
+				<mx:Button label="HTML" icon="@Embed(source='images/file_htm.png')" width="100" height="80" color="#0000FF" click="var exportOptions:ExportOptions = new ExportOptions('file'); exportOptions.destinationType = DestinationType.SERVER; exportOptions.url = 'http://ni.kiev.ua/flex_demos/export.php'; exportOptions.htmlTemplateURL = 'styles/misc/export.html'; pivot4.export(ExportType.HTML, exportOptions);"/>
+				<mx:Button label="Raw CSV" icon="@Embed(source='images/file_csv.png')" width="100" height="80" color="#0000FF" click="exportRawCSV()"/>
+				<mx:Button label="CSV to file" icon="@Embed(source='images/file_csv.png')" width="100" height="80" color="#0000FF" click="pivot4.export(ExportType.CSV);"/>
+				<mx:Button label="Image" icon="@Embed(source='images/file_png.png')" width="100" height="80" color="#0000FF" click="pivot4.export(ExportType.IMAGE)"/>
+				<mx:Button label="PDF" icon="@Embed(source='images/file_pdf.png')" width="100" height="80" color="#0000FF" click="pivot4.export(ExportType.PDF)"/>
+				<mx:Button label="Excel" icon="@Embed(source='images/file_xls.png')" width="100" height="80" color="#0000FF" click="pivot4.export(ExportType.EXCEL)"/>
+				<mx:Button label="Print" icon="@Embed(source='images/printer.png')" width="100" height="80" color="#0000FF" click="pivot4.print()"/>
+				<mx:Button label="Save Report" icon="@Embed(source='images/file_save.png')" width="130" height="80" color="#0000FF" click="pivot4.save('report.xml', DestinationType.SERVER, function(response:*):void {Alert.show((response as String),'Report was saved!')}, 'http://localhost/flex_demos/save.php')"/>
+				<mx:Button label="Load Report" icon="@Embed(source='images/file_save.png')" width="130" height="80" color="#0000FF" click="pivot4.load(true)"/>
+			</mx:HBox>
+			<pivot:FlexPivotComponent id="pivot4" width="100%" height="100%" top="100" x="10" 
+									  configUrl="{this.swfFilePath}simple.xml" 
+									  swfFilePath="{this.swfFilePath}"/>
+		</mx:Canvas>
+		<mx:Canvas label="Loading data via API" width="100%" height="100%">
+			<mx:Button id="btnClearData" label="Clear Data" enabled="false" x="10" y="5" click="clearData()"/>
+			<mx:Button id="btnAddData" label="Add Data" enabled="false" x="110" y="5" click="addData()"/>
+			<mx:Button id="btnAddData1" label="Add Data" enabled="false" x="210" y="5" click="addData1()"/>
+			<pivot:FlexPivotComponent 
+				id="apiPivot" top="30" bottom="5" left="0" right="0"
+				swfFilePath="{this.swfFilePath}"
+				pivotCreationComplete="onReady()"
+				gridMouseClick="onGridClick(event)"/>
+		</mx:Canvas>
+		<mx:Canvas label="中文 / Chinese language" width="100%" height="100%">
+			<pivot:FlexPivotComponent width="100%" height="100%" 
+									  configUrl="{this.swfFilePath}chinese.xml" 
+									  swfFilePath="{this.swfFilePath}"/>
+		</mx:Canvas>
+	</mx:Accordion>
+	
+</mx:Canvas>

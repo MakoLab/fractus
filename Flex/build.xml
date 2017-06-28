@@ -1,0 +1,105 @@
+<project name="Main" default="deploy">
+	<property environment="env"/>
+ 	<fail message="Define environment variable FLEX_HOME pointing to Flex SDK location.">
+		<condition>
+			<not>
+				<isset property="env.FLEX_HOME"/>
+			</not>
+		</condition>
+	</fail>	
+
+    <!-- Project specific overrides -->
+	<property name="buildScripts.dir" location="buildScripts"/>
+    <property name="Antennae.dir" location="${buildScripts.dir}/Antennae"/>
+	<property name="libs.dir" location="libs"/>
+  <!--<property name="user.dir" value="${basedir}"/>-->
+	
+	<!-- Build specific overrides -->
+	<condition property="project.deploy.dir" value="${env.FRACTUS_FLEX_DEPLOY_DIR}" >
+		<isset property="env.FRACTUS_FLEX_DEPLOY_DIR" />
+	</condition>
+	
+ 	<tstamp>
+		<format property="date.now" pattern="ddMMyy.HHmmss" />
+		<format property="project.build.time" pattern="yyyyMMddHHmmss" /> 
+	</tstamp>	
+	<property name="project.name" value="${ant.project.name}" />
+	<property name="project.revision" value="0" />
+	<property name="project.version" value="Latest Build" />
+	<property name="fractus.modules.wms" value="true"/>
+	<condition property="project.swf.prefix" value="${project.name}.${project.version}" else="${project.name}.${date.now}">
+      <not>
+        <equals arg1="${project.version}" arg2="Latest Build" />
+      </not>
+	</condition>
+	<property name="project.swf" value="${project.swf.prefix}.swf" />
+	
+	<property name="flex.mxmlc.options" value="-license=flexbuilder3,130740060091035147146725 -define=BUILD::REVISION,${project.revision} -define=BUILD::TIME,${project.build.time} -define=BUILD::VERSION,&quot;'${project.version}'&quot; -define=MODULES::wms,${fractus.modules.wms}" />
+	
+	
+	<!-- TODO check if FLEX_HOME exists -->
+    <import file="${buildScripts.dir}/build-imports.xml" />
+
+    <!-- Build path -->
+    <path id="flex.lib.path">
+        <pathelement location="${libs.dir}"/>
+    </path>
+	
+	<!-- DEBUG -->
+    <!-- <pathconvert targetos="windows" property="xx.path" refid="flex.lib.path" /> -->	
+	
+    <!-- Project specific targets -->
+    <target name="build" depends="init,flex-application" description="Build the application" />	
+	
+	<target name="deploy" depends="dist,isDeployEnabled" description="Deploy the project" if="deployFractusFlex" >
+ 	  <copy file="${build.mxmlc.dir}${project.swf}" todir="${project.deploy.dir}" />
+	  <replace file="html-template\index.template.html" token="${swf}" value="${project.swf.prefix}" />
+	  
+	  <exec executable="cmd" failonerror="true">
+		  <arg value="/c"/>
+		  <arg value="rake"/>
+		  <arg value="-f"/>
+		  <arg value="${basedir}\..\dotNET\buildScripts\generate_version.rb"/>
+		  <arg value="--libdir=${basedir}\..\dotNET\buildScripts\"/>
+      <arg value="--trace"/>
+		  <arg value="build_latest"/>
+		  <arg value="root_path='..'"/>
+		  <arg value="destination=${project.deploy.dir}"/>
+		  <arg value="is_debug=true"/>
+		  <arg value="subfolder=''"/>
+	  </exec>	
+	  <replace file="${project.deploy.dir}\config.js" token="${KERNEL_SERVICE_URL}" value="http://svn_serv/LatestBuilds/KernelServices" />
+	  <copy file="${project.deploy.dir}\index.html" tofile="${project.deploy.dir}\IndexNoDebug.html" overwrite="true" />
+	  <replace file="${project.deploy.dir}\IndexNoDebug.html" token="debug=1" value="debug=0" />
+		<delete dir="${project.deploy.dir}">
+		    <include name="Main*.swf"/>
+		    <exclude name="${project.swf}"/>
+		</delete>
+    
+	</target>
+	
+	<target name="isDeployEnabled" description="Checks if Fractus Flex deploy directory is defined." >
+    <echo message="My basedir is ${basedir}" />
+    <echo message="My current directory is ${user.dir}." />
+    <condition property="deployFractusFlex">
+		  <isset property="project.deploy.dir" />
+	  </condition>
+	</target>
+	
+	<target name="build.doc" depends="is.documentation.generation.enabled, asdoc" />
+	
+	<target name="is.documentation.generation.enabled" description="Checks if Fractus Flex deploy directory is defined." >
+	 	<fail message="Define environment variable FRACTUS_DOCUMENTATION_DIR specifying documentation location.">
+			<condition>
+				<not>
+					<isset property="env.FRACTUS_DOCUMENTATION_DIR"/>
+				</not>
+			</condition>
+		</fail>	
+	</target>	
+	
+	<!-- DEBUG -->
+<!--    	<target name="build" description="Build the application" >
+		<echo message="env.FLEX_HOME = ${env.FLEX_HOME}" />
+	</target> -->
+</project>

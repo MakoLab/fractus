@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DockPanel 	xmlns="com.makolab.components.layoutComponents.*" 
+			xmlns:mx="http://www.adobe.com/2006/mxml" 
+			width="100%" maxHeight="300" 
+			xmlns:list="com.makolab.components.list.*" 
+			creationComplete="callCommand();grid.contextMenu.customItems=[];"
+			headerColors="[0xe4ff00, 0x819400]" titleStyleName="bold"
+			title="{LanguageManager.getInstance().labels.dashboard.WZTitle}">
+			
+			<mx:VBox width="100%" height="100%" id="box">
+			<list:CommonGrid id="grid" rowCount="{grid.dataProvider.length>10?10:grid.dataProvider.length}" width="100%" height="100%" doubleClick="gridDoubleClickHandler(event)" doubleClickEnabled="true">		
+				<list:columns>
+					<mx:DataGridColumn dataField="@documentTypeId" headerText="{LanguageManager.getLabel('common.type')}" itemRenderer="com.makolab.fractus.view.generic.DocumentTypeRenderer" width="80"/>
+					<mx:DataGridColumn dataField="@status" headerText="Status" itemRenderer="com.makolab.fractus.view.generic.DocumentStatusRenderer" width="20"/>
+					<mx:DataGridColumn dataField="@fullNumber" headerText="{LanguageManager.getLabel('documents.documentNumber')}" width="160"/>
+					<mx:DataGridColumn dataField="@issueDate" headerText="{LanguageManager.getLabel('common.date')}" itemRenderer="com.makolab.components.inputComponents.DateRenderer"  width="100"/>
+					<mx:DataGridColumn dataField="@fullName" headerText="{LanguageManager.getLabel('common.type')}" />
+					<mx:DataGridColumn dataField="@grossValue" headerText="Brutto" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" width="100"/>
+				</list:columns>
+			</list:CommonGrid>
+			<mx:HBox>
+			<mx:LinkButton label="{LanguageManager.getInstance().labels.dashboard.refresh}" click="callCommand();"/>
+			<mx:LinkButton label="{LanguageManager.getInstance().labels.dashboard.send}" click="callSendCommand();"/>
+			</mx:HBox>
+			</mx:VBox>
+			
+			<mx:Script>
+				<![CDATA[
+					import com.makolab.components.util.Tools;
+					import com.makolab.fractus.commands.AbstractCommand;
+					import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+					import com.makolab.fractus.model.LanguageManager;
+					import com.makolab.fractus.model.ModelLocator;
+					import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+					import com.makolab.fractus.view.documents.DocumentRenderer;
+					import com.makolab.fractus.view.documents.documentEditors.InventoryDocumentPreview;
+					import com.makolab.fractus.view.documents.reports.salesReports.SalesReport;
+					
+					import mx.controls.Alert;
+					import mx.controls.dataGridClasses.DataGridColumn;
+					import mx.rpc.events.ResultEvent;
+					
+					private var cmd:ExecuteCustomProcedureCommand;
+					private var mod:ModelLocator=ModelLocator.getInstance();
+					
+					private var searchParams:XML = <searchParams> 
+														<dateFrom/>
+  														<dateTo/>
+  														<dateFrom1/>
+  														<dateTo1/>
+  														<report>nierozliczone</report>
+  														<filters/>
+												   </searchParams>;
+					private function callSendCommand():void
+					{
+						cmd = new ExecuteCustomProcedureCommand('custom.p_createUnrelatedOutcomes',<root>1</root>);
+						cmd.addEventListener(ResultEvent.RESULT,sendRaportResult);
+						cmd.execute();
+					}
+					private function callCommand():void
+					{
+						var today:Date = new Date();
+						cmd = new ExecuteCustomProcedureCommand('reports.p_getDashboard',<searchParams >
+  <pageSize>200</pageSize>
+  <page>1</page>
+  <dateFrom>2010-02-03</dateFrom>
+  <dateTo>2014-02-03T23:59:59.997</dateTo>
+  <dateFrom1>2014-01-03</dateFrom1>
+  <dateTo1>2014-02-03T23:59:59.997</dateTo1>
+  <report>nierozliczone</report>
+  <filters>
+   <column field="branchId">963BFF4B-FF4D-4EAA-8634-6566916CB388</column>
+   </filters>
+</searchParams>);
+						cmd.addEventListener(ResultEvent.RESULT,generateReportResult);
+						cmd.execute();
+					}		
+					
+					private function sendRaportResult(event:ResultEvent):void
+					{
+						
+					}
+					private function generateReportResult(event:ResultEvent):void
+					{
+						grid.dataProvider = XML(event.result).children()[0].children();
+					}
+					
+					protected function getPayement(id_:String):String
+					{
+						return ModelLocator.getInstance().dictionaryManager.dictionaries.paymentMethod.(id.toString() == id_).label;
+					}
+					protected function getBranch(id_:String):String
+					{
+						return ModelLocator.getInstance().dictionaryManager.dictionaries.branches.(id.toString() == id_).label;
+					}
+					private function hasCell(a:Array,val:String):Boolean
+					{
+						for(var i:int=0;i<a.length;i++)
+						{
+							if(a[i]==val) return true;
+						}
+						return false;
+					}
+				
+//					private function goToRaport():void{
+//						SalesReport.showWindow();
+//					}
+					function gridDoubleClickHandler(event:MouseEvent):void
+					{
+						var documentId:String=grid.selectedItem.@id;
+						//trace(grid.selectedItem.@id);
+						DocumentRenderer.showWindow(DocumentTypeDescriptor.WAREHOUSE_DOCUMENT, documentId);
+					}
+				]]>
+			</mx:Script>
+</DockPanel>

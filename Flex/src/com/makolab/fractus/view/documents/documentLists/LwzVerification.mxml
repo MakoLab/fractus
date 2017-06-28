@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CatalogueOperation xmlns="com.makolab.components.catalogue.*" xmlns:mx="http://www.adobe.com/2006/mxml"
+	creationComplete = "init()"
+	image="{customImage}"
+	label = "{customLabel}"	
+	enabled = "true"
+	visible="false"
+	operationInvoke="handleInvoke(event)">
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import assets.IconManager;
+			import com.makolab.fractus.view.documents.documentControls.DocumentBarcodeVerificationComponent;
+			import com.makolab.components.catalogue.CatalogueEvent;
+			import com.makolab.components.util.LocalFileLoader;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+
+			[Bindable] 
+			private var isOperationEnabled:Boolean = ModelLocator.getInstance().configManager.getBoolean("document.operations.isLwzVerificationOperationEnabled");
+			
+			[Bindable]
+			public var documentCategory:uint = DocumentTypeDescriptor.CATEGORY_PURCHASE;
+
+			[Bindable]
+			public var customLabel:String = LanguageManager.getInstance().labels.documents.lwzVerification;
+			
+			[Bindable]
+			public var customImage:Object = IconManager.getIcon('save_small');
+			
+			public var fileLoader:LocalFileLoader = new LocalFileLoader;
+			
+			private var fileTypes:Object = {
+				lwz : [new FileFilter("LWZ","*.lwz"),new FileFilter("wszystkie","*.*")]
+			};
+			
+			protected function init():void
+			{
+				if(model.configManager.isAvailable("document.operations.isLwzVerificationOperationEnabled"))
+				{
+					setVisibility(ModelLocator.getInstance().configManager.getBoolean("document.operations.isLwzVerificationOperationEnabled"));
+				}
+				else
+				{
+					ModelLocator.getInstance().configManager.requestList(["document.operations.isLwzVerificationOperationEnabled"],importConfigurationLoaded);
+				}
+			}
+			
+			protected function importConfigurationLoaded():void
+			{
+				if(model.configManager.isAvailable("document.operations.isLwzVerificationOperationEnabled"))
+				{
+					setVisibility(ModelLocator.getInstance().configManager.getBoolean("document.operations.isLwzVerificationOperationEnabled"));
+				}
+				else
+				{
+					setVisibility(false);
+				}
+			}
+			
+			public function setVisibility(isOperationEnabled:Boolean):void
+			{
+				this.visible = isOperationEnabled;
+				this.enabled = isOperationEnabled;
+				this.includeInLayout = isOperationEnabled;
+			}
+			
+			protected function handleInvoke(event:CatalogueEvent):void
+			{
+				//funkcja fileLoaded musi odbiera XML i nazwę pliku.
+				fileLoader.loadFile(fileLoaded, fileTypes["lwz"]);
+			}
+			
+			public function fileLoaded(resultFile:XML, fileName:String):void
+			{
+				var fileContent:XML = resultFile;
+				var delimiter:String = ",";
+				var dataArray:Array = Tools.CSVtoArray(String(fileContent), delimiter);
+				var collec:ArrayCollection = new ArrayCollection();
+				
+				for(var i:int = 1; i < dataArray.length-1; i++)
+				{
+					var lineArray:Array = dataArray[i];
+					var line:Object = {itemId : i, itemCode : lineArray[2], itemName : lineArray[3], quantity : Number(lineArray[4]), itemBarcode : lineArray[6], unitId : '2EC9C7C6-C250-41A6-818A-0C1B2B7D0A6C'}
+					collec.addItem(line);
+				}
+				
+				DocumentBarcodeVerificationComponent.showWindow(null, collec, fileName, documentCategory);
+			}
+		]]>
+	</mx:Script>
+	<!-- konfiguracja wywietlania w document.operations.isLwzVerificationOperationEnabled -->
+</CatalogueOperation>

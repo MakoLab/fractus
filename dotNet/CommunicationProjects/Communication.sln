@@ -1,0 +1,164 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommunicationModule", "CommunicationProjects\CommunicationModule\CommunicationModule.csproj", "{BAEF8A1B-BDCA-404A-8AE8-ED53A9B5C885}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Commons", "Commons\Commons.csproj", "{3B6F1CD9-0C49-4713-9FE9-A457B048FF5C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommunicationDataLayer", "CommunicationProjects\CommunicationDataLayer\CommunicationDataLayer.csproj", "{63B762C4-6D2F-4FA8-A1EA-73F2C72485C3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommunicationCommons", "CommunicationProjects\CommunicationCommons\CommunicationCommons.csproj", "{E13E4356-80FF-4E97-A5BE-05CD7F1EDD1A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FractusCommunication", "CommunicationProjects\FractusCommunication\FractusCommunication.csproj", "{7E3F7758-FF5F-41FA-952F-0D12AA13B1CB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommunicationModule.Tests", "Tests\CommunicationModule.Tests\CommunicationModule.Tests.csproj", "{F76F299E-A729-480D-A55F-E426CB1CA0D8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kernel", "KernelProjects\Kernel\Kernel.csproj", "{EAADBF1D-FD8A-4258-A43A-83ED9F65E80B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TransmittingModule", "CommunicationProjects\TransmittingModule\TransmittingModule.csproj", "{286C4207-8CE3-4A2E-919C-AA477424C783}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HostingService", "CommunicationProjects\HostingService\HostingService.csproj", "{10494AB7-AA08-48A5-930D-9EA705FD32AE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FractusDependencyConfiguration", "CommunicationProjects\FractusDependencyConfiguration\FractusDependencyConfiguration.csproj", "{84DC42A9-AE29-4DE2-82BF-47BBF1717A0A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FractusCommunication.Tests", "Tests\FractusCommunication.Tests\FractusCommunication.Tests.csproj", "{6F257127-03FD-43B8-9AFB-B6AF79FE7469}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestCommons", "Tests\TestCommons\TestCommons.csproj", "{5A96797E-5303-4E23-A72E-4BD1973F0AB3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceMonitor", "CommunicationProjects\ServiceMonitor\ServiceMonitor.csproj", "{578C96F5-85CB-4C90-88EE-AFAB8E391E13}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Commons.Tests", "Tests\Commons.Tests\Commons.Tests.csproj", "{B47470DA-8387-4A52-A77C-2F90C2F4CC33}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommunicationRunner", "CommunicationProjects\CommunicationRunner\CommunicationRunner.csproj", "{88539F3C-D0D2-46F9-A685-14843C1898A3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "zzTest", "C:\Users\pawel.ambroziak\Documents\Visual Studio 2008\Projects\Fractus2\zzTest\zzTest.csproj", "{E0B57BC2-2D86-4D56-990F-E8F3778CA3C6}"
+EndProject
+Global
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 17
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = http://tfs:8080/tfs/fractus
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = C:\\Users\\pawel.ambroziak\\Documents\\Visual\u0020Studio\u00202008\\Projects\\Fractus2\\zzTest\\zzTest.csproj
+		SccProjectName1 = zzTest
+		SccLocalPath1 = C:\\Users\\pawel.ambroziak\\Documents\\Visual\u0020Studio\u00202008\\Projects\\Fractus2\\zzTest
+		SccProjectUniqueName2 = Commons\\Commons.csproj
+		SccProjectName2 = Commons
+		SccLocalPath2 = Commons
+		SccProjectUniqueName3 = CommunicationProjects\\CommunicationCommons\\CommunicationCommons.csproj
+		SccProjectName3 = CommunicationProjects/CommunicationCommons
+		SccLocalPath3 = CommunicationProjects\\CommunicationCommons
+		SccProjectUniqueName4 = CommunicationProjects\\CommunicationDataLayer\\CommunicationDataLayer.csproj
+		SccProjectName4 = CommunicationProjects/CommunicationDataLayer
+		SccLocalPath4 = CommunicationProjects\\CommunicationDataLayer
+		SccProjectUniqueName5 = CommunicationProjects\\CommunicationModule\\CommunicationModule.csproj
+		SccProjectName5 = CommunicationProjects/CommunicationModule
+		SccLocalPath5 = CommunicationProjects\\CommunicationModule
+		SccProjectUniqueName6 = CommunicationProjects\\CommunicationRunner\\CommunicationRunner.csproj
+		SccProjectName6 = CommunicationProjects/CommunicationRunner
+		SccLocalPath6 = CommunicationProjects\\CommunicationRunner
+		SccProjectUniqueName7 = CommunicationProjects\\FractusCommunication\\FractusCommunication.csproj
+		SccProjectName7 = CommunicationProjects/FractusCommunication
+		SccLocalPath7 = CommunicationProjects\\FractusCommunication
+		SccProjectUniqueName8 = CommunicationProjects\\FractusDependencyConfiguration\\FractusDependencyConfiguration.csproj
+		SccProjectName8 = CommunicationProjects/FractusDependencyConfiguration
+		SccLocalPath8 = CommunicationProjects\\FractusDependencyConfiguration
+		SccProjectUniqueName9 = CommunicationProjects\\HostingService\\HostingService.csproj
+		SccProjectName9 = CommunicationProjects/HostingService
+		SccLocalPath9 = CommunicationProjects\\HostingService
+		SccProjectUniqueName10 = CommunicationProjects\\ServiceMonitor\\ServiceMonitor.csproj
+		SccProjectName10 = CommunicationProjects/ServiceMonitor
+		SccLocalPath10 = CommunicationProjects\\ServiceMonitor
+		SccProjectUniqueName11 = CommunicationProjects\\TransmittingModule\\TransmittingModule.csproj
+		SccProjectName11 = CommunicationProjects/TransmittingModule
+		SccLocalPath11 = CommunicationProjects\\TransmittingModule
+		SccProjectUniqueName12 = KernelProjects\\Kernel\\Kernel.csproj
+		SccProjectName12 = KernelProjects/Kernel
+		SccLocalPath12 = KernelProjects\\Kernel
+		SccProjectUniqueName13 = Tests\\Commons.Tests\\Commons.Tests.csproj
+		SccProjectName13 = Tests/Commons.Tests
+		SccLocalPath13 = Tests\\Commons.Tests
+		SccProjectUniqueName14 = Tests\\CommunicationModule.Tests\\CommunicationModule.Tests.csproj
+		SccProjectName14 = Tests/CommunicationModule.Tests
+		SccLocalPath14 = Tests\\CommunicationModule.Tests
+		SccProjectUniqueName15 = Tests\\FractusCommunication.Tests\\FractusCommunication.Tests.csproj
+		SccProjectName15 = Tests/FractusCommunication.Tests
+		SccLocalPath15 = Tests\\FractusCommunication.Tests
+		SccProjectUniqueName16 = Tests\\TestCommons\\TestCommons.csproj
+		SccProjectName16 = Tests/TestCommons
+		SccLocalPath16 = Tests\\TestCommons
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BAEF8A1B-BDCA-404A-8AE8-ED53A9B5C885}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAEF8A1B-BDCA-404A-8AE8-ED53A9B5C885}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAEF8A1B-BDCA-404A-8AE8-ED53A9B5C885}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAEF8A1B-BDCA-404A-8AE8-ED53A9B5C885}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B6F1CD9-0C49-4713-9FE9-A457B048FF5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B6F1CD9-0C49-4713-9FE9-A457B048FF5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B6F1CD9-0C49-4713-9FE9-A457B048FF5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B6F1CD9-0C49-4713-9FE9-A457B048FF5C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63B762C4-6D2F-4FA8-A1EA-73F2C72485C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63B762C4-6D2F-4FA8-A1EA-73F2C72485C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63B762C4-6D2F-4FA8-A1EA-73F2C72485C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63B762C4-6D2F-4FA8-A1EA-73F2C72485C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E13E4356-80FF-4E97-A5BE-05CD7F1EDD1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E13E4356-80FF-4E97-A5BE-05CD7F1EDD1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E13E4356-80FF-4E97-A5BE-05CD7F1EDD1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E13E4356-80FF-4E97-A5BE-05CD7F1EDD1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E3F7758-FF5F-41FA-952F-0D12AA13B1CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E3F7758-FF5F-41FA-952F-0D12AA13B1CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E3F7758-FF5F-41FA-952F-0D12AA13B1CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E3F7758-FF5F-41FA-952F-0D12AA13B1CB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F76F299E-A729-480D-A55F-E426CB1CA0D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F76F299E-A729-480D-A55F-E426CB1CA0D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F76F299E-A729-480D-A55F-E426CB1CA0D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F76F299E-A729-480D-A55F-E426CB1CA0D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EAADBF1D-FD8A-4258-A43A-83ED9F65E80B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EAADBF1D-FD8A-4258-A43A-83ED9F65E80B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EAADBF1D-FD8A-4258-A43A-83ED9F65E80B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EAADBF1D-FD8A-4258-A43A-83ED9F65E80B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{286C4207-8CE3-4A2E-919C-AA477424C783}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{286C4207-8CE3-4A2E-919C-AA477424C783}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{286C4207-8CE3-4A2E-919C-AA477424C783}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{286C4207-8CE3-4A2E-919C-AA477424C783}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10494AB7-AA08-48A5-930D-9EA705FD32AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10494AB7-AA08-48A5-930D-9EA705FD32AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10494AB7-AA08-48A5-930D-9EA705FD32AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10494AB7-AA08-48A5-930D-9EA705FD32AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{84DC42A9-AE29-4DE2-82BF-47BBF1717A0A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84DC42A9-AE29-4DE2-82BF-47BBF1717A0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84DC42A9-AE29-4DE2-82BF-47BBF1717A0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84DC42A9-AE29-4DE2-82BF-47BBF1717A0A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F257127-03FD-43B8-9AFB-B6AF79FE7469}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F257127-03FD-43B8-9AFB-B6AF79FE7469}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F257127-03FD-43B8-9AFB-B6AF79FE7469}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F257127-03FD-43B8-9AFB-B6AF79FE7469}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A96797E-5303-4E23-A72E-4BD1973F0AB3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A96797E-5303-4E23-A72E-4BD1973F0AB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A96797E-5303-4E23-A72E-4BD1973F0AB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A96797E-5303-4E23-A72E-4BD1973F0AB3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{578C96F5-85CB-4C90-88EE-AFAB8E391E13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{578C96F5-85CB-4C90-88EE-AFAB8E391E13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{578C96F5-85CB-4C90-88EE-AFAB8E391E13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{578C96F5-85CB-4C90-88EE-AFAB8E391E13}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B47470DA-8387-4A52-A77C-2F90C2F4CC33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B47470DA-8387-4A52-A77C-2F90C2F4CC33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B47470DA-8387-4A52-A77C-2F90C2F4CC33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B47470DA-8387-4A52-A77C-2F90C2F4CC33}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88539F3C-D0D2-46F9-A685-14843C1898A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88539F3C-D0D2-46F9-A685-14843C1898A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88539F3C-D0D2-46F9-A685-14843C1898A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88539F3C-D0D2-46F9-A685-14843C1898A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0B57BC2-2D86-4D56-990F-E8F3778CA3C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0B57BC2-2D86-4D56-990F-E8F3778CA3C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0B57BC2-2D86-4D56-990F-E8F3778CA3C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0B57BC2-2D86-4D56-990F-E8F3778CA3C6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

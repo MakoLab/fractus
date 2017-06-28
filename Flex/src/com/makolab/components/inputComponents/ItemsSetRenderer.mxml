@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" visible="{this._visible}" includeInLayout="{this._visible}">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			import mx.rpc.events.ResultEvent;
+			private var _data:Object;
+			
+			[Bindable]
+			private var _visible:Boolean = false;
+			
+			[Bindable]
+			private var itemsSet:XML = null;
+			
+			[Bindable]
+			public override function set data(value:Object):void
+			{
+				this._visible = false;
+				this._data = value;
+				
+				if(this._data && this._data.length() != 0)
+				{
+					var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("item.p_getItemsSetByItemId", <root><itemId>{String(this._data.id)}</itemId></root>);
+					cmd.addEventListener(ResultEvent.RESULT, resultHandler, false, 0, true);
+					cmd.execute();
+				}
+			}
+			
+			public override function get data():Object
+			{
+				return this._data;
+			}
+			
+			private function resultHandler(event:ResultEvent):void
+			{
+				this.itemsSet = XML(event.result);
+				
+				if(this.itemsSet.*.length() != 0)
+					this._visible = true;
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox>
+		<mx:Label text="Zestaw promocyjny" />
+		<mx:Label id="itemsSetName" fontWeight="bold" text="{itemsSet.label}"/>
+	</mx:HBox>
+	<mx:DataGrid dataProvider="{this.itemsSet.lines.line}" width="100%">
+		<mx:columns>
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.item')}" dataField="name" />
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.quantity')}" dataField="quantity" width="40" />
+			<mx:DataGridColumn headerText="{LanguageManager.getLabel('common.price')}" dataField="netPrice" width="40" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" />
+		</mx:columns>
+	</mx:DataGrid>
+</mx:VBox>

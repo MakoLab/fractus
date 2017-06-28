@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		implements="com.makolab.fractus.view.documents.documentControls.IDocumentControl"
+		xmlns:lineList="com.makolab.components.lineList.*"
+		xmlns:inputComponents="com.makolab.components.inputComponents.*"
+	>
+	<mx:Script>
+			<![CDATA[
+				import flight.binding.utils.BindingUtils;
+				import flight.binding.Bind;
+				import mx.controls.listClasses.ListBase;
+				import mx.events.FlexEvent;
+				import mx.events.ListEvent;
+				import mx.collections.ArrayCollection;
+				import com.makolab.fractus.model.document.CommercialDocumentVatTableEntry;
+				import com.makolab.fractus.model.LanguageManager;
+				import com.makolab.fractus.model.document.CommercialDocumentLine;
+				import com.makolab.components.document.DocumentEvent;
+				import mx.events.DataGridEvent;
+				import com.makolab.components.util.ColorTools;
+				import mx.utils.ColorUtil;
+				import com.makolab.components.inputComponents.CurrencyRenderer;
+				import com.makolab.components.util.Tools;
+				import mx.validators.NumberValidator;
+				import mx.controls.dataGridClasses.DataGridColumn;
+				import flash.sampler.getInvocationCount;
+				import com.makolab.fractus.model.DictionaryManager;
+				import com.makolab.fractus.model.DictionaryManager;
+				import com.makolab.fractus.model.DictionaryManager;
+				import com.makolab.fractus.model.document.DocumentObject;
+				private var _documentObject:DocumentObject;
+				[Bindable]
+				public function set documentObject(value:DocumentObject):void 
+				{
+					_documentObject = value;
+					_documentObject.addEventListener(DocumentEvent.DOCUMENT_LINE_CHANGE,documentLineChangeHandler);
+					_documentObject.addEventListener(DocumentEvent.DOCUMENT_LINE_DELETE,documentLineChangeHandler);
+				
+					if (_documentObject)
+					{
+						if (_documentObject.typeDescriptor.isCorrectiveDocument)
+						{
+							vatTable.dataProvider = _documentObject.differentialVatTable;
+							BindingUtils.bindTwoWay(_documentObject,"differentialVatTable",vatTable,"dataProvider");
+						}else{
+							vatTable.dataProvider = _documentObject.vatTable;
+							BindingUtils.bindTwoWay(_documentObject,"vatTable",vatTable,"dataProvider");
+						}
+					}
+					
+					var attribute:XML = dictionaryManager.getByName("Attribute_ManualVatTable")
+					var fieldId:String;
+					if (attribute) fieldId = attribute.id.toString();
+					for (var i:int = 0; i < _documentObject.attributes.length; i++)
+					{
+						if (_documentObject.attributes[i].documentFieldId.toString() == fieldId
+							&& _documentObject.attributes[i].value.toString() == "1")
+						{
+							manuallyEditable = true;
+							operationsColumn.visible = true;
+							VatTableSummary.visible = VatTableSummary.includeInLayout = true;
+							vatTableManualEditionCheckBox.selected = true;
+							vatTable.editable = true;
+						}
+					}
+				}
+				public function get documentObject():DocumentObject { return _documentObject; }
+				
+				private function documentLineChangeHandler(event:DocumentEvent):void
+				{
+					updateSummaryProvider(vatTable.dataProvider);
+				}
+				
+				public function get dictionaryManager():DictionaryManager { return DictionaryManager.getInstance(); }
+				
+				[Bindable]
+				public var gridStyleName:Object;
+				
+				[Bindable]
+				private var tableDataProvider:ArrayCollection;
+				
+				[Bindable]
+				public function set manuallyEditable(value:Boolean):void
+				{
+					var attribute:XML = dictionaryManager.getByName("Attribute_ManualVatTable")
+					var fieldId:String;
+					if (attribute) fieldId = attribute.id.toString();
+					var xmlAttribute:XML = <attribute/>;
+					if (fieldId && documentObject)
+					{
+						if (value)
+						{
+							xmlAttribute.documentFieldId = fieldId;
+							xmlAttribute.value = int(value);
+							documentObject.attributes.addItem(xmlAttribute);
+							var table:ArrayCollection = documentObject.typeDescriptor.isCorrectiveDocument ? documentObject.differentialVatTable : documentObject.vatTable;
+							if (table == null){
+								table = new ArrayCollection();
+								if (documentObject.typeDescriptor.isCorrectiveDocument)
+									documentObject.differentialVatTable = table
+									else documentObject.vatTable = table;
+							}
+							if (table.length == 0) addLine();
+							documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_FIELD_CHANGE,false,false,"vatTable"));
+							documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_RECALCULATE));
+							if(vatTable)updateSummaryProvider(vatTable.dataProvider);
+						}else{
+							//sxmlAttribute = documentObject.attributes.source.attribute.(documentFieldId.toString() == fieldId);// ---------!!!!!!!!!1
+							for (var i:int = 0; i < documentObject.attributes.length; i++)
+							{
+								if (documentObject.attributes[i].documentFieldId.toString() == fieldId) documentObject.attributes.removeItemAt(i);
+							}
+							documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_RECALCULATE));
+						}
+					}
+				}
+				
+				public function get manuallyEditable():Boolean
+				{
+					var value:Boolean = false;
+					var attribute:XML = dictionaryManager.getByName("Attribute_ManualVatTable")
+					var fieldId:String;
+					var xmlAttribute:XML;
+					if (attribute) fieldId = attribute.id.toString();
+					if (fieldId && documentObject)
+					{
+						for (var i:int = 0; i < documentObject.attributes.length; i++)
+						{
+							if (documentObject.attributes[i].documentFieldId.toString() == fieldId) xmlAttribute = documentObject.attributes[i];
+						} 
+					}
+					if (xmlAttribute && xmlAttribute.value.toString() == "1") value = true;
+					else value = false;
+					return value;
+				}
+				
+				private function calculateDifference(item:Object):Number
+				{
+					var net:Number = Tools.round(Number(item.netValue),2);
+					var vat:Number = Tools.round(Number(item.vatValue),2);
+					var gross:Number = Tools.round(Number(item.grossValue),2);
+					var calculatedGross:Number = Tools.round(net + vat,2);
+					var difference:Number = calculatedGross - gross;
+					
+					return difference;
+				}
+				
+				private function calculateVatValueDifference(item:Object):Number
+				{
+					var vatRates:XMLList = DictionaryManager.getInstance().dictionaries.vatRates.(id.toString() == item.vatRateId.toString());
+					var vatRate:Number = vatRates.length() > 0 ? Tools.round(Number(vatRates[0].rate) / 100, 2) : NaN; 
+					var net:Number = Tools.round(Number(item.netValue),2);
+					var vat:Number = Tools.round(Number(item.vatValue),2);
+					var calculatedVat:Number = Tools.round(net * vatRate,2);
+					var difference:Number = calculatedVat - vat;
+					
+					return difference;
+				}
+				
+				private function differenceLabelFunction(item:Object,column:DataGridColumn):String
+				{
+					return String(Tools.round(calculateDifference(item),2));
+				}
+				
+				private function differenceColorFunction(item:Object):Number
+				{
+					var difference:Number = calculateDifference(item);
+					var vatValueDifference:Number = calculateVatValueDifference(item);
+					var color:Number = NaN; 
+					if (difference != 0) color = 0x88ffAAAA;
+					//if (vatValueDifference != 0) color = 0xffaa00;
+					//else color = NaN;
+					//else if (difference < 0) color = 0xffaa00;
+					
+					return color;
+				}
+				
+				private function updateSummaryProvider(vatTable:Object):Array
+				{
+					if(!manuallyEditable) return [];
+					
+					var netValueSum:Number = 0;
+					var grossValueSum:Number = 0;
+					var vatValueSum:Number = 0;
+					
+					var documentNetValueSum:Number = 0;
+					var documentGrossValueSum:Number = 0;
+					var documentVatValueSum:Number = 0;
+					
+					for each (var entry:Object in vatTable)
+					{
+						netValueSum += entry.netValue;
+						grossValueSum += entry.grossValue;
+						vatValueSum += entry.vatValue;
+					}
+					if(documentObject.typeDescriptor.isCorrectiveDocument)
+					{
+						for each (var vatTableEntry:CommercialDocumentVatTableEntry in documentObject.automaticDifferentialVatTable)
+						{
+							documentNetValueSum += vatTableEntry.netValue;
+							documentGrossValueSum += vatTableEntry.grossValue;
+							documentVatValueSum += vatTableEntry.vatValue;	
+						}
+							/* documentNetValueSum = documentObject.xml.netValue;
+							documentGrossValueSum = documentObject.xml.grossValue;
+							documentVatValueSum = documentObject.xml.vatValue; */
+					}else{
+						for each (var line:CommercialDocumentLine in documentObject.lines)
+						{
+							documentNetValueSum += line.netValue;
+							documentGrossValueSum += line.grossValue;
+							documentVatValueSum += line.vatValue;
+						}
+					}
+					
+					var netValueDifference:Number = netValueSum - documentNetValueSum;
+					var grossValueDifference:Number = grossValueSum - documentGrossValueSum;
+					var vatValueDifference:Number = vatValueSum - documentVatValueSum;
+					
+					var vatTableSummaryLine:Object = {label : "Suma z tabeli VAT", netValue : netValueSum, vatValue : vatValueSum, grossValue : grossValueSum};
+					var documentSummaryLine:Object = {label : "Suma z dokumentu", netValue : documentNetValueSum, vatValue : documentVatValueSum, grossValue : documentGrossValueSum};
+					var differenceSummaryLine:Object = {label :languageManager.labels.common.difference, netValue : netValueDifference, vatValue : vatValueDifference, grossValue : grossValueDifference}
+					
+					var array:Array = [];
+					array.push(vatTableSummaryLine);
+					array.push(documentSummaryLine);
+					array.push(differenceSummaryLine);
+					
+					summary = array;
+					
+					return array;
+				}
+				
+				public function addLine():void
+				{
+					if (!manuallyEditable) return;
+					var vtEntry:XML =	<vtEntry>
+											<vatRateId/>
+											<netValue>0.00</netValue>
+											<grossValue>0.00</grossValue>
+											<vatValue>0.00</vatValue>
+									    </vtEntry>;
+					vtEntry.vatRateId = dictionaryManager.dictionaries.vatRates[0].id.toString();
+					var table:ArrayCollection = documentObject.typeDescriptor.isCorrectiveDocument ? documentObject.differentialVatTable : documentObject.vatTable;
+					table.addItem(new CommercialDocumentVatTableEntry(vtEntry));
+					updateSummaryProvider(table);
+					documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_FIELD_CHANGE,false,false,"vatTable"));
+				}
+				
+				public function deleteLine(line:CommercialDocumentVatTableEntry):void
+				{
+					if (!manuallyEditable) return;
+					var table:ArrayCollection = documentObject.typeDescriptor.isCorrectiveDocument ? documentObject.differentialVatTable : documentObject.vatTable;
+					if (table.length == 1)return;
+					table.removeItemAt(table.getItemIndex(line));
+					updateSummaryProvider(table);
+					documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_FIELD_CHANGE,false,false,"vatTable"));
+				}
+				
+				[Bindable]
+				public var languageManager:LanguageManager = LanguageManager.getInstance();
+				
+				private function tableFocusOutHandler(event:DataGridEvent):void
+				{
+					updateSummaryProvider(vatTable.dataProvider);
+					documentObject.dispatchEvent(new DocumentEvent(DocumentEvent.DOCUMENT_FIELD_CHANGE,false,false,"vatTable"));
+				}
+				
+				/* private function tableCreationCompleteHandler(event:FlexEvent):void
+				{
+					vatTable.addEventListener(DataGridEvent.ITEM_EDIT_END,tableFocusOutHandler,false,-1);
+				} */
+				
+			]]>
+		</mx:Script>
+		<mx:Array id="summary">
+			{updateSummaryProvider(vatTable.dataProvider)}
+		</mx:Array>
+		
+	<mx:CheckBox id="vatTableManualEditionCheckBox" label="{languageManager.labels.common.editManually}" selected="{manuallyEditable}" change="{manuallyEditable = vatTableManualEditionCheckBox.selected}" visible="{documentObject.typeDescriptor.isPurchaseDocument || documentObject.typeDescriptor.isPurchaseCorrectionDocument}" includeInLayout="{vatTableManualEditionCheckBox.visible}"/>
+	
+	<lineList:LineList
+		id="vatTable"
+		selectable="false" sortableColumns="false"
+		styleName="{gridStyleName}"
+		editable="{manuallyEditable}"
+		rowColorFunction="differenceColorFunction"
+		itemFocusOut="tableFocusOutHandler(event)"
+		resizableColumns="false"
+		width="100%"
+		draggableColumns="false"
+		>
+		<lineList:columns>
+			<mx:DataGridColumn id="vatRateColumn" headerText="{languageManager.labels.common.rate}" textAlign="right" headerStyleName="headerRight" dataField="vatRateId" editorDataField="selectedId" itemEditor="com.makolab.fractus.view.generic.FractusDictionarySelector" itemRenderer="com.makolab.fractus.view.generic.FractusDictionaryRenderer"/>
+			<mx:DataGridColumn id="netValueColumn" headerText="{languageManager.labels.common.net}" dataField="netValue" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+			<mx:DataGridColumn id="vatValueColumn" headerText="{languageManager.labels.common.tax}" dataField="vatValue" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+			<mx:DataGridColumn id="grossValueColumn" headerText="{languageManager.labels.common.gross}" dataField="grossValue" editorDataField="dataObject" itemEditor="com.makolab.components.inputComponents.CurrencyEditor" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer" headerStyleName="headerRight"/>
+			<mx:DataGridColumn id="operationsColumn" headerText="" width="20" editable="false" visible="{manuallyEditable}">
+				<mx:itemRenderer>
+					<mx:Component> 
+						<lineList:LineMenu enabled="{outerDocument.manuallyEditable}">
+							<lineList:operations>
+								<lineList:LineOperation label="{outerDocument.languageManager.labels.common.deleteAll}" operationInvoke="outerDocument.deleteLine((event.target as LineOperation).line as CommercialDocumentVatTableEntry)" icon="{IconManager.getIcon('delete_small')}" textAlign="left"/>
+								<lineList:LineOperation label="{outerDocument.languageManager.labels.common.addNewF}" operationInvoke="outerDocument.addLine()" icon="{IconManager.getIcon('add_small')}" textAlign="left"/>
+							</lineList:operations>
+							<mx:Script>
+								<![CDATA[
+									import com.makolab.fractus.model.document.CommercialDocumentVatTableEntry;
+									import assets.IconManager;
+								]]>
+							</mx:Script>
+						</lineList:LineMenu>
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+			<!--<mx:DataGridColumn headerText="Różnica" textAlign="right" visible="{manuallyEditable}" headerStyleName="headerRight" editable="false" labelFunction="differenceLabelFunction"/>-->
+		</lineList:columns>
+		
+	</lineList:LineList>
+	<mx:DataGrid id="VatTableSummary" dataProvider="{summary}" selectable="false" width="{vatTable.width}" headerHeight="0" rowCount="3" visible="{manuallyEditable}" includeInLayout="{manuallyEditable}">
+		<mx:columns>
+			<mx:DataGridColumn width="{vatRateColumn.width}" dataField="label"/>
+			<mx:DataGridColumn width="{netValueColumn.width}" dataField="netValue" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer"/>
+			<mx:DataGridColumn width="{vatValueColumn.width}" dataField="vatValue" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer"/>
+			<mx:DataGridColumn width="{grossValueColumn.width}" dataField="grossValue" itemRenderer="com.makolab.components.inputComponents.CurrencyRenderer"/>
+			<mx:DataGridColumn width="20"/>
+		</mx:columns>
+	</mx:DataGrid>
+</mx:VBox>

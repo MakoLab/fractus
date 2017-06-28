@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300" xmlns:catalogue="com.makolab.fractus.view.catalogue.*" xmlns:lineList="com.makolab.components.lineList.*" creationComplete="contractorSearch.cs.setFocus()">
+
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.lineList.LineImageButton;
+			
+			import mx.collections.XMLListCollection;
+			import mx.controls.Alert;
+			
+			import assets.IconManager;
+			
+			[Bindable] private var contractorId:String;
+			
+			public function removeItem(event:MouseEvent):void
+			{
+				var removingIndex:int = grid.itemRendererToIndex(event.target as LineImageButton);;
+				contractors.removeItemAt(removingIndex);
+				dispatchEvent(new Event(Event.CHANGE));
+				contractorSearch.cs.setFocus();
+			}
+			
+			[Bindable]
+			private var contractors:XMLListCollection = new XMLListCollection();
+			
+			public function set value(ids:String):void{}
+			
+			public function get value():String
+			{
+				var ids:Array = [];
+				for each(var contractor:XML in contractors){
+					ids.push(contractor.id);
+				}
+				return ids.join(",");
+			}
+			
+			public function set xmlValue(value:XMLList):void
+			{
+				//var xmlList:XMLList = value.*;
+				if(value)contractors = new XMLListCollection(value.copy());
+			}
+			
+			public function get xmlValue():XMLList
+			{
+				return contractors.source;
+			}
+			
+			public function get valueText():String
+			{
+				var labels:Array = [];
+				for each(var contractor:XML in contractors){
+					labels.push(contractor.label);
+				}
+				return labels.join(",");
+			}
+			
+			private function contractorSetFunction(item:Object, data:Object):void
+			{
+				contractorId = item.@id;
+				
+				var ContractorExists:Boolean
+				for(var i:int = 0; i < contractors.length; i++){
+					if(contractors.getItemAt(i).id == contractorId)ContractorExists = true;
+				}
+				
+				var xml:XML = <contractor><id>{item.@id}</id><label>{item.@fullName}</label></contractor>;
+				if(!ContractorExists)contractors.addItem(xml);
+				else Alert.show("Kontrahent jest już na liście"); // todo uzyc lm
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			private function handleSearchResult(event:Event):void
+			{
+				contractorId = null;
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:HBox width="100%" horizontalGap="0">
+		<catalogue:ContractorSearchEditor 
+			id="contractorSearch" 
+			width="100%" 
+			showItemOperations="false" 
+			autoLoadName="true" 
+			setFunction="contractorSetFunction" 
+			searchResult="handleSearchResult(event)"
+			itemId="{contractorId}"
+		/>
+	</mx:HBox>
+	<mx:DataGrid id="grid" width="100%" height="100%" headerHeight="0" dataProvider="{contractors}">
+		<mx:columns>
+			<mx:DataGridColumn editable="false" sortable="false" dataField="label"/>
+			<mx:DataGridColumn width="26" sortable="false" editable="false">
+				<mx:itemRenderer>
+					<mx:Component>
+						<lineList:LineImageButton width="100%" height="100%" click="outerDocument.removeItem(event)" iconsName="status_canceled" toolTip="{LanguageManager.getLabel('common.Delete')}">
+							<mx:Script>
+								<![CDATA[
+									import com.makolab.fractus.model.LanguageManager;
+								]]>
+							</mx:Script>
+						</lineList:LineImageButton>
+
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+		</mx:columns>
+	</mx:DataGrid>
+</mx:VBox>

@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<root>
+  <item>
+    <id/>
+    <code/>
+    <itemTypeId/>
+    <name/>
+    <defaultPrice/>
+    <unitId/>
+
+    <attributes>
+      <attribute>
+        <id/>
+        <itemFieldId/>
+        <value/>
+      </attribute>
+      <!--multiple-->
+    </attributes>
+    
+    <unitRelations>
+      <unitRelation>
+        <id/>
+        <unitId/>
+        <precision/>
+      </unitRelation>
+      <!--multiple-->
+    </unitRelations>
+
+    <relations>
+      <relation>
+        <id/>
+        <relatedObject>
+          ...
+        </relatedObject>
+        <itemRelationTypeId/>
+        <relationAttributes>
+          <relationAttribute>
+            <id/>
+            <itemRelationId/>
+            <itemRAVTypeId/>
+            <value/>
+          </relationAttribute>
+          <!--multiple-->
+        </relationAttributes>
+      </relation>
+      <!--multiple-->
+    </relations>
+
+    <groupMemberships>
+      <groupMembership>
+        <id/>
+        <itemGroupId/>
+        <version/>
+      </groupMembership>
+      <!--multiple-->
+    </groupMemberships>
+  </item>
+</root>

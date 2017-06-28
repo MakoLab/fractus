@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DocumentList icon="{IconManager.getIcon('inventoryDocument_catalogue')}" 
+	themeColor="{IconManager.INVENTORY_COLOR}" 
+	xmlns="com.makolab.fractus.view.documents.documentLists.*" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:catalogue="com.makolab.components.catalogue.*" 
+	xmlns:data="data.*"
+	config="{listConfig}"
+	dblClickPermissionKey="warehouse.inventories.preview"
+	listPermissionKey="warehouse.inventories.list"
+	>
+	<!-- OPERATIONS -->
+	<itemOperations>
+		<catalogue:CatalogueOperation permissionKey="warehouse.inventories.preview" operationId="operationPreviewInventoryDocument" label="{LanguageManager.getInstance().labels.documents.preview}" image="{IconManager.getIcon('preview_small')}" operationInvoke="operationInvokeHandler(event)" defaultOperation="true"/>
+		<catalogue:CatalogueOperation permissionKey="warehouse.inventories.edit" operationId="operationEditInventoryDocument" label="{LanguageManager.getInstance().labels.documents.edit}" image="{IconManager.getIcon('edit_small')}" operationInvoke="operationInvokeHandler(event)" />
+		<DocumentStatusChangeOperation permissionKey="warehouse.inventories.cancel" status="{DocumentStatusChangeOperation.CANCELLED}"/>
+		<DocumentStatusChangeOperation permissionKey="warehouse.inventories.commit" status="{DocumentStatusChangeOperation.COMMITED}"/>
+		<catalogue:CatalogueOperation permissionKey="warehouse.inventories.printGraphical" operationId="operationPrintDocumentGraphical" label="{LanguageManager.getInstance().labels.documents.printPdf}" image="{IconManager.getIcon('print_small')}" operationInvoke="operationInvokeHandler(event)"/>
+	</itemOperations>
+	
+
+	<!-- CONFIGURATION -->
+	<!--
+	<config>
+		<mx:XML xmlns="">
+			<config title="{LanguageManager.getInstance().labels.title.documents.list.inventoryDocument}">
+				<headerColor>INVENTORY_COLOR</headerColor>
+				<headerColorLight>INVENTORY_COLOR_LIGHT</headerColorLight>
+				<objectType>InventoryDocument</objectType>
+				<columns>
+					<column field="@status" labelKey="documents.status" dataType="documentStatus" width="50"/>
+					<column field="@fullNumber" labelKey="documents.documentNumber" />
+					<column field="@type" labelKey="common.shortName" dataType="type" width="200"/>
+				</columns>
+				<getItemDataParams>
+					<type>Document</type>
+					<id/>
+				</getItemDataParams>
+				<filterField>@fullNumber</filterField>
+				<searchParams type="InventoryDocument">
+					<pageSize>200</pageSize>
+					<page>1</page>
+					<columns>
+						<column field="fullNumber" column="fullNumber" sortOrder="1" sortType="DESC"/>
+						<column field="status" column="status"/>
+						<column field="type" column="type"/>
+					</columns>
+				</searchParams>
+				<filters>
+				  	<filter label="" type="dateFilter"/>
+				  	<filter label="Numer dokumentu" type="docNumberFilter"/>
+				  	<filter label="Status dokumentu" type="docStatusFilter"/>
+				</filters>
+				<filtersTemplates label="Na podstawie szablonu">
+					<template label="Status zaksięgowany lub zapisany">
+						<filter type="docStatusFilter" value="60,20"/>
+						<filter type="dateFilter">
+							<dateFormat value="DD-MM-YYYY"/>
+							<dateFrom value="30-12-2007"/>
+							<dateTo value="30-12-2010"/>
+						</filter>
+						<filter type="docNumberFilter" value="123"/>
+					</template>
+					<template label="Status zaksięgowany">
+						<filter type="docStatusFilter" value="60"/>
+					</template>
+				</filtersTemplates>
+			</config>
+		</mx:XML>
+	</config>
+	-->
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.events.FlexEvent;
+			import com.makolab.components.catalogue.CatalogueEvent;
+			import mx.events.DataGridEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import assets.IconManager;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+			[Bindable]
+			public var listConfig:XML = model.configManager.getXML("documents.lists.inventory");
+			
+			override protected function getRowTextColor(data:Object):Number
+			{
+				return (data && String(data.@status) && data.@status > -20) ? NaN : 0x808080;
+			}
+		]]>	
+	</mx:Script>
+
+</DocumentList>

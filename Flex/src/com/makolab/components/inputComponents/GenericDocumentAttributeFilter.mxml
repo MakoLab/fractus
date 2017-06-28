@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem implements="com.makolab.components.catalogue.ICatalogueFilter" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*" xmlns:generic="com.makolab.fractus.view.generic.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			[Bindable]
+			private var _config:XML;
+			
+			public function get value():Object
+			{
+				if (attributeEntry.metadata.dataType == GenericEditor.BOOLEAN && editor.dataObject == 0) return '';
+				return editor.dataObject;
+			}
+			
+			[Bindable]
+			public function set config(value:XML):void
+			{
+				_config = value;
+				this.attributeName = _config ? _config.attributeName : null;
+				//label = _config.@label;
+			}
+			
+			public function get config():XML
+			{
+				return _config;
+			}
+			
+			public function setParameters(parameters:Object):void
+			{
+				if(value!=""){//if(value != false && value!=""){
+					if(!parameters.filters)parameters.filters = "";
+					var filterNodes:XMLList = parameters.filters.column.(@field == "remoteOrderSettled");
+					if(filterNodes.length() == 0){
+						var newCondition:XML = null;
+						switch (String(attributeEntry.metadata.dataType))
+						{
+							case GenericEditor.BOOLEAN:
+								if (value == 1)
+								{
+									newCondition = <column field='decimalValue'>1</column>;
+								}
+								break;
+							case GenericEditor.CURRENCY:
+							case GenericEditor.DECIMAL:
+							case GenericEditor.INTEGER:
+							case GenericEditor.MONEY:
+								newCondition = <column field='decimalValue'>{parseFloat(String(value))}</column>;
+								break;
+							case GenericEditor.DATE:
+							case GenericEditor.DATETIME:
+								if (value)
+								{
+									newCondition = <column field='dateValue'>{String(value)}</column>;
+								}
+								break;
+							default:
+								newCondition = <column field='textValue'>{String(value)}</column>;
+								break;
+						}
+						if (newCondition != null)
+						{
+							newCondition.@documentFieldId = attributeEntry.id;
+							parameters.filters.columns += newCondition;
+						}
+					}else{
+						filterNodes[0].* = value;
+					}
+				}
+			}
+			
+			private var _attributeName:String;
+			[Bindable]
+			protected var attributeEntry:XML;
+			
+			public function set attributeName(value:String):void
+			{
+				_attributeName = value;
+				var all:XML = <value><name/><labels><label/></labels></value>;
+				all.labels.label.@lang = LanguageManager.getInstance().currentLanguage;
+				all.labels.label.(@lang == LanguageManager.getInstance().currentLanguage).* = LanguageManager.getInstance().labels.common.allF;
+				var l:XMLList = DictionaryManager.getInstance().dictionaries.documentFields.(name == value).copy();
+				if (l.metadata.values.length() == 1) l.metadata.values.prependChild(all);	// dodanie opcji "wszystkie" dla atrybutow select
+				attributeEntry = l.length() > 0 ? l[0] : null;
+				label = attributeEntry ? attributeEntry.label : null;
+			}
+			
+			public function get attributeName():String
+			{
+				return _attributeName;
+			}
+			
+			public function set template(valueList:XMLList):void{
+				for each (var value:XML in valueList){
+				//todo: jesli filtr ma rozpoznawac, ktory elem. z listy jest dla niego, trzeba to tu dodać
+				
+				// todo
+				}
+			}
+			
+			public function clear():void{
+				// todo
+			}
+			
+			public function restore():void{
+				//todo
+				//trzeba dopisac cialo funkcji, jesli inny filtr ma miec mozliwosc przywracania stanu tego filtra sprzed wyczyszczenia go
+				//filtry mogą mieć wpływ na inne filtry poprzez wypelnienie w konfiguracji parametru 'disableFilterType', przyklad w DocNumberFilter
+			}
+			
+		]]>
+	</mx:Script>
+	<generic:GenericEditor
+			id="editor"
+			dictionaryName="{attributeEntry.metadata.dictionaryName}"
+			dataType="{editor.dictionaryName ? GenericEditor.DICTIONARY : attributeEntry.metadata.dataType}"
+			regExp="{attributeEntry.metadata.regExp}"
+			values="{attributeEntry.metadata.values.value}"
+			width="100%"
+		/>
+</mx:FormItem>

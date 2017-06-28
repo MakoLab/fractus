@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical">
+	<mx:DataGrid dataProvider="{dp.*}" editable="true">
+		<mx:columns>
+			<mx:DataGridColumn dataField="@a"/>
+			<mx:DataGridColumn
+				dataField="@selected"
+				itemRenderer="com.makolab.components.inputComponents.CheckBoxEditor"
+				rendererIsEditor="true"
+				editorDataField="dataObject"
+				editable="true"
+				textAlign="center"
+			/>
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:TextArea text="{dp.*}" width="400" height="500"/>
+	<mx:XML id="dp">
+		<r>
+			<x a="asdas" selected="1"/>
+			<x a="aerts" selected="0"/>
+			<x a="dsbas" selected="0"/>
+			<x a="4tweg" selected="1"/>
+			<x a="eorpk" selected="1"/>
+			<x a="fpgas" selected="0"/>
+			<x a="fglfg" selected="1"/>
+			<x a="emers" selected="1"/>
+			<x a="wsdfs" selected="0"/>
+			<x a="lkjsd" selected="1"/>
+			<x a="sdfas" selected="1"/>
+			<x a="axcvx" selected="0"/>
+			<x a="asdfg" selected="0"/>
+			<x a="awers" selected="0"/>
+			<x a="hfsds" selected="1"/>
+		</r>
+	</mx:XML>
+</mx:Application>

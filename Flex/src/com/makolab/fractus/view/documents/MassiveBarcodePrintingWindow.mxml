@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="1000" height="500" xmlns:list="com.makolab.components.list.*" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*">
+	
+	<list:CommonGrid
+		id="grid"
+		headerWordWrap="true"
+		labelFunctions="{this}"
+		width="100%"
+		height="100%"
+		enabled="true"
+		editable="true"
+		itemEditEnd="updateLabelsQuantity(event)"	
+	/>
+	<mx:DataGridColumn id="selectionColumn" width="70" rendererIsEditor="true" textAlign="center" headerText="drukuj">
+		<mx:headerRenderer>
+			<mx:Component>
+				<mx:CheckBox selected="{outerDocument.setHeaderCheckBoxSelection(outerDocument.result)}" change="outerDocument.headerCheckBoxChangeHandler(event)"/>
+			</mx:Component>
+		</mx:headerRenderer>
+		<mx:itemRenderer>
+			<mx:Component>
+				<mx:CheckBox selected="{Boolean(Number(data.@enabled))}" change="outerDocument.checkBoxChangeHandler(event)"/>	
+			</mx:Component>
+		</mx:itemRenderer>
+	</mx:DataGridColumn>
+		
+	<mx:DataGridColumn id="labelsQuantity" width="60" dataField="@labelsQuantity" textAlign="left">
+		<mx:headerRenderer>
+			<mx:Component>
+				<mx:Text text="Ilość etykiet" textAlign="center"/>
+			</mx:Component>
+		</mx:headerRenderer>
+		<mx:itemEditor> 
+			<mx:Component> 
+				<mx:TextInput restrict="0-9" maxChars="3" textAlign="left"/> 
+			</mx:Component> 
+		</mx:itemEditor> 
+	</mx:DataGridColumn> 
+		
+	<mx:HBox width="100%" paddingBottom="4" horizontalAlign="center">
+		<mx:Button id="printBtn" label="{languageManager.labels.common.print}" click="printButtonClickHandler()" enabled="false"/>
+	</mx:HBox>
+	
+	<mx:Script>
+	<![CDATA[
+		import com.makolab.fractus.model.LanguageManager;
+		import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+		import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+		import com.makolab.fractus.model.DictionaryManager;
+		import com.makolab.fractus.commands.CreateItemsBarcodes;
+		import com.makolab.components.util.ComponentExportManager;
+		import mx.controls.CheckBox;
+		import mx.controls.TextInput;
+		import mx.events.DataGridEvent;
+		import mx.rpc.events.ResultEvent;
+		import com.makolab.fractus.view.ComponentWindow;
+		
+		[Bindable]
+		private var languageManager:LanguageManager = LanguageManager.getInstance();	
+		
+		private var window:ComponentWindow;
+
+		[Bindable] public var result:XML = <root></root>;
+		private var selectedItemsList:Array = [];
+		private var itemsArray:Array = new Array();
+		public var itemsLoaded:int = 0;
+		
+				
+		private var _documentId:String;
+		[Bindable]
+		public function set documentId(value:String):void
+		{
+			_documentId = value;
+			var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("item.p_getCommercialDocumentsAttributeExistance", <root attributeName="Attribute_Barcode">{documentId}</root>);
+			cmd.addEventListener(ResultEvent.RESULT, prepareItemsDataFromId, false, 0, true);
+			cmd.execute();
+		}
+		public function get documentId():String
+		{
+			return _documentId;
+		}
+		
+		private var _itemsXML:XMLList;
+		[Bindable]
+		public function set itemsXML(value:XMLList):void
+		{
+			_itemsXML = value;
+			prepareItemsDataFromXml();
+				
+		}
+		public function get itemsXML():XMLList
+		{
+			return _itemsXML;
+		}		
+		
+		public function showWindow():ComponentWindow
+		{
+			var window:ComponentWindow = ComponentWindow.showWindow(this, 0, new Rectangle(-1, -1, 1000, 500));
+			this.window = window;
+
+			return window;
+		}
+		
+		private function prepareItemsDataFromXml():void
+		{
+			var documentLines:XMLList = this.itemsXML;
+			var indexArray:Array = new Array();
+			var loadItemCmd:LoadBusinessObjectCommand;
+			
+			for each(var x:XML in documentLines.*)
+			{
+				loadItemCmd = new LoadBusinessObjectCommand(LoadBusinessObjectCommand.TYPE_ITEM, x.@id);
+				loadItemCmd.addEventListener(ResultEvent.RESULT, loadItemResult);
+				
+				var item:Object = {itemId: x.@id, loadItemCmd: loadItemCmd, itemData: XML, quantity: x.@quantity, barcode: null, defaultPrint: null, print: null};
+				itemsArray.push(item);
+				loadItemCmd.execute();
+			}
+		}
+		
+		private function prepareItemsDataFromId(event:ResultEvent):void
+		{
+			var documentLines:XML = XML(event.result);
+			var dict:Array = new Array();
+			var indexArray:Array = new Array();
+			var loadItemCmd:LoadBusinessObjectCommand;
+			
+			//agregacja towarow
+			for each(var x:XML in documentLines.*)
+			{
+				if(dict[x.@itemId] == null)
+				{
+					dict[x.@itemId + ""] = Number(x.@quantity);
+					indexArray.push(String(x.@itemId));
+				}
+				else
+				{
+					dict[x.@itemId + ""] = dict[x.@itemId] + Number(x.@quantity);
+				}
+			}
+			
+			for(var i:int=0; i<indexArray.length; i++)
+			{
+				loadItemCmd = new LoadBusinessObjectCommand(LoadBusinessObjectCommand.TYPE_ITEM, indexArray[i]);
+				loadItemCmd.addEventListener(ResultEvent.RESULT, loadItemResult);
+				
+				var item:Object = {itemId: indexArray[i], loadItemCmd: loadItemCmd, itemData: XML, quantity: dict[indexArray[i]], barcode: null, defaultPrint: !Boolean(parseInt((documentLines.*.(@itemId == indexArray[i]))[0].@attributeExistance)), print: !Boolean(parseInt((documentLines.*.(@itemId == indexArray[i]))[0].@attributeExistance))};
+				itemsArray.push(item);
+				loadItemCmd.execute();
+			}
+		}
+		
+		private function loadItemResult(event:ResultEvent):void
+		{			
+			var itemXML:XML = XML(event.result);
+			
+			for each(var item:Object in itemsArray)
+			{
+				if(item.loadItemCmd == event.target){
+					item.itemData = itemXML;
+					itemsLoaded++;
+				}
+			}
+				
+			if(itemsLoaded == itemsArray.length){
+				prepareDataForGrid();
+			}
+		}
+				
+		private function prepareDataForGrid():void
+		{
+			var itemXML:XML;
+			var barCodeAttrId:String = DictionaryManager.getInstance().getIdByName("Attribute_Barcode", "itemFields");
+			var colorAttrId:String = DictionaryManager.getInstance().getIdByName("Attribute_Color", "itemFields");
+			var sizeAttrId:String = DictionaryManager.getInstance().getIdByName("Attribute_Size", "itemFields");
+			
+			for each(var item:Object in itemsArray)
+			{
+				itemXML = <item/>;
+				itemXML.@itemId = item.itemId;
+				itemXML.@itemName = item.itemData.item.name;
+				itemXML.@itemCode = item.itemData.item.code;
+				
+				var barcode:String = String(item.itemData.item.attributes.attribute.(itemFieldId == barCodeAttrId).value[0]);
+				var color:String = String(item.itemData.item.attributes.attribute.(itemFieldId == colorAttrId).value[0]);
+				var size:String = String(item.itemData.item.attributes.attribute.(itemFieldId == sizeAttrId).value[0]);
+				
+				itemXML.@color = color;
+				itemXML.@size = size;
+				
+				if((barcode == "undefined") || (barcode == "") || (barcode == null))
+				{
+					itemXML.@itemBarCodeField = "[ wygeneruj ]";
+					itemXML.@itemBarCode = "";
+					itemXML.@defaultPrint = true;
+					itemXML.@print = true;
+				}
+				else
+				{
+					itemXML.@itemBarCodeField = barcode;
+					itemXML.@itemBarCode = barcode;
+					itemXML.@defaultPrint = false;
+					itemXML.@print = false;
+				}
+				itemXML.@quantity = item.quantity;
+				result.appendChild(itemXML);
+			}
+			fillGrid();
+		}
+		
+		private function fillGrid():void
+		{
+			this.grid.dataProvider = this.result.*;
+			this.grid.config = XMLList(this.config);
+			
+			
+			selectionColumn.editable=false;
+			var columns:Array = [selectionColumn];
+			
+			for each(var column:DataGridColumn in this.grid.columns){
+				column.editable=false;
+				columns.push(column);
+			}
+			
+			labelsQuantity.headerWordWrap = true;
+			columns.push(labelsQuantity);
+			this.grid.columns = columns;
+			
+			/*---doklada lp---*/
+			var counter:int = 1;
+			if(this.result){
+				for each (var i:XML in this.result.*)
+				{
+					i.@lp=counter.toString();
+					i.@labelsQuantity = i.@quantity;
+					counter++;
+				}
+			}
+			//------------------
+			
+			this.window.title = languageManager.labels.title.barcodeLabelPrintingForPurchaseInvoice;
+			for each (var item:XML in result.*)
+			{
+				item.@enabled = (String(item.@defaultPrint) == "true") ? 1 : 0; //ustawienie poczatkowych wartosci domyslnego wydruku
+			}
+			
+			setPrintBtnEnabled();
+		}
+		
+		
+		private function getItemsToGenerate(selectedItemsList:Array):XML
+		{
+			var itemsToGenerate:XML = <root></root>;
+			for each(var item:XML in result.children())
+			{
+				if((item.@enabled == 1) && (item.@itemBarCode == ""))
+				{
+					var generateXML:XML = <item/>
+					generateXML.@id = item.@itemId;
+					itemsToGenerate.appendChild(generateXML);
+				}
+			}
+			return itemsToGenerate;
+		}
+		/*--------------------HANDLERY----------------------*/
+		
+		private function printButtonClickHandler():void
+		{
+			var itemsToGenerate:XML = getItemsToGenerate(selectedItemsList);
+			
+			if(itemsToGenerate.children().length() > 0)
+			{
+				var cmd:CreateItemsBarcodes = new CreateItemsBarcodes();
+				cmd.addEventListener(ResultEvent.RESULT, generateBarcodeResultHandler);
+				cmd.execute(itemsToGenerate);
+			}
+			else
+			{
+				prepareFinalDataForPrinting();
+			}
+
+			window.hide();
+		}
+
+		private function generateBarcodeResultHandler(event:ResultEvent):void
+		{
+			var barcodesList:XML = XML(event.result);
+			for(var i:int = 0; i < XMLList(result.children()).length(); i++)
+			{
+				if(XML(result.children()[i]).@itemBarCode == "")
+				{
+					var item:XML = result.children()[i];
+					XML(result.children()[i]).@itemBarCode = String(barcodesList.item.(valueOf().@id == item.@itemId).barcode);
+				}
+		}
+			 prepareFinalDataForPrinting();
+		}
+		
+		private function prepareFinalDataForPrinting():void
+		{
+			var itemXML:XML;
+			var itemsResultXML:XML = <root></root>;
+			
+			for(var i:int = 0; i < XMLList(result.children()).length(); i++)
+			{
+				var item:XML = result.children()[i];
+				if(item.@enabled == "1")
+				{
+					itemXML = <item />;
+					itemXML.@quantity = XML(this.grid.dataProvider[i]).@labelsQuantity;
+					itemXML.@name = item.@itemName;
+					itemXML.@id= item.@itemId;
+					itemXML.@code = item.@itemCode;
+					itemXML.@barcode = item.@itemBarCode;
+					itemXML.@color = item.@color;
+					itemXML.@size = item.@size;
+					itemsResultXML.appendChild(itemXML);
+				}
+			}
+			
+			ComponentExportManager.getInstance().exportData(itemsResultXML, "defaultDocumentItemsPdf", "content");
+		}
+		
+		public function headerCheckBoxChangeHandler(event:Event):void
+		{
+			for each(var item:XML in result.*){
+				item.@enabled = event.target.selected ? 1 : 0;
+			}
+			
+			setPrintBtnEnabled();
+		}
+		
+		public function checkBoxChangeHandler(event:Event):void
+		{
+			var index:int = grid.itemRendererToIndex(event.target as CheckBox); 
+			this.result.*[index].@enabled = event.target.selected ? 1 : 0;
+			
+			setPrintBtnEnabled();
+		}
+
+		public function setHeaderCheckBoxSelection(conditions:XML):Boolean
+		{
+			var selected:Boolean = true;
+			for each(var item:XML in result.*){
+				if(item.attribute("enabled").length() == 0 || item.@enabled == 0){
+					selected = false;
+					break;
+				}
+			}
+			return selected;
+		}		
+		
+		public function updateLabelsQuantity(event:DataGridEvent):void
+		{
+			//var editor:TextInput = TextInput(event.currentTarget.itemEditorInstance);
+			//var editedValue:Number = Number(o.text);
+			if(Number(TextInput(event.currentTarget.itemEditorInstance).text) == 0)
+			{
+				this.result.*[event.rowIndex].@enabled = 0;
+				setPrintBtnEnabled();
+			}
+		}
+		
+		public function setPrintBtnEnabled():void
+		{
+			if((this.result.*.@enabled).contains(1))
+			{
+				printBtn.enabled = true;
+			}
+			else
+			{
+				printBtn.enabled = false;
+			}
+		}
+		
+	]]>
+</mx:Script>
+	<mx:XML id="config">
+		<config>
+			<column labelKey="common.lp" label="Lp." field="@lp" width="35"/>
+			<column field="@itemCode" dataType="string" label="Kod towaru" width="200"/>			
+			<column field="@itemName" dataType="string" labelKey="common.shortName" label="Nazwa" width="100%"/>
+			<column field="@itemBarCodeField" dataType="string" label="Kod paskowy" width="120"/>
+			<column field="@quantity" dataType="decimal" labelKey="common.quantity" label="Ilość" width="40"/>
+		</config>
+	</mx:XML>
+	
+</mx:VBox>

@@ -1,0 +1,540 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem xmlns:mx="http://www.adobe.com/2006/mxml" verticalGap="0" width="100%" implements="com.makolab.components.inputComponents.IFormBuilderComponent">
+	
+	<mx:Metadata>
+		[Style(name="labelWidth", type="Number", format="Length", inherit="yes")]
+		[Style(name="editorWidth", type="Number", format="Length", inherit="yes")]
+        [Event(name="change", type="flash.events.Event")]
+    </mx:Metadata>
+    
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.commands.GetContractorByNip;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			import mx.controls.Alert;
+			import mx.rpc.events.ResultEvent;
+			import mx.validators.ValidationResult;
+			/**
+			 * Countries dictionary.
+			 */
+			[Bindable]
+			public var countries:XMLList = new XMLList();
+			/**
+			 * Determines if the control should check NIP number correctness or not.
+			 */
+			[Bindable]
+			public var checkCorrectness:Boolean = false;
+			private var _dataObject:Object = new Object();
+			[Bindable]
+			private var nip:String = "";
+			[Bindable]
+			private var countryID:XML;
+			
+			private var checkNIPAvailability:Boolean = false;
+			
+			private var validVat:XMLList;
+			
+			[Bindable]
+			private var checkedNip=false;
+			[Bindable]
+			public var checkingEnabled:Boolean = true;
+			
+			/**
+			 * 	Lets you pass/read values to/from editor.
+			 * 	Pass the whole contractor's XML.
+			 */
+			[Bindable]
+			public function set dataObject(value:Object):void
+			{
+				
+				_dataObject = value;
+				nip = value.nip.*;
+				if(countries)countryID = XMLList(countries).(String(id) == dataObject.nipPrefixCountryId)[0];
+				//if(checkCorrectness)validateNip();
+				if(validationCheck)init();
+			}
+			
+			private var vData:String="0000-00-00";
+			private var valid:String="false";
+			private var cName:String="";
+			private var address:String="";
+			
+			/**
+			 * @private
+			 */
+			public function get dataObject():Object
+			{
+				//_dataObject.nip.* = nip;
+				return _dataObject;
+			}
+			
+			/**
+			 * 	Lets you pass/read values to/from editor.
+			 * 	Pass the whole contractor's XML.
+			 */
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				dataObject = value;
+				
+				if(Boolean(dataObject.isBusinessEntity.text() == '0')) {
+					nipInput.errorString = null;
+				}
+				
+			}
+			
+			private function controlDigit(val:String):int{
+				var cd:int=0;
+				cd+=int(val.charAt(0))*6;
+				cd+=int(val.charAt(1))*5;
+				cd+=int(val.charAt(2))*7;
+				cd+=int(val.charAt(3))*2;
+				cd+=int(val.charAt(4))*3;
+				cd+=int(val.charAt(5))*4;
+				cd+=int(val.charAt(6))*5;
+				cd+=int(val.charAt(7))*6;
+				cd+=int(val.charAt(8))*7;
+				cd=cd % 11;
+				return cd;
+			}
+			
+			private function stripDashes(val:String):String{
+				var pattern:RegExp=/\-/g;
+				return val.replace(pattern,"");
+			}
+			
+			private function validateNip():Boolean{
+				if(nip.length == 0) {
+					nipInput.errorString = LanguageManager.getInstance().labels.error.noNip;
+					return false;
+				}
+				
+				var str:String=stripDashes(nip);
+				var pattern_pl:RegExp = /^(\d\-?){9}\d$/;
+				/*
+				if(nipInput.text == '') {
+					nipInput.errorString = LanguageManager.getInstance().labels.error.noNip;
+					return false;
+				}
+				*/
+				if(!pattern_pl.test(str) || controlDigit(str)!=int(str.charAt(str.length-1))){
+					if(checkCorrectness && countryCmb.selectedItem && countryCmb.selectedItem.symbol == "PL") 
+						nipInput.errorString = LanguageManager.getInstance().labels.error.nipError;
+					return false;
+				}else{
+					nipInput.errorString = null;
+					return true;
+				}
+			}
+			
+			private function init():void
+			{
+				//Alert.show(countries.toXMLString());
+				if(countries)countryID = countries.(String(id) == dataObject.nipPrefixCountryId)[0];
+				validVat=ModelLocator.getInstance().dictionaryManager.dictionaries.contractorAttributes.(name == 'Attribute_TaxValid');
+			}
+			
+			/**
+			 * Checks whether the code is correct at the start and sets the initial state of the "check correctness" checkbox.
+			 */
+			public function reset():void
+			{
+				if(nipInput.text.length == 0) {
+					checkCorrectness = true;
+				} else {
+					if(validateNip()){
+						checkCorrectness = true;
+					}else{
+						checkCorrectness = false;
+					}
+				}	
+			}
+			
+			private function countryChangeHandler(event:Event):void
+			{
+				dataObject.nipPrefixCountryId.* = countryCmb.selectedItem.id.*;
+				if(checkCorrectness)validateNip();
+			}
+			
+			private function nipChangeHandler(event:Event):void
+			{
+				nip = nipInput.text;
+				_dataObject.nip.* = nip;
+				dispatchEvent(new Event("change"));
+			}
+			
+			private function validationChangeHandler(event:Event):void
+			{
+				checkCorrectness = event.target.selected;
+				if(checkCorrectness)validateNip();
+				else nipInput.errorString = null;
+			}
+			/**
+			 * A method of the <code>IFormBuilderComponent</code> interface.
+			 */
+			public function commitChanges():void {;}
+
+			/**
+			 * A method of the <code>IFormBuilderComponent</code> interface.
+			 */
+			public function validate():Object
+			{
+				if(Boolean(dataObject.isBusinessEntity.text() == '1')) {
+					validateNip();
+					if (nipInput.errorString && this.checkingEnabled) return new ValidationResult(true, null, GenericValidator.ERROR_WRONG_FORMAT, nipInput.errorString);
+					else return null;
+				} else {
+					return null;
+				}
+			}
+			
+			private function outFocus(event:FocusEvent):void {
+				if(checkNIPAvailability){
+					
+				}
+			}
+			
+			private function checkUniquenessHandler(event:MouseEvent):void {
+				if(nipInput.text != '') {
+					getContractorsData(nipInput.text);
+				}
+			}
+			private function checkNipHandler(event:MouseEvent):void {
+				if(nipInput.text != '') {
+					fBeginRequest();
+				}
+			}
+			
+			private function addAdressAndName(e:MouseEvent):void{
+				trace(dataObject);
+				var arr:Array=address.split(getNipReg());
+				var str:String=address;
+				
+				
+				if(arr.length==2)
+				{
+					str=str.replace(arr[0],"");
+					str=str.replace(arr[1],"");
+				dataObject.addresses.address[0].city=arr[1];
+				dataObject.addresses.address[0].address=arr[0];
+				dataObject.addresses.address[0].postOffice=arr[1];
+				dataObject.addresses.address[0].postCode=str;
+				}
+				else
+				{
+					dataObject.addresses.address[0].address=address;
+				}
+				dataObject.fullName=cName;
+				this.setFocus();
+
+			}
+			private function getContractorsData(value:String):void
+			{
+				var cmd:GetContractorByNip = new GetContractorByNip(value);
+				cmd.addEventListener(ResultEvent.RESULT, getContractorsDataResult);
+				cmd.execute();
+			}
+			
+			private function getContractorsDataResult(event:ResultEvent):void
+			{
+				var result:XML = XML(event.result);
+				if(result.contractor.entry.length()) {
+					Alert.show(LanguageManager.getInstance().labels.error.nipExistError, LanguageManager.getInstance().labels.alert.alert);
+				} else {
+					Alert.show(LanguageManager.getInstance().labels.error.goodNip );
+				}
+			}
+			
+			
+			private var xmlResults:XML =new XML();
+			private var urlLoader:URLLoader = new URLLoader();
+			
+			
+			
+			public function fErrorHandler(e:IOErrorEvent):void {
+				trace("xml failed!");
+			}
+			
+			
+			//when the "loader" event object finishes the loading of the xml file, run other needed functions to process the data 
+			private function fLoaderCompleteHandler(event:Event):void {
+				
+				trace("xml loaded!!"); //jwt testing
+				var result2:XML = new XML(urlLoader.data); // loads the xml file data into the xml object
+				xmlResults = result2; //have the global xml object equal the current data loaded xml object 
+				result2 = null; // dont need current xml object any more so erase it
+				
+				fParseXML(0); //process the first set of records from the xml object
+				trace("found xml" + xmlResults.toString()); 
+			} 
+			
+			
+			
+			public function fParseXML(intAddNum:Number):void{
+				var resultL:XMLList = XMLList(xmlResults.*.*.*);
+				valid="false";
+				vData="0000-00-00";
+				for each( var i in resultL)
+				{
+					switch(i.name().localName)
+					{
+						case 'requestDate':
+						{
+							vData=i.toString();break;;
+						}
+						case 'valid':
+						{
+							valid=i.toString();break;;
+						}
+						case 'address':
+						{
+							address=i.toString();break;;
+						}
+						case 'name':
+						{
+							cName=i.toString();break;;
+						}
+					}
+				}
+				vData=vData.slice(0,10);
+				dataObject.attributes.appendChild(     <attribute>
+        <contractorFieldId>{validVat.id}</contractorFieldId>
+		<value>{vData}</value>
+	  </attribute>);
+				
+				if(valid=="false") {
+					Alert.show(LanguageManager.getInstance().labels.error.nipNoExist, LanguageManager.getInstance().labels.alert.alert);
+					checkedNip=false;
+				
+				} else {
+
+					checkedNip=true;
+					Alert.show(LanguageManager.getInstance().labels.error.validNip );
+					
+					
+				}
+			}
+			
+			/*
+			<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:ec.europa.eu:taxud:vies:services:checkVat:types">
+			<soapenv:Header/>
+			<soapenv:Body>
+			<urn:checkVat>
+			<urn:countryCode>MS</urn:countryCode>
+			<urn:vatNumber>TESTVATNUMBER</urn:vatNumber>
+			</urn:checkVat>
+			</soapenv:Body>
+			</soapenv:Envelope>
+			*/
+			public function fBeginRequest():void{
+				var strXMLDataRequest:String
+				var urlRequest:URLRequest = new URLRequest();
+				urlRequest.contentType = "text/xml; charset=utf-8";
+				urlRequest.method = "POST";
+				urlRequest.url = "http://ec.europa.eu/taxation_customs/vies/services/checkVatService";  
+				var soapAction:URLRequestHeader = new URLRequestHeader("SOAPAction","checkVatService");
+				//urlRequest.requestHeaders.push(soapAction);
+				var nn:String=nipInput.text;
+				var r1:RegExp=/-/g;
+				var r2:RegExp=/ /g;
+				
+				nn=nn.replace(r1,"");
+				nn=nn.replace(r2,"");
+				strXMLDataRequest =
+					<s11:Envelope xmlns:s11='http://schemas.xmlsoap.org/soap/envelope/'>
+  <s11:Body>
+	  <tns1:checkVat xmlns:tns1='urn:ec.europa.eu:taxud:vies:services:checkVat:types'>
+		<tns1:countryCode>{countryCmb.selectedItem.symbol.toString()}</tns1:countryCode>
+		<tns1:vatNumber>{nn}</tns1:vatNumber>
+	  </tns1:checkVat>
+	</s11:Body>
+  </s11:Envelope>;
+				urlRequest.data =  new XML(strXMLDataRequest);
+				urlLoader.load(urlRequest);
+				urlLoader.addEventListener(IOErrorEvent.IO_ERROR, fErrorHandler); //add the event to the "loader" object
+				urlLoader.addEventListener(Event.COMPLETE, fLoaderCompleteHandler); //add the event to the "loader" object
+			}
+//checkNipHandler
+			private function getNipReg():RegExp{
+				var reg:RegExp;
+				switch(countryCmb.selectedItem.symbol.toString()){
+					case "GB" : reg=/GIR[ ]?0AA|((AB|AL|B|BA|BB|BD|BH|BL|BN|BR|BS|BT|CA|CB|CF|CH|CM|CO|CR|CT|CV|CW|DA|DD|DE|DG|DH|DL|DN|DT|DY|E|EC|EH|EN|EX|FK|FY|G|GL|GY|GU|HA|HD|HG|HP|HR|HS|HU|HX|IG|IM|IP|IV|JE|KA|KT|KW|KY|L|LA|LD|LE|LL|LN|LS|LU|M|ME|MK|ML|N|NE|NG|NN|NP|NR|NW|OL|OX|PA|PE|PH|PL|PO|PR|RG|RH|RM|S|SA|SE|SG|SK|SL|SM|SN|SO|SP|SR|SS|ST|SW|SY|TA|TD|TF|TN|TQ|TR|TS|TW|UB|W|WA|WC|WD|WF|WN|WR|WS|WV|YO|ZE)(\d[\dA-Z]?[ ]?\d[ABD-HJLN-UW-Z]{2}))|BFPO[ ]?\d{1,4}/;break;
+					case "JE" : reg=/JE\d[\dA-Z]?[ ]?\d[ABD-HJLN-UW-Z]{2}/;break;
+				case "GG" : reg=/GY\d[\dA-Z]?[ ]?\d[ABD-HJLN-UW-Z]{2}/;break;
+				case "IM" : reg=/IM\d[\dA-Z]?[ ]?\d[ABD-HJLN-UW-Z]{2}/;break;
+				case "US" : reg=/\d{5}([ \-]\d{4})?/;break;
+				case "CA" : reg=/[ABCEGHJKLMNPRSTVXY]\d[ABCEGHJ-NPRSTV-Z][ ]?\d[ABCEGHJ-NPRSTV-Z]\d/;break;
+				case "DE" : reg=/\d{5}/;break;
+				case "JP" : reg=/\d{3}-\d{4}/;break;
+				case "FR" : reg=/\d{2}[ ]?\d{3}/;break;
+				case "AU" : reg=/\d{4}/;break;
+				case "IT" : reg=/\d{5}/;break;
+				case "CH" : reg=/\d{4}/;break;
+				case "AT" : reg=/\d{4}/;break;
+				case "ES" : reg=/\d{5}/;break;
+				case "NL" : reg=/\d{4}[ ]?[A-Z]{2}/;break;
+				case "BE" : reg=/\d{4}/;break;
+				case "DK" : reg=/\d{4}/;break;
+				case "SE" : reg=/\d{3}[ ]?\d{2}/;break;
+				case "NO" : reg=/\d{4}/;break;
+				case "BR" : reg=/\d{5}[\-]?\d{3}/;break;
+				case "PT" : reg=/\d{4}([\-]\d{3})?/;break;
+				case "FI" : reg=/\d{5}/;break;
+				case "AX" : reg=/22\d{3}/;break;
+				case "KR" : reg=/\d{3}[\-]\d{3}/;break;
+				case "CN" : reg=/\d{6}/;break;
+				case "TW" : reg=/\d{3}(\d{2})?/;break;
+				case "SG" : reg=/\d{6}/;break;
+				case "DZ" : reg=/\d{5}/;break;
+				case "AD" : reg=/AD\d{3}/;break;
+				case "AR" : reg=/([A-HJ-NP-Z])?\d{4}([A-Z]{3})?/;break;
+				case "AM" : reg=/(37)?\d{4}/;break;
+				case "AZ" : reg=/\d{4}/;break;
+				case "BH" : reg=/((1[0-2]|[2-9])\d{2})?/;break;
+				case "BD" : reg=/\d{4}/;break;
+				case "BB" : reg=/(BB\d{5})?/;break;
+				case "BY" : reg=/\d{6}/;break;
+				case "BM" : reg=/[A-Z]{2}[ ]?[A-Z0-9]{2}/;break;
+				case "BA" : reg=/\d{5}/;break;
+				case "IO" : reg=/BBND 1ZZ/;break;
+				case "BN" : reg=/[A-Z]{2}[ ]?\d{4}/;break;
+				case "BG" : reg=/\d{4}/;break;
+				case "KH" : reg=/\d{5}/;break;
+				case "CV" : reg=/\d{4}/;break;
+				case "CL" : reg=/\d{7}/;break;
+				case "CR" : reg=/\d{4,5}|\d{3}-\d{4}/;break;
+				case "HR" : reg=/\d{5}/;break;
+				case "CY" : reg=/\d{4}/;break;
+				case "CZ" : reg=/\d{3}[ ]?\d{2}/;break;
+				case "DO" : reg=/\d{5}/;break;
+				case "EC" : reg=/([A-Z]\d{4}[A-Z]|(?:[A-Z]{2})?\d{6})?/;break;
+				case "EG" : reg=/\d{5}/;break;
+				case "EE" : reg=/\d{5}/;break;
+				case "FO" : reg=/\d{3}/;break;
+				case "GE" : reg=/\d{4}/;break;
+				case "GR" : reg=/\d{3}[ ]?\d{2}/;break;
+				case "GL" : reg=/39\d{2}/;break;
+				case "GT" : reg=/\d{5}/;break;
+				case "HT" : reg=/\d{4}/;break;
+				case "HN" : reg=/(?:\d{5})?/;break;
+				case "HU" : reg=/\d{4}/;break;
+				case "IS" : reg=/\d{3}/;break;
+				case "IN" : reg=/\d{6}/;break;
+				case "ID" : reg=/\d{5}/;break;
+				case "IL" : reg=/\d{5}/;break;
+				case "JO" : reg=/\d{5}/;break;
+				case "KZ" : reg=/\d{6}/;break;
+				case "KE" : reg=/\d{5}/;break;
+				case "KW" : reg=/\d{5}/;break;
+				case "LA" : reg=/\d{5}/;break;
+				case "LV" : reg=/\d{4}/;break;
+				case "LB" : reg=/(\d{4}([ ]?\d{4})?)?/;break;
+				case "LI" : reg=/(948[5-9])|(949[0-7])/;break;
+				case "LT" : reg=/\d{5}/;break;
+				case "LU" : reg=/\d{4}/;break;
+				case "MK" : reg=/\d{4}/;break;
+				case "MY" : reg=/\d{5}/;break;
+				case "MV" : reg=/\d{5}/;break;
+				case "MT" : reg=/[A-Z]{3}[ ]?\d{2,4}/;break;
+				case "MU" : reg=/(\d{3}[A-Z]{2}\d{3})?/;break;
+				case "MX" : reg=/\d{5}/;break;
+				case "MD" : reg=/\d{4}/;break;
+				case "MC" : reg=/980\d{2}/;break;
+				case "MA" : reg=/\d{5}/;break;
+				case "NP" : reg=/\d{5}/;break;
+				case "NZ" : reg=/\d{4}/;break;
+				case "NI" : reg=/((\d{4}-)?\d{3}-\d{3}(-\d{1})?)?/;break;
+				case "NG" : reg=/(\d{6})?/;break;
+				case "OM" : reg=/(PC )?\d{3}/;break;
+				case "PK" : reg=/\d{5}/;break;
+				case "PY" : reg=/\d{4}/;break;
+				case "PH" : reg=/\d{4}/;break;
+				case "PL" : reg=/\d{2}-\d{3}/;break;
+				case "PR" : reg=/00[679]\d{2}([ \-]\d{4})?/;break;
+				case "RO" : reg=/\d{6}/;break;
+				case "RU" : reg=/\d{6}/;break;
+				case "SM" : reg=/4789\d/;break;
+				case "SA" : reg=/\d{5}/;break;
+				case "SN" : reg=/\d{5}/;break;
+				case "SK" : reg=/\d{3}[ ]?\d{2}/;break;
+				case "SI" : reg=/\d{4}/;break;
+				case "ZA" : reg=/\d{4}/;break;
+				case "LK" : reg=/\d{5}/;break;
+				case "TJ" : reg=/\d{6}/;break;
+				case "TH" : reg=/\d{5}/;break;
+				case "TN" : reg=/\d{4}/;break;
+				case "TR" : reg=/\d{5}/;break;
+				case "TM" : reg=/\d{6}/;break;
+				case "UA" : reg=/\d{5}/;break;
+				case "UY" : reg=/\d{5}/;break;
+				case "UZ" : reg=/\d{6}/;break;
+				case "VA" : reg=/00120/;break;
+				case "VE" : reg=/\d{4}/;break;
+				case "ZM" : reg=/\d{5}/;break;
+				case "AS" : reg=/96799/;break;
+				case "CC" : reg=/6799/;break;
+				case "CK" : reg=/\d{4}/;break;
+				case "RS" : reg=/\d{6}/;break;
+				case "ME" : reg=/8\d{4}/;break;
+				case "CS" : reg=/\d{5}/;break;
+				case "YU" : reg=/\d{5}/;break;
+				case "CX" : reg=/6798/;break;
+				case "ET" : reg=/\d{4}/;break;
+				case "FK" : reg=/FIQQ 1ZZ/;break;
+				case "NF" : reg=/2899/;break;
+				case "FM" : reg=/(9694[1-4])([ \-]\d{4})?/;break;
+				case "GF" : reg=/9[78]3\d{2}/;break;
+				case "GN" : reg=/\d{3}/;break;
+				case "GP" : reg=/9[78][01]\d{2}/;break;
+				case "GS" : reg=/SIQQ 1ZZ/;break;
+				case "GU" : reg=/969[123]\d([ \-]\d{4})?/;break;
+				case "GW" : reg=/\d{4}/;break;
+				case "HM" : reg=/\d{4}/;break;
+				case "IQ" : reg=/\d{5}/;break;
+				case "KG" : reg=/\d{6}/;break;
+				case "LR" : reg=/\d{4}/;break;
+				case "LS" : reg=/\d{3}/;break;
+				case "MG" : reg=/\d{3}/;break;
+				case "MH" : reg=/969[67]\d([ \-]\d{4})?/;break;
+				case "MN" : reg=/\d{6}/;break;
+				case "MP" : reg=/9695[012]([ \-]\d{4})?/;break;
+				case "MQ" : reg=/9[78]2\d{2}/;break;
+				case "NC" : reg=/988\d{2}/;break;
+				case "NE" : reg=/\d{4}/;break;
+				case "VI" : reg=/008(([0-4]\d)|(5[01]))([ \-]\d{4})?/;break;
+				case "PF" : reg=/987\d{2}/;break;
+				case "PG" : reg=/\d{3}/;break;
+				case "PM" : reg=/9[78]5\d{2}/;break;
+				case "PN" : reg=/PCRN 1ZZ/;break;
+				case "PW" : reg=/96940/;break;
+				case "RE" : reg=/9[78]4\d{2}/;break;
+				case "SH" : reg=/(ASCN|STHL) 1ZZ/;break;
+				case "SJ" : reg=/\d{4}/;break;
+				case "SO" : reg=/\d{5}/;break;
+				case "SZ" : reg=/[HLMS]\d{3}/;break;
+				case "TC" : reg=/TKCA 1ZZ/;break;
+				case "WF" : reg=/986\d{2}/;break;
+				case "XK" : reg=/\d{5}/;break;
+				case "YT" : reg=/976\d{2}/;break;
+			}
+				return reg;
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox width="300" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+		<mx:HBox width="100%">
+			<mx:ComboBox id="countryCmb" dataProvider="{countries}" labelField="symbol" selectedItem="{countryID}" change="countryChangeHandler(event)"/>
+			<mx:VBox width="100%">
+				<mx:TextInput focusOut="outFocus(event)" id="nipInput" width="100%" restrict="a-zA-Z0-9\- " change="nipChangeHandler(event)" text="{nip}"/>
+				<mx:CheckBox id="validationCheck" paddingTop="-5" visible="{checkingEnabled}" selected="{checkCorrectness}" label="{LanguageManager.getInstance().labels.common.checkCorrectness}" change="validationChangeHandler(event)"/>
+				<mx:Button id="uniqeNip" click="checkUniquenessHandler(event)" label="{LanguageManager.getInstance().labels.error.nipUnique}" width="100%" />
+				<mx:Button click="checkNipHandler(event)" label="{LanguageManager.getInstance().labels.error.nipExist}" width="100%"  />
+				<mx:Button click="addAdressAndName(event)" label="{LanguageManager.getInstance().labels.common.copyData}" includeInLayout="{checkedNip}" visible="{checkedNip}" width="100%"/>
+			</mx:VBox>
+			
+		</mx:HBox>
+	</mx:VBox>
+	
+</mx:FormItem>

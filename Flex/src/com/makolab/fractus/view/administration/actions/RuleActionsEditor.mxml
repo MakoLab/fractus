@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:LinkButton xmlns:mx="http://www.adobe.com/2006/mxml" click="handleClick(event)" label="{this.data.textValue}">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.inputComponents.CurrencyEditor;
+			import mx.controls.NumericStepper;
+			import mx.controls.Tree;
+			import mx.containers.ControlBar;
+			import mx.controls.Alert;
+			import mx.controls.Button;
+			import mx.managers.PopUpManager;
+			import mx.events.FlexMouseEvent;
+			import mx.containers.TitleWindow;
+			import com.makolab.components.util.FPopUpManager;
+			[Bindable]
+			public var classMapper:Object = {
+				currencyEditor : { editor : CurrencyEditor, dataField : "dataObject", labelField : "dataObject" },
+				priceListSelector : { editor : PriceListSelector, dataField : "selectedId", labelField : "label" },
+				attributePriceListSelector : { editor : AttributePriceListSelector, dataField : "selectedId", labelField : "label" }
+			};
+			
+			override public function set visible(value:Boolean):void
+			{
+				if(!data || !classMapper[data.@editor]) super.visible = false;
+				else super.visible = value;
+			}
+			
+			private function handleClick(event:MouseEvent):void
+			{
+				if(!classMapper[data.@editor])return;
+				var window:TitleWindow = new TitleWindow();
+				window.layout = "vertical";
+				
+				var okButton:Button = new Button();
+				okButton.label = "OK";
+				okButton.percentWidth = 100;
+				okButton.addEventListener(MouseEvent.CLICK,function ():void{PopUpManager.removePopUp(window)});
+				
+				var controlBar:ControlBar = new ControlBar();
+				controlBar.setStyle("paddingTop",0);
+				controlBar.setStyle("paddingBottom",0);
+				
+				var component:DisplayObject = new (classMapper[data.@editor].editor)(); 
+				component.addEventListener("change",updateData);
+				component[classMapper[data.@editor.toString()].dataField] = data.value[0];
+				
+				window.addChild(component);
+				window.addChild(controlBar);
+				controlBar.addChild(okButton);
+				
+				window.setStyle("headerHeight",0);
+				FPopUpManager.addPopUp(window,this);
+				window.addEventListener(FlexMouseEvent.MOUSE_DOWN_OUTSIDE,function ():void{PopUpManager.removePopUp(window)});
+			}
+			
+			private function updateData(event:Event):void
+			{
+				this.data.value = event.target[classMapper[data.@editor].dataField];
+				this.data.textValue = event.target[classMapper[data.@editor].labelField];
+				this.label = event.target[classMapper[data.@editor].labelField];
+			}
+		]]>
+	</mx:Script>
+	
+</mx:LinkButton>

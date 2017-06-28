@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<reports:ReportContainer xmlns:mx="http://www.adobe.com/2006/mxml" configurationName="service" width="400" height="300" xmlns:reports="com.makolab.fractus.view.documents.reports.*" creationComplete="init()" xmlns:serviceReports="com.makolab.fractus.view.documents.reports.serviceReports.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.view.documents.reports.ReportGenerator;
+			import com.makolab.fractus.view.documents.reports.ReportBase;
+			import mx.events.CloseEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import com.makolab.fractus.commands.SearchCommand;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			private var _filtersInfo:Object = {};
+			[Bindable]
+			public function set filtersInfo(value:Object):void
+			{
+				_filtersInfo = value;
+			}
+			public function get filtersInfo():Object
+			{
+				return _filtersInfo;
+			}
+			
+			[Bindable]
+			private var showProgressBar:Boolean = false;
+			
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var component:ServiceReport = new ServiceReport();
+				window.innerComponent = component;
+				window.show(null,/* new Rectangle(-1,-1,800,500) */null,LanguageManager.getInstance().labels.reports.serviceReports);
+				component.reportsName = LanguageManager.getInstance().labels.reports.serviceReports;
+				return window;
+			}
+			
+			private function filtersInfoChangedHandler(event:Event):void
+			{
+				this.filtersInfo = filtersTab.filtersInfo;
+			}
+		]]>
+	</mx:Script>
+	
+	<reports:defaultSearchParams>
+		<mx:XML xmlns="">
+			<searchParams type="CommercialDocument">
+				 <filters>	
+				 </filters> 
+			</searchParams>
+		</mx:XML>
+	</reports:defaultSearchParams>
+	
+	<reports:filtersComponent>
+		<serviceReports:ServiceReportFilters id="filtersTab" documentCategories="10" label="{LanguageManager.getInstance().labels.reports.filters.filters}" filtersInfo="{filtersInfo}" filterInfoChanged="filtersInfoChangedHandler(event)" searchParams="{defaultSearchParams}" width="100%" height="100%"/>
+	</reports:filtersComponent>
+	
+	<serviceReports:ReportByDocumentEmployee label="{LanguageManager.getInstance().labels.service.mechanics}" filtersInfo="{filtersInfo}" reportsName="{reportsName}" procedure="[reports].[p_getServiceDocumentsEmployees]" width="100%" height="100%" showProgressBar="{showProgressBar}"/>
+	
+</reports:ReportContainer>

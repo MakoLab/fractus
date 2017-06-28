@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*" creationComplete="{identifierText.setFocus()}" xmlns:catalogue="com.makolab.fractus.view.catalogue.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.GlobalEvent;
+			import com.makolab.fractus.model.EventManager;
+			import mx.controls.Alert;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.commands.CreateBusinessObjectCommand;
+			import com.makolab.components.catalogue.dynamicOperations.CreateNewBusinessObjectOperation;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.SaveBusinessObjectCommand;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.DictionaryManager;
+			
+			private var _dataXML:XML;
+			
+			private var dataXMLcopy:XML;
+			
+			// called when data is saved
+			private var notifyFunction:Function;
+			
+			[Bindable]
+			public function set dataXML(value:XML):void
+			{
+				_dataXML = value;
+				dataXMLcopy = value.copy();
+			}
+			public function get dataXML():XML
+			{
+				return _dataXML;
+			}
+			
+			private var preAssignedContractorId:String;
+			
+			public static function showWindow(objectId:String = null, notifyFunction:Function = null, contractorId:String = null):ComponentWindow
+			{
+				var title:String = LanguageManager.getInstance().getLabel('title.servicedObject');
+				var component:ServicedObjectEditor = new ServicedObjectEditor();
+				component.notifyFunction = notifyFunction;
+				var window:ComponentWindow = ComponentWindow.showWindow(component,ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL,new Rectangle(-1,-1,600,400),title);
+				window.commitFunction = component.commitFunction;
+				if (objectId)
+				{
+					var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand(LoadBusinessObjectCommand.TYPE_SERVICED_OBJECT);
+					cmd.id = objectId;
+					cmd.addEventListener(ResultEvent.RESULT, ServicedObjectEditor(window.innerComponent).handleLoadResult);
+					cmd.execute();
+				}
+				else
+				{
+					component.preAssignedContractorId = contractorId;
+					var createCmd:CreateBusinessObjectCommand = new CreateBusinessObjectCommand(LoadBusinessObjectCommand.TYPE_SERVICED_OBJECT);
+					createCmd.addEventListener(ResultEvent.RESULT, ServicedObjectEditor(window.innerComponent).handleLoadResult);
+					createCmd.execute();
+				}
+				return window;
+			}
+			
+			public function commitFunction():void
+			{
+				if (!identifierText.text)
+				{
+					Alert.show(LanguageManager.getLabel('service.emptyIdentifierMessage'));
+					return;
+				}
+				dataXMLcopy.identifier = identifierText.text;
+				dataXMLcopy.description = descriptionText.text;
+				dataXMLcopy.remarks = remarksText.text;
+				var contractorId:String = contractorSearch.cs.itemId;
+				if (contractorId) dataXMLcopy.ownerContractorId = contractorId;
+				else delete dataXMLcopy.ownerContractorId;
+				this.dataXML = dataXMLcopy;
+				var cmd:SaveBusinessObjectCommand = new SaveBusinessObjectCommand();
+				cmd.addEventListener(ResultEvent.RESULT, handleSaveResult);
+				cmd.execute(<root>{dataXML}</root>);
+			}
+			
+			public function handleLoadResult(event:ResultEvent):void
+			{
+				this.dataXML = XML(event.result).*[0];
+				if (preAssignedContractorId) this.dataXML.ownerContractorId = preAssignedContractorId;
+			}
+
+			public function handleSaveResult(event:ResultEvent):void
+			{
+				ModelLocator.getInstance().eventManager.dispatchEvent(new GlobalEvent(GlobalEvent.DOCUMENT_CHANGED, "10"));
+			
+				if (this.parent is ComponentWindow) ComponentWindow(this.parent).hide();
+				if (notifyFunction != null) notifyFunction(XML(event.result).id);
+			}
+			
+			public function clearContractor():void
+			{
+				contractorSearch.text = null;
+				contractorSearch.cs.itemId = null;
+			}	
+		]]>
+	</mx:Script>
+	
+	<mx:Form width="100%" height="100%">
+		<mx:FormItem label="Właściciel" width="100%">
+			<mx:HBox width="100%">
+				<catalogue:ContractorSearchEditor id="contractorSearch" width="100%" itemId="{dataXML.ownerContractorId}" autoLoadName="true"/>
+				<mx:Button label="Wyczyść" click="clearContractor()"/>
+			</mx:HBox>
+		</mx:FormItem>
+		<mx:FormItem label="Identyfikator" width="100%">
+			<mx:TextInput id="identifierText" width="100%" text="{dataXML.identifier}"/>
+		</mx:FormItem>
+		<mx:FormItem label="Opis" width="100%">
+			<mx:TextArea id="descriptionText" width="100%" text="{dataXML.description}" height="150"/>
+		</mx:FormItem>
+		<mx:FormItem label="Uwagi" width="100%">
+			<mx:TextArea id="remarksText" width="100%" text="{dataXML.remarks}" height="100"/>
+		</mx:FormItem>
+	</mx:Form>
+</mx:VBox>

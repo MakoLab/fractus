@@ -1,0 +1,428 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+	xmlns:groupTree="com.makolab.components.catalogue.groupTree.*"
+	xmlns:lineList="com.makolab.components.lineList.*" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*" 
+	xmlns:administration="com.makolab.fractus.view.administration.*"
+	xmlns:permission="com.makolab.components.permission.*"
+	creationComplete="init()"
+	preinitialize="preInit()">
+	
+	<inputComponents:MatchValidator
+		id="passwordCheckValidator"
+		source="{tiPassword2}"
+		trigger="{tiPassword2}"
+		triggerEvent="change"
+		property="text"
+		matchSource="{tiPassword}"
+		matchProperty="text"
+		enabled="{tiPassword.enabled}"
+		noMatchError="{LanguageManager.getInstance().labels.login.error.passwordMismatch}"
+		requiredFieldError="{LanguageManager.getInstance().labels.login.error.required}"
+		/>
+	
+	<mx:StringValidator id="shortNameValidator"
+		source="{tiShortName}"
+		trigger="{tiShortName}"
+		triggerEvent="change"
+		property="text"
+		requiredFieldError="{LanguageManager.getInstance().labels.login.error.required}"/>
+	
+	<mx:StringValidator id="loginValidator"
+		source="{tiLogin}"
+		property="text"
+		trigger="{tiLogin}"
+		triggerEvent="change"
+		minLength="2"
+		requiredFieldError="{LanguageManager.getInstance().labels.login.error.required}"
+		tooShortError="{LanguageManager.getInstance().labels.login.error.toShort}"/>
+		
+	<mx:StringValidator id="passwordValidator"
+		source="{tiPassword}"
+		property="text"
+		minLength="3"
+		trigger="{tiPassword}"
+		triggerEvent="change"
+		enabled="{tiPassword.enabled}"
+		requiredFieldError="{LanguageManager.getInstance().labels.login.error.required}"
+		tooShortError="{LanguageManager.getInstance().labels.login.error.toShort}"/>
+		
+	<mx:NumberValidator id="permissionsValidator"
+		source="{cbProfiles}"
+		property="selectedIndex"
+		minValue="0"
+		required="true"
+		trigger="{cbProfiles}"
+		triggerEvent="change"
+		requiredFieldError="{LanguageManager.getInstance().labels.login.error.required}"
+		lowerThanMinError="{LanguageManager.getInstance().labels.login.error.required}"
+		/>
+		
+		
+	
+<mx:Script>
+	<![CDATA[
+		import mx.events.ValidationResultEvent;
+		import mx.validators.Validator;
+		import com.makolab.fractus.commands.CheckLoginAvailabilityCommand;
+		import com.makolab.fractus.model.ConfigManager;
+		import com.makolab.fractus.model.DictionaryManager;
+		import com.makolab.fractus.commands.CreateBusinessObjectCommand;
+		import com.makolab.fractus.commands.SaveBusinessObjectCommand;
+		import mx.rpc.events.ResultEvent;
+		import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+		import mx.utils.SHA256;
+		import com.makolab.fractus.model.ModelLocator;
+		import com.makolab.fractus.view.ComponentWindow;
+		import com.makolab.fractus.model.LanguageManager;
+		import mx.controls.Alert;
+		
+		public const PWD_DFT:String = "";
+		[Bindable]
+		public var model:ModelLocator = ModelLocator.getInstance();
+		public var window:ComponentWindow;
+		[Bindable]
+		public var profiles:XML;
+		[Bindable]
+		public var user:XML;
+		public var contractorXML:XML;
+		[Bindable]
+		private var passwordDefault:String = PWD_DFT;
+		private var allBranchesNode:XML = <entry><label lang={ModelLocator.getInstance().languageManager.currentLanguage}>{ModelLocator.getInstance().languageManager.labels.common.allF}</label></entry>;
+		[Bindable]
+		private var branches:XMLList = allBranchesNode + ModelLocator.getInstance().dictionaryManager.dictionaries.branches;
+		[Bindable]
+		private var validatorArr:Array;
+		[Bindable]
+		private var passwordChangePermission:String = 'false';
+		
+		private var loginCorrect:Boolean = false;
+		private var proceedSave:Boolean = false;
+            
+		public static function showWindow(profiles:XML, user:XML = null):ComponentWindow
+		{
+			var component: UserPanel = new UserPanel();
+			var window:ComponentWindow = ComponentWindow.showWindow(component,ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL,new Rectangle(-1,-1,400,310),LanguageManager.getInstance().labels.title.users.panel);
+			window.commitFunction = component.saveFunction;
+			component.window = window;
+			component.profiles = profiles;
+			component.user = user;
+			return window;
+		}
+		
+		public function saveFunction():void {
+			if(!user) {
+				userLoginCheck(null);
+			} else {
+				saveFunctionExecute();
+			}
+		}
+		
+		
+		private function saveFunctionChecked():void {
+			var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+			var isValidForm:Boolean = validatorErrorArray.length == 0;
+			if (isValidForm && loginCorrect) {
+				saveFunctionExecute();
+				//Alert.show("The form is valid!", "Valid form...");
+			} else {
+				var err:ValidationResultEvent;
+				var errorMessageArray:Array = [];
+				for each (err in validatorErrorArray) {
+					errorMessageArray.push(err.message);
+				}
+				if(tiLogin.errorString == '' && !loginCorrect) {	
+					tiLogin.errorString = LanguageManager.getInstance().labels.login.loginExist;
+				}
+			}
+		}
+			
+		private function saveFunctionExecute():void {
+			var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+			
+			var isValidForm:Boolean = validatorErrorArray.length == 0;
+			
+			if (isValidForm) {
+				
+				contractorXML.contractor.shortName = tiShortName.text;
+				// if(contractorXML.contractor.fullName.toString() == "")  
+				
+				contractorXML.contractor.isActive = int(cbActive.selected);
+				contractorXML.contractor.fullName = tiShortName.text;
+				contractorXML.contractor.login = tiLogin.text;
+				contractorXML.contractor.permissionProfile = cbProfiles.selectedItem.@id			
+				if (cbActive.selected)	{ 
+					if((tiPassword.text != passwordDefault || tiPassword.text == "") && tiPassword.enabled)
+						contractorXML.contractor.password = getHash(tiPassword.text);
+					else
+						delete contractorXML.contractor.password;
+				}
+				else contractorXML.contractor.password = "";
+				
+				if (cbBranch.selectedItem.id.length() > 0)
+				{
+					contractorXML.contractor.databaseId = cbBranch.selectedItem.databaseId.toString();
+				}else{
+					if (contractorXML.contractor.databaseId.length() > 0)
+						delete contractorXML.contractor.databaseId;
+				}
+				if (tiPassword.text != tiPassword2.text) 
+					Alert.show(LanguageManager.getInstance().labels.login.passwordConfirmError);
+				else {
+					saveContractor(contractorXML);
+				}
+				
+			} else {
+				var err:ValidationResultEvent;
+				var errorMessageArray:Array = [];
+				for each (err in validatorErrorArray) {
+					errorMessageArray.push(err.message);
+				}
+			}
+			
+		}
+		
+		public function changeProfile(item:XML):void
+		{
+			//lbProfile.text = item.@label;	
+		}
+		
+		public function saveContractor(contractor:XML):void
+		{
+			var cmd:SaveBusinessObjectCommand = new SaveBusinessObjectCommand();
+			cmd.addEventListener(ResultEvent.RESULT,saveContractorResult);
+			cmd.execute(contractorXML);
+		}
+		
+		public function saveContractorResult(event:ResultEvent):void
+		{
+			var result:XML = XML(event.result);
+			model.dictionaryManager.loadUsers();
+			window.hide();
+		}
+		
+		private function getContractor(id:String):void
+		{
+			var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand();	
+			cmd.addEventListener(ResultEvent.RESULT, getContractorResult);
+			cmd.execute( { type : "Contractor", id : id } );
+		}
+		
+		private function getContractorResult(event:ResultEvent):void
+		{
+			contractorXML = XML(event.result);
+			if (contractorXML.contractor.databaseId.length() > 0)
+				for each (var branch:XML in branches)
+				{
+					if (contractorXML.contractor.databaseId.toString() == branch.databaseId.toString())
+						cbBranch.selectedItem = branch;
+				}
+		}
+		
+		private function preInit():void
+		{
+			visible = false;
+		}
+		
+		private function init():void
+		{
+			validatorArr = new Array();
+			
+			if(user) {
+				validatorArr.push(shortNameValidator);
+				validatorArr.push(passwordCheckValidator);
+				validatorArr.push(passwordValidator);
+				var profile:String = user.permissionProfile;
+				var i:Number = 0;
+				for each(var x:XML in profiles.*) {
+					if(profile == String(x.@id)) cbProfiles.selectedIndex = i;
+					i++;
+				}
+				if(user.id == ModelLocator.getInstance().sessionManager.userId) {
+					passwordChangePermission = 'administration.ownCompanies.users.edit.changePassword';
+				} else {
+					passwordChangePermission = 'administration.ownCompanies.users.edit.changeUsersPassword';
+				}
+				tiLogin.enabled = false;
+				tiLoginCanvas.includeInLayout = false;
+				tiLoginCanvas.visible = false;
+				tiPassword.enabled = false;
+				tiPassword2.enabled = false;
+				fiLoginCheck.permissionKey = 'false';
+				if(user.isActive == "0") passwordDefault = ""; 
+				getContractor(user.id);
+			} else {
+				validatorArr.push(shortNameValidator);
+				validatorArr.push(loginValidator);
+				validatorArr.push(passwordCheckValidator);
+				validatorArr.push(passwordValidator);
+				validatorArr.push(permissionsValidator);
+				fiPassword.permissionKey = 'false';
+				fiPassword1.permissionKey = 'true';
+				fiPassword2.permissionKey = 'true';
+				passwordDefault = "";
+				tiLogin.enabled = true;
+				cbActive.selected = true;
+				tiPassword.enabled = true;
+				tiPassword2.enabled = true;
+				fiLoginCheck.permissionKey = 'true';
+				var cmd:CreateBusinessObjectCommand = new CreateBusinessObjectCommand("ApplicationUser");
+				cmd.addEventListener(ResultEvent.RESULT,getContractorResult);
+				cmd.execute();
+			}
+			
+			if(!ModelLocator.getInstance().permissionManager.isEnabled('administration.ownCompanies.users.edit.editAssignedToBranch')) {
+				fiAssignedToBranch.permissionKey = 'true';
+				fiAssignedToBranch.enabled = false;
+			}
+			
+			fiProfile.permissionKey = 'administration.ownCompanies.users.edit.editPermissions';
+			fiAssignedToBranch.permissionKey = 'administration.ownCompanies.users.edit.editAssignedToBranch';
+			
+			callLater(showAll);
+		}
+		
+		
+		
+		private function showAll():void
+		{
+			visible = true;
+		}
+		
+		private function userEdit():void
+		{
+			
+		}
+		
+		private function getHash(text:String):String
+		{
+			var bt:ByteArray = new ByteArray();
+			bt.writeUTFBytes(text);
+			bt.position = 0;				
+			return SHA256.computeDigest(bt);
+		}
+		
+		private function activate():void
+		{
+			tiPassword.errorString = null;
+			tiPassword2.errorString = null;
+			
+			if(cbActive.selected) { true;
+				passwordDefault = PWD_DFT;
+				tiPassword.text = "";
+				tiPassword2.text = "";
+			}
+			else {
+				passwordDefault = "";
+			}
+		}
+		
+		private function passwordChange():void {
+			if(cbPassword.selected)	{
+				tiPassword.enabled = true;
+				tiPassword2.enabled = true;
+			}
+			else {
+				tiPassword.enabled = false;
+				tiPassword.errorString = null;
+				tiPassword2.enabled = false;
+				tiPassword2.errorString = null;
+			}
+		}
+		
+		private function branchLabelFunction(item:Object):String
+		{
+			return item.label.(@lang.toString() == LanguageManager.getInstance().currentLanguage)[0].toString();
+		}
+		
+		private function userLoginCheck(event:MouseEvent):void
+		{
+			if(event) {
+				if(tiLogin.text.length < loginValidator.minLength) {
+					loginValidator.validate();
+					return;
+				}
+				proceedSave = false;
+			} else {
+				proceedSave = true;
+			}
+			
+			loginCorrect = false;
+			tiLoginCheck.enabled = false;
+			tiLoginCorrectSign.visible = false;
+			
+			var cmd:CheckLoginAvailabilityCommand = new CheckLoginAvailabilityCommand(tiLogin.text);
+			cmd.addEventListener(ResultEvent.RESULT, checkLoginResult);
+			cmd.execute();
+		}
+		
+		private function checkLoginResult(event:ResultEvent):void
+		{
+			var result:XML= XML(event.result);
+			
+			if(result == 'TRUE') {
+				loginCorrect = false;
+				tiLoginCorrectSign.visible = false;
+				tiLogin.errorString = LanguageManager.getInstance().labels.login.loginExist;
+			} else {
+				loginCorrect = true;
+				tiLoginCorrectSign.visible = true;
+				tiLogin.errorString = null;
+			}
+			
+			tiLoginCheck.enabled = true;
+			
+			if(proceedSave) {
+				tiLoginCorrectSign.visible = false;
+				saveFunctionChecked();
+			}
+		}
+		
+	]]>
+</mx:Script>
+	
+	<mx:Form id="mainForm" width="100%">
+		<mx:FormItem label="{LanguageManager.getInstance().labels.login.activeUser}" width="100%">
+			<mx:CheckBox id="cbActive" selected="{Boolean(Number(user.isActive))}" click="activate()" width="100%"/>
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.common.nameAndSurname}" width="100%">
+			<mx:TextInput id="tiShortName" text="{user.shortName}" change="userEdit()" width="100%"/>
+		</mx:FormItem>
+		<mx:FormItem label="{LanguageManager.getInstance().labels.login.login}" width="100%">
+			<mx:TextInput id="tiLogin" text="{user.login}" change="userEdit()" width="100%" enabled="false"/>
+		</mx:FormItem>
+		<permission:FormItemComponent id="fiLoginCheck" width="100%" permissionKey="false">
+			<mx:Canvas width="100%" id="tiLoginCanvas">
+				<mx:Label id="tiLoginCorrectSign" text="0K" color="#007100" fontSize="14" visible="false"/> 
+				<mx:Button id="tiLoginCheck" label="{LanguageManager.getInstance().labels.login.loginFreeCheck}" click="userLoginCheck(event)" right="0"/>	
+			</mx:Canvas>
+		</permission:FormItemComponent>
+		<permission:FormItemComponent id="fiPassword" label="{LanguageManager.getInstance().labels.login.passwordChange}" width="100%" permissionKey="{passwordChangePermission}">
+			<mx:CheckBox id="cbPassword" click="passwordChange()" width="100%"/>
+		</permission:FormItemComponent>
+		<permission:FormItemComponent id="fiPassword1" label="{LanguageManager.getInstance().labels.login.password}" width="100%" permissionKey="{passwordChangePermission}">
+			<mx:TextInput id="tiPassword" enabled="false" displayAsPassword="true" text="{passwordDefault}" change="userEdit()" width="100%"/>		
+		</permission:FormItemComponent>
+		<permission:FormItemComponent id="fiPassword2" label="{LanguageManager.getInstance().labels.login.passwordConfirm}" width="100%" permissionKey="{passwordChangePermission}">
+			<mx:TextInput id="tiPassword2" enabled="false" displayAsPassword="true" text="{passwordDefault}" width="100%"/>		
+		</permission:FormItemComponent>
+		<permission:FormItemComponent id="fiAssignedToBranch" label="{LanguageManager.getInstance().labels.login.assignedToBranch}" width="100%" permissionKey="false">
+			<mx:ComboBox
+				id="cbBranch"
+				dataProvider="{branches}"
+				labelFunction="branchLabelFunction"
+				width="100%"
+				/>
+		</permission:FormItemComponent>
+		<permission:FormItemComponent id="fiProfile" label="{LanguageManager.getInstance().labels.login.profile}" width="100%" permissionKey="false">
+			<mx:ComboBox
+				 id="cbProfiles"
+				 dataProvider="{profiles.*}"
+				 prompt="wybierz"
+				 labelField="@label"
+				 change="userEdit()"
+				 width="100%"
+				/>
+		</permission:FormItemComponent>
+	</mx:Form>
+</mx:Canvas>

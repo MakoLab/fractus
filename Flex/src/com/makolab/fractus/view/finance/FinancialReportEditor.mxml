@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:generic="com.makolab.fractus.view.generic.*">
+	<mx:FormItem label="Numer raportu">
+		<mx:Label text="{reportXml.number.fullNumber}"/>
+	</mx:FormItem> 
+	<mx:FormItem label="Bilans otwarcia">
+		<inputComponents:CurrencyEditor data="{reportXml.initialBalance}" width="100" enabled="{reportXml.@isFirstReport == 1 &amp;&amp; context == CONTEXT_OPEN_REPORT}"/>
+	</mx:FormItem>	
+	<mx:FormItem label="Data otwarcia">
+		<!--<inputComponents:DateEditor data="{reportXml.creationDate}" enabled="{context == CONTEXT_CREATE_REPORT}"/>-->
+		<inputComponents:DateTimeEditor id="creationDateEditor" data="{reportXml.creationDate}" enabled="{context == CONTEXT_CREATE_REPORT}" change="reportXml.creationDate = Tools.dateToIso(creationDateEditor.selectedDate)" />
+	</mx:FormItem>
+	<mx:FormItem label="Otworzył">
+		<generic:FractusDictionaryRenderer data="{context != CONTEXT_CREATE_REPORT ? reportXml.creatingUser.contractor.id : ModelLocator.getInstance().sessionManager.userId}"/>
+	</mx:FormItem>
+	<mx:FormItem label="Data zamknięcia">
+		<inputComponents:DateTimeEditor id="closureDateEditor" data="{reportXml.closureDate}" enabled="{context == CONTEXT_CLOSE_REPORT}" change="reportXml.closureDate = Tools.dateToIso(closureDateEditor.selectedDate)"/>
+	</mx:FormItem>
+	<mx:FormItem label="Zamknął">
+		<generic:FractusDictionaryRenderer data="{context != CONTEXT_CLOSE_REPORT ? reportXml.closingUser.contractor.id : ModelLocator.getInstance().sessionManager.userId}"/>
+	</mx:FormItem>
+		
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			import assets.IconManager;
+			import com.makolab.fractus.commands.SaveBusinessObjectCommand;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.commands.CreateBusinessObjectCommand;
+			import com.makolab.fractus.view.ComponentWindow;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			
+			
+			[Bindable]
+			private var reportXml:XML;
+			[Bindable]
+			private var context:int;
+			
+			private var window:ComponentWindow; 
+			
+			public function loadReport(reportId:String):void
+			{
+				var cmd:LoadBusinessObjectCommand = new LoadBusinessObjectCommand(DocumentTypeDescriptor.FINANCIAL_REPORT, reportId);
+				cmd.addEventListener(ResultEvent.RESULT, handleResult);
+				cmd.execute();
+			}
+			
+			public function createReport(registerId:String):void
+			{
+				var cmd:CreateBusinessObjectCommand = new CreateBusinessObjectCommand(DocumentTypeDescriptor.FINANCIAL_REPORT);
+				cmd.addEventListener(ResultEvent.RESULT, handleResult);
+				cmd.execute({ source : <source type="financialRegister"><financialRegisterId>{registerId}</financialRegisterId></source> });
+			}
+			
+			private function handleResult(event:ResultEvent):void
+			{
+				this.reportXml = XML(event.result).financialReport[0];
+				if (context == CONTEXT_CLOSE_REPORT)
+				{
+					if (!String(reportXml.closureDate)) reportXml.closureDate = Tools.dateToIso(new Date());
+					reportXml.isClosed = 1;
+				}
+				else if (context == CONTEXT_CREATE_REPORT)
+				{
+					
+				}
+				else if (context == CONTEXT_OPEN_REPORT)
+				{
+					if(reportXml.closureDate) delete reportXml.closureDate;
+					if(reportXml.closingUser) delete reportXml.closingUser;
+					reportXml.isClosed = 0;
+				}
+			}
+			
+			private function commitChanges():void
+			{
+				var cmd:SaveBusinessObjectCommand = new SaveBusinessObjectCommand();
+				cmd.addEventListener(ResultEvent.RESULT, handleCommitResult);
+				cmd.execute(<root>{this.reportXml}</root>);
+			}
+			
+			private function handleCommitResult(event:ResultEvent):void
+			{
+				if (window) window.hide();
+				dispatchEvent(new Event('dataCommited'));
+			}
+			
+			public static const CONTEXT_CREATE_REPORT:int = 1;
+			public static const CONTEXT_CLOSE_REPORT:int = 2;
+			public static const CONTEXT_OPEN_REPORT:int = 3;
+			
+			public static function showWindow(id:String, context:int = 0):ComponentWindow
+			{
+				var editor:FinancialReportEditor = new FinancialReportEditor();
+				editor.context = context;
+				if (context == CONTEXT_CREATE_REPORT) editor.createReport(id);
+				else editor.loadReport(id); 
+				var win:ComponentWindow = ComponentWindow.showWindow(
+					editor,
+					ComponentWindow.BUTTON_COMMIT | ComponentWindow.BUTTON_CANCEL,
+					new Rectangle(-1, -1, 350, 240),
+					''
+				);
+				editor.window = win;
+				win.commitFunction = editor.commitChanges;
+				win.setStyle("headerColors", [IconManager.FINANCIAL_COLOR, IconManager.FINANCIAL_COLOR_LIGHT]);
+				win.setStyle("themeColor", IconManager.FINANCIAL_COLOR);
+				return win;
+			}
+			
+		]]>
+	</mx:Script>
+</mx:Form>

@@ -1,0 +1,157 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<root xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <table dotyczy="tabela główna">
+    <table dotyczy="miejsce wystawienia">
+      <tr>
+        <td BLANK="true" WIDTH="70%"/>
+        <td ALIGN="left" WIDTH="20%" FONT-SIZE="8.0pt" FONT-WEIGHT="normal" FONT-STYLE="normal">Miejsce wystawienia:</td>
+        <td ALIGN="center" WIDTH="10%" FONT-SIZE="8.0pt" FONT-WEIGHT="normal" FONT-STYLE="normal">Warszawa</td>
+      </tr>
+      <tr>
+        <td BLANK="true" WIDTH="70%"/>
+        <td ALIGN="left" WIDTH="20%" FONT-SIZE="8.0pt" FONT-WEIGHT="normal" FONT-STYLE="normal">Data wystawienia:</td>
+        <td ALIGN="center" WIDTH="10%" FONT-SIZE="8.0pt" FONT-WEIGHT="normal" FONT-STYLE="normal">2009-12-18</td>
+      </tr>
+      <tr>
+        <td BLANK="true" WIDTH="70%"/>
+        <td ALIGN="left" WIDTH="20%" FONT-SIZE="8.0pt" FONT-WEIGHT="normal" FONT-STYLE="normal">Data sprzedaży:</td>
+        <td ALIGN="center" WIDTH="10%" FONT-SIZE="8.0pt" FONT-WEIGHT="normal" FONT-STYLE="normal">2009-12-18</td>
+      </tr>
+    </table>
+    <tr WIDTH="100%" BLANK="true"/>
+    <tr WIDTH="100%" BLANK="true"/>
+    <tr ALIGN="center" WIDTH="100%" FONT-SIZE="20.0pt" FONT-WEIGHT="normal" FONT-STYLE="normal">Faktura VAT sprzedaży121/O1/2009</tr>
+    <tr WIDTH="100%" BLANK="true"/>
+    <tr WIDTH="100%" BLANK="true"/>
+    <tr ALIGN="center" WIDTH="100%" FONT-SIZE="" FONT-WEIGHT="" FONT-STYLE="">oryginał / kopia</tr>
+    <table dotyczy="sprzedawca nabywca">
+      <tr>
+        <td ALIGN="left" WIDTH="15%" FONT-SIZE="8.0pt" FONT-WEIGHT="normal" FONT-STYLE="normal">Sprzedawca:</td>
+        <td ALIGN="left" WIDTH="35%" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Twoja firma</td>
+        <td ALIGN="left" WIDTH="15%" FONT-SIZE="8.0pt" FONT-WEIGHT="normal" FONT-STYLE="normal">Nabywca:</td>
+        <td ALIGN="left" WIDTH="35%" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Batcar sp jaw</td>
+      </tr>
+      <tr>
+        <td BLANK="true" WIDTH="15%"/>
+        <td ALIGN="left" WIDTH="35%" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Domyślna 1</td>
+        <td BLANK="true" WIDTH="15%"/>
+        <td ALIGN="left" WIDTH="35%" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal"></td>
+      </tr>
+      <tr>
+        <td BLANK="true" WIDTH="15%"/>
+        <td ALIGN="left" WIDTH="35%" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">12-345 Miasto</td>
+        <td BLANK="true" WIDTH="15%"/>
+        <td ALIGN="left" WIDTH="35%" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal"> </td>
+      </tr>
+      <tr>
+        <td BLANK="true" WIDTH="15%"/>
+        <td ALIGN="left" WIDTH="35%" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">NIP: 111-111-11-11</td>
+        <td BLANK="true" WIDTH="15%"/>
+        <td BLANK="true" WIDTH="35%"/>
+      </tr>
+      <tr>
+        <td BLANK="true" WIDTH="15%"/>
+        <td ALIGN="left" WIDTH="35%" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">NRB: 19203000451110000001713850</td>
+        <td BLANK="true" WIDTH="15%"/>
+        <td BLANK="true" WIDTH="35%"/>
+      </tr>
+    </table>
+    <table dotyczy="tabela towarów">
+      <th TOPBORDER="-" CROSSBORDER="+" BOTTOMBORDER="-" VERTICALBORDER="|">
+        <td BLANK="true" WIDTH="1"/>
+        <td ALIGN="center" WIDTH="20pt" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Lp</td>
+        <td ALIGN="center" WIDTH="160pt" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Nazwa</td>
+        <td ALIGN="center" WIDTH="30pt" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Ilość</td>
+        <td ALIGN="center" WIDTH="30pt" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">J.m.</td>
+        <td ALIGN="center" WIDTH="50pt" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Cena netto bez rabatu</td>
+        <td ALIGN="center" WIDTH="30pt" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Rabat</td>
+        <td ALIGN="center" WIDTH="40pt" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Cena jedn. netto</td>
+        <td ALIGN="center" WIDTH="40pt" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Wartość netto</td>
+        <td ALIGN="center" WIDTH="50pt" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">VAT [%]</td>
+        <td ALIGN="center" WIDTH="40pt" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Wartość VAT</td>
+        <td ALIGN="center" WIDTH="40pt" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Wartość brutto</td>
+      </th>
+      <tr VERTICALBORDER="|" BOTTOMBORDER="-" CROSSBORDER="+">
+        <td BLANK="true" WIDTH="1"/>
+        <td ALIGN="center" WIDTH="20pt" FONT-WEIGHT="normal" FONT-STYLE="normal">1</td>
+        <td ALIGN="left" WIDTH="160pt" FONT-WEIGHT="normal" FONT-STYLE="normal">krzesło lama</td>
+        <td ALIGN="center" WIDTH="30pt" FONT-WEIGHT="normal" FONT-STYLE="normal">2</td>
+        <td ALIGN="center" WIDTH="30pt" FONT-WEIGHT="normal" FONT-STYLE="normal">szt.</td>
+        <td ALIGN="right" WIDTH="50pt" FONT-WEIGHT="normal" FONT-STYLE="normal">225,00</td>
+        <td ALIGN="center" WIDTH="30pt" FONT-WEIGHT="normal" FONT-STYLE="normal">0%</td>
+        <td ALIGN="right" WIDTH="40pt" FONT-WEIGHT="normal" FONT-STYLE="normal">225,00</td>
+        <td ALIGN="right" WIDTH="40pt" FONT-WEIGHT="normal" FONT-STYLE="normal">450,00</td>
+        <td ALIGN="center" WIDTH="50pt" FONT-WEIGHT="normal" FONT-STYLE="normal">22</td>
+        <td ALIGN="right" WIDTH="40pt" FONT-WEIGHT="normal" FONT-STYLE="normal">99,00</td>
+        <td ALIGN="right" WIDTH="40pt" FONT-WEIGHT="normal" FONT-STYLE="normal">549,00</td>
+      </tr>
+    </table>
+    <tr WIDTH="100%" BLANK="true"/>
+    <table dotyczy="tabela vat">
+      <th TOPBORDER="-" CROSSBORDER="+" BOTTOMBORDER="-" VERTICALBORDER="|">
+        <td BLANK="true" WIDTH="40"/>
+        <td ALIGN="center" WIDTH="40pt" FONT-WEIGHT="normal" FONT-STYLE="normal">Wartość netto</td>
+        <td ALIGN="center" WIDTH="50pt" FONT-WEIGHT="normal" FONT-STYLE="normal">VAT [%]</td>
+        <td ALIGN="center" WIDTH="40pt" FONT-WEIGHT="normal" FONT-STYLE="normal">Wartość VAT</td>
+        <td ALIGN="center" WIDTH="40pt" FONT-WEIGHT="normal" FONT-STYLE="normal">Wartość brutto</td>
+      </th>
+      <tr VERTICALBORDER="|" BOTTOMBORDER="-" CROSSBORDER="+">
+        <td BLANK="true" WIDTH="40"/>
+        <td ALIGN="center" WIDTH="40pt" FONT-WEIGHT="normal" FONT-STYLE="normal">450,00</td>
+        <td ALIGN="center" WIDTH="50pt" FONT-WEIGHT="normal" FONT-STYLE="normal">22</td>
+        <td ALIGN="center" WIDTH="40pt" FONT-WEIGHT="normal" FONT-STYLE="normal">99,00</td>
+        <td ALIGN="center" WIDTH="40pt" FONT-WEIGHT="normal" FONT-STYLE="normal">549,00</td>
+      </tr>
+    </table>
+    <tr WIDTH="100%" BLANK="true"/>
+    <tr WIDTH="100%" BLANK="true"/>
+    <table dotyczy="razem do zapłaty">
+      <tr>
+        <td ALIGN="left" WIDTH="30" FONT-SIZE="14.0pt" FONT-WEIGHT="normal" FONT-STYLE="normal">Razem do zapłaty:</td>
+        <td ALIGN="left" WIDTH="60" FONT-SIZE="14.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">549,00 PLN</td>
+      </tr>
+      <tr>
+        <td ALIGN="left" WIDTH="30" FONT-SIZE="14.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Słownie:</td>
+        <td ALIGN="left" WIDTH="60" FONT-SIZE="14.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">pięćset czterdzieści dziewięć PLN zero </td>
+      </tr>
+    </table>
+    <tr WIDTH="100%" BLANK="true"/>
+    <tr WIDTH="100%" BLANK="true"/>
+    <table dotyczy="płatności">
+      <tr>
+        <td ALIGN="left" WIDTH="30" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Forma płatności:</td>
+        <td ALIGN="left" WIDTH="30" FONT-SIZE="10.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Gotówka</td>
+        <td ALIGN="left" WIDTH="30" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Termin płatności:</td>
+        <td ALIGN="left" WIDTH="30" FONT-SIZE="10.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">2009-12-18</td>
+      </tr>
+    </table>
+    <tr WIDTH="100%" BLANK="true"/>
+    <tr>
+      <td ALIGN="left" WIDTH="30" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Zapłacono:</td>
+      <td ALIGN="left" WIDTH="30" FONT-SIZE="10.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">549,00 PLN</td>
+      <td ALIGN="left" WIDTH="30" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Do zapłaty:</td>
+      <td ALIGN="left" WIDTH="30" FONT-SIZE="10.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">0,00 PLN</td>
+    </tr>
+    <tr ALIGN="left" WIDTH="30" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">
+      Uwagi
+      :
+    </tr>
+    <tr ALIGN="left" WIDTH="30" FONT-SIZE="10.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">KIEROWCO!  po przejechaniu 100km sprawdź dokręcenie kół !</tr>
+    <tr WIDTH="100%" BLANK="true"/>
+    <tr WIDTH="100%" BLANK="true"/>
+    <table dotyczy="osoba wystawiająca i podpisy">
+      <tr>
+        <td ALIGN="left" WIDTH="30" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Osoba wystawiająca:</td>
+        <td ALIGN="left" WIDTH="30" FONT-SIZE="10.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Makolab Administrator</td>
+        <td ALIGN="left" WIDTH="30" FONT-SIZE="8.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal">Odebrał:</td>
+        <td ALIGN="left" WIDTH="30" FONT-SIZE="10.0pt" FONT-WEIGHT="bold" FONT-STYLE="normal"></td>
+      </tr>
+      <tr WIDTH="100%" BLANK="true"/>
+      <tr WIDTH="100%" BLANK="true"/>
+      <tr>
+        <td ALIGN="left" WIDTH="60" FONT-SIZE="6.0pt" FONT-WEIGHT="normal" FONT-STYLE="italic">Podpis osoby upoważnionej do wystawienia faktury VAT:</td>
+        <td ALIGN="left" WIDTH="60" FONT-SIZE="6.0pt" FONT-WEIGHT="normal" FONT-STYLE="italic">Podpis osoby upoważnionej do odbioru faktury VAT:</td>
+      </tr>
+    </table>
+  </table>
+</root>

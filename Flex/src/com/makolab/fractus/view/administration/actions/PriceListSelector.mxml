@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:ComboBox xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="getList()" dataProvider="{list}" labelField="@label">
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			
+			[Bindable] private var list:XMLList;
+		
+			private function getList():void
+			{
+				var requestXML:XML = 	<root><columns><column field="label"/></columns></root>;
+				var cmd:ExecuteCustomProcedureCommand = new ExecuteCustomProcedureCommand("item.p_getPriceLists",requestXML);
+				cmd.addEventListener(ResultEvent.RESULT,getPriceListsHandler);
+				cmd.execute();
+			}
+			
+			private function getPriceListsHandler(event:ResultEvent):void
+			{
+				list = XML(event.result).priceListHeader;
+				selectedId = _selectedId;
+			}
+			
+			private var _selectedId:String;
+			
+			public function set selectedId(value:String):void
+			{
+				_selectedId = value;
+				if(list)this.selectedItem = list.(@id == value);
+			}
+			
+			public function get selectedId():String
+			{
+				return selectedItem.@id;
+			}
+			
+			public function get label():String
+			{
+				return selectedItem.@label;
+			}
+			
+		]]>
+	</mx:Script>
+</mx:ComboBox>

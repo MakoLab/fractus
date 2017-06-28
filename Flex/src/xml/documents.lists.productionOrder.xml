@@ -1,0 +1,47 @@
+<config>
+	<headerColor>SERVICE_COLOR</headerColor>
+	<headerColorLight>SERVICE_COLOR_LIGHT</headerColorLight>
+	<objectType>CommercialDocument</objectType>
+	<showClipboard>false</showClipboard>
+	<exportProfile>defaultCommercialDocumentXml</exportProfile>
+	<alwaysShowOperationsPanel>true</alwaysShowOperationsPanel>
+	<columns>
+		<column field="@status" dataType="documentStatus" width="25"/>
+		<column field="@documentTypeId" labelKey="documents.type" dataType="documentType" width="70"/>
+		<column field="@fullNumber" labelKey="documents.documentNumber" width="120"/>
+		<column field="@issueDate" labelKey="documents.issueDateShort" dataType="date" width="80"/> 
+		<column field="@contractor" labelKey="contractors.contractor"/>
+		<column field="@grossValue" labelKey="documents.grossValue" dataType="currency" width="100"/>
+	</columns>
+	<summary>
+		<column field="@netValue" labelKey="documents.netValueSummary" dataType="currency" showSystemCurrency="true" />
+		<column field="@grossValue" labelKey="documents.grossValueSummary" dataType="currency" showSystemCurrency="true" />
+	</summary>
+	<getItemDataParams>
+		<type>Document</type>
+		<id/>
+	</getItemDataParams>
+	<filterField>@fullNumber</filterField>
+	<searchParams type="CommercialDocument">
+		<pageSize>200</pageSize>
+		<page>1</page>
+		<columns>
+			<column field="documentTypeId" column="documentTypeId"/>
+			<column field="status" column="status"/>
+			<column field="fullNumber"/>
+			<column field="issueDate" sortOrder="1" sortType="DESC"/>
+			<column field="contractor" column="fullName" relatedObject="contractor"/>
+			<column field="grossValue"/>
+		</columns>
+	</searchParams>
+	<filters>
+		<filter label="" type="dateFilter"/>
+		<filter label="Numer dokumentu"  labelKey="documents.documentNumber" type="docNumberFilter" disableFilterType="dateFilter"/>
+		<filter label="Status dokumentu" type="docStatusFilter"/>
+		<filter labelKey="documents.documentType" label="Typ dokumentu" type="docTypeFilter" itemsType="15"/>
+		<filter label="Firma" type="docCompanyFilter"/>
+		<filter label="Magazyn" labelKey="common.warehouse" type="docWarehouseFilter"/>
+		<!--filter label="Ustawienia numerowania" type="docNumSettingsFilter"/-->
+		<filter label="Powiązania" type="docRelationsFilter"/>
+	</filters>
+</config>

@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DocumentEditor
+		xmlns="com.makolab.fractus.view.documents.documentEditors.*"
+		xmlns:lineList="com.makolab.components.lineList.*"
+		xmlns:mx="http://www.adobe.com/2006/mxml"
+		xmlns:util="com.makolab.components.util.*"
+		xmlns:inputComponents="com.makolab.components.inputComponents.*"
+		xmlns:model="com.makolab.fractus.model.*" xmlns:catalogue="com.makolab.components.catalogue.*"
+		xmlns:documentControls="com.makolab.fractus.view.documents.documentControls.*" xmlns:plugins="com.makolab.fractus.view.documents.plugins.*"
+		printProfileName="defaultWarehouseDocumentPdf"
+		xmlns:warehouse="com.makolab.fractus.view.warehouse.*"
+		xmlns:document="com.makolab.fractus.model.document.*"
+		creationComplete="creationComplete()">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.events.FlexEvent;
+			import com.makolab.fractus.view.documents.documentControls.DocumentBarcodeVerificationComponent;
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.components.inputComponents.CurrencyRenderer;
+			import com.makolab.fractus.view.documents.documentControls.DefaultAttributeComponent;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			private function getSummaryText(pattern:String,totalLines:Number,totalQuantity:Number,totalValue:Number):String
+			{
+				var summaryText:String = pattern;
+				summaryText = summaryText.replace("%lineCount%",totalLines);
+				summaryText = summaryText.replace("%quantity%",totalQuantity);
+				summaryText = summaryText.replace("%documentValue%",CurrencyManager.formatCurrency(totalValue));
+				return summaryText;
+			}
+			
+			private function creationComplete():void
+			{
+				if(documentObject.typeDescriptor.xmlOptions.additionalAttributes.*.length() == 0)
+				{
+					this.tabNavigator.getTabAt(2).visible = false;
+					this.tabNavigator.getTabAt(2).includeInLayout = false;
+				}
+				 
+				ModelLocator.getInstance().configManager.requestList(["system.barcodeVerification"],configurationLoaded);
+				
+				tabNavigator.setFocus();
+			}
+			
+			private function configurationLoaded():void
+			{
+				barcodeVerification = ModelLocator.getInstance().configManager.getBoolean("system.barcodeVerification");
+			}
+			
+			[Bindable] private var barcodeVerification:Boolean;
+			
+			private function verifyByCode():void
+			{
+				DocumentBarcodeVerificationComponent.showWindow(documentObject).addEventListener(FlexEvent.HIDE,verificationComponentHide);
+			}
+			
+			private function verificationComponentHide(event:FlexEvent):void
+			{
+				this.window.setFocus();
+			}
+			
+			override protected function handleKeyDown(event:KeyboardEvent):void
+			{
+				// Przejscie do konkretnej zakadki
+				if (event.ctrlKey && !event.altKey && !event.shiftKey && event.keyCode >= 49 && event.keyCode <= 57)
+				{
+					if (event.keyCode - 49 < tabNavigator.numChildren && tabNavigator.getTabAt(event.keyCode - 49).visible)
+					{
+						tabNavigator.selectedIndex = event.keyCode - 49;
+						tabNavigator.setFocus();
+					}
+				}
+				super.handleKeyDown(event);
+			}
+			
+			private function isDocumentFeatureEnabled(documentObject:DocumentObject, attributeName:String):Boolean
+			{
+				var result:Boolean = false;
+				var attributeId:String = dictionaryManager.getByName('Attribute_SupplierDocumentNumber',"documentFeatures").id.toString();
+				var documentFeatures:XMLList = documentObject.typeDescriptor.xmlOptions.basicAttributes.attribute.(documentFieldId.toString() == attributeId);
+				if (documentFeatures.length() > 0 && documentFeatures[0].@readOnly != 1) result = true;
+				
+				return result;
+			}
+		]]>
+	</mx:Script>
+	
+	<!-- plugins -->
+	<plugins:DocumentValidationPlugin id="validationPlugin" documentObject="{documentObject}"/>
+	<plugins:WarehouseDocumentCalculationPlugin id="calculationPlugin" documentObject="{documentObject}"/>
+	<plugins:ContractorPlugin documentObject="{documentObject}"/>
+	<plugins:DocumentNumberPlugin documentObject="{documentObject}"/>
+	<plugins:CostCalculationPlugin documentObject="{documentObject}"/>
+	<plugins:WarehouseDocumentAlocationsPlugin documentObject="{documentObject}"/>
+	
+	<mx:TabNavigator id="tabNavigator" width="100%" height="100%">
+		
+		<mx:Form
+				label="{LanguageManager.getInstance().labels.common.basicTab}"
+				paddingLeft="15"
+				paddingRight="15"
+				width="100%"
+				height="100%"
+				paddingTop="0"
+				paddingBottom="0"
+			>
+	
+			<!-- TYP I NUMER -->
+			<mx:HBox paddingBottom="10">
+				<mx:Label text="{getDocumentType(documentObject.xml).label.(@lang==LanguageManager.getInstance().currentLanguage)[0]}" fontSize="18"/>
+				<mx:Label text="{documentObject.xml.number.fullNumber}" fontSize="18"/>
+			</mx:HBox>
+			
+			<!-- DATA -->
+			<documentControls:DateControl documentObject="{documentObject}" fieldName="issueDate" currentState="editor" enabled="false"/>
+			
+			<!-- MAGAZYN -->
+			<documentControls:WarehouseSelectionComponent id="warehouseSelector" documentObject="{documentObject}"/>
+			
+			<!-- DOKUMENT DOSTAWCY -->
+			<documentControls:DocumentGenericSingleAttributeComponent width="400" documentObject="{documentObject}" attributeName="Attribute_SupplierDocumentNumber" enabled="{isDocumentFeatureEnabled(documentObject,'Attribute_SupplierDocumentNumber')}"/>
+			<documentControls:DocumentGenericSingleAttributeComponent width="400" documentObject="{documentObject}" attributeName="Attribute_SupplierDocumentDate" enabled="{isDocumentFeatureEnabled(documentObject,'Attribute_SupplierDocumentDate')}"/>
+			
+			<!-- KONTRAHENT -->
+			<mx:FormItem
+					label="{LanguageManager.getInstance().labels.documents.contractorData}"
+					visible="{!documentObject.typeDescriptor.isShiftDocument}"
+					includeInLayout="{!documentObject.typeDescriptor.isShiftDocument}"
+					width="100%"
+				>
+				<mx:HBox width="100%">
+					<documentControls:ContractorComponent
+							id="contractorComponent"
+							currentState="editorNoAddress"
+							width="40%"
+							documentObject="{documentObject}"
+							contractorId="{documentObject.xml.contractor.contractor.id}"
+							enableAddressSelection="{documentObject.enableAddressSelection}"
+						/>
+					<!-- dane nabywcy -->
+					<documentControls:ContractorDataComponent
+							width="60%"
+							documentObject="{documentObject}"
+						/>
+				</mx:HBox>
+			</mx:FormItem>
+				
+			<!-- POZYCJE -->
+			<!--<documentControls:WarehouseLinesComponent
+					id="lines"
+					width="100%"
+					documentObject="{documentObject}"
+					rowCount="10"
+					enableValueChange="{documentObject.typeDescriptor.isWarehouseIncome}"
+				/>-->
+			<WMSLinesComponent
+					id="lines"
+					width="100%"
+					documentObject="{documentObject}"
+					rowCount="10"
+					enableValueChange="{documentObject.typeDescriptor.isWarehouseIncome}"
+				/>
+				
+			<!-- PODSUMOWANIE -->
+			<mx:Label visible="{!isNaN(calculationPlugin.totalLines)}" 
+				text="{getSummaryText(LanguageManager.getInstance().labels.documents.warehouseDocumentSummary,calculationPlugin.totalLines,calculationPlugin.totalQuantity,calculationPlugin.totalValue)}"/>
+
+			<!-- weryfikacja faktury czytnikiem kodów-->
+			<mx:FormItem label="{LanguageManager.getInstance().labels.documents.verifyPurchaseDocument}" visible="{barcodeVerification}" includeInLayout="{barcodeVerification}">
+				<mx:Button label="{LanguageManager.getInstance().labels.documents.verify}" toolTip="{LanguageManager.getInstance().labels.documents.verifyDocumentTooltip}" click="{verifyByCode();}" />
+			</mx:FormItem>
+			
+		</mx:Form>
+		
+		<!-- ZAKLADKA SZCZEGOLOW -->
+		<mx:HBox
+				label="{LanguageManager.getInstance().labels.documents.details}"
+				paddingLeft="15"
+				paddingRight="15"
+				paddingTop="15"
+				width="100%"		
+				height="100%"
+			>
+			
+			<!-- lewa kolumna szczegolow -->
+			<mx:Form
+					width="35%"
+					height="100%"
+					paddingTop="4"
+				>
+				<!-- waluta dokumentu -->
+				<documentControls:DocumentCurrencySelector documentObject="{documentObject}" width="100%" visible="{documentObject.typeDescriptor.allowOtherCurrencies}" includeInLayout="{documentObject.typeDescriptor.allowOtherCurrencies}"/>
+				<!-- daty -->		
+				<documentControls:DateControl documentObject="{documentObject}" fieldName="issueDate" label="Data wystawienia" enabled="false" currentState="editor"/>
+				
+				<!-- cechy dokumentu -->
+				<documentControls:DocumentFeatureComponent documentObject="{this.documentObject}" currentState="editor" />
+				
+				<!-- atrybuty podstawowe -->
+				<mx:Repeater id="basicAttributeRepeater" dataProvider="{documentObject.typeDescriptor.xmlOptions.basicAttributes.attribute.(@name.toString() != 'Attribute_SupplierDocumentNumber' &amp;&amp; @name.toString() != 'Attribute_SupplierDocumentDate')}">
+					<documentControls:DocumentGenericSingleAttributeComponent documentObject="{documentObject}" attributeName="{basicAttributeRepeater.currentItem.@name}" enabled="{basicAttributeRepeater.currentItem.@readOnly != 1}"/>
+				</mx:Repeater>
+			</mx:Form>
+			
+			<!-- prawa (szersza) kolumna -->
+			<mx:Form
+					width="65%"
+					height="100%"
+					paddingTop="4"
+				>
+				<!-- uwagi -->
+				<documentControls:RemarksComponent documentObject="{documentObject}" width="100%" height="100"/>
+			</mx:Form>
+		</mx:HBox>
+		
+		<documentControls:AdditionalAttributesTab documentObject="{documentObject}"/>
+	</mx:TabNavigator>
+
+</DocumentEditor>

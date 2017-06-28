@@ -1,0 +1,29 @@
+<config>
+	<columns>
+		<column field="@shortName" sortOrder="1" sortType="ASC" label="\{LanguageManager.labels.common.shortName\}"/>
+		<column field="@code" sortOrder="1" sortType="ASC" label="\{LanguageManager.labels.common.code\}"/>
+		<!--column field="@isBusinessEntity" sortOrder="1" sortType="ASC" label="Firma"/-->
+		<!--column field="@nipPrefixCountryId" sortOrder="1" sortType="ASC" label="Kraj NIP"/-->
+		<column field="@nip" sortOrder="1" sortType="ASC" label="\{LanguageManager.labels.common.nip\}"/>
+		<!--column field="Address_Billing" sortOrder="1" sortType="ASC" label="NIP"/-->
+	</columns>
+	<searchParams>
+		<query/>
+		<columns>
+			<column field="shortName" sortOrder="1" sortType="ASC" labelKey="common.shortName" label="Nazwa"/>
+			<column field="code" sortOrder="1" sortType="ASC" labelKey="common.code" label="Kod"/>
+			<column field="nip" sortOrder="1" sortType="ASC" label="NIP"/>
+		</columns>
+		<!--condition>isSupplier = 1 OR isReceiver = 1</condition-->
+	</searchParams>			
+	<getItemDataParams>
+		<type>Contractor</type>
+		<id/>
+	</getItemDataParams>
+	<filterField>shortName</filterField>
+	<columns_>
+		<column field="@shortName" table="Contractor" column="shortName" labelKey="common.shortName" label="Nazwa"/>
+		<column field="passportNumber" table="ContractorAttrValue" column="xmlValue" contractorFieldId="123132-132-123-132-13-123" label="Paszport"/>
+		<column field="regon" table="ContractorAttrValue" column="textValue" contractorFieldId="DUPA-1234-5678-2324" label="Regon"/>
+	</columns_>
+</config>

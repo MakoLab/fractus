@@ -1,0 +1,10 @@
+<configuration>
+  <linesTableColumns>
+    <column node="ordinalNumber" headerKey="common.lp" header="Lp" dataFormat="decimal" width="30"/>
+    <column node="itemCode" headerKey="common.code" header="Kod" width="90" />
+    <column node="itemName" headerKey="common.shortName" header="Nazwa"/>
+    <column node="quantity" headerKey="common.quantity" header="Ilość" dataFormat="decimal4" width="40"/>
+    <column node="unitId" localizedAttribute="symbol" headerKey="dictionaries.unitIdShort" header="J.m." width="40" dataFormat="dictionary" />
+    <column node="attributes" header="Technologia" dataFormat="technologyName" width="150" />
+  </linesTableColumns>
+</configuration>

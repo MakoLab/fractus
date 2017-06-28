@@ -1,0 +1,56 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>MakoPrint test page</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta http-equiv="pragma" content="no-cache" />
+    </head>
+    <body>
+        <script type="text/javascript">
+        function onBtnSubmit() {
+            var radioButtons = document.getElementsByName('destinationFormat');
+            
+            for (var i=0; i<radioButtons.length; i++) {
+                if (radioButtons[i].checked) {
+                    document.getElementsByName('outputFormat')[0].value = radioButtons[i].value;
+                }
+            }
+            
+            document.MainForm.submit();
+        }
+        </script>
+        <form name="MainForm" action="Export.aspx" method="post">
+            <input type="hidden" name="outputFormat" />
+            Input Xml:
+            <br />
+            <textarea cols="0" rows="0" name="xml" style="width: 900px; height: 250px;"></textarea>
+            <br />
+            Xslt name:
+            <br />
+            <input type="text" name="xsltName" />
+            <br />
+            Print config name:
+            <br />
+            <input type="text" name="printConfigName" />
+            <br />
+            Driver config name:
+            <br />
+            <input type="text" name="driverConfigName" />
+            <br />
+            Output content type:
+            <br />
+            <input type="text" name="outputContentType" value="content"/>
+            <br />
+            <input type="button" value="Generate document" onclick="onBtnSubmit();" />
+        </form>
+        <div>
+            <input id="rbPdf" type="radio" name="destinationFormat" value="pdf" checked="checked" /><label for="rbPdf">PDF</label>
+            <input id="rbXls" type="radio" name="destinationFormat" value="xls" /><label for="rbXls">XLS</label>
+            <input id="rbCsv" type="radio" name="destinationFormat" value="csv" /><label for="rbCsv">CSV</label>
+            <input id="rbXml" type="radio" name="destinationFormat" value="xml" /><label for="rbXml">XML</label>
+            <input id="rbFiscal" type="radio" name="destinationFormat" value="fiscal" /><label for="rbFiscal">Fiscal</label>
+            <input id="rbVcard" type="radio" name="destinationFormat" value="vcard" /><label for="rbXml">VCard</label>
+            <input id="rbText" type="radio" name="destinationFormat" value="text" /><label for="rbText">Text</label>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,35 @@
+<project name="Main" default="main">
+  <taskdef resource="net/sf/antcontrib/antcontrib.properties"/>
+
+  <target name="main" >
+
+    <propertyregex property="testProp"
+                   input="${basedir}"
+                   regexp="\\"
+                   replace="/"
+                   global="true" defaultValue="${basedir}" />
+				 
+	<echo message="project.version = ${project.version}" />
+	<echo message="project.revision = ${project.revision}" />
+	<echo message="project.build.time = ${project.build.time}" />
+	<echo message="date.now = ${date.now}" />
+	<echo message="fractus.modules.wms = ${fractus.modules.wms}" />
+	
+    <echo message="basedir = ${basedir}" />
+    <echo message="testProp = ${testProp}" />
+    <exec executable="cmd" failonerror="true">
+		  <arg value="/c"/>
+		  <arg value="rake"/>
+		  <arg value="-f"/>
+      <arg value="${basedir}\..\dotNET\buildScripts\generate_version.rb"/>
+      <arg value="--libdir=${testProp}/../dotNET/buildScripts/"/>
+      <arg value="--trace"/>
+      <arg value="build_latest"/>
+      <arg value="root_path='..'"/>
+      <arg value="destination=C:\Builds\3\Fractus\Slim\Sources\trunk\dotNet"/>
+      <arg value="is_debug=true"/>
+      <arg value="subfolder=''"/>
+	  </exec>	    
+	</target>
+
+</project>

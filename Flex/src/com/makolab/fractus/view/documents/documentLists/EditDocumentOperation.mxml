@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CatalogueOperation xmlns="com.makolab.components.catalogue.*" xmlns:mx="http://www.adobe.com/2006/mxml"
+		image="{getImage(category, simple)}"
+		label="{simple ? LanguageManager.getInstance().labels.documents.editSimple : LanguageManager.getInstance().labels.documents.edit}"
+		operationInvoke="handleInvoke(event)"
+	>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.DictionaryManager;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import com.makolab.components.catalogue.CatalogueEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import assets.IconManager;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			
+			/**
+			 * True if the operation should open simplified document editor (sales only).
+			 */
+			[Bindable]
+			public var simple:Boolean = false;
+		
+			[Bindable]
+			public var typeDescriptor:DocumentTypeDescriptor;
+			
+			/**
+			 * Document category as defined by CATEGORY_* constants in DocumentTypeDescriptor.
+			 */
+			[Bindable]
+			public var category:uint;
+			
+			protected function getImage(category:uint, simple:Boolean):Class
+			{
+				var iconName:String;
+				if (category == DocumentTypeDescriptor.CATEGORY_SALES && simple) iconName = "sales_simple_small";
+				else iconName = "edit_small";
+				return IconManager.getIcon(iconName);
+			}
+			
+			/**
+			 * Open document editor.
+			 */
+			protected function handleInvoke(event:CatalogueEvent):void
+			{
+				event.deselectItem = true;
+				var nodeName:String = "";
+				var matchArray:Array;
+				for each(var node:XML in event.itemData.*){
+					matchArray = node.localName().toString().match(new RegExp("document","i")); 
+					if(matchArray && matchArray.length > 0)nodeName = node.localName().toString();
+				}
+				var id:String = event.itemData[nodeName].id;
+				var category:uint = this.typeDescriptor ? this.typeDescriptor.categoryNumber : this.category;
+				
+				var askQuestion:Boolean = false;
+				
+				if(this.typeDescriptor && this.typeDescriptor.getDefaultFiscalPrintProfile() != "")
+				{
+					//sprawdzamy jakie jest id atrybutu z fiskalizacja
+					var attrId:String = DictionaryManager.getInstance().getByName('Attribute_FiscalPrintDate', 'documentAttributes').id;
+					
+					var attribute:XMLList = event.itemData.*.attributes.attribute.(documentFieldId == attrId);
+					
+					if(attribute.length() != 0)
+						askQuestion = true;					
+				}
+				
+				if(!askQuestion)
+					this.showDocumentEditor(category, simple ? ShowDocumentEditorCommand.EDITOR_SIMPLE : ShowDocumentEditorCommand.EDITOR_ADVANCED, id);
+				else
+				{
+					Alert.yesLabel = LanguageManager.getLabel("alert.yes");
+			 		Alert.noLabel = LanguageManager.getLabel("alert.no");
+			 		var alert:Alert = Alert.show(LanguageManager.getLabel("documents.repeatedFiscalDocumentEdition"), '', Alert.YES | Alert.NO, null, fiscalizedDocumentEditionQuestionHandler, null, Alert.YES);
+			 		alert.data = {'id' : id, 'category' : category, 'editorType' : (simple ? ShowDocumentEditorCommand.EDITOR_SIMPLE : ShowDocumentEditorCommand.EDITOR_ADVANCED)};
+				}
+			}
+			
+			private function fiscalizedDocumentEditionQuestionHandler(event:CloseEvent):void
+		 	{
+		 		if(event.detail == Alert.YES)
+		 			this.showDocumentEditor(event.target.data['category'], event.target.data['editorType'], event.target.data['id']);
+		 	}
+			
+			private function showDocumentEditor(category:uint, editorType:int, id:String):void
+			{
+				var cmd:ShowDocumentEditorCommand = new ShowDocumentEditorCommand(category);
+					cmd.documentId = id;
+					cmd.editorType = editorType;
+					cmd.execute();
+			}
+			
+			/**
+			 * Check if document can be modified. If not, disable the operation and set a tooltip with explanation.
+			 */
+			public override function set itemData(val:Object):void
+			{
+				if(simple && !visible)return;
+				super.itemData = val;
+				if (val is XML)
+				{
+					this.enabled = model.permissionManager.isEnabled(permissionKey);
+					if(model.permissionManager.isHidden(permissionKey))
+						this.includeInLayout = false;
+					var typeDescriptor:DocumentTypeDescriptor = new DocumentTypeDescriptor(val.*.documentTypeId);
+						
+					if(this.enabled)	{	
+						var msg:Array = [];
+						if (val.*.@disableDocumentChange.length() > 0)
+						{
+							var spl:Array = String(val.*.@disableDocumentChange).split(/,/g);
+							for (var i:String in spl) msg.push(LanguageManager.getLabel(spl[i]));
+	
+						}
+						if (typeDescriptor.isShiftDocument)
+						{
+							msg.push(LanguageManager.getLabel("documents.messages.shiftDocumentChange"));
+						}
+						if (val.*.branchId != ModelLocator.getInstance().branchId)
+						{
+							msg.push(LanguageManager.getLabel("documents.messages.documentFromAnotherBranch"));
+						}
+						toolTip = msg.length > 0 ? msg.join('\n') : null;
+						enabled = toolTip ? false : true;
+						if(val.*.status.* == "-20" && category != DocumentTypeDescriptor.CATEGORY_TECHNOLOGY_DOCUMENT)
+						{
+							this.enabled = false;
+						}
+						if(val.*.status.* == "60")
+						{
+							this.enabled = false;
+							//hard text
+							toolTip = "Nie można edytować zaksięgowanego dokumentu";
+						}
+						if(typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_PURCHASE_CORRECTION || typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_WAREHOUSE_INCOME_CORRECTION || typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_WAREHOUSE_OUTCOME_CORRECTION || (simple && (typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_SALES_CORRECTION || typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_WAREHOUSE_RESERVATION || typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_WAREHOUSE_ORDER))){
+							this.enabled = false;
+						}
+						if(simple && (typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_WAREHOUSE_ORDER || typeDescriptor.categoryNumber == DocumentTypeDescriptor.CATEGORY_WAREHOUSE_RESERVATION)){
+							this.visible = false;
+							this.includeInLayout = false;
+						}
+						if(typeDescriptor.isFinancialDocument && val.*.financialReport.financialReport.isClosed.* == "1")
+						{
+							this.enabled = false;
+							//hard text
+							toolTip = "Nie można edytować dokumentu finansowego należącego do zamkniętego raportu finansowego";
+						}
+						// QLA hardtext
+						if(typeDescriptor.isFinancialDocument)
+						{
+							if(typeDescriptor.symbol!="KP"&&typeDescriptor.symbol!="KW")
+							{	
+								//hard text
+								if(!model.permissionManager.isEnabled(permissionKey+"nf"))
+									{
+										this.enabled = false;
+										//hard text
+										toolTip = "Nie można edytować dokumentu finansowego niegotówkowego";
+									}
+							}
+						}
+						if(typeDescriptor && typeDescriptor.isIncomeShiftOrder)
+						{
+							this.enabled = false;
+						}
+					}
+					else
+					{
+						// QLA hardtext
+						if(typeDescriptor)
+						if(typeDescriptor.isFinancialDocument&&!this.enabled)
+						{
+							if(model.permissionManager.isEnabled(permissionKey+"nf"))
+							{
+						
+								if(typeDescriptor.symbol!="KP"&&typeDescriptor.symbol!="KW")
+								{//hard text
+									
+											this.enabled = true;
+										
+								}
+							}
+						}
+					}
+				} 
+			}
+			
+		]]>
+	</mx:Script>
+</CatalogueOperation>

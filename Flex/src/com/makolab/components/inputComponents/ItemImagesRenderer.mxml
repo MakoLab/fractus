@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" 
+	xmlns:inputComponents="com.makolab.components.inputComponents.*"
+	horizontalAlign="center"
+	horizontalCenter="0" horizontalGap="0">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.DictionaryManager;
+		]]>
+	</mx:Script>
+	<mx:Repeater 
+		width="100%" 
+		id="rptr" 
+		dataProvider="{data.attributes.attribute.(String(valueOf().itemFieldId) == String(DictionaryManager.getInstance().dictionaries.itemImage.id))}"
+		horizontalCenter="0">
+		<inputComponents:ImageAttributeRenderer data="{rptr.currentItem}" width="100%" horizontalAlign="center" horizontalCenter="0" horizontalGap="0"/>
+	</mx:Repeater>
+</mx:VBox>

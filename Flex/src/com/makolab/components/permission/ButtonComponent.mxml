@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Button xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.ModelLocator;
+			
+			private var _permissionKey:String;
+			
+			public function get permissionKey():String {
+				return _permissionKey;
+			}
+			
+			public function set permissionKey(value:String):void {
+				_permissionKey = value;
+				
+				var per:Boolean = true;
+				var permissions:Array = value.split(',');
+				
+				for each(var permision:String in permissions) {
+					/*
+					// dodatek jeszcze nie użyty na ory;
+					if(permision.indexOf('|')) {
+						var:orPermissions:Array = permision.split('|');
+						var orPer:Boolean = false;
+						for each(var orPermision:String in orPermissions) {
+							orPer = orPer || ModelLocator.getInstance().permissionManager.isEnabled(orPermision);
+						}
+						per = per && orPer;
+					} else {
+						per = per && ModelLocator.getInstance().permissionManager.isEnabled(permision);
+					}
+					*/
+					per = per && ModelLocator.getInstance().permissionManager.isEnabled(permision);
+				}
+				
+				if(!per || value == null) {
+					this.visible = false;
+					this.includeInLayout = false;
+				} else {
+					this.visible = true;
+					this.includeInLayout = true;
+				}
+			}
+		]]>
+	</mx:Script>
+</mx:Button>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			[Bindable]
+			public var parameters:XML;
+			
+			[Bindable]
+			public var selectedIndex:Number = 0;
+			
+			public function paymentChange():void
+			{
+				if(parameters.settled.length() > 0) delete parameters.requireSettlement;
+				if(paymentCB.selected) {
+					parameters.requireSettlement = '1';
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:CheckBox id="paymentCB" change="paymentChange()" width="100%" label="{LanguageManager.getInstance().labels.documents.paymentsRequireSettlement}" />
+</mx:VBox>

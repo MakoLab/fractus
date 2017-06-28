@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+	paddingLeft="15"
+	paddingRight="15"
+	paddingBottom="15"
+	width="100%"
+	height="110%"
+	left="20"
+	right="20"
+	top="20"
+	bottom="20"
+	verticalGap="0" verticalAlign="middle" horizontalAlign="center" xmlns:inputComponents="com.makolab.components.inputComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.view.documents.plugins.WarehouseDocumentCalculationPlugin;
+			import com.makolab.components.document.template.WarehouseDocument;
+			import com.makolab.fractus.model.document.WarehouseDocumentLine;
+			import mx.effects.easing.Back;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.commands.CreateAccountingEntriesCommand;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.view.documents.plugins.CommercialDocumentCalculationPlugin;
+			import com.makolab.fractus.model.document.CommercialDocumentLine;
+			import com.makolab.fractus.commands.SaveBusinessObjectCommand;
+			import mx.controls.Alert;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import com.makolab.fractus.commands.LoadBusinessObjectCommand;
+			import com.makolab.fractus.commands.CreateBusinessObjectCommand;
+			import com.makolab.fractus.commands.SearchCommand;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.MenuManager;
+			import mx.controls.TextArea;
+			
+			
+			[Bindable] private var dictionary:DictionaryManager = DictionaryManager.getInstance();
+			
+			[Bindable] public var documentsTable:Array;
+			
+			[Bindable] public var procedurki:DocumentIssueTestProcedures;
+			
+			[Bindable] public var counter:int = 0;
+	
+	
+			public static function showWindow():ComponentWindow
+			{
+				var component:DocumentIssueTestWindow = new DocumentIssueTestWindow();
+				var window:ComponentWindow = ComponentWindow.showWindow(component);
+				return window;
+			}
+						
+
+			public function performScenario():void
+			{
+				documentsTable = new Array();
+				log.text += "*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n"; 
+				log.text += "Rozpoczynam test\n"; 
+				processInputXML(XML(input.text));
+				
+				
+				var timeDelay:Timer = new Timer(1000, documentsTable.length);
+				timeDelay.addEventListener(TimerEvent.TIMER, timerHandler);
+				timeDelay.start();
+			//
+			}
+			
+			
+			public function timerHandler(event:TimerEvent):void 
+			{
+				var procedurki:DocumentIssueTestProcedures = new DocumentIssueTestProcedures(searchContractorParams, searchItemParams, searchDocumentParams, payments);
+				//procedurki.issueDocument(documentsTable[counter]);
+				procedurki.issueCorrectiveDocument(documentsTable[counter]);
+				
+				counter++;
+			}
+				
+	
+			
+			
+			
+			
+			
+			
+			
+			public function processInputXML(inputXML:XML):void
+			{
+			
+			for each (var doc:XML in inputXML.*){
+				
+				var document:Object;
+				
+				var linesTable:Array = new Array();
+				
+				var template:String = doc.@template;	
+				
+				var type:String = getType(template);
+				
+				var sourceType:String = doc.@sourceType;
+				var correctedDocumentNumber:String = doc.@correctedDocumentNumber; 
+				
+				var contractorCode:String = doc.@contractorCode;
+				
+				var warehouseSymbol:String = doc.@warehouseSymbol;
+				
+				var issueFinancial:int = doc.@issueFinancialDocument;
+				var issueWarehouse:int = doc.@issueWarehouseDocument;
+			 
+			 	var payment:String = doc.@payment;
+			 	
+			 	
+				 for each (var lineXML:XML in doc.*){
+				 	
+				 	var line:Object;	
+				 	
+				 	var itemCode:String = lineXML.@itemCode;
+				 	var quantity:String = lineXML.@quantity;
+				 	var price:String = lineXML.@price;
+				 	var discountRate:String = lineXML.@discountRate;
+				 	var vatRate:String = lineXML.@vatRate;
+				 					 	
+				 	line = {itemCode: itemCode, quantity: quantity, price: price, discountRate: discountRate, vatRate: vatRate};
+				 	
+				 linesTable.push(line);
+				 	
+				 }
+				 
+				document = {template: template, type: type, payment: payment, sourceType: sourceType, correctedDocumentNumber: correctedDocumentNumber, contractorCode: contractorCode, warehouseSymbol: warehouseSymbol, issueFinancial: issueFinancial, issueWarehouse: issueWarehouse,  linesTable: linesTable};
+			
+				documentsTable.push(document);
+			} 
+			
+						
+		}
+	
+	
+	
+			private function getType(type:String):String
+			{
+				var model:ModelLocator = ModelLocator.getInstance();
+				
+			/*	trace("salesDocumentTemplates: " + model.salesDocumentTemplates.@id);
+				trace("purchaseDocumentTemplates: " + model.purchaseDocumentTemplates.@id);
+				trace("warehouseDocumentTemplates: " + model.warehouseDocumentTemplates.@id);
+				trace("documentTemplates: " + model.documentTemplates.@id);
+				*/
+				if (Boolean(model.salesDocumentTemplates.(@id == String(type)).length() > 0) || 
+					Boolean(model.purchaseDocumentTemplates.(@id == String(type)).length() > 0) ||
+					Boolean(model.financialDocumentTemplates.(@id == String(type)).length() > 0) ||
+					Boolean(model.orderDocumentTemplates.(@id == String(type)).length() > 0) ||
+					(String(type) == "correctiveBill") ||
+					(String(type) == "correctivePurchaseInvoice") ||
+					(String(type) == "correctiveSalesInvoice"))
+				{
+					log.text += "CommercialDocument in getType function\n"; 
+					return "CommercialDocument";
+				}
+				else if(model.warehouseDocumentTemplates.(@id == String(type)).length() > 0 ||
+					(String(type) == "correctiveExternalIncome") ||
+					(String(type) == "correctiveExternalOutcome"))
+				{
+					log.text += "WarehouseDocument in getType function\n"; 
+					return "WarehouseDocument";
+				}
+				
+				
+				
+				log.text += "EMPTY STRING in getType function\n"; 
+				return "" ;
+			}
+			
+						
+		
+		]]>
+	</mx:Script>
+	<mx:XML  id="searchDocumentParams">
+		<searchParams type="CommercialDocument">
+			<pageSize>200</pageSize>
+  <page>1</page>
+  			<columns>
+    			<column field="documentTypeId" column="documentTypeId"/>
+   				<column field="status" column="status"/>
+    			<column field="fullNumber"/>
+    			<column field="issueDate" sortOrder="1" sortType="DESC"/>
+    			<column field="contractor" column="fullName" relatedObject="contractor"/>
+    			<column field="nazwa_odbiorcy" column="fullName" relatedObject="receivingPersonContractor"/>
+  			</columns>
+  			<query/>
+ 			<filters>
+    			<column field="number"/>
+    		</filters>
+  			<groups/>
+		</searchParams>
+	</mx:XML>
+	
+	<mx:XML  id="searchContractorParams">
+		<searchParams>
+  			<query></query>
+  			<columns>
+    			<column field="shortName" sortOrder="1" sortType="ASC"/>
+    			<column field="fullName"/> 
+    			<column field="code"/>
+    			<column field="nip"/>
+  			</columns>
+  			<sqlConditions/>
+    	</searchParams>
+	</mx:XML>
+	
+	<mx:XML id="searchItemParams">
+		<searchParams>
+  			<columns>
+    			<column field="code"/>
+    			<column field="name"/>
+    			<column field="quantity"/>
+    			<column field="reservedQuantity"/>
+    			<column field="orderedQuantity"/>
+    			<column field="availableQuantity"/>
+  			</columns>
+  			<filters>
+    			<column field="code"></column>
+  			</filters>
+  			<currentWarehouse>62739AB5-9885-4A06-A252-CD222DCC86BD</currentWarehouse>
+		</searchParams>
+	</mx:XML>
+	
+	<mx:XML id="payments">
+		<payments>
+      			<payment>
+        			<date></date>
+        			<dueDate></dueDate>
+        			<paymentMethodId>66B4A96A-511D-49F8-ABAB-6DEE34AC3D0D</paymentMethodId>
+        			<amount></amount>
+        			<paymentCurrencyId>F01007BF-1ADA-4218-AE77-52C106DA4105</paymentCurrencyId>
+        			<systemCurrencyId>F01007BF-1ADA-4218-AE77-52C106DA4105</systemCurrencyId>
+        			<exchangeDate></exchangeDate>
+        			<exchangeScale>1</exchangeScale>
+       	 			<exchangeRate>1</exchangeRate>
+        			<isSettled>0</isSettled>
+        		</payment>
+    		</payments>
+	</mx:XML>
+		
+<mx:Box paddingBottom="15" paddingLeft="15" paddingRight="15" paddingTop="15" width="100%" height="100%" borderColor="#7BAFE5" horizontalAlign="center" verticalAlign="middle">
+		<mx:HBox paddingBottom="15" paddingLeft="15" paddingRight="15" paddingTop="15" width="100%" height="100%" borderColor="#7BAFE5" horizontalAlign="center" verticalAlign="middle">
+			<mx:TextArea id="input"  paddingBottom="15" paddingLeft="15" paddingRight="15" paddingTop="15" width="100%" height="80%" borderColor="#0868F8" horizontalScrollPolicy="auto" verticalScrollPolicy="auto"/>
+			<mx:TextArea id="log" paddingBottom="15" paddingLeft="15" paddingRight="15" paddingTop="15" width="100%" height="80%" borderColor="#0868F8" horizontalScrollPolicy="auto" verticalScrollPolicy="auto" liveScrolling="true"/>
+			<mx:VBox height="100%">
+				<mx:HBox width="100%">
+				</mx:HBox>
+				<mx:HBox width="100%">
+				</mx:HBox>
+				<mx:HBox width="100%">
+				</mx:HBox>
+			</mx:VBox>
+		</mx:HBox>
+		<mx:CheckBox id="saveCreatedDocumentsCB" label="Save created documents" />
+		<mx:Button id="genBtn" label="Perform Scenario" click="performScenario()" />
+	</mx:Box>
+</mx:VBox>
+
+

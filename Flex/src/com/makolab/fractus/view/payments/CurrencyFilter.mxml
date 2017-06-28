@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:generic="com.makolab.fractus.view.generic.*"
+	creationComplete="onCreationComplete()">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.GlobalEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			
+			import mx.collections.XMLListCollection;
+			
+			
+			[Bindable]
+			public var parameters:XML;
+			
+			
+			[Bindable] private var currencyId:String = "00000000-0000-0000-0000-000000000000";
+			
+			
+			private function onCreationComplete():void
+			{
+				// tutaj mamy problem taki, że niezależnie od ilośi językó zawsze dostaje wartość z aktualnego słownika więc dokument 
+				// nie ma  szans zmienić labela zerowego bez ponownego stworzenia komponentu -> mozna by dodać wartość w bazie do słownika walut
+				
+				var all:XML = <entry>
+  <id>
+    00000000-0000-0000-0000-000000000000
+  </id>
+  <symbol>
+    Wszystkie
+  </symbol>
+  <label lang="pl">
+{LanguageManager.getInstance().labels.currency.filter.all}
+  </label>
+ <label lang="en">
+{LanguageManager.getInstance().labels.currency.filter.all}
+  </label>
+  <version>
+    66235E47-0A8C-403F-A43D-DA001272E656
+  </version>
+  <order>
+    1
+  </order>
+</entry>;
+
+
+				var o:XMLListCollection = new XMLListCollection((DictionaryManager.getInstance().dictionaries.currency).copy());
+					o.addItemAt(all,0);
+					
+				var i:int = 0;
+				selector.dataProvider = o;
+				selector.selectedId = "00000000-0000-0000-0000-000000000000";
+				
+				this.addEventListener(GlobalEvent.LANGUAGE_CHANGED,onLangChanged);
+			}
+			private function onLangChanged(e:Event):void
+			{
+				handleCurrencyChange();
+			}
+			private function handleCurrencyChange():void
+			{
+				if(parameters.documentCurrencyId.length() > 0) delete parameters.documentCurrencyId;
+				if(selector.selectedId != "00000000-0000-0000-0000-000000000000")
+				{
+					parameters.documentCurrencyId = selector.selectedId;
+				}
+			}
+			
+			private function labelFunction(item:Object):String
+			{
+				return item.label.(@lang==LanguageManager.getInstance().currentLanguage)[0];
+			}
+		]]>
+	</mx:Script>
+	<generic:FractusDictionarySelector labelFunction="labelFunction" id="selector" dictionaryName="currency" change="handleCurrencyChange()" width="100%" selectedId="{currencyId}"/>
+</mx:VBox>

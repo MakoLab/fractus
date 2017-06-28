@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" initialize="init()" xmlns:local="*" xmlns:warehouse="com.makolab.fractus.view.warehouse.*" xmlns:layoutComponents="com.makolab.components.layoutComponents.*">
+	<mx:Metadata>
+		[Event(name="slotClick", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.containers.TitleWindow;
+			import mx.core.IFlexDisplayObject;
+			import assets.IconManager;
+			import mx.managers.PopUpManager;
+			import com.makolab.components.util.FPopUpManager;
+			import mx.events.CloseEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.view.ComponentWindow;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.rpc.events.ResultEvent;
+			import com.makolab.fractus.commands.ExecuteCustomProcedureCommand;
+			import com.makolab.fractus.commands.FractusCommand;
+			
+			[Bindable] public var showSlotContent:Boolean=false;
+			public var shiftTransactionId:String;
+			
+			[Bindable]
+			private var displayMode:int = WarehouseMap.DISPLAY_MODE_AVAILABLE;
+			
+			private function init():void
+			{
+				var params:XML = <root/>;
+				if(shiftTransactionId && shiftTransactionId != "")params.shiftTransactionId = shiftTransactionId;
+				var cmd:FractusCommand = new ExecuteCustomProcedureCommand("warehouse.p_getAvailableContainers", params);
+				cmd.addEventListener(ResultEvent.RESULT, function(event:ResultEvent):void { wm.availableSlots = XML(event.result).*});
+				cmd.execute();
+			}
+			
+			private function slotClickHandler(event:Event):void
+			{
+				dispatchEvent(new Event("slotClick"));
+				if(showSlotContent)panel.height = 300;
+				var searchParams:XML = <param><containerId>{wm.selectedSlotId}</containerId></param>;
+				ste.searchXml = searchParams;
+				ste.search();
+			}
+			
+			public function get selectedSlotId():String
+			{
+				return wm.selectedSlotId;
+			}
+			
+			public static function showWindow():TitleWindow
+			{
+				var editor:WarehouseContentInfo = new WarehouseContentInfo();
+				editor.displayMode = WarehouseMap.DISPLAY_MODE_OCCUPIED;
+				editor.showSlotContent = true;
+				editor.percentWidth = 100;
+				editor.percentHeight = 100;
+				
+				var window:TitleWindow = new TitleWindow();
+				window.addChild(editor);
+				window.title = "Zawartość magazynu";
+				window.setStyle("headerColors", [IconManager.WAREHOUSE_COLOR, IconManager.WAREHOUSE_COLOR_LIGHT]);
+				window.setStyle("borderAlpha", 0.9);
+				window.showCloseButton = true;
+				window.height = 630;
+				window.addEventListener(CloseEvent.CLOSE, function (event:CloseEvent):void{ PopUpManager.removePopUp(event.target as IFlexDisplayObject); } );
+				PopUpManager.addPopUp(window as IFlexDisplayObject, ModelLocator.getInstance().applicationObject as DisplayObject);
+				PopUpManager.centerPopUp(window);
+				return window;	
+			}
+			
+			private function closeButtonClickHandler(event:CloseEvent):void
+			{
+				if(showSlotContent)panel.height = panel.getStyle('headerHeight');
+			}
+		]]>
+	</mx:Script>
+	<local:WarehouseMap id="wm" width="100%" height="100%" slotClick="slotClickHandler(event)" warehouseStructure="{XML(ModelLocator.getInstance().configManager.getValue('warehouse.warehouseMap'))}" displayMode="{this.displayMode}"/>
+	<mx:TitleWindow id="panel" bottom="0" right="0" showCloseButton="true" close="closeButtonClickHandler(event)" visible="{showSlotContent}" includeInLayout="{panel.visible}" backgroundAlpha="0.5" width="800" height="{panel.getStyle('headerHeight')}">
+		<warehouse:ShiftTransactionEditor id="ste" width="100%" height="100%" showFilters="false" skipStartupSearch="true" saveComplete="init()" shiftAttributeWindowParent="{this}"/>
+	</mx:TitleWindow>
+</mx:Canvas>

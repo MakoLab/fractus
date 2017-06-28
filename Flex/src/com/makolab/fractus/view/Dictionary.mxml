@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:layout="com.makolab.components.layoutComponents.*" 
+	xmlns:dictionaries="com.makolab.fractus.view.dictionaries.*"
+	width="100%" height="100%">
+	<mx:XML id="dict" source="../../../../xml/dictionaries.xml"/>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.inputComponents.DictionaryEditor;
+			import com.makolab.components.list.CommonGrid;
+			import com.makolab.fractus.commands.dictionaries.SaveDictionaryCommand;
+			import com.makolab.fractus.model.DictionaryManager;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.view.dictionaries.DictionaryConfigurator;
+			
+			import mx.binding.utils.ChangeWatcher;
+			import mx.collections.ArrayCollection;
+			import mx.containers.HBox;
+			import mx.controls.Alert;
+			import mx.controls.DataGrid;
+			import mx.controls.Label;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.messaging.management.Attribute;
+			
+			[Bindable]
+			private var model:ModelLocator = ModelLocator.getInstance();
+			
+			private var de:DictionaryEditor;
+			
+			private function submit():void	{
+				for each(var x:XML in model.dictionaryManager.dictionaryModified.*)	{
+					if(x.toString()!="")
+					{
+						/*
+						 *
+						var xml:XML=<root><{x.localName()}><entry>{x.*.*}</entry></{x.localName()}></root>;
+						new SaveDictionaryCommand().execute( xml.toXMLString() ); 
+						*/
+						new SaveDictionaryCommand().execute("<root>" + x.toXMLString() + "</root>");
+					}
+				}
+				clear();
+			}
+			
+			private function cancel():void	{
+				clear();
+			}
+			
+			public static function showWindow():ComponentWindow
+			{
+				var window:ComponentWindow = new ComponentWindow();
+				var panel:Dictionary = new Dictionary();
+				window.innerComponent = panel;
+				window.show(null,null,LanguageManager.getInstance().labels.title.dictionary.panel);
+				return window;
+			}
+			
+			private function clear():void	{
+				model.dictionaryManager.dictionaryData = null;
+				model.dictionaryManager.dictionaryData = model.dictionaryManager.dictionaryTemplate.copy();
+				model.dictionaryManager.dictionaryModified = null;
+				model.dictionaryManager.dictionaryModified = model.dictionaryManager.dictionaryTemplate.copy();
+				dictionaryPanel.selectedIndex = 0;
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox width="100%" height="100%">	
+		<mx:TabBar direction="vertical" id="dictionaryPanel" dataProvider="viewstack1" selectedIndex="0"/>
+		<mx:ViewStack id="viewstack1" width="100%" height="100%">
+			<layout:DictionaryInfoPanel width="100%"/>
+			<dictionaries:DictionaryConfigurator width="100%" height="100%" id="contractorField" 			dictionaryType="ContractorField" 			label="{LanguageManager.getInstance().labels.dictionaries.contractorField}"				config="{model.dictionaryManager.dictionaryData.contractorField}" 			data="{model.dictionaryManager.dictionaryData.contractorField}"/>
+			<dictionaries:DictionaryConfigurator width="100%" height="100%" id="contractorRelationType"		dictionaryType="ContractorRelationType" 	label="{LanguageManager.getInstance().labels.dictionaries.contractorRelationType}"		config="{model.dictionaryManager.dictionaryData.contractorRelationType}" 	data="{model.dictionaryManager.dictionaryData.contractorRelationType}"/>
+			<dictionaries:DictionaryConfigurator width="100%" height="100%" id="country" 					dictionaryType="Country" 					label="{LanguageManager.getInstance().labels.dictionaries.country}"						config="{model.dictionaryManager.dictionaryData.country}" 					data="{model.dictionaryManager.dictionaryData.country}"/>
+			<dictionaries:DictionaryConfigurator width="100%" height="100%" id="currency" 					dictionaryType="Currency" 					label="{LanguageManager.getInstance().labels.dictionaries.currency}"					config="{model.dictionaryManager.dictionaryData.currency}" 					data="{model.dictionaryManager.dictionaryData.currency}"/>
+			<dictionaries:DictionaryConfigurator width="100%" height="100%" id="documentField" 				dictionaryType="DocumentField" 				label="{LanguageManager.getInstance().labels.dictionaries.documentField}"				config="{model.dictionaryManager.dictionaryData.documentField}" 			data="{model.dictionaryManager.dictionaryData.documentField}"/>
+			<!--
+			<dictionaries:DictionaryConfigurator width="100%" height="100%" id="documentFieldRelation" 		dictionaryType="DocumentFieldRelation" 		label="{LanguageManager.getInstance().labels.dictionaries.relationField}"				config="{model.dictionaryManager.dictionaryData.documentFieldRelation}" 	data="{model.dictionaryManager.dictionaryData.documentFieldRelation}"/>
+			-->
+			<dictionaries:DictionaryConfigurator width="100%" height="100%" id="documentType" 				dictionaryType="DocumentType" 				label="{LanguageManager.getInstance().labels.dictionaries.documentType}"				config="{model.dictionaryManager.dictionaryData.documentType}" 				data="{model.dictionaryManager.dictionaryData.documentType}"/>
+			<dictionaries:DictionaryConfigurator width="100%" height="100%" id="issuePlace" 				dictionaryType="IssuePlace" 				label="{LanguageManager.getInstance().labels.dictionaries.issuePlace}"					config="{model.dictionaryManager.dictionaryData.issuePlace}"				data="{model.dictionaryManager.dictionaryData.issuePlace}"/>
+			<dictionaries:DictionaryConfigurator width="100%" height="100%" id="itemField" 					dictionaryType="ItemField" 					label="{LanguageManager.getInstance().labels.dictionaries.itemField}"					config="{model.dictionaryManager.dictionaryData.itemField}" 				data="{model.dictionaryManager.dictionaryData.itemField}"/>
+			<dictionaries:DictionaryConfigurator width="100%" height="100%" id="itemRelationAttrValueType" 	dictionaryType="ItemRelationAttrValueType" 	label="{LanguageManager.getInstance().labels.dictionaries.attributeType}"				config="{model.dictionaryManager.dictionaryData.itemRelationAttrValueType}" data="{model.dictionaryManager.dictionaryData.itemRelationAttrValueType}"/>
+			<dictionaries:DictionaryConfigurator width="100%" height="100%" id="itemRelationType" 			dictionaryType="ItemRelationType"			label="{LanguageManager.getInstance().labels.dictionaries.itemRelationType}"			config="{model.dictionaryManager.dictionaryData.itemRelationType}" 			data="{model.dictionaryManager.dictionaryData.itemRelationType}"/>
+			<!--
+			<dictionaries:DictionaryConfigurator width="100%" height="100%" id="itemType" 					dictionaryType="ItemType" 					label="{LanguageManager.getInstance().labels.dictionaries.itemType}"					config="{model.dictionaryManager.dictionaryData.itemType}" 					data="{model.dictionaryManager.dictionaryData.itemType}"/>
+			-->
+			<dictionaries:DictionaryConfigurator width="100%" height="100%" id="jobPosition" 				dictionaryType="JobPosition" 				label="{LanguageManager.getInstance().labels.dictionaries.position}"					config="{model.dictionaryManager.dictionaryData.jobPosition}" 				data="{model.dictionaryManager.dictionaryData.jobPosition}"/>
+			<dictionaries:DictionaryConfigurator width="100%" height="100%" id="paymentMethod" 				dictionaryType="PaymentMethod" 				label="{LanguageManager.getInstance().labels.dictionaries.paymentType}"					config="{model.dictionaryManager.dictionaryData.paymentMethod}" 			data="{model.dictionaryManager.dictionaryData.paymentMethod}"/>
+			<dictionaries:DictionaryConfigurator width="100%" height="100%" id="unit" 						dictionaryType="Unit" 						label="{LanguageManager.getInstance().labels.dictionaries.unit}"						config="{model.dictionaryManager.dictionaryData.unit}" 						data="{model.dictionaryManager.dictionaryData.unit}"/>
+			<dictionaries:DictionaryConfigurator width="100%" height="100%" id="unitType" 					dictionaryType="UnitType" 					label="{LanguageManager.getInstance().labels.dictionaries.unitType}"					config="{model.dictionaryManager.dictionaryData.unitType}" 					data="{model.dictionaryManager.dictionaryData.unitType}"/>
+			<dictionaries:DictionaryConfigurator width="100%" height="100%" id="vatRate" 					dictionaryType="VatRate" 					label="{LanguageManager.getInstance().labels.dictionaries.vat}"							config="{model.dictionaryManager.dictionaryData.vatRate}" 					data="{model.dictionaryManager.dictionaryData.vatRate}"/>			
+			<!--<layout:DictionaryConfigurator width="100%" height="100%" id="documentStatus" 				dictionaryType="DocumentStatus" 			label="{LanguageManager.getInstance().labels.dictionaries.documentStatus}"				config="{model.dictionaryManager.dictionaryData.documentStatus}" 			data="{model.dictionaryManager.dictionaryData.documentStatus}"/>-->
+		</mx:ViewStack>
+	</mx:HBox>	
+	<mx:HBox width="100%" horizontalAlign="center" visible="{viewstack1.selectedIndex ? true: false}">
+		<mx:Button label="{LanguageManager.getInstance().labels.common.ok}" click="submit()" enabled="{ModelLocator.getInstance().permissionManager.isEnabled('administration.dictionaries.edit') || ModelLocator.getInstance().permissionManager.isEnabled('administration.dictionaries.add')}"/>
+		<mx:Button label="{LanguageManager.getInstance().labels.common.cancel}" click="cancel()"/>	
+	</mx:HBox>		
+</mx:VBox>

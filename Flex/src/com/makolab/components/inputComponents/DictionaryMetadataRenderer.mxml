@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" implements="mx.core.IFactory" horizontalScrollPolicy="off">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.controls.ComboBox;
+			import mx.controls.Alert;
+			
+			public var type:String;
+			[Bindable]
+			private var _data:Object;
+			[Bindable]
+			private var d:Object;
+			
+			override public function set data(value:Object):void	{
+				_data = value;
+				
+				if(type == "xmlLabels") {
+					var t:Array = LanguageManager.getInstance().languages.langs.text().toXMLString().split("\n");
+					d = data.xmlLabels.*.*.copy();
+					var n:int = d.length();
+					for(var i:int = n-1; i >= 0; i--) {
+						if(d[i].@lang != undefined && t.indexOf((d[i].@lang).toXMLString()) == -1) {
+							delete d[i];
+						}
+					}
+				} else if(type == "xmlMetadata") {
+					d = data.xmlMetadata.*.*;
+				} else {
+					d = data.*.*.*;
+				}
+			}
+			
+			override public function get data():Object{
+				return _data;
+			}
+			
+			public function newInstance():*	{
+				var lr:DictionaryMetadataRenderer = new DictionaryMetadataRenderer();
+				lr.type = this.type;
+				return lr;
+			}			
+		]]>
+	</mx:Script>
+	<mx:ComboBox id="cb" dataProvider="{d}" width="100%">
+		<mx:itemRenderer>
+			<mx:Component>
+				<mx:Label text="{data.name() + ': ' + data.toString()}"/>
+			</mx:Component>
+		</mx:itemRenderer>
+	</mx:ComboBox>
+</mx:VBox>

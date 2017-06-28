@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Panel 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="vertical"
+	headerHeight="22"
+	dropShadowColor="black"
+	borderAlpha="0.1"
+	shadowDistance="0"
+	borderThickness="0"
+	creationComplete="init()">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Button;
+			import mx.containers.VBox;
+			import mx.core.UIComponent;
+			private var strzalka:UIComponent=new UIComponent;
+			
+			private var _open:Boolean = true;
+			
+			private var _titleBarVBox:VBox = new VBox;
+			
+			[Bindable]
+			public var panelTitleBarVisibleAlways:Boolean = false;
+			
+			public function set open(value:Boolean):void
+			{
+				_open = value;
+				if(_open)currentState = "";
+				else currentState = "mini";
+			}
+			
+			public function get open():Boolean
+			{
+				return _open;
+			}
+			
+			private var _showTitleBar:Boolean = true;
+			[Bindable]
+			public function set showTitleBar(value:Boolean):void
+			{
+				_showTitleBar = value;
+				this.setStyle("headerHeight",showTitleBar ? 22 : 0);
+				if (!showTitleBar) this.setStyle("borderStyle", "none");
+			} 
+			public function get showTitleBar():Boolean
+			{
+				return _showTitleBar;
+			}
+			
+			private var _collapsable:Boolean = true;
+			[Bindable]
+			public function set collapsable(value:Boolean):void
+			{
+				_collapsable = value;
+				if (_collapsable)
+				{ 
+					strzalka.visible = true;
+					if (this.titleBar && !this.titleBar.hasEventListener(MouseEvent.MOUSE_UP))
+						this.titleBar.addEventListener(MouseEvent.MOUSE_UP,titleBarClickHandler);
+				}else{ 
+					strzalka.visible = false;
+					if (this.titleBar && this.titleBar.hasEventListener(MouseEvent.MOUSE_UP))
+						this.titleBar.removeEventListener(MouseEvent.MOUSE_UP,titleBarClickHandler);
+				}
+			}
+			public function get collapsable():Boolean
+			{
+				return _collapsable;
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+			{
+				super.updateDisplayList(unscaledWidth,unscaledHeight);
+				if(_open){
+			    	strzalka.graphics.clear();
+			        strzalka.graphics.moveTo(titleBar.width-20, (titleBar.height-5)/2);
+			    	strzalka.graphics.lineStyle(1, 0x000000, 1);
+			        strzalka.graphics.beginFill(0x000000);
+			        strzalka.graphics.lineTo(titleBar.width-10, (titleBar.height-5)/2);
+			        strzalka.graphics.lineTo(titleBar.width-15, (titleBar.height-5)/2+5);
+			        strzalka.graphics.lineTo(titleBar.width-20, (titleBar.height-5)/2);
+			        strzalka.graphics.endFill();
+			        _titleBarVBox.visible = true; 
+			    }else{
+	    			strzalka.graphics.clear();
+			        strzalka.graphics.moveTo(titleBar.width-17, (titleBar.height)/2);
+			    	strzalka.graphics.lineStyle(1, 0x000000, 1);
+			        strzalka.graphics.beginFill(0x000000);
+			        strzalka.graphics.lineTo(titleBar.width-12, (titleBar.height-10)/2);
+			        strzalka.graphics.lineTo(titleBar.width-12, (titleBar.height-10)/2+10);
+			        strzalka.graphics.lineTo(titleBar.width-17, (titleBar.height)/2);
+			        strzalka.graphics.endFill();
+			        _titleBarVBox.visible = panelTitleBarVisibleAlways;
+			    }
+			    	
+				_titleBarVBox.width = this.titleBar.width - this.titleTextField.textWidth - 60;	
+				_titleBarVBox.move(this.titleTextField.textWidth+20, -2);
+			}
+			
+			override protected function layoutChrome(unscaledWidth:Number, unscaledHeight:Number):void
+			{
+				super.layoutChrome(unscaledWidth,unscaledHeight);
+				var arrowColor:Number = 0x000000;
+			        strzalka.graphics.moveTo(titleBar.width-20, (titleBar.height-5)/2);
+			    	strzalka.graphics.lineStyle(1, 0x000000, 1);
+			        strzalka.graphics.beginFill(arrowColor);
+			        strzalka.graphics.lineTo(titleBar.width-10, (titleBar.height-5)/2);
+			        strzalka.graphics.lineTo(titleBar.width-15, (titleBar.height-5)/2+5);
+			        strzalka.graphics.lineTo(titleBar.width-20, (titleBar.height-5)/2);
+			        strzalka.graphics.endFill();
+				    titleBar.addChild(strzalka);
+			}
+			
+			private function init():void
+			{
+				if (collapsable) this.titleBar.addEventListener(MouseEvent.MOUSE_UP,titleBarClickHandler);
+				this.setStyle("headerHeight",showTitleBar ? 22 : 0);
+			}
+			
+			private function titleBarClickHandler(event:Event):void
+			{	
+				if(titleTextField == event.target || titleBar == event.target || strzalka == event.target) changeState();
+			}
+			
+			public function changeState():void
+			{
+				currentState = (currentState == "mini") ? "" : "mini";
+				open = !open;
+			}
+			
+			override protected function createChildren() : void{
+				super.createChildren();		
+				_titleBarVBox.height = 22;			
+				_titleBarVBox.setStyle("horizontalAlign", "right");
+				titleBar.addChild(_titleBarVBox);					
+			}				
+			
+			public function get panelTitleBar():VBox{
+				return _titleBarVBox;
+			}
+			
+			public function set panelTitleBar(value:VBox):void{
+				_titleBarVBox = value;
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:states>
+        <mx:State name="mini">
+            <mx:SetProperty name="height" value="22"/>
+            <!--Marta: zakomentowalam, poniewaz powodowalo bledne wyswietlanie wysokosci w przypadku gdy wysoki panel zostal zminimalizowany, nastepnie zmieniono dane ktore sie w nim wyswietlaly i otworzono panel z nowymi, nizszymi danymi (wysokosc panela pozostawala duza)
+            <mx:SetProperty name="minHeight" value="22"/>
+            -->
+        </mx:State>
+    </mx:states>
+    
+    <mx:transitions>
+        <mx:Transition fromState="*" toState="*">
+            <mx:Resize target="{this}" duration="500"/>
+        </mx:Transition>
+    </mx:transitions>
+    
+</mx:Panel>

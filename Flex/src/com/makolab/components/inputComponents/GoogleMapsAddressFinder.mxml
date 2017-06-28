@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+    <mx:UIComponent id="mapContainer" 
+        initialize="startMap(event);" 
+        resize="resizeMap(event)" 
+        width="100%" height="100%"/>
+	<mx:HBox id="errorMessage"
+			verticalCenter="0"
+			horizontalCenter="0"
+			visible="false"
+			paddingBottom="10"
+			paddingLeft="10"
+			paddingTop="10"
+			paddingRight="10"
+			backgroundAlpha="0.5"
+			borderSides="top left bottom right"
+			borderThickness="1"
+			borderStyle="solid"
+			borderColor="#000000"
+			backgroundColor="#000000"
+		>
+		<mx:Label fontSize="14" fontWeight="bold" color="#ff0000" text="Nie znaleziono:"/>
+		<mx:Label id="addressLabel" color="#ffffff"/>
+	</mx:HBox>
+	<mx:Script>
+	    <![CDATA[
+	    	import com.google.maps.interfaces.IInfoWindow;
+	    	import com.google.maps.InfoWindowOptions;
+	    	import com.google.maps.overlays.Marker;
+	    	import com.google.maps.services.Placemark;
+	    	import com.google.maps.services.GeocodingEvent;
+	    	import com.google.maps.services.ClientGeocoder;
+			import flash.events.Event;
+			import com.google.maps.MapEvent;
+			import com.google.maps.Map;
+			import com.google.maps.MapType;
+			import com.google.maps.LatLng;
+	
+			private var map:Map;
+			
+			[Bindable]
+			public var address:String;
+			
+			private var _dataObject:XML;
+			[Bindable]
+			public function set dataObject(value:Object):void
+			{
+				errorMessage.visible = false;
+				if (infoWindow)
+				{
+					infoWindow.visible = false;
+					infoWindow = null;
+				}
+				if (marker)
+				{
+					marker.closeInfoWindow();
+					marker.visible = false;
+					map.removeOverlay(marker);
+					marker = null;
+				}
+				_dataObject = XML(value);
+				if (_dataObject) findAddress(_dataObject.addresses.address[0]);
+			}
+			public function get dataObject():Object { return _dataObject; }
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				dataObject = value;
+			}
+			
+			public function startMap(event:Event):void {
+				map = new Map();
+				map.key = "ABQIAAAACoMtbLTKUN-etwCyQWPR9RSYBUG_dExpZMAVv7fimqz5q5pqJRToaFt2TTEJyZ4sTlHSotbGrNb5qg";
+				map.addEventListener(MapEvent.MAP_READY, onMapReady);
+				mapContainer.addChild(map);
+			}
+			  
+			public function resizeMap(event:Event):void {
+				map.setSize(new Point(mapContainer.width, mapContainer.height));
+			}
+			 
+			private var cg:ClientGeocoder;
+			 
+			private function onMapReady(event:MapEvent):void {
+				//map.setCenter(new LatLng(40.736072,-73.992062), 14, MapType.NORMAL_MAP_TYPE);
+				cg = new ClientGeocoder("PL");
+				cg.addEventListener(GeocodingEvent.GEOCODING_SUCCESS, handleGeocodingSuccess);
+				cg.addEventListener(GeocodingEvent.GEOCODING_FAILURE, handleGeocodingFailure);
+				if (_dataObject) findAddress(_dataObject.addresses.address[0]);
+			}
+			
+			private var currentAddress:String;
+			
+			private function findAddress(address:XML):void
+			{
+				if (!cg || !address) return;
+				currentAddress = address.city + "," + address.address;
+				cg.geocode(currentAddress);
+				addressLabel.text = currentAddress;				
+			}
+			
+			private var marker:Marker;
+			private var infoWindow:IInfoWindow;
+			
+			private function handleGeocodingSuccess(event:GeocodingEvent):void
+			{
+				if (event.response.placemarks.length > 0)
+				{
+					var placemark:Placemark = Placemark(event.response.placemarks[0]);
+					map.setCenter(placemark.point);
+					map.setZoom(15);
+					marker = new Marker(placemark.point);
+					var infoWindowOptions:InfoWindowOptions = new InfoWindowOptions();
+					infoWindowOptions.title = dataObject..contractor.shortName;
+					infoWindowOptions.content = currentAddress;
+					map.addOverlay(marker);
+					addressLabel.text = String(_dataObject.shortName);
+					infoWindow = marker.openInfoWindow(new InfoWindowOptions(
+						{
+							titleFormat : new TextFormat("Arial", "14", "#000000", "bold"),
+							title : String(_dataObject.shortName),
+							content : currentAddress
+						}));
+				}
+				
+			}
+			
+			private function handleGeocodingFailure(event:GeocodingEvent):void
+			{
+				errorMessage.visible = true;
+			}
+		]]>
+	</mx:Script>
+</mx:Canvas>

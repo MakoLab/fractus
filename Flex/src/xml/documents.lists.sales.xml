@@ -1,0 +1,87 @@
+<config title="{LanguageManager.getInstance().labels.documents.list.sales}">
+				<headerColor>SALES_COLOR</headerColor>
+				<headerColorLight>SALES_COLOR_LIGHT</headerColorLight>
+				<objectType>CommercialDocument</objectType>
+				<exportProfile>defaultCommercialDocumentXml</exportProfile>
+				<showClipboard>true</showClipboard>
+				<columns>
+					<column field="@status" dataType="documentStatus" width="25"/>
+					<column field="@documentTypeId" labelKey="documents.type" dataType="documentType" width="70"/>
+					<column field="@fullNumber" labelKey="documents.documentNumber" width="120"/>
+					<column field="@issueDate" labelKey="documents.issueDateShort" dataType="date" width="80"/> 
+					<column field="@contractor" labelKey="contractors.contractor"/>
+					<column field="@grossValue" labelKey="documents.grossValue" dataType="currency" width="100"/>
+				</columns>
+				<summary>
+					<column field="@netValue" labelKey="documents.netValueSummary" dataType="currency"/>
+					<column field="@grossValue" labelKey="documents.grossValueSummary" dataType="currency"/>
+				</summary>
+				<getItemDataParams>
+					<type>Document</type>
+					<id/>
+				</getItemDataParams>
+				<filterField>@fullNumber</filterField>
+				<searchParams type="CommercialDocument">
+					<pageSize>200</pageSize>
+					<page>1</page>
+					<columns>
+						<column field="documentTypeId" column="documentTypeId"/>
+						<column field="status" column="status"/>
+						<column field="fullNumber"/>
+						<column field="issueDate" sortOrder="1" sortType="DESC"/>
+						<column field="contractor" column="fullName" relatedObject="contractor"/>
+						<column field="grossValue"/>
+					</columns>
+				</searchParams>
+				<filters>
+				  	<filter label="" type="dateFilter"/>
+				  	<filter label="Numer dokumentu" labelKey="documents.documentNumber" type="docNumberFilter" disableFilterType="dateFilter"/>
+				  	<filter label="Status dokumentu" type="docStatusFilter"/>
+				  	<filter labelKey="documents.documentType" label="Typ dokumentu" type="docTypeFilter" itemsType="0,5"/>
+				  	<filter label="Firma" type="docCompanyFilter"/>
+				  	<filter label="Magazyn" labelKey="common.warehouse" type="docWarehouseFilter"/>
+				  	<!--filter label="Ustawienia numerowania" type="docNumSettingsFilter"/-->
+				  	<filter label="Powiązania" type="docRelationsFilter"/>
+				  	<filter label="Rozliczone" type="docUnsettledFilter"/>
+				  	<filter label="Forma płatności" type="docPaymentFilter"/>
+				  	<filter label="Fiskalne" type="fiscalDocumentFilter"/>
+				  	<!--
+				  	<filter label="Status księgowy" type="docAttributeFilter">
+				  		<attributeName>Attribute_StatusPurchase</attributeName>
+				  	</filter>
+				  	-->
+				  	<filter labelKey="common.attributes" label="Atrybuty" type="docAttributesFilter" attributesNames="DocumentFeature_RetailSales"/>
+				</filters>
+				<filtersTemplates label="Na podstawie szablonu">
+					<template label="Status zaksięgowany lub zapisany">
+						<filter type="docStatusFilter" value="60,20"/>
+						<filter type="dateFilter">
+							<dateFormat value="DD-MM-YYYY"/>
+							<dateFrom value="30-12-2007"/>
+							<dateTo value="30-12-2010"/>
+						</filter>
+						<filter type="docNumberFilter" value=""/>
+						<filter type="docTypeFilter" value="PA,FW"/>
+						<filter type="docCompanyFilter">
+							<company value="26F958D1-06D7-4CDB-8002-9205F5871BE3"/>
+							<branch value="DFC07022-2743-4C03-8960-8FB62A85B524"/>
+						</filter>
+						<filter type="docWarehouseFilter" value="5D1E6A78-8C69-4079-B9B4-175727EF62E8"/>
+						<filter type="docNumSettingsFilter" value="0A2155CE-7598-44C2-804B-333BC6332388"/>
+						<filter type="docRelationsFilter" value="1"/>
+						<filter type="docUnsettledFilter" value="1"/>
+						<filter type="docPaymentFilter" value="D3847280-4701-4C59-AD23-0A1955F4A473,0B9D516E-BCAD-4702-AA17-11AAAED12845"/>
+					</template>
+					<template label="Status zaksięgowany">
+						<filter type="docStatusFilter" value="60"/>
+					</template>
+				</filtersTemplates>
+			  <!--
+				  <operations>
+				    <editSimple />
+				  </operations>
+			  -->
+			   <operations>
+   					 <link1 labelKey="common.name" url="http://daydreamers.pl?costam=id" toRep="item.id" rep="id" />
+  </operations>
+</config>

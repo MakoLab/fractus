@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:DataGrid xmlns:mx="http://www.adobe.com/2006/mxml" sortableColumns="false" draggableColumns="false" dataProvider="{conditionsXML.condition}" xmlns:rules="com.makolab.fractus.view.administration.rules.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			
+			import mx.controls.CheckBox;
+			public function headerCheckBoxChangeHandler(event:Event):void
+			{
+				for each(var condition:XML in conditionsXML.condition){
+					condition.@enabled = event.target.selected ? 1 : 0;
+				}
+			}
+			
+			public function checkBoxChangeHandler(event:Event):void
+			{
+				var index:int = this.itemRendererToIndex(event.target as CheckBox);
+				conditionsXML.condition[index].@enabled = event.target.selected ? 1 : 0;
+			}
+			
+			public function setHeaderCheckBoxSelection(conditions:XML):Boolean
+			{
+				var selected:Boolean = true;
+				for each(var condition:XML in conditionsXML.condition){
+					if(condition.attribute("enabled").length() == 0 || condition.@enabled == 0){
+						selected = false;
+						break;
+					}
+				}
+				return selected;
+			}
+			
+			public function get conditions():XMLList
+			{
+				var list:XMLList = conditionsXML.condition.(valueOf().@enabled.length() > 0 && @enabled == 1);
+				return list;
+			}
+			public function set conditions(value:XMLList):void
+			{
+				var temp:XML = <root/>;
+				for each(var condition:XML in conditionsXML.condition){
+					for each( var element:XML in value){
+						if(condition.@name.toString() == element.@name.toString()){
+							condition = element;
+							break;
+						}
+					}
+					temp.appendChild(condition.copy());
+				}
+				conditionsXML = temp;
+			}
+			
+			public function get errors():Array
+			{
+				var array:Array = [];
+				for each(var condition:XML in conditionsXML.condition){
+					if(condition.attribute("enabled").length() > 0 
+						&& condition.@enabled == 1 
+						&& (condition.attribute("editor").length() > 0 && (condition.value.length() == 0 || condition.value[0].toString() == ""))
+					){
+						array.push('Opcja "'+condition.@label+' jest zaznaczona, ale nie wybrano dla niej wartości.');
+					}
+				}
+				return array;
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:columns>
+		<mx:DataGridColumn width="20" rendererIsEditor="true" textAlign="center">
+			<mx:headerRenderer>
+				<mx:Component>
+					<mx:CheckBox selected="{outerDocument.setHeaderCheckBoxSelection(outerDocument.conditionsXML)}" change="outerDocument.headerCheckBoxChangeHandler(event)"/>
+				</mx:Component>
+			</mx:headerRenderer>
+			<mx:itemRenderer>
+				<mx:Component>
+					<mx:CheckBox selected="{Boolean(Number(data.@enabled))}" change="outerDocument.checkBoxChangeHandler(event)"/>
+				</mx:Component>
+			</mx:itemRenderer>
+		</mx:DataGridColumn>
+		<mx:DataGridColumn headerText="Warunek" dataField="@label"/>
+		<mx:DataGridColumn headerText="{LanguageManager.getLabel('documents.value')}" width="200" rendererIsEditor="true" textAlign="left">
+			<mx:itemRenderer>
+				<mx:Component>
+					<rules:RuleConditionEditor/>
+				</mx:Component>
+			</mx:itemRenderer>
+		</mx:DataGridColumn>
+	</mx:columns>
+	
+	<mx:XML id="conditionsXML" xmlns="">
+		<conditions>
+			<condition name="itemGroups" label="Towar należący do grupy" editor="itemGroupSelector"/>
+			<condition name="contractorGroups" label="Kontrahent należący do grupy" editor="contractorGroupSelector"/>
+			<condition name="contractors" label="Wybrani kontrahenci" editor="contractorSelector"/>
+			<condition name="dateRange" label="Data z przedziału" editor="dateRangeChooser"/>
+			<condition name="contractorDealing" label="Obroty na kontrahencie w ciągu ostatnich x dni" editor="contractorDealingEditor"/>
+			<condition name="branch" label="Oddział" editor="branchSelector"/>
+			<condition name="documentCategory" label="Kategoria dokumentu" editor="documentCategorySelector"/>
+			<condition name="all" label="W każdym przypadku (nadpisuje inne warunki)"/>
+		</conditions>
+	</mx:XML>
+</mx:DataGrid>

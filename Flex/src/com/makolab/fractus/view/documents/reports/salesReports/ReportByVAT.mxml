@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReportBase xmlns="com.makolab.fractus.view.documents.reports.*" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:list="com.makolab.components.list.*" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:layoutComponents="com.makolab.components.layoutComponents.*" xmlns:filters="com.makolab.fractus.view.documents.reports.filters.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.view.documents.DocumentRenderer;
+			import com.makolab.fractus.view.documents.documentLists.DocumentList;
+			import com.makolab.fractus.view.documents.documentLists.SalesDocumentList;
+			import mx.events.ListEvent;
+			import com.makolab.fractus.model.LanguageManager;
+			import mx.core.Application;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.controls.advancedDataGridClasses.AdvancedDataGridColumnGroup;
+			import com.makolab.components.util.Tools;
+			import com.makolab.components.layoutComponents.SummaryColumn;
+			import mx.messaging.channels.StreamingAMFChannel;
+			import com.makolab.components.layoutComponents.SummaryOperation;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.formatters.CurrencyFormatter;
+			
+			override public function generateReport(newSearchParams:XML,refresh:Boolean = false):void
+			{
+				vatRatesColumns = [];
+				summaryVatRatesColumns = [];
+				for each (var vatRate:XML in vatRatesFilter.selectedItems)
+				{
+					var columnGroup:AdvancedDataGridColumnGroup = new AdvancedDataGridColumnGroup();
+					columnGroup.headerText = vatRate.label.(@lang == LanguageManager.getInstance().currentLanguage)[0].toString();
+					
+					var valueColumn:AdvancedDataGridColumn = new AdvancedDataGridColumn("Wart.");
+					valueColumn.dataField = "@netValue_" + vatRate.symbol.toString();
+					valueColumn.setStyle("textAlign","right");
+					valueColumn.labelFunction = moneyLabelFunction;
+					valueColumn.sortCompareFunction = Tools.getSortFunction(valueColumn.dataField);
+					
+					var vatColumn:AdvancedDataGridColumn = new AdvancedDataGridColumn(LanguageManager.getLabel('common.VAT'));
+					vatColumn.dataField = "@value_" + vatRate.symbol.toString();
+					vatColumn.setStyle("textAlign","right");
+					vatColumn.labelFunction = moneyLabelFunction;
+					vatColumn.sortCompareFunction = Tools.getSortFunction(valueColumn.dataField);
+					
+					var summaryValueColumn:SummaryColumn = new SummaryColumn();
+					summaryValueColumn.operations = [SummaryColumn.SUM];
+					summaryValueColumn.sourceColumn = valueColumn;
+					
+					var summaryVatColumn:SummaryColumn = new SummaryColumn();
+					summaryVatColumn.operations = [SummaryColumn.SUM];
+					summaryVatColumn.sourceColumn = vatColumn;
+					
+					columnGroup.children = [valueColumn,vatColumn];
+					
+					vatRatesColumns.push(columnGroup);
+					summaryVatRatesColumns.push(summaryValueColumn);
+					summaryVatRatesColumns.push(summaryVatColumn);
+				}
+				grid.groupedColumns = constantColumns.concat(vatRatesColumns);
+				summaryGrid.summaryColumns = summaryConstantColumns.concat(summaryVatRatesColumns);
+				
+				super.generateReport(newSearchParams,refresh);
+			}
+			
+			override protected function onGenerateReportResult():void
+			{
+				super.onGenerateReportResult();
+			}
+			
+			private function itemDoubleClickHandler(event:ListEvent):void
+			{
+				if (dataProvider && event.itemRenderer.data.@id)
+					DocumentRenderer.showWindow(DocumentTypeDescriptor.COMMERCIAL_DOCUMENT,event.itemRenderer.data.@id);
+			}
+		]]>
+	</mx:Script>
+	
+		<mx:Array id="constantColumns">
+			<mx:AdvancedDataGridColumn id="docNumberColumn" headerText="{LanguageManager.getInstance().labels.documents.documentNumber}" dataField="@fullNumber" sortCompareFunction="{Tools.getSortFunction('@fullNumber')}"/>
+			<mx:AdvancedDataGridColumn id="issueDateColumn" headerText="{LanguageManager.getInstance().labels.documents.issueDate}" dataField="@issueDate" labelFunction="dateLabelFunction" sortCompareFunction="{Tools.getSortFunction('@issueDate')}" minWidth="55"/>
+			<mx:AdvancedDataGridColumn id="eventDateColumn" headerText="{LanguageManager.getInstance().labels.documentRenderer.salesDate}" dataField="@eventDate" labelFunction="dateLabelFunction" sortCompareFunction="{Tools.getSortFunction('@eventDate')}" minWidth="55"/>
+			<mx:AdvancedDataGridColumn id="nipColumn" headerText="{LanguageManager.getInstance().labels.common.nip}" dataField="@nip"/>
+			<mx:AdvancedDataGridColumn id="contractorColumn" headerText="{LanguageManager.getInstance().labels.documentRenderer.contractor2}" dataField="@contractor_name" sortCompareFunction="{ReportBase.stringCompareFunction('@contractor_name')}"/>
+			<mx:AdvancedDataGridColumn id="netValueColumn" headerText="{LanguageManager.getInstance().labels.documents.netValue}" sortCompareFunction="{Tools.getSortFunction('@netValue')}" dataField="@netValue" textAlign="right" labelFunction="moneyLabelFunction" minWidth="80"/>
+			<mx:AdvancedDataGridColumn id="vatValueColumn" headerText="{LanguageManager.getInstance().labels.documents.vatValue}" dataField="@vatValue" textAlign="right" labelFunction="moneyLabelFunction" sortCompareFunction="{Tools.getSortFunction('@vatValue')}" minWidth="80"/>
+			<mx:AdvancedDataGridColumn id="grossValueColumn" headerText="{LanguageManager.getInstance().labels.documents.grossValue}" sortCompareFunction="{Tools.getSortFunction('@grossValue')}" dataField="@grossValue" textAlign="right" labelFunction="moneyLabelFunction" minWidth="80"/>
+		</mx:Array>
+		
+		<mx:Array id="vatRatesColumns"/>
+		
+		<mx:Array id="summaryConstantColumns">
+			<layoutComponents:SummaryColumn operations="{[SummaryColumn.ROW_COUNT]}" sourceColumn="{docNumberColumn}"/>
+			<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{netValueColumn}"/>
+			<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{vatValueColumn}"/>
+			<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{grossValueColumn}"/>
+		</mx:Array>
+		
+		<mx:Array id="summaryVatRatesColumns"/>
+		
+		<customFilters>
+			<filters:VatRatesFilter id="vatRatesFilter" label="{LanguageManager.getInstance().labels.common.vatRates}"/>
+		</customFilters>
+		
+		<table>
+			<mx:AdvancedDataGrid id="grid" width="100%" height="100%" doubleClickEnabled="true" itemDoubleClick="itemDoubleClickHandler(event)">
+				<!--<mx:groupedColumns>
+					<mx:AdvancedDataGridColumnGroup headerText="Podstawowy podatek VAT 22%">
+						<mx:AdvancedDataGridColumn id="netValue_22Column" headerText="Wart." dataField="@netValue_22" textAlign="right" labelFunction="moneyLabelFunction" sortCompareFunction="{Tools.getSortFunction('@netValue_22')}"/>
+						<mx:AdvancedDataGridColumn id="value_22Column" headerText="VAT" dataField="@value_22" textAlign="right" labelFunction="moneyLabelFunction" sortCompareFunction="{Tools.getSortFunction('@value_22')}"/>	
+					</mx:AdvancedDataGridColumnGroup>
+					<mx:AdvancedDataGridColumnGroup headerText="Podatek VAT 7%">
+						<mx:AdvancedDataGridColumn id="value2" headerText="Wart." dataField="@netValue_7" textAlign="right" labelFunction="moneyLabelFunction" />
+						<mx:AdvancedDataGridColumn id="vat2" headerText="VAT" dataField="@value_7" textAlign="right" labelFunction="moneyLabelFunction" />	
+					</mx:AdvancedDataGridColumnGroup>
+					<mx:AdvancedDataGridColumnGroup headerText="Zerowy podatek VAT">
+						<mx:AdvancedDataGridColumn id="value3" headerText="Wart." dataField="@netValue_0" textAlign="right" labelFunction="moneyLabelFunction"/>
+						<mx:AdvancedDataGridColumn id="vat3" headerText="VAT" dataField="@value_0" textAlign="right" labelFunction="moneyLabelFunction" />	
+					</mx:AdvancedDataGridColumnGroup>
+					<mx:AdvancedDataGridColumnGroup headerText="Zwolnione z podatku VAT">
+						<mx:AdvancedDataGridColumn id="value4" headerText="Wart." dataField="@netValue_zw" textAlign="right" labelFunction="moneyLabelFunction" />
+						<mx:AdvancedDataGridColumn id="vat4" headerText="VAT" dataField="@value_zw" textAlign="right" labelFunction="moneyLabelFunction" />	
+					</mx:AdvancedDataGridColumnGroup>
+					<mx:AdvancedDataGridColumnGroup headerText="Nie podlega">
+						<mx:AdvancedDataGridColumn id="value5" headerText="Wart." dataField="@netValue_np" textAlign="right" labelFunction="moneyLabelFunction" />
+						<mx:AdvancedDataGridColumn id="vat5" headerText="VAT" dataField="@value_np" textAlign="right" labelFunction="moneyLabelFunction" />	
+					</mx:AdvancedDataGridColumnGroup>
+				</mx:groupedColumns>-->
+			</mx:AdvancedDataGrid>
+		</table>
+		
+		<summary>
+			<layoutComponents:AdvancedDataGridSummary2 id="summaryGrid" source="{grid}">
+			</layoutComponents:AdvancedDataGridSummary2>
+		</summary>
+		
+</ReportBase>

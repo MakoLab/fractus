@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:LegendItem xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			import flight.binding.Bind;
+			import mx.controls.CheckBox;
+			[Bindable]
+			public var selected:Boolean = true;
+			private var checkBox:CheckBox = new CheckBox();
+			
+			override protected function createChildren():void{
+				super.createChildren();
+				checkBox.label = label;
+				this.addChildAt(checkBox,0);
+				checkBox.x = super.marker.width + 2;
+				checkBox.y = (this.height - checkBox.height)/2;
+				checkBox.addEventListener(Event.CHANGE,changeHandler);
+				checkBox.selected = this.element.visible;
+				this.getChildAt(2).x = marker.width + 20;
+				//this.removeChildAt(2);
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+			{
+				super.updateDisplayList(unscaledWidth,unscaledHeight);
+				checkBox.width = 120;
+				checkBox.x = super.marker.width + 2;
+				checkBox.y = (this.height - checkBox.height)/2;
+				checkBox.label = label;
+				this.getChildAt(2).x = marker.width + 20;
+			}
+			
+			private function changeHandler(event:Event):void
+			{
+				this.element.visible = checkBox.selected;
+			}
+		]]>
+	</mx:Script>
+</mx:LegendItem>

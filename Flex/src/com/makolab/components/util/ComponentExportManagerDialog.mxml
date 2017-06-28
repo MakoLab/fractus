@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml" width="316" height="214" title="{LanguageManager.getInstance().labels.common.exportTitle}" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.ComponentExportManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import mx.managers.PopUpManager;
+			import com.makolab.fractus.model.LanguageManager;
+			
+			private var model:ModelLocator = ModelLocator.getInstance();
+			
+			private function export(type:String,content:String):void	{
+				pleaseWaitSign.visible = true;
+				model.eventManager.addEventListener('closeExportDialogWindow', close, false, 0, true);
+				this.enabled = false;
+				ComponentExportManager.getInstance().exportData(model.exportListXML,type,content);
+				//close();
+			}
+			private function close(event:Event = null): void {
+				PopUpManager.removePopUp(this);			
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:VBox paddingTop="10" width="100%" verticalGap="20" horizontalAlign="center" horizontalScrollPolicy="off">
+	
+		<mx:Label text="{LanguageManager.getInstance().labels.reports.filters.chooseExportFileType}:" paddingBottom="-15"/>
+		
+		<mx:HBox width="100%" horizontalAlign="center">
+			<mx:Button label="XLS" width="67" click="export('defaultTableXls','file')" />
+			<mx:Button label="CSV" width="67" click="export('defaultTableCsv','file')" />
+			<mx:Button label="PDF" width="67" click="export('defaultTablePdf','content')" />
+			<mx:Button label="HTML" width="67" click="export('defaultTableHtml','content')" />		
+		</mx:HBox>
+		
+		<mx:Text id="pleaseWaitSign" visible="false" textAlign="center" width="85%" selectable="false" fontSize="18" fontWeight="bold" text="{LanguageManager.getInstance().labels.reports.filters.generatingOrderPleaseWait}"/>
+		
+		<mx:Button label="{LanguageManager.getInstance().labels.common.cancel}" width="125" click="close()"/>	
+	
+	</mx:VBox>
+	
+</mx:Panel>

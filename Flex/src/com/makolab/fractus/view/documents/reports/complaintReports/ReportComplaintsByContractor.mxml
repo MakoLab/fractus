@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReportBase xmlns="com.makolab.fractus.view.documents.reports.*" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:layoutComponents="com.makolab.components.layoutComponents.*">
+	<treeTable>
+		<mx:AdvancedDataGrid id="grid" width="100%" height="100%" >
+			<mx:columns>
+				<mx:AdvancedDataGridColumn id="numberColumn" headerText="Numer/Towar" labelFunction="getRowLabel" dataField="@fullNumber"/>
+				<!--<mx:AdvancedDataGridColumn id="contractorNameColumn" headerText="Kontrahent" dataField="@contractorName"/>-->
+				<!--<mx:AdvancedDataGridColumn id="itemNameColumn" headerText="Nazwa towaru" dataField="@itemName"/>-->
+				<mx:AdvancedDataGridColumn id="salesTotalColumn" headerText="Sprzedaż całkowita" labelFunction="getSum" dataField="@salesTotal" width="100"/>
+				<mx:AdvancedDataGridColumn id="filteredSalesTotalColumn" headerText="Sprzedaż całkowita w danym okresie" labelFunction="getSum" dataField="@filteredSalesTotal" width="150"/>
+				<mx:AdvancedDataGridColumn id="reportedQuantityColumn" headerText="Ilość zaraportowana" headerWordWrap="true" labelFunction="getSum" dataField="@reportedQuantity" width="150"/>
+				<mx:AdvancedDataGridColumn id="unrealizedQuantityColumn" headerText="Ilość niezrealizowana" headerWordWrap="true" labelFunction="getSum" dataField="@unrealizedQuantity" width="150"/>
+			</mx:columns>
+		</mx:AdvancedDataGrid>
+	</treeTable>
+	<summary>
+		<layoutComponents:AdvancedDataGridSummary2 source="{grid}" createDataProviderFunction="calculateSummary" rowCount="1">
+			<layoutComponents:summaryColumns>
+				<layoutComponents:SummaryColumn sourceColumn="{reportedQuantityColumn}"/>
+				<layoutComponents:SummaryColumn sourceColumn="{unrealizedQuantityColumn}"/>
+				<layoutComponents:SummaryColumn sourceColumn="{salesTotalColumn}"/>
+				<layoutComponents:SummaryColumn sourceColumn="{filteredSalesTotalColumn}"/>
+			</layoutComponents:summaryColumns>
+		</layoutComponents:AdvancedDataGridSummary2>
+	</summary>
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.util.CurrencyManager;
+			import com.makolab.components.util.Tools;
+			
+			private function getRowLabel(item:Object, column:Object):String
+			{
+				if (item.localName() == 'line') return '  \u2022 ' + item.@itemName;
+				else return item.@documentType + ' ' + item.@contractorName;
+			}
+			
+			private function getSum(item:Object, column:Object, precision:Number = 2):String
+			{
+				var value:Number = NaN;
+				if (item.localName() == 'complaintDocument')
+				{
+					value = 0;
+					for each (var x:XML in item.line)
+					{
+						value +=  parseFloat(x[column.dataField])
+					}
+				} 
+				else value = parseFloat(item[column.dataField]);
+				return CurrencyManager.formatCurrency(value, '', null, precision);
+			}
+			
+			private function calculateSummary(gridDataProvider:Object):Object
+			{
+				var
+					reportedTotal:Number = 0,
+					unrealizedTotal:Number = 0,
+					salesTotalTotal:Number = 0,
+					filteredSalesTotalTotal:Number = 0;
+					
+				var x:XML;
+				
+				if (gridDataProvider.source && gridDataProvider.source.source)
+				{
+					for each (x in gridDataProvider.source.source.line)
+					{
+						reportedTotal += parseFloat(x.@reportedQuantity);
+						unrealizedTotal += parseFloat(x.@unrealizedQuantity);
+						salesTotalTotal += parseFloat(x.@salesTotal);
+						filteredSalesTotalTotal += parseFloat(x.@filteredSalesTotal);
+					}
+				}
+				
+				return XMLList(<summary
+						reportedQuantity = {reportedTotal}
+						unrealizedQuantity = {unrealizedTotal}
+						salesTotal = {salesTotalTotal}
+						filteredSalesTotal = {filteredSalesTotalTotal}
+					/>);
+			}
+		]]>
+	</mx:Script>
+</ReportBase>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReportBase xmlns="com.makolab.fractus.view.documents.reports.*" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:list="com.makolab.components.list.*" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:layoutComponents="com.makolab.components.layoutComponents.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.components.inputComponents.ItemRenderer;
+			import com.makolab.components.layoutComponents.DragElementProxy;
+			import com.makolab.components.layoutComponents.SummaryColumn;
+			import com.makolab.components.layoutComponents.SummaryOperation;
+			import com.makolab.components.util.Tools;
+			import com.makolab.fractus.commands.ShowDocumentEditorCommand;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.document.DocumentTypeDescriptor;
+			import com.makolab.fractus.view.catalogue.CatalogueItemInfo;
+			import com.makolab.fractus.view.catalogue.ItemsCatalogue;
+			
+			import mx.controls.CheckBox;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.events.DataGridEvent;
+			import mx.events.ListEvent;
+			import mx.formatters.CurrencyFormatter;
+			import mx.messaging.channels.StreamingAMFChannel;
+			
+			private function calculateProfitMargin(source:XMLList,dataField:String,childDataField:String = null):String{
+				var dataFieldName:String = dataField;
+				var nettoSum:Number = 0;
+				var profitSum:Number = 0;
+				for(var i:int=0;i<source.length();i++){
+					nettoSum += Number(source[i].@netValue);
+					profitSum += Number(source[i].@profit);
+				}
+				return (profitSum/nettoSum).toString();
+			}
+			
+			private function itemDoubleClickHandler(event:ListEvent):void
+			{
+				if (dataProvider)
+					CatalogueItemInfo.showWindow(event.itemRenderer.data.@id);
+			}
+		]]>
+	</mx:Script>
+		<table>
+			<mx:AdvancedDataGrid id="grid" width="100%" height="100%" doubleClickEnabled="true" itemDoubleClick="itemDoubleClickHandler(event)">
+				<mx:columns>
+					<mx:AdvancedDataGridColumn id="nameColumn" headerText="{LanguageManager.getInstance().labels.common.itemName}" dataField="@itemName" sortCompareFunction="{ReportBase.stringCompareFunction('@itemName')}"/>
+					<mx:AdvancedDataGridColumn headerText="{LanguageManager.getInstance().labels.reports.filters.manufacturer}" dataField="@manufacturer" width="100" sortCompareFunction="{ReportBase.stringCompareFunction('@manufacturer')}"/>
+					<mx:AdvancedDataGridColumn headerText="{LanguageManager.getInstance().labels.common.itemCode}" dataField="@itemCode" width="150"/>
+					<mx:AdvancedDataGridColumn id="quantityColumn" sortCompareFunction="{Tools.getSortFunction('@quantity')}" headerText="{LanguageManager.getInstance().labels.common.quantity}" dataField="@quantity" labelFunction="quantityLabelFunction" textAlign="right" width="100"/>
+					<mx:AdvancedDataGridColumn id="costColumn" sortCompareFunction="{Tools.getSortFunction('@cost')}" headerText="{LanguageManager.getInstance().labels.documents.documentValue}" dataField="@cost" textAlign="right" labelFunction="currencyLabelFunction" width="120"/>
+					<mx:AdvancedDataGridColumn id="netValueColumn" sortCompareFunction="{Tools.getSortFunction('@netValue')}" headerText="{LanguageManager.getInstance().labels.documents.netValue}" dataField="@netValue" textAlign="right" labelFunction="currencyLabelFunction" width="120"/>
+					<mx:AdvancedDataGridColumn id="grossValueColumn" sortCompareFunction="{Tools.getSortFunction('@grossValue')}" headerText="{LanguageManager.getInstance().labels.documents.grossValue}" dataField="@grossValue" textAlign="right" labelFunction="currencyLabelFunction" width="120"/>
+					<mx:AdvancedDataGridColumn id="profitColumn" sortCompareFunction="{Tools.getSortFunction('@profit')}" headerText="{LanguageManager.getInstance().labels.common.profitValue}" dataField="@profit" textAlign="right" labelFunction="currencyLabelFunction" width="120"/>
+					<mx:AdvancedDataGridColumn id="profitMarginColumn" sortCompareFunction="{Tools.getSortFunction('@profitMargin')}" headerText="{LanguageManager.getInstance().labels.common.profit}" dataField="@profitMargin" textAlign="right" labelFunction="percentLabelFunction" width="100"/>
+				</mx:columns>
+			</mx:AdvancedDataGrid>
+		</table>
+		<summary>
+			<layoutComponents:AdvancedDataGridSummary2 source="{grid}">
+				<layoutComponents:summaryColumns>
+					<layoutComponents:SummaryColumn operations="{[SummaryColumn.ROW_COUNT]}" sourceColumn="{nameColumn}"/>
+					<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{quantityColumn}"/>
+					<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{costColumn}"/>
+					<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{netValueColumn}"/>
+					<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{grossValueColumn}"/>
+					<layoutComponents:SummaryColumn operations="{[SummaryColumn.SUM]}" sourceColumn="{profitColumn}"/>
+					<layoutComponents:SummaryColumn operations="{[calculateProfitMargin]}" sourceColumn="{profitMarginColumn}"/>
+				</layoutComponents:summaryColumns>
+			</layoutComponents:AdvancedDataGridSummary2>
+		</summary>
+	
+</ReportBase>

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:inputComponents="com.makolab.components.inputComponents.*" xmlns:generic="com.makolab.fractus.view.generic.*"
+		implements="com.makolab.fractus.view.documents.documentControls.IDocumentControl"
+		paddingTop="10" paddingBottom="10"
+		label="{LanguageManager.getInstance().labels.common.warehouse}"
+		direction="horizontal"
+		enabled="{documentObject.isNewDocument &amp;&amp; !documentObject.typeDescriptor.isCorrectiveDocument}"
+	>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.validators.IValidatorListener;
+			import com.makolab.fractus.view.documents.plugins.DocumentValidationPlugin;
+			import mx.validators.ValidationResult;
+			import mx.events.ValidationResultEvent;
+			import com.makolab.components.document.DocumentEvent;
+			import com.makolab.fractus.model.document.DocumentObject;
+			import com.makolab.fractus.model.LanguageManager;
+			import com.makolab.fractus.model.ModelLocator;
+			import com.makolab.fractus.model.DictionaryManager;
+
+			public function get model():ModelLocator
+			{
+				return ModelLocator.getInstance();
+			}
+			
+			private var _documentObject:DocumentObject;
+			[Bindable]
+			public function set documentObject(value:DocumentObject):void
+			{
+				if(_documentObject)
+					_documentObject.removeEventListener(ValidationResultEvent.INVALID, handleValidationEvent);
+				
+				_documentObject = value;
+				
+				if(value)
+				{
+					if(value.xml.warehouseId.* == "00000000-0000-0000-0000-000000000000")
+					{
+						value.xml.warehouseId.* = ModelLocator.getInstance().currentWarehouseId;
+					}
+					
+					if(targetWarehouseAttribute != null)
+						this.targetWarehouseId = targetWarehouseAttribute.value;
+						
+					if(documentObject.typeDescriptor.isShiftDocument && documentObject.getAttribute("Attribute_IncomeShiftOrderId") != null)
+					{
+						this.targetSelector.enabled = false;
+					}
+					
+					value.addEventListener(ValidationResultEvent.INVALID, handleValidationEvent);
+				}		
+			}
+			public function get documentObject():DocumentObject
+			{
+				return _documentObject;
+			}
+			
+			private function handleValidationEvent(event:ValidationResultEvent):void
+			{
+				if(this.targetSelector)
+					this.targetSelector.errorString = "";
+					
+				this.selector.errorString = "";
+				
+				for each(var valResult:ValidationResult in event.results)
+				{
+					if(valResult.subField == DocumentValidationPlugin.TARGET_WAREHOUSE_SUBFIELD)
+					{
+						if(valResult.errorCode == DocumentValidationPlugin.TARGET_WAREHOUSE_NOT_SPECIFIED_ERRORCODE)
+						{
+							this.targetSelector.errorString = valResult.errorMessage;						
+						}
+						else if (valResult.errorCode == DocumentValidationPlugin.WAREHOUSE_EQUAL_ERRORCODE)
+						{
+							this.selector.errorString = valResult.errorMessage;
+						}
+					}
+				}
+			}
+
+			private function warehouseChange():void
+			{
+				documentObject.xml.warehouseId = selector.selectedId;
+				documentObject.dispatchEvent(DocumentEvent.createEvent(DocumentEvent.DOCUMENT_FIELD_CHANGE, 'warehouseId'));
+			}
+			
+			private var _targetWarehouseAttribId:String;
+			private function get targetWarehouseAttribId():String
+			{
+
+				return _targetWarehouseAttribId;
+			}
+			
+			private function targetWarehouseChange():void
+			{
+				targetWarehouseAttribute.value = targetSelector.selectedId;
+				this.targetWarehouseId = targetSelector.selectedId;
+			}
+			
+			[Bindable]
+			private var targetWarehouseId:String;
+			
+			private function get targetWarehouseAttribute():XML
+			{
+				if (!_targetWarehouseAttribId)
+				{
+					_targetWarehouseAttribId = DictionaryManager.getInstance().dictionaries.
+											documentFields.(valueOf().name == 'ShiftDocumentAttribute_OppositeWarehouseId').id;
+				}
+				
+				if(documentObject == null) return null;
+				
+				var l:XMLList = documentObject.attributes.source.(documentFieldId == _targetWarehouseAttribId);
+				return l.length() > 0 ? l[0] : null;
+			}
+		]]>
+	</mx:Script>
+	<generic:FractusDictionarySelector
+			id="selector"
+			dataProvider="{DictionaryManager.getInstance().dictionaries.warehouses.(valueOf().branchId == model.branchId)}"
+			selectedId="{documentObject.xml.warehouseId}"
+			change="warehouseChange()"
+		/>
+	<mx:HBox visible="{documentObject.typeDescriptor.isShiftDocument}" includeInLayout="{documentObject.typeDescriptor.isShiftDocument}">
+		<mx:Label text="{LanguageManager.getInstance().labels.documents.targetWarehouse}"/>
+		<generic:FractusDictionarySelector 
+						id="targetSelector"
+						dictionaryName="allActiveWarehouses"
+						selectedId="{targetWarehouseId}"
+						change="targetWarehouseChange()"
+					/>
+	</mx:HBox>
+</mx:FormItem>

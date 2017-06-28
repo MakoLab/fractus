@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas width="100%" height="100%" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:template="document.template.*" 
+	xmlns:inputComponents="inputComponents.*"
+	borderColor="#aaaaa0" borderStyle="outset" cornerRadius="10" 
+	verticalScrollPolicy="off"
+	xmlns:lineList="lineList.*">
+	<mx:Script>
+		<![CDATA[
+			import com.makolab.fractus.model.LanguageManager;
+			[Bindable]
+			public var dataObject:XML;
+			
+		]]>
+	</mx:Script>
+	<mx:VBox width="99%" height ="99%"  horizontalScrollPolicy="off" verticalScrollPolicy="off" >
+		<!--Nagłówek-->
+		<template:DocumentHeader id="headerDocument" width="100%" height="20"
+				documentNameType = "{dataObject.@Type}"
+				documentNumber = "{dataObject.Number}"
+				documentNumberPrefix = "{dataObject.Number.@Prefix}"
+				documentNumberPostfix = "{dataObject.Number.@Postfix}"/>
+		<!-- data wyst i miejsce wyst-->		
+		<mx:HBox width="100%"  paddingTop="10" horizontalAlign="right"  >
+				<template:Fields 
+					dataObject="{dataObject}" 
+					listFields="{new Array(
+						{'label':'.'{LanguageManager.getInstance().labels.documents.issueDate}'.','value':'IssueDate'} ,
+						{'label':'Miejsce wystawienia: ', 'value':'IssuePlace' },
+						{'label':'z Magazyu: ', 'value':'WarehouseSender' },
+						{'label':'do Magazyu: ', 'value':'WarehouseRecipient' }
+					)}" 
+					width="50%" />
+		</mx:HBox>
+		
+		<lineList:LineList  dataProvider="{dataObject.Lines.Line}"  width="100%" rowCount="{(dataObject.Lines.Line.length()==1)? 1 : dataObject.Lines.Line.length() -1}" headerColors ="[#ffffff,#ffffff]" >
+			<lineList:columns>
+				<mx:DataGridColumn backgroundColor="#ffffff" editorDataField="value" headerWordWrap="true" sortable="false" editable="true" rendererIsEditor="true" headerText="{LanguageManager.getInstance().labels.common.ordinalNumber}" dataField="OrdinalNumber" width="10"  itemRenderer="mx.controls.Label" />
+				<mx:DataGridColumn backgroundColor="#ffffff" editorDataField="value" headerWordWrap="true" sortable="false" editable="true" rendererIsEditor="true" headerText="{LanguageManager.getInstance().labels.common.item}" dataField="Item" width="80"  itemRenderer="mx.controls.Label" />
+				<mx:DataGridColumn backgroundColor="#ffffff" editorDataField="value" headerWordWrap="true" sortable="false" editable="true" rendererIsEditor="true" headerText="{LanguageManager.getInstance().labels.common.quantity}" dataField="Quantity" width="25"   itemRenderer="inputComponents.CurrencyRenderer"   />
+				<mx:DataGridColumn backgroundColor="#ffffff" editorDataField="value" headerWordWrap="true" sortable="false" editable="true" rendererIsEditor="true" headerText="{LanguageManager.getInstance().labels.documents.netValue}" dataField="NetPrice" width="25"   itemRenderer="inputComponents.CurrencyRenderer"   />
+			</lineList:columns>
+		</lineList:LineList>
+	</mx:VBox>
+</mx:Canvas>

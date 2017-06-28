@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" visible="{Boolean(currentPage &amp;&amp; rowCount)}">
+	<mx:LinkButton id="btFirst" label="&lt;&lt;" click="handleClick(event)" enabled="{currentPage &gt; 1}"/>
+	<mx:LinkButton id="btPrev" label="&lt;" click="handleClick(event)" enabled="{currentPage &gt; 1}"/>
+	<mx:Label text="{currentPage + '/' + Math.ceil(rowCount / pageSize) + ' (' + rowCount + ' ' + LanguageManager.getInstance().labels.page.results +')'}"/>
+	<mx:LinkButton id="btNext" label="&gt;" click="handleClick(event)" enabled="{currentPage * pageSize &lt; rowCount}"/>
+	<mx:LinkButton id="btLast" label="&gt;&gt;" click="handleClick(event)" enabled="{currentPage * pageSize &lt; rowCount}"/>
+	
+	<mx:Metadata>
+		/**
+		 * Dispatched when a user changes page.
+		 */
+		[Event(name="setPage", type="com.makolab.components.list.MakoListEvent")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.formatters.SwitchSymbolFormatter;
+			import com.makolab.fractus.model.LanguageManager;
+			/**
+			 * The property <code>visible</code> is set to <code>true</true> if <code>currentPage</code> and <code>rowCount</code> are set.
+			 */
+			
+			/**
+			 * All results count.
+			 */
+			[Bindable]
+			public var rowCount:int;
+			/**
+			 * Determines the number of rows per page.
+			 */
+			[Bindable]
+			public var pageSize:int;
+			/**
+			 * Current page number.
+			 */
+			[Bindable]
+			public var currentPage:int;
+			/**
+			 * Sets current page number and dispatches the <code>setPage</code> event.
+			 */
+			protected function handleClick(event:MouseEvent):void
+			{
+				var newEvent:MakoListEvent = new MakoListEvent(MakoListEvent.SET_PAGE);
+				switch (event.target)
+				{
+					case btFirst:
+						newEvent.pageNumber = 1;
+						break;
+					case btPrev:
+						newEvent.pageNumber = currentPage - 1;
+						break;
+					case btNext:
+						newEvent.pageNumber = currentPage + 1;
+						break;
+					case btLast:
+						newEvent.pageNumber = Math.ceil(rowCount / pageSize);
+						break;
+				}
+				dispatchEvent(newEvent);
+			}
+		]]>
+	</mx:Script>
+</mx:HBox>

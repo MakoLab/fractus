@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" verticalGap="0">
+
+	<mx:Metadata>
+        [Event(name="change", type="flash.events.Event")]
+    </mx:Metadata>
+    
+	<mx:Script>
+		<![CDATA[
+		
+			import com.makolab.fractus.model.LanguageManager;
+			
+			private var _dataObject:XML;
+		
+			/**
+			 * Lets you pass a value to the editor.
+			 * @see #dataObject
+			 */
+			override public function set data(value:Object):void{
+				dataObject = XML(value);
+			}
+			
+			[Bindable]
+			public function set dataObject(value:XML):void
+			{
+				_dataObject = value;
+			}
+			
+			public function get dataObject():XML
+			{
+				return _dataObject;
+			}
+			
+			private function changePassportNumber(event:Event):void{
+				_dataObject.passport.passportNumber = passportNumber.text;
+				dispatchEvent(new Event("change"));
+			}
+			
+			private function changeIssuer(event:Event):void{
+				_dataObject.passport.issuer = issuer.text;
+				dispatchEvent(new Event("change"));
+			}
+		]]>
+	</mx:Script>
+
+	<mx:HBox width="100%">
+		<mx:Label text="{LanguageManager.getInstance().labels.contractors.forms.contractor.passportNumber}:" textAlign="right" width="90"/>
+		<mx:TextInput id="passportNumber" width="100%" restrict="A-z0-9" maxChars="20" change="changePassportNumber(event)" text="{dataObject.passport.passportNumber}"/>
+	</mx:HBox>
+	<mx:HBox width="100%">
+		<mx:Label text="{LanguageManager.getInstance().labels.contractors.forms.contractor.issuer}:" width="90" textAlign="right"/>
+		<mx:TextInput id="issuer" width="100%" change="changeIssuer(event)" maxChars="50" text="{dataObject.passport.issuer}"/>
+	</mx:HBox>
+</mx:VBox>
